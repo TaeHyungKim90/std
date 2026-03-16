@@ -1,0 +1,25 @@
+# Python 관련
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+
+# FastAPI / DB 관련
+.env
+*.db
+*.sqlite3
+
+# Node.js / React 관련
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/frontend/build/
+/frontend/dist/
+
+# 에디터 및 OS 관련
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

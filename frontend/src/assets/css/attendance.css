@@ -1,0 +1,200 @@
+.attendance-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    background-color: #f4f7f9;
+    min-height: calc(100vh - 70px);
+}
+
+.attendance-card {
+    width: 100%;
+    max-width: 500px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    padding: 30px;
+}
+
+/* 헤더 스타일 */
+.attendance-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+
+.today-date {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.digital-clock {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--bq-primary, #007bff);
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+}
+
+/* 바디 스타일 */
+.attendance-body {
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 25px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.bq-select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.bq-select:focus {
+    border-color: var(--bq-primary, #007bff);
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.button-group button {
+    padding: 18px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-clock-in {
+    background-color: var(--bq-primary, #007bff);
+    color: white;
+}
+
+.btn-clock-out {
+    background-color: #e44d26; /* Danger color */
+    color: white;
+}
+
+.button-group button:hover:not(.disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.button-group button.disabled {
+    background-color: #eee !important;
+    color: #aaa !important;
+    cursor: not-allowed;
+}
+
+/* 푸터 스타일 */
+.attendance-footer {
+    background-color: #fafafa;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.status-item:last-child {
+    margin-bottom: 0;
+}
+
+.status-item .label {
+    color: #888;
+}
+
+.status-item .value {
+    font-weight: 600;
+    color: #333;
+}
+
+.total-work {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd;
+}
+
+.total-work .value {
+    color: var(--bq-primary, #007bff);
+    font-size: 1.1rem;
+}
+
+/* 모바일 최적화 */
+/* ==========================================
+   📱 모바일 & 태블릿 최적화 (2단계 대응)
+   ========================================== */
+
+/* 1. 태블릿 및 작은 PC (768px 이하) */
+@media (max-width: 768px) {
+    .attendance-container {
+        padding: 10px 10px;
+    }
+    .attendance-card {
+        padding: 10px 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .digital-clock {
+        font-size: 2.8rem; /* 살짝 축소 */
+    }
+}
+
+/* 2. 스마트폰 (480px 이하 - 이미지 속 문제 해결 구간) */
+@media (max-width: 480px) {
+    .digital-clock {
+        font-size: 2.2rem; /* ✅ 한 줄에 쏙 들어오도록 대폭 축소 */
+        letter-spacing: 1px;
+    }
+    
+    .today-date {
+        font-size: 0.95rem;
+    }
+
+    .button-group {
+        grid-template-columns: 1fr; /* ✅ 버튼 세로 배치 */
+        gap: 10px;
+    }
+
+    .button-group button {
+        padding: 15px; /* 터치하기 적당한 높이 */
+        font-size: 1rem;
+    }
+
+    .attendance-footer {
+        padding: 15px;
+    }
+
+    .status-item {
+        font-size: 0.85rem; /* 글자 크기 최적화 */
+    }
+
+    .total-work .value {
+        font-size: 1rem;
+    }
+}

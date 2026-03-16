@@ -1,0 +1,175 @@
+/* ==========================================
+   1. 전체 헤더 구조
+   ========================================== */
+.bq-header {
+  padding: 0 40px;
+  height: 70px;
+  background-color: var(--bq-bg-card); /* 흰색 배경 */
+  border-bottom: 1px solid var(--bq-border-soft);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  gap: 20px; /* 좌/우 그룹 간 최소 여백 보장 */
+}
+
+/* ==========================================
+   2. 좌측 영역 (로고 + 메뉴바)
+   ========================================== */
+.bq-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 40px; 
+  flex: 1; /* 남는 가로 공간을 모두 차지 */
+  min-width: 0; /* 🚨 핵심: 내부 메뉴가 길어져도 부모 밖으로 뚫고 나가지 않게 방지 */
+}
+
+/* 로고 영역 */
+.bq-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0; /* 공간이 부족해도 로고는 찌그러지지 않음 */
+}
+
+.bq-logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.bq-logo-text-group {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  font-weight: 800;
+}
+
+.bq-logo-main { color: var(--bq-text-bright); } /* #141414 */
+.bq-logo-sub { color: var(--bq-primary); }      /* #3DAF7A */
+
+/* 메인 메뉴 (스와이프 스크롤 지원) */
+.bq-main-menu {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto; /* 메뉴가 많으면 가로 스크롤 허용 */
+  white-space: nowrap; /* 글자 꺾임 방지 */
+  
+  /* 스크롤바 숨김 처리 (깔끔한 UI) */
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+.bq-main-menu::-webkit-scrollbar { display: none; }
+
+.menu-item {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--bq-text-dim); /* 비활성 메뉴는 부드러운 회색 */
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.2s, border-bottom 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.menu-item:hover {
+  color: var(--bq-text-bright);
+}
+
+.menu-item.active {
+  color: var(--bq-primary);
+  border-bottom: 2px solid var(--bq-primary);
+}
+
+/* ==========================================
+   3. 우측 영역 (유저 상태 + 버튼)
+   ========================================== */
+.bq-header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0; /* 우측 버튼이 밀려서 사라지지 않게 방지 */
+}
+
+.bq-user-info {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--bq-text-bright);
+  font-weight: 500;
+  white-space: nowrap; 
+}
+
+.bq-status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--bq-primary); /* #3DAF7A */
+  border-radius: 50%;
+  margin-right: 8px;
+  box-shadow: 0 0 4px rgba(61, 175, 122, 0.4);
+}
+
+.bq-btn-logout {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: var(--bq-danger-color); /* #FF6A3D */
+  border: 1px solid var(--bq-danger-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+}
+
+.bq-btn-logout:hover {
+  background-color: var(--bq-danger-color);
+  color: #fff !important; 
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   4. 모바일 화면 최적화 (가로 768px 이하)
+   ========================================== */
+@media (max-width: 768px) {
+  .bq-header {
+      padding: 0 15px; /* 양옆 여백 축소 */
+      gap: 10px;
+  }
+
+  .bq-logo-section {
+      gap: 15px; /* 로고와 메뉴 사이 간격 축소 */
+  }
+
+  /* 로고 크기 축소 및 서브 텍스트(HR) 숨김 */
+  .bq-logo-img { height: 26px; }
+  .bq-logo-text-group { font-size: 18px; }
+  .bq-logo-sub { display: none; } /* 공간 확보를 위해 'HR' 글자 생략 */
+
+  /* 메뉴바 간격 축소 및 부드러운 터치 스크롤 활성화 */
+  .bq-main-menu {
+      gap: 15px;
+      -webkit-overflow-scrolling: touch; 
+  }
+  
+  .menu-item {
+      font-size: 14px;
+      padding: 5px 2px;
+  }
+
+  .bq-header-right { gap: 10px; }
+
+  /* 이름 숨기고 상태 점(Dot)만 표시 */
+  .bq-user-info span { display: none; }
+  .bq-status-dot { margin-right: 0; }
+
+  /* 로그아웃 버튼 크기 축소 */
+  .bq-btn-logout {
+      padding: 6px 10px;
+      font-size: 12px;
+  }
+}

@@ -1,0 +1,221 @@
+.bq-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: 
+        radial-gradient(circle at 15% 50%, rgba(61, 175, 122, 0.05), transparent 25%), /* 좌측 중간 연한 그린 */
+        radial-gradient(circle at 85% 30%, rgba(255, 106, 61, 0.04), transparent 25%), /* 우측 상단 연한 오렌지 */
+        var(--bq-bg-main, #F0EEE9); /* 기본 웜톤 배경 */
+    overflow: hidden;
+}
+
+.bq-main-content {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    padding: 40px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    color: #141414;
+    overflow-y: auto; 
+    height: 100%;
+}
+
+/* ==========================================
+   2. 공통 모달 시스템 (재사용 가능 & 글래스모피즘)
+   ========================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(20, 20, 20, 0.5); /* 세련된 다크 오버레이 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    backdrop-filter: blur(6px); /* 💡 배경 블러 처리 */
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.modal-content, .detail-modal {
+    /* 💡 글래스모피즘 핵심: 반투명 흰색 + 블러 + 은은한 테두리 */
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    
+    position: relative; /* 닫기 버튼 기준점 */
+    padding: 30px;
+    border-radius: 16px; 
+    width: 450px;
+    max-width: 90%;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    color: #141414; 
+    animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    color: #141414;
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.close-x {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    color: #8A8A8A; 
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.close-x:hover {
+    color: #FF6A3D; /* 🎨 닫기 버튼 오버 시 Signal Orange */
+    transform: scale(1.1);
+}
+
+/* ==========================================
+   3. 공통 폼 요소 (입력창, 드롭다운)
+   ========================================== */
+.bq-input, .bq-select, .bq-input-title, .bq-textarea {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border: 1px solid #E2DFD8; /* 🎨 부드러운 웜톤 테두리 */
+    border-radius: 8px; 
+    font-size: 0.95rem;
+    color: #141414;
+    background-color: #F0EEE9; /* 🎨 입력창 기본 배경 */
+    box-sizing: border-box;
+    transition: all 0.2s;
+    font-family: inherit;
+    outline: none;
+}
+
+.bq-input:focus, .bq-select:focus, .bq-input-title:focus, .bq-textarea:focus {
+    background-color: #ffffff; /* 포커스 시 깔끔한 흰색으로 변경 */
+    border-color: #3DAF7A; /* 🎨 Primary 컬러 테두리 */
+    box-shadow: 0 0 0 3px rgba(61, 175, 122, 0.15);
+}
+
+.bq-textarea {
+    min-height: 150px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.bq-textarea::-webkit-scrollbar { width: 8px; }
+.bq-textarea::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 10px; }
+.bq-textarea::-webkit-scrollbar-track { background-color: transparent; }
+
+.date-group { 
+    display: flex; 
+    gap: 15px; 
+    margin-bottom: 5px; 
+}
+.date-group > input { flex: 1; }
+
+/* ==========================================
+   4. 버튼 및 정보 표시 배지
+   ========================================== */
+.form-actions { 
+    display: flex; 
+    gap: 12px; 
+    margin-top: 30px; 
+    justify-content: center; 
+}
+
+.form-actions button { 
+    padding: 14px 20px; 
+    border: none; 
+    border-radius: 8px; 
+    font-size: 1rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+}
+
+.btn-cancel, .form-actions button[type="button"] { 
+    flex: 1; 
+    background-color: #E2DFD8; 
+    color: #141414; 
+}
+.btn-cancel:hover { background-color: #d1cdc4; }
+
+.btn-save, .form-actions button[type="submit"] { 
+    flex: 2; 
+    background-color: #3DAF7A !important; /* 🎨 Primary */
+    color: #ffffff !important; 
+}
+.btn-save:hover, .form-actions button[type="submit"]:hover { 
+    background-color: #2e8f62 !important; 
+    transform: translateY(-1px);
+}
+.btn-save:disabled { background-color: #ccc !important; cursor: not-allowed; }
+
+.btn-delete {
+    flex: 1; 
+    background-color: #ffffff; 
+    border: 1px solid #FF6A3D !important; /* 🎨 Signal Orange */
+    color: #FF6A3D !important; 
+}
+.btn-delete:hover {
+    background-color: #FF6A3D !important; 
+    color: #ffffff !important; 
+    box-shadow: 0 4px 10px rgba(255, 106, 61, 0.3);
+}
+
+.error-msg { 
+    color: #FF6A3D; 
+    font-size: 0.85rem; 
+    margin-top: 10px; 
+    text-align: center; 
+}
+
+/* 정보 표시 영역 */
+.display-info-group { 
+    background-color: rgba(255,255,255,0.5); 
+    padding: 15px; 
+    border-radius: 10px; 
+    margin-bottom: 20px; 
+    border: 1px solid #E2DFD8;
+}
+.info-item { font-size: 1rem; margin-bottom: 8px; color: #141414; }
+.info-item:last-child { margin-bottom: 0; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; color: #fff; font-size: 0.85rem; font-weight: bold; }
+
+/* ==========================================
+   5. 모바일 반응형 완벽 대응 (768px 이하)
+   ========================================== */
+@media (max-width: 768px) {
+    .modal-content, .detail-modal { 
+        width: 92%; 
+        min-width: 0 !important; 
+        padding: 24px; 
+        max-height: 85vh; 
+        overflow-y: auto; 
+    }
+    
+    .modal-content h2 { font-size: 1.3rem; margin-top: 10px; }
+    .date-group { flex-direction: column; gap: 0; margin-bottom: 0; }
+    
+    .form-actions { flex-direction: column; gap: 10px; margin-top: 20px;}
+    .form-actions button { width: 100%; padding: 14px; margin: 0; }
+    .btn-cancel { order: 2; } /* 모바일에서는 취소 버튼이 아래로 가도록 순서 변경 */
+    .btn-save { order: 1; }
+}

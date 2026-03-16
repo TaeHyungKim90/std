@@ -1,0 +1,27 @@
+.bq-private-loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* global.css에서 설정한 밝은 배경(#f8f9fa) */
+    background-color: var(--bq-bg-main); 
+}
+
+.bq-private-loading-text {
+    margin-top: 20px;
+    /* 이제 'neon-blue'는 신뢰감 있는 '가치플레이 블루'를 가리킵니다 */
+    color: var(--bq-neon-blue); 
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+    /* 로딩 중임을 알리는 은은한 애니메이션 효과 추가 */
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* 텍스트가 부드럽게 깜빡이는 효과 */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
