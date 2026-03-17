@@ -1,10 +1,11 @@
 import React from 'react';
 import { todoService } from '../../services/todoService';
 import { adminService } from '../../services/adminService';
+import { useAuth } from '../../context/AuthContext';
 
 // ✅ categories props 추가 수신
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
-  const currentUserId = localStorage.getItem('userId');
+  const { userId: currentUserId } = useAuth();
   
   if (!isOpen || !event) return null;
 

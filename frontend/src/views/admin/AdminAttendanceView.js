@@ -58,7 +58,9 @@ const AdminAttendanceView = () => {
                         </thead>
                         <tbody>
                             {attendanceList.length > 0 ? (
-                                attendanceList.map((record) => (
+                               [...attendanceList]
+                               .sort((a, b) => new Date(b.work_date) - new Date(a.work_date))
+                               .map((record) => (
                                     <tr key={record.id}>
                                         <td>
                                             <div style={{ fontWeight: '600' }}>{record.user_name}</div>
