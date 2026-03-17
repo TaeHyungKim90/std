@@ -1,7 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import PrivateRoute from '../views/common/PrivateRoute';
+import PrivateRoute from '../components/common/PrivateRoute';
+import AdminRoute from '../components/common/AdminRoute';
 import Layout from '../components/common/Layout';
 
 // 분리된 라우트 모듈들 임포트
@@ -22,7 +23,10 @@ const AppRoutes = () => {
             <Route path="/" element={<Navigate to="/my/todos" replace />} />
             {/* 모듈화된 라우트들 배치 */}
             {hrRoutes}
-            {adminRoutes}
+            <Route element={<AdminRoute />}>
+              {adminRoutes}
+            </Route>
+            
           </Route>      
         </Route>
         
