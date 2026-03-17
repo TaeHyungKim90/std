@@ -21,11 +21,13 @@
     width: 100%;             
     max-width: 1440px;       
     margin: 0 auto;          
-    padding: 30px 20px;         
+    /* padding: 30px 20px; */
     display: flex;
     flex-direction: column;
     gap: 25px;
-    min-height: 100vh;
+    /* min-height: 100vh; */
+    flex: 1;
+    min-height: 0;
 }
 
 .admin-header {
@@ -35,6 +37,7 @@
     align-items: center;
 }
 .admin-header h2 { 
+    margin-top: 0;
     font-size: 2rem; 
     color: var(--text-main); 
     margin-bottom: 5px; 

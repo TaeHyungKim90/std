@@ -1,7 +1,23 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef } from 'react';
 import { getContrastColor } from '../../utils/colorUtils';
 
 const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
+    // ✅ 1. 마우스를 누른 시작 좌표를 저장할 공간을 만듭니다.
+    const mousePos = useRef({ x: 0, y: 0 });
+    // ✅ 2. 마우스를 누를 때(Down) 현재 X, Y 좌표를 기억합니다.
+    const handleMouseDown = (e) => {
+        mousePos.current = { x: e.clientX, y: e.clientY };
+    };
+    // ✅ 3. 마우스를 뗄 때(Up) 움직인 거리를 계산합니다.
+    const handleMouseUp = (e, cat) => {
+        const moveX = Math.abs(e.clientX - mousePos.current.x);
+        const moveY = Math.abs(e.clientY - mousePos.current.y);
+
+        // 상하좌우로 5픽셀 미만으로 움직였을 때만 '순수한 클릭'으로 인정합니다!
+        if (moveX < 5 && moveY < 5) {
+            openColorModal(cat);
+        }
+    };
     return (
         <aside ref={ref} id="external-events" className="calendar-sidebar">
             <h4 className="sidebar-title">
@@ -13,9 +29,7 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
 
             {categories.length > 0 ? (
                 categories.map(cat => {
-                    // 배경색 결정 (커스텀 설정이 없으면 흰색)
                     const bgColor = cat.hasCustomConfig ? cat.color : '#ffffff';
-                    // 🎨 배경색에 따른 자동 글자색 계산
                     const textColor = cat.hasCustomConfig ? getContrastColor(bgColor) : '#333';
                     const borderColor = cat.hasCustomConfig ? cat.color : '#ddd';
 
@@ -28,6 +42,8 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
                             data-color={cat.color}
                             data-category={cat.category_key} 
                             data-description={cat.default_description}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={(e) => handleMouseUp(e, cat)}
                             style={{ 
                                 backgroundColor: bgColor, 
                                 color: textColor, // ✅ 자동 반전된 글자색 적용

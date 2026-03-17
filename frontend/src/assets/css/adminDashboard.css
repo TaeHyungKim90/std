@@ -1,85 +1,105 @@
-/* HR 대시보드 전용 스타일 */
-.hr-dashboard-container {
-    width: 100%;
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 30px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
+/* src/assets/css/adminDashboard.css */
 
-/* 상단 요약 섹션 */
+/* 상단 KPI 요약 섹션 */
 .hr-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    margin-bottom: 25px;
 }
 
-.hr-stat-card {
-    background: white;
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    border: 1px solid #edf2f0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.hr-stat-card .label {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.hr-stat-card .value {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: #3FAF7A; /* Primary Mint */
-}
-
-/* 대시보드 메인 콘텐츠 섹션 */
+/* 대시보드 메인 콘텐츠 섹션 (1:1 비율로 두 패널 배치) */
 .hr-content-row {
     display: grid;
-    grid-template-columns: 2fr 1fr; /* 2:1 비율 */
+    grid-template-columns: 1fr 1fr; 
     gap: 25px;
+    flex: 1; /* 🚨 추가: 남은 화면 높이를 전부 차지함 */
+    min-height: 0; /* 🚨 추가 */
 }
 
 .hr-widget {
-    background: white;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(15px);
     border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.04);
-    border: 1px solid #f0f0f0;
-}
-
-.hr-widget h3 {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #141414;
+    flex-direction: column;
+    min-height: 0;
 }
 
-/* 최근 현황 리스트 스타일 (가상 데이터용) */
-.hr-list { list-style: none; padding: 0; margin: 0; }
+.hr-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.hr-widget-header h3 {
+    font-size: 1.2rem;
+    color: #141414;
+    margin: 0;
+}
+
+/* 리스트 공통 스타일 */
+.hr-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
+
 .hr-list-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid #f5f5f5;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
 }
-.hr-list-item:last-child { border-bottom: none; }
+
+/* 🚨 1. 여기가 리스트가 밑으로 무한히 늘어나지 않게 막아주는 핵심입니다! */
+.scrollable-list {
+    flex: 1;
+    /* max-height: 420px; */
+    overflow-y: auto;
+    padding-right: 10px;
+}
+.scrollable-list::-webkit-scrollbar { width: 6px; }
+.scrollable-list::-webkit-scrollbar-thumb { background-color: rgba(61, 175, 122, 0.3); border-radius: 10px; }
+.scrollable-list::-webkit-scrollbar-track { background-color: transparent; }
+
+/* 유저 정보 및 아바타 */
 .user-info { display: flex; align-items: center; gap: 12px; }
-.user-avatar { width: 35px; height: 35px; border-radius: 50%; background: #eef7f2; display: flex; align-items: center; justify-content: center; color: #3FAF7A; font-weight: bold; }
-.status-tag { padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; }
-.status-tag.status-past { background: #eee; color: #888; }     /* 다녀온 사람 */
-.status-tag.status-now { background: #fff3e0; color: #ef6c00; } /* 휴가 중 */
-.status-tag.status-future { background: #e8f5e9; color: #3FAF7A; } /* 예정 */
+.user-avatar { 
+    width: 40px; height: 40px; 
+    border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 1.1rem; font-weight: bold; 
+}
+.user-details { display: flex; flex-direction: column; }
+.user-name { font-weight: 700; font-size: 1rem; color: #333; }
+.user-sub { font-size: 0.8rem; color: #888; margin-top: 2px; }
+
+/* 상태 태그 (휴가 상태) */
+.status-tag { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+.status-tag.status-past { background: #f1f3f5; color: #999; }     
+.status-tag.status-now { background: #fff0eb; color: #FF6A3D; } 
+.status-tag.status-future { background: #e8f5e9; color: #3DAF7A; } 
+
+/* 🚨 2. 여기가 예쁜 연차 게이지 바(Progress Bar)를 그려주는 핵심입니다! */
+.progress-container { margin-top: 8px; }
+.progress-text { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.95rem; font-weight: 600; }
+.progress-subtext { font-size: 0.85rem; color: #666; font-weight: normal; }
+.progress-bar-bg { width: 100%; height: 6px; background-color: #F0EEE9; border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; transition: width 0.5s ease-out; }
+.progress-bar-fill.normal { background-color: #3DAF7A; }
+.progress-bar-fill.warning { background-color: #FF6A3D; }
+
+/* 모바일 대응 */
 @media (max-width: 1024px) {
     .hr-content-row { grid-template-columns: 1fr; }
 }
