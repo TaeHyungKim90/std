@@ -23,22 +23,15 @@ const AdminDashboard = () => {
                 setLoading(true);
                 // 1. 실제 백엔드 API 호출 (KPI 및 이달의 휴가자)
                 const res = await adminService.getDashboard();
-                setSummary(res.data);
-
-                // 2. 전 직원 연차 현황용 UI 테스트 Mock 데이터 (20명)
-                const names = ["김태형", "네이버", "이지은", "박보검", "한소희", "공유", "수지", "남주혁", "김지원", "박서준", "손예진", "현빈", "아이유", "정국", "지민", "뷔", "진", "슈가", "제이홉", "RM"];
-                const mockEmployees = names.map((name, index) => {
-                    const total = index < 5 ? 11 : 15; // 랜덤 총 연차 부여
-                    const used = Math.floor(Math.random() * total); // 랜덤 사용 연차
-                    return {
-                        id: index + 1,
-                        user_name: name,
-                        total_days: total,
-                        used_days: used,
-                        remaining_days: total - used
-                    };
+                setSummary({
+                    user_count: res.data.user_count,
+                    vacation_count: res.data.vacation_count,
+                    category_count: res.data.category_count,
+                    today_vacations: res.data.today_vacations || []
                 });
-                setEmployeeBalances(mockEmployees);
+
+                // 3. 백엔드에서 받아온 [전 직원 연차 현황] 세팅!
+                setEmployeeBalances(res.data.employee_balances || []);
 
             } catch (err) {
                 console.error("관리자 대시보드 데이터 로드 실패", err);

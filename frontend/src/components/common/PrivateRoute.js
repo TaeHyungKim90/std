@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import LoadingBar from './LoadingBar';
+import LoadingBar from '../../views/common/LoadingBar';
 import '../../assets/css/privateRoute.css';
 const PrivateRoute = () => {
   const { isLoggedIn, loading } = useContext(AuthContext);

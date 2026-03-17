@@ -48,8 +48,17 @@ def init_db():
         if category_count == 0:
             print("--- 🏷️ 기본 카테고리(휴가, 주간보고) 생성 중 ---")
             default_categories = [
-                TodoCategoryType(category_key="vacation", category_name="휴가"),
-                TodoCategoryType(category_key="weekly", category_name="주간보고")
+                # 🛑 [연차 차감 O 카테고리]
+                TodoCategoryType(category_key="vacation_full", category_name="연차", icon="🌴"),
+                TodoCategoryType(category_key="vacation_am", category_name="오전반차", icon="🌤️"),
+                TodoCategoryType(category_key="vacation_pm", category_name="오후반차", icon="⛅"),
+                # 🟢 [연차 차감 X 카테고리 (근태 기록용)]
+                TodoCategoryType(category_key="vacation_special", category_name="경조휴가", icon="💌"),
+                TodoCategoryType(category_key="vacation_sick", category_name="병가", icon="🤒"),
+                TodoCategoryType(category_key="official_leave", category_name="공가", icon="🪖"),
+                
+                # 📝 [일반 업무용]
+                TodoCategoryType(category_key="weekly", category_name="주간보고", icon="📝")
             ]
             db.add_all(default_categories)
             print("--- ✅ 기본 카테고리 설정 완료 ---")
