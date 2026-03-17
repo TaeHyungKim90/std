@@ -1,5 +1,5 @@
 // src/components/auth/LoginForm.jsx (수정된 소스)
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService'
 import { AuthContext } from '../../context/AuthContext';
@@ -10,9 +10,14 @@ const LoginForm = () => {
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [showKoreanWarning, setShowKoreanWarning] = useState(false);
-  const { setIsLoggedIn, setUserRole, setUserName, setUserNickname } = useContext(AuthContext);
+  const { isLoggedIn, loading, setIsLoggedIn, setUserRole, setUserName, setUserNickname } = useContext(AuthContext);
   const navigate = useNavigate();
-
+  useEffect(() => {
+    // 로딩이 끝났고(false), 로그인 상태(true)라면 '/' (또는 '/my/todos') 로 강제 이동
+    if (!loading && isLoggedIn) {
+      navigate('/'); 
+    }
+  }, [isLoggedIn, loading, navigate]);
   // ✅ 한글 입력 차단 핸들러
   const handleInputChange = (setter) => (e) => {
     const { value } = e.target;
@@ -35,7 +40,7 @@ const LoginForm = () => {
       const res = await authService.login(id, pw);
       const { success, access_token, userId, userNickname,role, userName } = res.data;
       if (success) {
-        localStorage.setItem('token', access_token);
+        localStorage.setItem('accessToken', access_token);
         localStorage.setItem('userId', userId);
 
         setIsLoggedIn(true);

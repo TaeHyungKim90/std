@@ -1,24 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
 import { getContrastColor } from '../../utils/colorUtils';
 import { todoService } from '../../services/todoService';
+import { holidayService } from '../../services/holidayService'; // ✅ 공휴일 서비스 임포트
 import { useAuth } from '../../context/AuthContext';
 import TodoSidebar from './TodoSidebar';
 import TodoEditModal from './TodoEditModal';
 import TodoDetailModal from '../../components/common/TodoDetailModal';
-
-
 
 import '../../assets/css/layout.css';
 import '../../assets/css/calendar.css';
 
 const TodoListView = () => {
     const [events, setEvents] = useState([]);
+    const [holidays, setHolidays] = useState([]);
+    const holidaysRef = useRef([]);
     const [categories, setCategories] = useState([]);
-    const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3DAF7A',selectedDescription: ''});
+    const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3DAF7A', selectedDescription: ''});
     const { userId } = useAuth();
     const calendarRef = useRef(null);
     const externalEventsRef = useRef(null);
@@ -28,29 +29,8 @@ const TodoListView = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [modalMode, setModalMode] = useState('create');
 
-    useEffect(() => {
-        fetchTodos();
-        fetchCategoriesAndConfigs();
-
-        // 외부 드래그 앤 드롭 설정
-        let draggable = new Draggable(externalEventsRef.current, {
-            itemSelector: '.fc-event',
-            eventData: (eventEl) => ({
-                title: eventEl.getAttribute('data-title'),
-                color: eventEl.getAttribute('data-color'), // 👈 드래그 시 적용될 캘린더 색상
-                extendedProps: {
-                    category: eventEl.getAttribute('data-category'),
-                    description: eventEl.getAttribute('data-description')
-                }
-            }),
-        });
-
-        return () => draggable.destroy();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // ✅ 마스터 카테고리 + 유저 개인 설정 병합 (수정됨)
-    const fetchCategoriesAndConfigs = async () => {
+    // ✅ 1. 함수 호이스팅 & 의존성 경고 해결 (useCallback 적용)
+    const fetchCategoriesAndConfigs = useCallback(async () => {
         try {
             const [catRes, configRes] = await Promise.all([
                 todoService.getCategories(),
@@ -64,8 +44,7 @@ const TodoListView = () => {
                 const userConf = userConfigs.find(c => c.category_key === cat.category_key);
                 return {
                     ...cat,
-                    hasCustomConfig: !!userConf, // 커스텀 색상 등록 여부 플래그
-                    // 캘린더에 들어갈 실제 색상 (설정 없으면 기본 파란색)
+                    hasCustomConfig: !!userConf, 
                     color: userConf?.color || '#3DAF7A', 
                     default_description: userConf?.default_description || ''
                 };
@@ -75,18 +54,28 @@ const TodoListView = () => {
         } catch (err) {
             console.error("카테고리 및 설정 로드 실패", err);
         }
-    };
+    }, []);
 
-    const fetchTodos = async () => {
+    // ✅ 2. Todo와 공휴일(Holidays)을 함께 불러와서 병합
+    const fetchTodos = useCallback(async () => {
         try {
-            const res = await todoService.getTodos();
-            const formatted = res.data.map(todo => {
+            const currentYear = new Date().getFullYear().toString();
+            
+            // Promise.all을 통해 할일과 올해의 공휴일을 동시에 비동기 호출
+            const [todoRes, holidayRes] = await Promise.all([
+                todoService.getTodos(),
+                holidayService.getHolidays(currentYear)
+            ]);
+
+            // 할일(Todo) 매핑
+            const formattedTodos = todoRes.data.map(todo => {
                 const isOwner = todo.user_id === userId;
                 const endDate = new Date(todo.end_date);
                 endDate.setSeconds(endDate.getSeconds() + 1);
                 const nickname = todo.author?.user_nickname || '';
                 const name = todo.author?.user_name || '';
                 const eventTextColor = getContrastColor(todo.color);
+                
                 return {
                     id: todo.id.toString(),
                     title: `[${nickname}(${name})] ${todo.title}`,
@@ -96,25 +85,61 @@ const TodoListView = () => {
                     backgroundColor: todo.color,
                     borderColor: todo.color,
                     textColor: eventTextColor,
-                    startEditable:isOwner,
+                    startEditable: isOwner,
                     durationEditable: isOwner,
-                    extendedProps: { ...todo },
+                    extendedProps: { ...todo, isHoliday: false }, // 일반 일정 플래그
                     className: todo.category === 'vacation' ? 'event-vacation' : ''
-                }
+                };
             });
-            setEvents(formatted);
+            holidaysRef.current = holidayRes.data || [];
+
+            // 합쳐서 캘린더 이벤트로 등록
+            setEvents(formattedTodos);
+            setHolidays(holidayRes.data || []);
         } catch (err) {
             console.error("데이터 로드 실패", err);
         }
-    };
+    }, [userId]);
 
     // --- 이벤트 핸들러 ---
     const handleSwitchToEdit = () => { setIsDetailOpen(false); setModalMode('edit'); setIsEditOpen(true); };
-    const handleDateClick = (info) => { setSelectedDate({ start: info.dateStr, end: info.dateStr }); setModalMode('create'); setIsEditOpen(true); };
-    const handleEventClick = (info) => { const event = info.event.toPlainObject(); const props = event.extendedProps; setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || 'report', color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); setIsDetailOpen(true); };
+    
+    const handleDateClick = (info) => { 
+        setSelectedDate({ start: info.dateStr, end: info.dateStr }); 
+        setModalMode('create'); 
+        setIsEditOpen(true); 
+    };
+    
+    const handleEventClick = (info) => { 
+        const event = info.event.toPlainObject(); 
+        const props = event.extendedProps; 
+        
+        // ✅ 공휴일을 클릭했을 때는 일반 일정 상세 모달을 띄우지 않음
+        if (props.isHoliday) return; 
+
+        setSelectedEvent({ 
+            id: event.id, 
+            title: props.title || '제목 없음', 
+            start: props.start_date.split('T')[0], 
+            end: props.end_date.split('T')[0], 
+            category: props.category || 'report', 
+            color: event.backgroundColor, 
+            description: props.description || '', 
+            user_id: props.user_id, 
+            author: props.author 
+        }); 
+        setIsDetailOpen(true); 
+    };
     
     const handleEventUpdate = async (info) => {
         const { event } = info;
+        
+        // 방어 로직: 혹시라도 공휴일이 드래그되었다면 원상복구
+        if (event.extendedProps.isHoliday) {
+            info.revert();
+            return;
+        }
+
         const startStr = event.startStr || "";
         const startDate = startStr.includes('T') ? startStr.split('T')[0] + "T00:00:00" : startStr + "T00:00:00";
         const toLocalISO = (date) => new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('.')[0];
@@ -146,7 +171,7 @@ const TodoListView = () => {
             title: event.title,
             start_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T00:00:00`,
             end_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T23:59:59`,
-            color: event.backgroundColor, // 드래그 시점에 결정된 색상 적용
+            color: event.backgroundColor, 
             category: event.extendedProps?.category || 'report', 
             description: event.extendedProps?.description || '',
             status: "CREATED"
@@ -156,41 +181,63 @@ const TodoListView = () => {
         fetchTodos();
     };
 
-    // ✅ 카테고리 색상 설정 모달 열기
     const openColorModal = (cat) => {
         setColorModal({
             isOpen: true,
             targetCat: cat,
-            selectedColor: cat.color, // 기존에 쓰던 색상 불러오기
+            selectedColor: cat.color, 
             selectedDescription: cat.default_description || ''
         });
     };
 
-    // ✅ 색상 설정 저장 로직
     const handleSaveColor = async () => {
         try {
             await todoService.updateTodoConfig({
                 category_key: colorModal.targetCat.category_key,
                 color: colorModal.selectedColor,
-                default_description: colorModal.selectedDescription // 기존 설명 유지
+                default_description: colorModal.selectedDescription 
             });
-            await fetchCategoriesAndConfigs(); // 설정 저장 후 데이터 재호출
+            await fetchCategoriesAndConfigs(); 
             setColorModal({ ...colorModal, isOpen: false });
         } catch (err) {
             alert("색상 설정에 실패했습니다.");
         }
     };
 
+    // ✅ 3. 함수 선언부 하단으로 내려온 안전한 useEffect
+    useEffect(() => {
+        fetchTodos();
+        fetchCategoriesAndConfigs();
+
+        let draggable;
+        // DOM Ref가 존재하는지 확인하는 방어 로직 추가
+        if (externalEventsRef.current) {
+            draggable = new Draggable(externalEventsRef.current, {
+                itemSelector: '.fc-event',
+                eventData: (eventEl) => ({
+                    title: eventEl.getAttribute('data-title'),
+                    color: eventEl.getAttribute('data-color'), 
+                    extendedProps: {
+                        category: eventEl.getAttribute('data-category'),
+                        description: eventEl.getAttribute('data-description')
+                    }
+                }),
+            });
+        }
+        
+        return () => {
+            if (draggable) draggable.destroy();
+        };
+    }, [fetchTodos, fetchCategoriesAndConfigs]); // 의존성 배열에 완벽하게 함수 추가됨
+
     return (
         <div className="calendar-page-container">
-            {/* 스케줄 템플릿 사이드바 */}
             <TodoSidebar 
                 ref={externalEventsRef} 
                 categories={categories} 
                 openColorModal={openColorModal} 
             />
 
-            {/* 메인 캘린더 */}
             <section id="calendar-container" className="calendar-main">
                 <FullCalendar
                     ref={calendarRef}
@@ -198,9 +245,45 @@ const TodoListView = () => {
                     initialView="dayGridMonth"
                     headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
                     locale="ko"
-                    events={events}
+                    events={events} // 이제 여기엔 순수 할 일만 들어있습니다
                     editable={true}
                     droppable={true}
+                    
+                    // 👇👇 새로 추가되는 날짜 디자인 커스텀 로직 👇👇
+                    dayCellContent={(arg) => {
+                        // 현재 렌더링 중인 칸의 날짜를 YYYY-MM-DD 형식으로 변환
+                        const dateStr = new Date(arg.date.getTime() - (arg.date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                        
+                        // 해당 날짜가 공휴일 배열에 존재하는지 확인
+                        const holiday = holidaysRef.current.find(h => h.holiday_date === dateStr);
+                        const isHoliday = !!holiday;
+
+                        // 토, 일, 공휴일에 따른 숫자 색상 결정
+                        let dateColor = '';
+                        if (isHoliday) {
+                            dateColor = '#FF4B4B'; // 공휴일은 무조건 빨간색
+                        } else if (arg.date.getDay() === 0) {
+                            dateColor = '#FF4B4B'; // 일요일 빨간색
+                        } else if (arg.date.getDay() === 6) {
+                            dateColor = '#2E8AF6'; // 토요일 파란색
+                        }
+
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', padding: '2px 4px' }}>
+                                
+                                <span style={{ color: dateColor, fontWeight: isHoliday ? 'bold' : 'normal' }}>
+                                    {arg.dayNumberText}
+                                </span>
+                                {isHoliday && (
+                                    <span style={{ fontSize: '0.75rem', color: '#FF4B4B', fontWeight: 'bold', marginTop: '2px' }}>
+                                        {holiday.holiday_name}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    }}
+                    // 👆👆 여기까지 👆👆
+
                     dateClick={handleDateClick}
                     eventClick={handleEventClick}
                     eventDrop={handleEventUpdate}
@@ -209,7 +292,6 @@ const TodoListView = () => {
                 />
             </section>
 
-            {/* ✅ 카테고리 색상 설정 모달 */}
             {colorModal.isOpen && (
                 <div className="modal-overlay" onClick={() => setColorModal({...colorModal, isOpen: false})}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -217,7 +299,6 @@ const TodoListView = () => {
                             {colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 색상 설정
                         </h2>
                         
-                        {/* 미리 정의된 색상 팔레트 */}
                         <div className="color-palette" style={{ margin: '30px 0' }}>
                             {['#3DAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'].map(color => (
                                 <div 
@@ -229,7 +310,6 @@ const TodoListView = () => {
                             ))}
                         </div>
                         
-                        {/* 자유 색상 선택기 */}
                         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                             <label style={{ fontSize: '0.9rem', color: '#666', marginRight: '10px' }}>직접 선택:</label>
                             <input 
@@ -266,7 +346,6 @@ const TodoListView = () => {
                 </div>
             )}
 
-            {/* 기본 모달들 */}
             <TodoEditModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={fetchTodos} categories={categories} />
             <TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={fetchTodos} onEditClick={handleSwitchToEdit} categories={categories} />
         </div>

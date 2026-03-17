@@ -1,0 +1,58 @@
+/* src/assets/css/sidebar.css (신규 생성) */
+.admin-sidebar {
+    width: 240px;
+    background-color: #FFFFFF;
+    border-right: 1px solid #E5E7EB;
+    flex-shrink: 0; /* 화면이 작아져도 사이드바 크기 유지 */
+    overflow-y: auto;
+}
+
+.sidebar-inner {
+    padding: 24px 16px;
+}
+
+.sidebar-group {
+    margin-bottom: 24px;
+}
+
+.sidebar-group-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #9CA3AF;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-left: 12px;
+}
+
+.sidebar-group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #4B5563;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-item:hover {
+    background-color: #F3F4F6;
+    color: #111827;
+}
+
+.sidebar-item.active {
+    background-color: #EFF6FF; /* 파란색 계열 포인트 */
+    color: #2563EB;
+    font-weight: 600;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: #F3F4F6;
+    margin: 16px 0;
+}

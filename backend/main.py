@@ -3,6 +3,7 @@ import os
 import subprocess
 import threading
 import platform
+import atexit
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -49,19 +50,33 @@ async def read_root():
 # 5. 리액트 자동 실행 함수 (개발 편의용)
 def run_react():
     frontend_dir = os.path.join(BASE_DIR, "..", "frontend")
-    if os.path.exists(frontend_dir):
-        print(f"--- Starting React Dev Server in {frontend_dir} ---")
-        env = os.environ.copy()
-        env["HOST"] = "0.0.0.0"
-        # 윈도우 환경 대응
-        shell_val = True if platform.system() == "Windows" else False
-        process = subprocess.Popen("npm start", shell=shell_val, cwd=frontend_dir,env=env)
-        return process
+    if not os.path.exists(frontend_dir):
+        return
+    print(f"--- Starting React Dev Server in {frontend_dir} ---")
+    env = os.environ.copy()
+    env["HOST"] = "0.0.0.0"
+    # 윈도우 환경 대응
+    is_windows = platform.system() == "Windows"
+    process = subprocess.Popen("npm start", shell=is_windows, cwd=frontend_dir, env=env)
+    
+    def kill_react_server():
+        print("\n--- 🛑 Shutting down React server... ---")
+        if is_windows:
+            # 윈도우: /T 옵션을 줘서 자식 프로세스(node.exe)까지 싹 다 강제 종료 (좀비 방지)
+            subprocess.call(['taskkill', '/F', '/T', '/PID', str(process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            # 맥/리눅스용 종료
+            process.terminate()
+            
+    # 파이썬 종료 이벤트에 청소 함수 등록
+    atexit.register(kill_react_server)
 
 if __name__ == "__main__":
     # 리액트 서버를 별도 스레드에서 실행
-    react_thread = threading.Thread(target=run_react, daemon=True)
-    react_thread.start()
+    if os.environ.get("REACT_SERVER_STARTED") != "1":
+        os.environ["REACT_SERVER_STARTED"] = "1"
+        react_thread = threading.Thread(target=run_react, daemon=True)
+        react_thread.start()
 
-    # FastAPI 실행 (reload=True는 개발 시 필수)
+    # FastAPI 실행
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     NAVER_CLIENT_ID: str
     NAVER_CLIENT_SECRET: str
     NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
-    
+    PUBLIC_DATA_API_KEY: str
     class Config:
         env_file = ENV_PATH
 

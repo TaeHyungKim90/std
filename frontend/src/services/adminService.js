@@ -62,4 +62,8 @@ export const adminService = {
   // 사용자 삭제
   deleteUser: (userId) => 
     client.delete(`${PATH}/users/${userId}`), //
+  
+  // 연차 일괄 정산
+  syncVacations: () => 
+    client.post(`${PATH}/vacations/sync`), //
 };

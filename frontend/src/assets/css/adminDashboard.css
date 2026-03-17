@@ -1,0 +1,85 @@
+/* HR 대시보드 전용 스타일 */
+.hr-dashboard-container {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* 상단 요약 섹션 */
+.hr-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.hr-stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #edf2f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hr-stat-card .label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.hr-stat-card .value {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #3FAF7A; /* Primary Mint */
+}
+
+/* 대시보드 메인 콘텐츠 섹션 */
+.hr-content-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2:1 비율 */
+    gap: 25px;
+}
+
+.hr-widget {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f0f0f0;
+}
+
+.hr-widget h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #141414;
+}
+
+/* 최근 현황 리스트 스타일 (가상 데이터용) */
+.hr-list { list-style: none; padding: 0; margin: 0; }
+.hr-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.hr-list-item:last-child { border-bottom: none; }
+.user-info { display: flex; align-items: center; gap: 12px; }
+.user-avatar { width: 35px; height: 35px; border-radius: 50%; background: #eef7f2; display: flex; align-items: center; justify-content: center; color: #3FAF7A; font-weight: bold; }
+.status-tag { padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; }
+.status-tag.status-past { background: #eee; color: #888; }     /* 다녀온 사람 */
+.status-tag.status-now { background: #fff3e0; color: #ef6c00; } /* 휴가 중 */
+.status-tag.status-future { background: #e8f5e9; color: #3FAF7A; } /* 예정 */
+@media (max-width: 1024px) {
+    .hr-content-row { grid-template-columns: 1fr; }
+}

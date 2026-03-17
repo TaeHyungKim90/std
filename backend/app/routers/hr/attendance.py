@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from app.controller.hr import attendance_controller
+from app.controllers.hr import attendance_controller
 from app.schemas.hr import attendance_schemas
 from app.services.auth_service import get_current_user
 
