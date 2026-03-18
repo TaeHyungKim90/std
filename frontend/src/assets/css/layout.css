@@ -58,13 +58,51 @@
     position: relative; /* 닫기 버튼 기준점 */
     padding: 30px;
     border-radius: 16px; 
-    width: 450px;
-    max-width: 90%;
+    width: 100%; 
+    max-width: 450px;
+    overflow: visible;
+
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
     color: #141414; 
     animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
+/* =========================================
+   에디터 및 뷰어 공통 컨테이너 (인라인 대체용)
+========================================= */
+.editor-wrapper {
+    margin: 15px 0;
+    text-align: left;
+}
+.editor-wrapper.spacing-bottom {
+    margin-bottom: 50px;
+}
+.viewer-container {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    min-height: 150px;
+    background-color: #fafafa;
+    text-align: left;
+}
+.modal-color-bar {
+    height: 6px;
+    border-radius: 3px 3px 0 0;
+    margin-top: -20px;
+    margin-bottom: 15px;
+}
+.modal-field-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+}
+.modal-field-label.inline {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 0;
+}
 @keyframes modalFadeIn {
     from { opacity: 0; transform: translateY(-20px) scale(0.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }

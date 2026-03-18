@@ -100,7 +100,32 @@
 .fc-daygrid-day.fc-day-today {
     background-color: rgba(61, 175, 122, 0.08) !important;
 }
+.color-palette-container {
+    display: flex; 
+    justify-content: center; 
+    gap: 15px; 
+    margin: 25px 0; 
+    flex-wrap: wrap;
+}
 
+.color-circle-btn {
+    width: 45px; 
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.1s ease, border 0.1s ease;
+    outline-offset: -4px;
+}
+
+.color-circle-btn:hover {
+    transform: scale(1.1);
+}
+
+.color-circle-btn.selected {
+    border: 3px solid #333;
+    outline: 2px solid white;
+}
 /* ==========================================
    4. 달력 모바일 전용 최적화
    ========================================== */

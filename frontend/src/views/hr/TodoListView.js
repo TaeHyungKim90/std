@@ -11,6 +11,9 @@ import TodoSidebar from './TodoSidebar';
 import TodoEditModal from './TodoEditModal';
 import TodoDetailModal from '../../components/common/TodoDetailModal';
 
+import { Editor } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
+
 import '../../assets/css/layout.css';
 import '../../assets/css/calendar.css';
 
@@ -24,6 +27,7 @@ const TodoListView = () => {
     const { userId } = useAuth();
     const calendarRef = useRef(null);
     const externalEventsRef = useRef(null);
+    const colorEditorRef = useRef(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -200,24 +204,61 @@ const TodoListView = () => {
             </section>
             {/* 컬러 모달 및 공통 모달 부분 동일 유지 */}
             {colorModal.isOpen && (
-                /* 컬러 설정 모달 JSX 기존과 완전히 동일 */
                 <div className="modal-overlay" onClick={() => setColorModal({...colorModal, isOpen: false})}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h2 style={{ textAlign: 'center' }}>{colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 색상 설정</h2>
-                        <div className="color-palette" style={{ margin: '30px 0' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                        <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>
+                            {colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 템플릿 설정
+                        </h2>
+                        
+                        {/* 🎨 인라인 스타일 싹 날리고 CSS 클래스로 교체! */}
+                        <div className="color-palette-container">
                             {['#3DAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'].map(color => (
-                                <div key={color} className={`color-swatch ${colorModal.selectedColor === color ? 'selected' : ''}`} style={{ backgroundColor: color, width: '40px', height: '40px' }} onClick={() => setColorModal({...colorModal, selectedColor: color})} />
+                                <div 
+                                    key={color} 
+                                    // 기본 클래스와 선택되었을 때의 클래스 조합
+                                    className={`color-circle-btn ${colorModal.selectedColor === color ? 'selected' : ''}`}
+                                    // 🔥 변하는 배경색만 인라인으로 유지
+                                    style={{ backgroundColor: color }} 
+                                    onClick={() => setColorModal({...colorModal, selectedColor: color})}
+                                />
                             ))}
                         </div>
+
                         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                            <label style={{ fontSize: '0.9rem', color: '#666', marginRight: '10px' }}>직접 선택:</label>
-                            <input type="color" value={colorModal.selectedColor} onChange={e => setColorModal({...colorModal, selectedColor: e.target.value})} style={{ verticalAlign: 'middle', cursor: 'pointer' }} />
+                            <label className="modal-field-label inline">직접 선택:</label>
+                            <input 
+                                type="color" 
+                                value={colorModal.selectedColor} 
+                                onChange={e => setColorModal({...colorModal, selectedColor: e.target.value})} 
+                                style={{ verticalAlign: 'middle', cursor: 'pointer', border: 'none', width: '35px', height: '35px', padding: '0', borderRadius: '4px' }} 
+                            />
                         </div>
-                        <div style={{ marginTop: '20px', textAlign: 'left' }}>
-                            <label style={{ fontSize: '0.9rem', color: '#666', display: 'block', marginBottom: '8px' }}>📝 기본 등록 멘트 (해당 카테고리 선택 시 자동 입력)</label>
-                            <textarea style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #E2DFD8', backgroundColor: '#F0EEE9', minHeight: '80px', resize: 'none' }} placeholder="예: 휴가 신청합니다." value={colorModal.selectedDescription} onChange={e => setColorModal({...colorModal, selectedDescription: e.target.value})} />
+
+                        {/* 📝 에디터 적용 영역 */}
+                        <div className="editor-wrapper">
+                            <label className="modal-field-label">
+                                📝 기본 등록 멘트 (해당 카테고리 선택 시 자동 입력)
+                            </label>
+                            <Editor
+                                ref={colorEditorRef}
+                                initialValue={colorModal.selectedDescription || " "}
+                                previewStyle="tab"
+                                height="200px"
+                                initialEditType="wysiwyg"
+                                useCommandShortcut={true}
+                                hideModeSwitch={true}
+                                onChange={() => {
+                                    if (colorEditorRef.current) {
+                                        setColorModal(prev => ({ 
+                                            ...prev, 
+                                            selectedDescription: colorEditorRef.current.getInstance().getHTML() 
+                                        }));
+                                    }
+                                }}
+                            />
                         </div>
-                        <div className="form-actions">
+
+                        <div className="form-actions" style={{ marginTop: '25px' }}>
                             <button type="button" className="btn-cancel" onClick={() => setColorModal({...colorModal, isOpen: false})}>취소</button>
                             <button type="button" className="btn-save" onClick={handleSaveColor}>저장</button>
                         </div>

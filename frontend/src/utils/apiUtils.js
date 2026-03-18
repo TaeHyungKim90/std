@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
  * 개발 환경(Proxy 설정 시)에 맞춰 baseURL을 설정합니다.
  */
 export const client = axios.create({
-    baseURL: 'http://localhost:8000/api', // FastAPI의 APIRouter prefix와 맞춤
+    baseURL: process.env.REACT_APP_API_BASE_URL, // FastAPI의 APIRouter prefix와 맞춤
     headers: {
       'Content-Type': 'application/json',
     },
@@ -19,14 +19,6 @@ export const client = axios.create({
  */
 client.interceptors.request.use(
   (config) => {
-    // 로그인 시 'token'이라는 이름으로 저장했다고 가정합니다.
-    const token = localStorage.getItem('token'); 
-    
-    if (token) {
-      // FastAPI(OAuth2) 표준에 맞춰 'Bearer '를 앞에 붙여줍니다.
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
     return config;
   },
   (error) => {
@@ -48,7 +40,7 @@ client.interceptors.response.use(
         console.warn("세션이 만료되어 로그인이 필요합니다.");
         
         // 1. 필요한 경우 경고창 띄우기
-        // alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+        //alert("세션이 만료되었습니다. 다시 로그인해주세요.");
 
         // 2. 로그인 페이지로 리다이렉트
         // window.location.href를 사용하면 앱이 새로고침되며 모든 상태가 초기화됩니다.

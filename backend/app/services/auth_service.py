@@ -1,3 +1,5 @@
+import secrets
+import re
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -93,6 +95,13 @@ def get_current_admin(current_user: dict = Depends(get_current_user)):
 # ==========================================
 def authenticate_user(db: Session, login_id: str, pw: str):
     """일반 로그인 유저 검증"""
+    # 👈 수정된 부분: 소셜 계정은 일반 로그인 폼으로 접근 불가하도록 차단 (이중 보안)
+    if login_id.startswith(("kakao_", "naver_")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="소셜 가입 계정입니다. 해당하는 소셜 로그인 버튼을 이용해주세요."
+        )
+    
     user = db.query(User).filter(User.user_login_id == login_id).first()
     if not user or not verify_password(pw, user.user_password):
         raise HTTPException(
@@ -116,6 +125,7 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate):
         user_password=hashed_password,
         user_name=user_data.user_name,
         user_nickname=user_data.user_nickname,
+        user_phone_number=user_data.user_phone_number,
         role=user_data.role or "user",
         join_date=user_data.join_date,
         resignation_date=user_data.resignation_date
@@ -130,22 +140,36 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate):
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="데이터베이스 오류로 가입에 실패했습니다.")
 
-def process_social_login(db: Session, provider: str, provider_id: str, name: str, nickname: str):
+def process_social_login(db: Session, provider: str, provider_id: str, name: str, nickname: str, phone: str = None):
     """소셜 로그인 유저 통합 관리 (카카오, 네이버 공통)"""
     user_login_id = f"{provider}_{provider_id}"
     user = db.query(User).filter(User.user_login_id == user_login_id).first()
 
+    clean_phone = None
+    if phone:
+        clean_phone = re.sub(r'[^\d]', '', phone)
+        # 만약 국제번호 +82 10... 형식으로 들어오면 010...으로 변환 (선택 사항)
+        if clean_phone.startswith('82'):
+            clean_phone = '0' + clean_phone[2:]
+    
     if not user:
         # 최초 소셜 로그인 시 자동 회원가입
+        secure_random_password = secrets.token_urlsafe(32)
+        hashed_password = get_password_hash(secure_random_password)
         user = User(
             user_login_id=user_login_id,
-            user_password="social_login_dummy", 
+            user_password=hashed_password, 
             user_name=name,
             user_nickname=nickname,
+            user_phone_number=clean_phone,
             role="user"
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        if not user.user_phone_number and clean_phone:
+            user.user_phone_number = clean_phone
+            db.commit()
         
     return user

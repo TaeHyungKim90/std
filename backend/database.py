@@ -24,7 +24,7 @@ def init_db():
     from app.models.auth_models import User
     from app.models.hr_models import TodoCategoryType
     from app.services.auth_service import get_password_hash
-    
+    from app.models import recruitment_models
     # 테이블 생성 (이미 있으면 무시됨)
     print("🚀 테이블 생성 시도 중...")
     Base.metadata.create_all(bind=engine)

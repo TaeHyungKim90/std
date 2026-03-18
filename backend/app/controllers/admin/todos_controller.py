@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.hr import todos_service # 기존 일정 서비스 활용 가능
+from app.services.admin import todos_service # 기존 일정 서비스 활용 가능
 
 def get_all_todo_list(db: Session):
     # 관리자용 전체 일정 조회 로직 (joinedload 포함)

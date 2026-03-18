@@ -18,6 +18,7 @@ class User(Base):
     user_name = Column[str](String(50), nullable=False)                 # 실명
     user_nickname = Column[str](String(50))                             # 닉네임
     role = Column[str](String(20), default="user")                      # 권한
+    user_phone_number = Column[str](String(20), nullable=True)
     created_at = Column[datetime](DateTime, server_default=func.now())
     join_date = Column[date](Date, nullable=True) 
     resignation_date = Column[date](Date, nullable=True)

@@ -3,13 +3,15 @@ import { todoService } from '../../services/todoService';
 import { adminService } from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 
-// ✅ categories props 추가 수신
+// 👈 Toast UI Viewer 및 CSS 임포트
+import { Viewer } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor-viewer.css'; // 뷰어 전용 CSS
+
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
   const { userId: currentUserId } = useAuth();
   
   if (!isOpen || !event) return null;
 
-  // 권한 설정 (이전 수정사항 적용됨: String 변환으로 타입 불일치 버그 방지)
   const isAdminMode = mode === 'admin';
   const isAuthor = String(currentUserId) === String(event.user_id); 
   
@@ -40,19 +42,17 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
   const startDate = event.start ? event.start.split('T')[0] : "";
   const endDate = event.end ? event.end.split('T')[0] : startDate;
 
-  // ✅ 마스터 카테고리에서 현재 일정의 아이콘과 이름 찾기
   const targetCategory = categories.find(c => c.category_key === event.category);
   const displayIcon = targetCategory ? targetCategory.icon : '📌';
   const displayName = targetCategory ? targetCategory.category_name : (event.category_name || event.category);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content detail-modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-content detail-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <button className="close-x" onClick={onClose}>&times;</button>
         
         <div className="modal-header" style={{ borderBottom: `4px solid ${event.color}` }}>
           <span className="category-badge" style={{ backgroundColor: event.color }}>
-             {/* ✅ 찾은 아이콘과 이름 적용 */}
             {displayIcon} {displayName}
           </span>
           <h2>일정 상세조회 {isAdminMode && <span style={{fontSize:'0.8rem', color:'red'}}>(관리자)</span>}</h2>
@@ -71,27 +71,28 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
             </div>
           </div>
 
-          <div className="detail-item">
-            <label>상세 내용</label>
-            <textarea 
-              className="bq-textarea detail-view" 
-              value={event.description || "등록된 상세 내용이 없습니다."} 
-              readOnly 
-            ></textarea>
+          {/* 👇 뷰어 적용 영역 */}
+          <div className="detail-item" style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', minHeight: '150px', backgroundColor: '#fafafa', textAlign: 'left' }}>
+            <label style={{ display: 'block', marginBottom: '10px', color: '#555', fontWeight: 'bold' }}>상세 내용</label>
+            {event.description && event.description.trim() !== "" && event.description !== "<p><br></p>" ? (
+              <Viewer initialValue={event.description} />
+            ) : (
+              <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+                등록된 상세 내용이 없습니다.
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="form-actions detail-actions">
+        <div className="form-actions detail-actions" style={{ marginTop: '20px' }}>
           {canDelete && (
             <button className="btn-delete" onClick={handleDelete}>일정 삭제</button>
           )}
-          
           <div className="right-group">
             {canEdit && (
               <button className="btn-primary" onClick={onEditClick}>수정하기</button>
             )}
             <button className="btn-secondary" onClick={onClose}>닫기</button>
-            
           </div>
         </div>
         

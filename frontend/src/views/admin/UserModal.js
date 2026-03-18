@@ -3,7 +3,7 @@ import { adminService } from '../../services/adminService';
 
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
     const [formData, setFormData] = useState({
-        user_login_id: '', user_password: '', user_name: '', user_nickname: '', role: 'user',join_date: '',resignation_date: ''
+        user_login_id: '', user_password: '', user_name: '', user_nickname: '',user_phone_number: '', role: 'user',join_date: '',resignation_date: ''
     });
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
@@ -12,9 +12,19 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
     // 수정 모드일 경우 기존 데이터 세팅
     useEffect(() => {
         if (editingUser) {
-            setFormData({ ...editingUser, user_password: '', join_date: formatDate(editingUser.join_date),resignation_date: formatDate(editingUser.resignation_date) });
+            setFormData({ 
+                ...editingUser, 
+                user_password: '',
+                user_phone_number: editingUser.user_phone_number || '',
+                join_date: formatDate(editingUser.join_date),
+                resignation_date: formatDate(editingUser.resignation_date) });
         } else {
-            setFormData({ user_login_id: '', user_password: '', user_name: '', user_nickname: '', role: 'user', join_date: '', resignation_date: '' });
+            setFormData({ 
+                user_login_id: '',
+                user_password: '', 
+                user_name: '', 
+                user_nickname: '', 
+                role: 'user', join_date: '', resignation_date: '' });
         }
     }, [editingUser, isOpen]);
     
@@ -72,6 +82,15 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
                             placeholder="닉네임을 입력하세요"
                         />
                     </div>
+                    <div className="form-group">
+                        <label>전화번호</label>
+                        <input 
+                            type="text" 
+                            name="user_phone_number"
+                            value={formData.user_phone_number || ''} 
+                            onChange={e => setFormData({...formData, user_phone_number: e.target.value})}
+                        />
+                        </div>
                     {/* 추가된 날짜 필드들 */}
                     <div className="form-row" style={{ display: 'flex', gap: '10px' }}>
                         <div className="form-group" style={{ flex: 1 }}>

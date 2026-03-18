@@ -77,6 +77,7 @@ const AdminUserView = () => {
                             <th>아이디</th>
                             <th>성명</th>
                             <th>닉네임</th>
+                            <th>연락처</th>
                             <th>상태/권한</th> {/* ✅ 상태 추가 */}
                             <th>가입일</th>
                             <th>입사/퇴사일</th> {/* ✅ 통합 */}
@@ -97,6 +98,7 @@ const AdminUserView = () => {
                                         {isResigned && <span style={{fontSize:'0.75rem', color:'#FF6A3D', marginLeft:'5px'}}>(퇴사)</span>}
                                     </td>
                                     <td>{u.user_nickname || '-'}</td>
+                                    <td>{u.user_phone_number || '-'}</td>
                                     <td>
                                         <span className={`role-badge ${u.role}`}>{u.role}</span>
                                     </td>

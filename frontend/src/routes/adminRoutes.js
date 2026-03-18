@@ -6,6 +6,7 @@ import CategoryMgmtView from '../views/admin/CategoryMgmtView';
 import AdminAttendanceView from '../views/admin/AdminAttendanceView';
 import AdminUserView from '../views/admin/AdminUserView';
 import HolidayMgmtView from '../views/admin/HolidayMgmtView'
+import RecruitmentAdminView from '../views/admin/RecruitmentAdminView'
 
 
 const adminRoutes = (
@@ -16,6 +17,7 @@ const adminRoutes = (
     <Route path="holidays" element={<HolidayMgmtView />} />
     <Route path="attendance" element={<AdminAttendanceView />} />
     <Route path="users" element={<AdminUserView />} />
+    <Route path="recruitment" element={<RecruitmentAdminView />} />
 
   </Route>
 );

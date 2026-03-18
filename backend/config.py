@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     NAVER_CLIENT_SECRET: str
     NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
     PUBLIC_DATA_API_KEY: str
+    ENVIRONMENT: str = "development"
+    CORS_ORIGINS: str = "http://localhost:3000,http://10.44.100.52:3000,http://127.0.0.1:3000"
+    
     class Config:
         env_file = ENV_PATH
 

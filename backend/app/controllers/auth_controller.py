@@ -11,12 +11,16 @@ KAKAO_CLIENT_ID = settings.KAKAO_CLIENT_ID
 KAKAO_CLIENT_SECRET = settings.KAKAO_CLIENT_SECRET
 KAKAO_REDIRECT_URI = settings.KAKAO_REDIRECT_URI
 
+NAVER_CLIENT_ID = settings.NAVER_CLIENT_ID
+NAVER_CLIENT_SECRET = settings.NAVER_CLIENT_SECRET
+IS_PROD = settings.ENVIRONMENT == "production"
+
 COOKIE_OPTIONS = {
     "key": "accessToken",
     "httponly": True,
     "max_age": 24 * 60 * 60,
     "samesite": "lax",
-    "secure": False,
+    "secure": IS_PROD,
     "path": "/"
 }
 
@@ -105,26 +109,30 @@ async def kakao_callback(db: Session, code: str):
         user_info = user_res.json()
 
     kakao_id = str(user_info.get("id"))
-    nickname = user_info.get("properties", {}).get("nickname", "카카오유저")
-    
+    properties = user_info.get("properties", {})
+    kakao_account = user_info.get("kakao_account", {})
+    nickname = properties.get("nickname", "카카오유저")
+    phone = kakao_account.get("phone_number")
     # DB 조회 및 자동가입 로직은 Service에 맡깁니다.
-    user = auth_service.process_social_login(db, "kakao", kakao_id, nickname, nickname)
+    user = auth_service.process_social_login(db, "kakao", kakao_id, nickname, nickname, phone)
     return _create_social_login_response(user)
 
 async def naver_callback(db: Session, code: str, state: str):
     async with httpx.AsyncClient() as client:
         token_res = await client.get("https://nid.naver.com/oauth2.0/token", params={
-            "grant_type": "authorization_code", "client_id": settings.NAVER_CLIENT_ID,
-            "client_secret": settings.NAVER_CLIENT_SECRET, "code": code, "state": state
+            "grant_type": "authorization_code", "client_id": NAVER_CLIENT_ID,
+            "client_secret": NAVER_CLIENT_SECRET, "code": code, "state": state
         })
         access_token = token_res.json().get("access_token")
         user_res = await client.get("https://openapi.naver.com/v1/nid/me", headers={"Authorization": f"Bearer {access_token}"})
         user_info = user_res.json().get("response", {})
 
-    naver_id = user_info.get("id")
-    nickname = user_info.get("nickname") or user_info.get("name") or "네이버유저"
-    name = user_info.get("name", nickname)
+    naver_data = user_info.get("response", {})
+    naver_id = naver_data.get("id")
+    nickname = naver_data.get("nickname") or naver_data.get("name") or "네이버유저"
+    name = naver_data.get("name")
+    phone = naver_data.get("mobile")
 
     # DB 조회 및 자동가입 로직은 Service에 맡깁니다.
-    user = auth_service.process_social_login(db, "naver", naver_id, name, nickname)
+    user = auth_service.process_social_login(db, "naver", naver_id, name, nickname, phone)
     return _create_social_login_response(user)

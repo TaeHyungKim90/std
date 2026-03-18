@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
 from database import init_db
 from app.routers import auth, admin, hr # 분리한 라우터들 가져오기
+from config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,9 +23,10 @@ app = FastAPI(title="HR Management System", lifespan=lifespan)
 
 # 2. CORS 설정 (React 연동 필수)
 # 반드시 allow_credentials=True여야 check-auth 세션 쿠키가 공유됩니다.
+cors_origins_list = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://10.44.100.52:3000","http://127.0.0.1:3000"],
+    allow_origins=cors_origins_list,
     allow_credentials=True, 
     allow_methods=["*"],
     allow_headers=["*"],

@@ -34,6 +34,8 @@ const Sidebar = () => {
             <div className="sidebar-inner">
                 {renderMenuGroup(ADMIN_SUB_MENU.HR)}
                 <div className="sidebar-divider"></div>
+                {renderMenuGroup(ADMIN_SUB_MENU.RECRUITMENT)}
+                <div className="sidebar-divider"></div>
                 {renderMenuGroup(ADMIN_SUB_MENU.MGMT)}
             </div>
         </aside>

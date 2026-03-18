@@ -1,7 +1,7 @@
 # app/routers/admin/todos.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.controllers.admin import todo_controller as controller
+from app.controllers.admin import todos_controller as controller
 from database import get_db
 from app.services.auth_service import get_current_admin
 

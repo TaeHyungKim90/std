@@ -1,9 +1,12 @@
-import React, { useActionState, useState, useEffect } from 'react';
+import React, { useActionState, useState, useEffect, useRef } from 'react';
 import { todoService } from '../../services/todoService';
+import { Editor } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
 
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
   const [selectedColor, setSelectedColor] = useState('#4a90e2');
   const [category, setCategory] = useState('');
+  const editorRef = useRef(null);
 
   // ✅ 반차 여부를 실시간으로 감지합니다.
   const isHalfVacation = category === 'vacation_am' || category === 'vacation_pm';
@@ -32,9 +35,10 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
   const [formError, submitAction, isPending] = useActionState(async (prevState, formData) => {
     const title = formData.get("title");
     const start = formData.get("start_date");
-    // ✅ 반차일 경우 폼에서 뭘 보냈든 무조건 시작일과 동일하게 덮어씁니다!
     const end = isHalfVacation ? start : formData.get("end_date");
-    const desc = formData.get("description");
+    
+    // 👈 formData 대신 에디터에서 직접 HTML 내용을 뽑아옵니다.
+    const desc = editorRef.current ? editorRef.current.getInstance().getHTML() : "";
 
     if (new Date(start) > new Date(end)) return "종료일이 시작일보다 빠를 수 없습니다.";
 
@@ -58,7 +62,6 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
       onClose();
       return null;
     } catch (e) {
-      // 🚨 백엔드 에러 메시지를 가로채서 화면에 알럿으로 띄웁니다!
       const errorDetail = e.response?.data?.detail || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
       alert(errorDetail); 
       return errorDetail;
@@ -72,13 +75,12 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
         <div className="color-indicator-bar" style={{ backgroundColor: selectedColor, height: '6px', borderRadius: '3px 3px 0 0', marginTop: '-20px', marginBottom: '15px' }}></div>
         <h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
         <form action={submitAction}>
           <div className="date-group">
             <input type="date" name="start_date" defaultValue={defaultStart} required className="bq-input" />
-            {/* ✅ 반차일 경우 종료일 창을 비활성화(disabled)하여 클릭 자체를 막습니다. */}
             <input 
               type="date" 
               name="end_date" 
@@ -98,7 +100,20 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
             )}
           </select>
           <input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
-          <textarea name="description" defaultValue={mode === 'edit' ? event?.description : ''} placeholder="상세 내용을 입력하세요..." className="bq-textarea"></textarea>
+          
+          {/* 👇 텍스트에어리어를 지우고 에디터 장착! */}
+          <div style={{ marginTop: '15px', marginBottom: '15px', textAlign: 'left' }}>
+              <Editor
+                  ref={editorRef}
+                  initialValue={mode === 'edit' ? (event?.description || " ") : " "}
+                  previewStyle="tab" // 모달 공간을 고려해 탭(Tab) 스타일로 뷰어 제공
+                  height="300px"
+                  initialEditType="wysiwyg"
+                  useCommandShortcut={true}
+                  hideModeSwitch={true}
+              />
+          </div>
+
           <div className="form-actions">
             <button type="button" onClick={onClose} className="btn-cancel">취소</button>
             <button type="submit" disabled={isPending} className="btn-save">{isPending ? '처리 중...' : mode === 'edit' ? '수정 완료' : '저장하기'}</button>

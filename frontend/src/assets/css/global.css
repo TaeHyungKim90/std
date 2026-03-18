@@ -33,3 +33,14 @@ body {
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
+.toastui-editor-defaultUI {
+    border: 1px solid var(--bq-border-soft) !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.toastui-editor-toolbar {
+    background-color: #F8F9FA !important;
+}
+.toastui-editor-defaultUI .ProseMirror {
+    font-family: 'Noto Sans KR', sans-serif !important;
+}

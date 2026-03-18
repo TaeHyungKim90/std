@@ -10,7 +10,8 @@ const SignupForm = () => {
     user_password: '',
     password_confirm: '',
     user_name: '',
-    user_nickname: ''
+    user_nickname: '',
+    user_phone_number: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,11 @@ const SignupForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'user_phone_number') {
+      const onlyNums = value.replace(/[^\d]/g, '').slice(0, 11);
+      setFormData({ ...formData, [name]: onlyNums });
+      return; // 전화번호 처리는 여기서 끝냄
+    }
     setFormData({ ...formData, [name]: value });
   };
 
@@ -119,7 +125,8 @@ const SignupForm = () => {
 
         <input type="text" name="user_name" placeholder="이름 (실명)" value={formData.user_name} onChange={handleChange} className="login-input" required />
         <input type="text" name="user_nickname" placeholder="닉네임" value={formData.user_nickname} onChange={handleChange} className="login-input" required/>
-        
+        <input type="text" name="user_phone_number" placeholder="전화번호 (숫자만 입력)" value={formData.user_phone_number} onChange={handleChange} maxLength="11" inputMode="numeric" className="login-input" required/>
+
         <button type="submit" className="login-button" disabled={loading}>
           {loading ? '가입 처리 중...' : '가입하기'}
         </button>
