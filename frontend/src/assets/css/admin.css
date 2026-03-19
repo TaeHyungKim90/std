@@ -42,6 +42,10 @@
     color: var(--text-main); 
     margin-bottom: 5px; 
     font-weight: 800;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-right: 20px;
+
 }
 .admin-header h2 span { color: var(--primary); }
 .admin-header p { 
@@ -210,6 +214,95 @@
     background-color: #f1f3f5; 
     color: var(--text-dim); 
     border: 1px solid #dee2e6;
+}
+/* =========================================
+   9. 지원자 현황 칸반 보드 (Kanban)
+========================================= */
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 200px); /* 화면 높이에 맞춤 */
+    overflow-x: auto; /* 열이 많으면 가로 스크롤 */
+    padding-bottom: 20px;
+}
+
+.kanban-column {
+    flex: 1;
+    min-width: 250px;
+    background-color: rgba(244, 246, 245, 0.7);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #E5E7EB;
+}
+
+.kanban-column-header {
+    padding: 15px;
+    border-bottom: 3px solid #ccc; /* JS에서 색상 동적 덮어쓰기됨 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-column-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.kanban-count {
+    background-color: #e0e0e0;
+    color: #555;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.kanban-cards {
+    padding: 15px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kanban-card {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid #E5E7EB;
+    cursor: grab;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.card-info {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.card-date {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: #999;
+    text-align: right;
 }
 /* =========================================
    7. 모바일 반응형 처리

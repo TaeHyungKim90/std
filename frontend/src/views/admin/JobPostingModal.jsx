@@ -38,7 +38,8 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
         e.preventDefault();
         try {
             if (editingJob) {
-                alert("수정 기능은 추후 업데이트 예정입니다.");
+                await recruitmentService.updateJobPosting(editingJob.id, formData);
+                alert("채용 공고가 성공적으로 수정되었습니다.");
             } else {
                 await recruitmentService.createJobPosting(formData);
                 alert("채용 공고가 등록되었습니다.");

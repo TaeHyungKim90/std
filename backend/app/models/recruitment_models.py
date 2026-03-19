@@ -47,7 +47,7 @@ class Application(Base):
     applicant_id = Column[int](Integer, ForeignKey("applicants.id", ondelete="CASCADE"))
     
     # 첨부 항목 (물리적 파일 경로와 URL을 명확히 분리)
-    resume_file_url = Column[str](String(255), nullable=False)    # 이력서 파일 경로 (필수)
+    resume_file_url = Column[str](String(255), nullable=True)    # 이력서 파일 경로 (필수)
     portfolio_file_url = Column[str](String(255), nullable=True)  # 포트폴리오 파일 경로 (선택)
     reference_url = Column[str](String(500), nullable=True)       # GitHub/Notion 등 URL (선택)
     

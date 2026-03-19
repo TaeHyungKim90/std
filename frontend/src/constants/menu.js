@@ -17,7 +17,7 @@ export const ADMIN_SUB_MENU = {
         title: '채용관리',
         items: [
             { id: 'admin-recruitment', label: '채용 공고 관리', path: '/admin/recruitment' },
-            { id: 'admin-applicants', label: '지원 현황(칸반)', path: '/admin/applicants' },
+            { id: 'admin-applicants', label: '지원 현황 관리', path: '/admin/applicants' },
             // 나중에 지원자 통합 검색이나 통계 페이지를 추가할 수 있습니다.
         ]
     },

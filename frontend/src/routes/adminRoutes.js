@@ -7,7 +7,7 @@ import AdminAttendanceView from '../views/admin/AdminAttendanceView';
 import AdminUserView from '../views/admin/AdminUserView';
 import HolidayMgmtView from '../views/admin/HolidayMgmtView'
 import RecruitmentAdminView from '../views/admin/RecruitmentAdminView'
-
+import ApplicantStatusView from '../views/admin/ApplicantStatusView';
 
 const adminRoutes = (
   <Route path="/admin">
@@ -18,7 +18,7 @@ const adminRoutes = (
     <Route path="attendance" element={<AdminAttendanceView />} />
     <Route path="users" element={<AdminUserView />} />
     <Route path="recruitment" element={<RecruitmentAdminView />} />
-
+    <Route path="applicants" element={<ApplicantStatusView />} />
   </Route>
 );
 

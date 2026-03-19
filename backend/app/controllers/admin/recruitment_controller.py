@@ -10,6 +10,12 @@ def create_job(db: Session, data: recruitment_schemas.JobPostingCreate, current_
 def get_jobs(db: Session):
     return recruitment_service.get_all_job_postings(db)
 
+def update_job(db: Session, job_id: int, data: recruitment_schemas.JobPostingUpdate):
+    return recruitment_service.update_job_posting(db, job_id, data)
+
+def delete_job(db: Session, job_id: int):
+    return recruitment_service.delete_job_posting(db, job_id)
+
 def get_applications(db: Session, job_id: int):
     return recruitment_service.get_applications_by_job(db, job_id)
 
