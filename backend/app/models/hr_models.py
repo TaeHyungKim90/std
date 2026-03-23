@@ -6,7 +6,7 @@ from datetime import date, datetime
 
 from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean,  func
 from sqlalchemy.orm import relationship
-from database import Base # 상위 폴더의 database.py를 참조하도록 설정
+from db.session import Base # 상위 폴더의 database.py를 참조하도록 설정
 #일정
 class Todo(Base):
     __tablename__ = "todos"

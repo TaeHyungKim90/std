@@ -1,55 +1,16 @@
 import secrets
 import re
-from datetime import datetime, timedelta
-from jose import jwt, JWTError
-from passlib.context import CryptContext
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from config import settings
-from app.models.auth_models import User
-from app.schemas import auth_schemas
-
-# ==========================================
-# ⚙️ 0. 환경 설정 및 보안 인스턴스 초기화
-# ==========================================
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_DAYS = settings.ACCESS_TOKEN_EXPIRE_DAYS
-
-# 비밀번호 해싱 도구
-pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+from models.auth_models import User
+from schemas import auth_schemas
+from core.security import verify_password, get_password_hash, decode_auth_token # 👈 분리된 보안 로직 임포트
 
 # 💡 핵심: auto_error=False로 설정하여 헤더에 토큰이 없어도 바로 터지지 않고 쿠키를 검사할 기회를 줍니다.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
-
-
-# ==========================================
-# 🔐 1. 코어 보안 & 토큰 유틸리티
-# ==========================================
-def verify_password(plain_password, hashed_password):
-    """비밀번호 검증"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    """비밀번호 단방향 암호화(해싱)"""
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict):
-    """JWT 토큰 생성"""
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def decode_auth_token(token: str):
-    """JWT 토큰 해독 (공통 헬퍼)"""
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except (JWTError, AttributeError):
-        return None
 
 
 # ==========================================

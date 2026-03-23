@@ -1,10 +1,10 @@
 # app/routers/admin/users.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.controllers.admin import user_controller as controller
-from database import get_db
-from app.services.auth_service import get_current_admin
-from app.schemas.auth_schemas import UserResponse, UserCreate, UserUpdate
+from controllers.admin import user_controller as controller
+from db.session import get_db
+from services.auth_service import get_current_admin
+from schemas.auth_schemas import UserResponse, UserCreate, UserUpdate
 
 router = APIRouter(tags=["Admin Users"])
 

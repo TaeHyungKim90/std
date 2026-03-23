@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import get_db
-from app.controllers.hr import attendance_controller
-from app.schemas.hr import attendance_schemas
-from app.services.auth_service import get_current_user
+from db.session import get_db
+from controllers.hr import attendance_controller
+from schemas.hr import attendance_schemas
+from services.auth_service import get_current_user
 
 router = APIRouter()
 

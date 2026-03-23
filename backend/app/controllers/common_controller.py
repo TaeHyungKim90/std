@@ -2,7 +2,7 @@ import os
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
-from app.services import common_service
+from services import common_service
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 

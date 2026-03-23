@@ -28,6 +28,7 @@
     /* min-height: 100vh; */
     flex: 1;
     min-height: 0;
+    min-width: 0;
 }
 
 .admin-header {
@@ -70,6 +71,9 @@
     border-radius: var(--radius-card); 
     border: 1px solid rgba(255, 255, 255, 0.8); 
     box-shadow: var(--shadow-soft);
+
+    min-width: 0;
+    box-sizing: border-box;
 }
 .bq-btn-admin-action {
     width: 100%; 
@@ -124,6 +128,8 @@
     border: 1px solid rgba(255, 255, 255, 0.8); 
     border-radius: 16px;
     box-shadow: var(--shadow-soft);
+    width: 100%;
+    max-width: 100%;
 }
 .admin-table-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
 .admin-table-wrapper::-webkit-scrollbar-thumb { background-color: rgba(61, 175, 122, 0.3); border-radius: 10px; }

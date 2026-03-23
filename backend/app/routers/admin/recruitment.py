@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from app.schemas.admin import recruitment_schemas
-from app.controllers.admin import recruitment_controller
-from app.services import auth_service
+from db.session import get_db
+from schemas.admin import recruitment_schemas
+from controllers.admin import recruitment_controller
+from services import auth_service
 
 router = APIRouter()
 

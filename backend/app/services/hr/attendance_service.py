@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 # ✅ 모듈 안의 특정 클래스들을 직접 임포트합니다.
-from app.models.hr_models import Attendance
+from models.hr_models import Attendance
 
 # 1. 특정 날짜의 내 출퇴근 기록 조회
 def get_today_attendance(db: Session, user_id: str, today_date: date):

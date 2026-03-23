@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
-from app.models.hr_models import Todo
-from app.models.auth_models import UserVacation
+from models.hr_models import Todo
+from models.auth_models import UserVacation
 
 def get_all_todos_with_author(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Todo).options(joinedload(Todo.author)).order_by(Todo.created_at.desc()).offset(skip).limit(limit).all()

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.admin import user_service # 사용자 전용 서비스로 분리 권장
+from services.admin import user_service # 사용자 전용 서비스로 분리 권장
 
 def get_all_users(db: Session):
     return user_service.get_all_users(db)

@@ -2,10 +2,10 @@
 from fastapi.responses import RedirectResponse
 import httpx
 from fastapi import Response, Request
-from app.schemas import auth_schemas
-from app.services import auth_service
+from schemas import auth_schemas
+from services import auth_service
 from sqlalchemy.orm import Session
-from config import settings
+from core.config import settings
 
 KAKAO_CLIENT_ID = settings.KAKAO_CLIENT_ID
 KAKAO_CLIENT_SECRET = settings.KAKAO_CLIENT_SECRET

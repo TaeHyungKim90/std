@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.services.hr import todos_service
-from app.schemas.hr import todos_schemas
+from services.hr import todos_service
+from schemas.hr import todos_schemas
 
 # --- 할 일 (Todo) 관리 ---
 

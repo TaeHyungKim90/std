@@ -1,9 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from app.controllers import common_controller
-from app.schemas.common_schemas import FileUploadResponse
+from db.session import get_db
+from controllers import common_controller
+from schemas.common_schemas import FileUploadResponse
 
 router = APIRouter()
 

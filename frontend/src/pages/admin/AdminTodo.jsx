@@ -1,20 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import '../../assets/css/admin.css';
 import TodoDetailModal from '../../components/common/TodoDetailModal.jsx';
 import { adminApi } from '../../api/adminApi.js';
-
+import { LoadingContext } from '../../context/LoadingContext';
 const AdminTodoView = () => {
     const [allTodos, setAllTodos] = useState([]);
     const [categoryMap, setCategoryMap] = useState({}); // ✅ 표에 보여줄 한글 사전 (Object)
     const [categories, setCategories] = useState([]);   // ✅ 모달에 넘겨줄 원본 데이터 (Array)
-    const [loading, setLoading] = useState(true);
     const [selectedTodo, setSelectedTodo] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const { setIsLoading } = useContext(LoadingContext);
     const fetchData = async () => {
         try {
-            setLoading(true);
-            
+            setIsLoading(true);
             // 1. 카테고리 마스터 데이터 불러오기
             const catRes = await adminApi.getCategoryTypes();
             
@@ -35,12 +33,15 @@ const AdminTodoView = () => {
         } catch (err) {
             console.error("데이터 로드 실패", err);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
-
+    useEffect(() => { 
+        fetchData(); 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    
     const handleOpenModal = (todo) => {
         const mappedTodo = {
             ...todo,

@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from app.controllers.admin import holiday_controller as controller
-from database import get_db
-from app.services.auth_service import get_current_admin, get_current_user
-from app.schemas.admin.holiday_schemas import HolidayCreate, HolidayOut
+from controllers.admin import holiday_controller as controller
+from db.session import get_db
+from services.auth_service import get_current_admin, get_current_user
+from schemas.admin.holiday_schemas import HolidayCreate, HolidayOut
 
 router = APIRouter(tags=["Admin Holidays"])
 

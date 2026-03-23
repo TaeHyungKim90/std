@@ -2,9 +2,9 @@ import requests
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
-from app.models.holiday_models import Holiday
-from app.schemas.admin import holiday_schemas
-from config import settings
+from models.holiday_models import Holiday
+from schemas.admin import holiday_schemas
+from core.config import settings
 
 def get_all_holidays(db: Session, year: int = None):
     """DB에서 공휴일 목록 조회"""

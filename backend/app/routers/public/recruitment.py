@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from app.schemas.public import recruitment_schemas      # 새로 만든 퍼블릭 스키마
-from app.controllers.public import recruitment_controller # 새로 만든 퍼블릭 컨트롤러
+from db.session import get_db
+from schemas.public import recruitment_schemas      # 새로 만든 퍼블릭 스키마
+from controllers.public import recruitment_controller # 새로 만든 퍼블릭 컨트롤러
 
 router = APIRouter()
 

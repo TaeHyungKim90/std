@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
 # ✅ 모듈 안의 특정 클래스들을 직접 임포트합니다.
-from app.models.hr_models import Todo, TodoConfig, TodoCategoryType
-from app.models.auth_models import UserVacation
-from app.schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
+from models.hr_models import Todo, TodoConfig, TodoCategoryType
+from models.auth_models import UserVacation
+from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
 # --- Todo CRUD ---
 # --- 헬퍼 함수: 카테고리에 따른 연차 차감 일수 계산 ---

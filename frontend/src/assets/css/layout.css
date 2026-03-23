@@ -28,8 +28,9 @@
     box-sizing: border-box;
     color: #141414;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     min-height: 0;
+    min-width: 0;
 }
 
 /* ==========================================

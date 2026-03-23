@@ -4,7 +4,7 @@ from datetime import date, datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database import Base
+from db.session import Base
 
 # --- 1. 외부 지원자용 테이블 (Applicants) ---
 class Applicant(Base):

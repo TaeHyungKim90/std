@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.services.public import recruitment_service
-from app.schemas.public import recruitment_schemas
+from services.public import recruitment_service
+from schemas.public import recruitment_schemas
 
 def get_public_jobs(db: Session):
     try:

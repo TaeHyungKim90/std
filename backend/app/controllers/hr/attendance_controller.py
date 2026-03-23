@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from datetime import datetime
-from app.services.hr import attendance_service
+from services.hr import attendance_service
 
 # 출근 처리 로직
 def process_clock_in(db: Session, current_user: dict, req: any):

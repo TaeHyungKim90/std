@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
-from app.models.auth_models import User, UserVacation
-from app.schemas.auth_schemas import UserCreate, UserUpdate
-from app.services.auth_service import get_password_hash
+from models.auth_models import User, UserVacation
+from schemas.auth_schemas import UserCreate, UserUpdate
+from services.auth_service import get_password_hash
 from datetime import date
 
 # 1. 전체 사용자 목록 조회

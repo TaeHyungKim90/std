@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, func
-from database import Base
+from db.session import Base
 
 class UploadedFile(Base):
     __tablename__ = "uploaded_files"

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.admin import category_service as service
+from services.admin import category_service as service
 
 def create_todo_category_type(db: Session, payload):
     return service.add_category_type(db, payload)

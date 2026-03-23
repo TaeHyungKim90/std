@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { recruitmentApi } from '../../api/recruitmentApi';
 import { openFileViewer } from '../../utils/fileUtils';
-
+import { LoadingContext } from '../../context/LoadingContext';
 // ✅ 마스터님의 모델(Application.status)과 동일하게 단계를 설정합니다.
+
 const STATUS_COLUMNS = [
     { id: 'applied', title: '📄 서류 접수', color: '#4A90E2' },
     { id: 'document_passed', title: '✅ 서류 합격', color: '#F39C12' },
@@ -15,31 +16,39 @@ const ApplicantStatusView = () => {
     const [jobs, setJobs] = useState([]);
     const [selectedJobId, setSelectedJobId] = useState('');
     const [applications, setApplications] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { setIsLoading } = useContext(LoadingContext);
 
     useEffect(() => {
         const fetchJobs = async () => {
+            setIsLoading(true);
             try {
                 const res = await recruitmentApi.getJobPostings();
                 const data = res.data || res; 
                 setJobs(data);
                 if (data.length > 0) setSelectedJobId(data[0].id);
-            } catch (err) { console.error("공고 로드 실패", err); }
+            } catch (err) { 
+                console.error("공고 로드 실패", err); 
+            } finally {
+                setIsLoading(false);
+            }
+            
         };
         fetchJobs();
-    }, []);
+    }, [setIsLoading]);
 
     useEffect(() => {
         if (!selectedJobId) return;
         const fetchApplicants = async () => {
-            setIsLoading(true);
+            //setIsLoading(true);
             try {
                 const res = await recruitmentApi.getApplicationsByJob(selectedJobId);
                 setApplications(res.data || res);
             } catch (err) {
                 console.error("지원자 로드 실패:", err);
                 setApplications([]);
-            } finally { setIsLoading(false); }
+            } finally { 
+                //setIsLoading(false); 
+            }
         };
         fetchApplicants();
     }, [selectedJobId]);

@@ -1,9 +1,9 @@
 # app/routers/admin/stats.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.controllers.admin import stats_controller as controller # 💡 경로 확인 필요
-from database import get_db
-from app.services.auth_service import get_current_admin
+from controllers.admin import stats_controller as controller # 💡 경로 확인 필요
+from db.session import get_db
+from services.auth_service import get_current_admin
 
 router = APIRouter(tags=["Admin Stats"])
 

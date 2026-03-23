@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models import recruitment_models
-from app.schemas.public import recruitment_schemas
+from models import recruitment_models
+from schemas.public import recruitment_schemas
 
 def get_public_jobs(db: Session):
     """현재 진행 중(open)인 채용 공고만 가져옵니다."""

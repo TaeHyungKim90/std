@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from app.services.admin import holiday_service as service # 👈 세분화된 서비스 경로
-from app.schemas.admin import holiday_schemas
+from services.admin import holiday_service as service # 👈 세분화된 서비스 경로
+from schemas.admin import holiday_schemas
 
 def get_holidays(db: Session, year: int):
     return service.get_all_holidays(db, year)

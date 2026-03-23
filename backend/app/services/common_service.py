@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import List
 from fastapi import UploadFile
-from app.models.common_models import UploadedFile
+from models.common_models import UploadedFile
 
 async def save_files_to_db_and_disk(db: Session, files: List[UploadFile]):
     # 저장 디렉토리 설정

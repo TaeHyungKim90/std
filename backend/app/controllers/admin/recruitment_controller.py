@@ -1,7 +1,7 @@
 # app/controllers/admin/recruitment_controller.py
 from sqlalchemy.orm import Session
-from app.schemas.admin import recruitment_schemas
-from app.services.admin import recruitment_service
+from schemas.admin import recruitment_schemas
+from services.admin import recruitment_service
 
 def create_job(db: Session, data: recruitment_schemas.JobPostingCreate, current_admin: dict):
     # 토큰에서 추출한 관리자 ID(userId)를 작성자로 넘겨줍니다.

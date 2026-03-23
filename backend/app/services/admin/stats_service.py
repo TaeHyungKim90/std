@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import date
-from app.models.hr_models import Todo, TodoCategoryType
-from app.models.auth_models import User, UserVacation
+from models.hr_models import Todo, TodoCategoryType
+from models.auth_models import User, UserVacation
 
 from datetime import date
 

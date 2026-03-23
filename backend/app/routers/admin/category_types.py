@@ -1,10 +1,10 @@
 # app/routers/admin/category_types.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.controllers.admin import category_controller as controller
-from database import get_db
-from app.services.auth_service import get_current_admin
-from app.schemas.hr import todos_schemas
+from controllers.admin import category_controller as controller
+from db.session import get_db
+from services.auth_service import get_current_admin
+from schemas.hr import todos_schemas
 
 router = APIRouter(tags=["Admin Categories"])
 

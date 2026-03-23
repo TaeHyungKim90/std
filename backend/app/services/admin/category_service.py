@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models.hr_models import Todo, TodoCategoryType
+from models.hr_models import Todo, TodoCategoryType
 
 def get_all_category_types(db: Session):
     return db.query(TodoCategoryType).all()

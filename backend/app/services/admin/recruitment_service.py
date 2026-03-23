@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime
-from app.models import recruitment_models, auth_models
-from app.schemas.admin import recruitment_schemas
-from app.services import auth_service 
+from models import recruitment_models, auth_models
+from schemas.admin import recruitment_schemas
+from services import auth_service 
 
 # --- 1. 채용 공고 관리 ---
 def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):

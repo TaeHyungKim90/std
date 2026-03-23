@@ -1,9 +1,9 @@
 # app/routers/admin/todos.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.controllers.admin import todos_controller as controller
-from database import get_db
-from app.services.auth_service import get_current_admin
+from controllers.admin import todos_controller as controller
+from db.session import get_db
+from services.auth_service import get_current_admin
 
 router = APIRouter(tags=["Admin Todos"])
 

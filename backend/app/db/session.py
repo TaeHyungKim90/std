@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_NAME = "todo.db"
 DB_PATH = os.path.join(BASE_DIR, DB_NAME)
 
@@ -21,10 +21,10 @@ def get_db():
     finally:
         db.close()
 def init_db():
-    from app.models.auth_models import User
-    from app.models.hr_models import TodoCategoryType
-    from app.services.auth_service import get_password_hash
-    from app.models import recruitment_models
+    from models.auth_models import User
+    from models.hr_models import TodoCategoryType
+    from services.auth_service import get_password_hash
+    from models import recruitment_models
     # 테이블 생성 (이미 있으면 무시됨)
     print("🚀 테이블 생성 시도 중...")
     Base.metadata.create_all(bind=engine)

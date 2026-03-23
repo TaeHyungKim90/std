@@ -11,9 +11,9 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
-from database import init_db
-from app.routers import auth, admin, hr,public,common # 분리한 라우터들 가져오기
-from config import settings
+from db.session import init_db
+from routers import auth, admin, hr,public,common # 분리한 라우터들 가져오기
+from core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -58,7 +58,7 @@ async def read_root():
 
 # 5. 리액트 자동 실행 함수 (개발 편의용)
 def run_react():
-    frontend_dir = os.path.join(BASE_DIR, "..", "frontend")
+    frontend_dir = os.path.join(BASE_DIR, "../..", "frontend")
     if not os.path.exists(frontend_dir):
         return
     print(f"--- Starting React Dev Server in {frontend_dir} ---")

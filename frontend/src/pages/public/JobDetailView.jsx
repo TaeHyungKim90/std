@@ -13,6 +13,17 @@ const JobDetailView = () => {
         navigate('/careers', { replace: true });
         return null;
     }
+    const handleApplyClick = () => {
+        const user = sessionStorage.getItem('applicant_user');
+        if (!user) {
+            alert("입사 지원은 로그인이 필요합니다.");
+            // 🚨 꿀팁: 로그인 성공 후 다시 이 공고로 돌아오도록 returnUrl을 넘김
+            navigate('/careers/login', { state: { returnUrl: `/careers/${job.id}/apply`, job } });
+        } else {
+            // 로그인 되어 있으면 바로 지원서 작성으로 이동
+            navigate(`/careers/${job.id}/apply`, { state: { job } });
+        }
+    };
 
     return (
         <div className="careers-container" style={{ maxWidth: '800px' }}>
@@ -31,11 +42,8 @@ const JobDetailView = () => {
                 />
 
                 <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                    <button 
-                        className="btn-apply-large" 
-                        onClick={() => navigate(`/careers/${job.id}/apply`, { state: { job } })}
-                        style={{ padding: '15px 40px', fontSize: '1.2rem', backgroundColor: '#4A90E2', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                    >
+                    {/* onClick 함수를 handleApplyClick 으로 변경! */}
+                    <button className="btn-apply-large" onClick={handleApplyClick}>
                         이 포지션에 지원하기
                     </button>
                 </div>

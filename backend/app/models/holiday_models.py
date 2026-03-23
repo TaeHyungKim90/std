@@ -2,7 +2,7 @@ from datetime import date
 
 
 from sqlalchemy import Column, Integer, String, Date, Boolean
-from database import Base
+from db.session import Base
 
 class Holiday(Base):
     __tablename__ = "holidays"

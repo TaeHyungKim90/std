@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.controllers.admin import attendance_controller as controller
-from database import get_db
-from app.services.auth_service import get_current_admin
+from controllers.admin import attendance_controller as controller
+from db.session import get_db
+from services.auth_service import get_current_admin
 
 router = APIRouter(tags=["Admin Attendance"])
 

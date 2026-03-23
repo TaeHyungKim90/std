@@ -28,7 +28,10 @@ const CategoryMgmtView = () => {
         }
     };
 
-    useEffect(() => { fetchCategories(); }, []);
+    useEffect(() => { 
+        fetchCategories();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // 1. 등록 핸들러
     const handleCreate = async () => {

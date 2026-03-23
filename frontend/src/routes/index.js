@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from '../components/common/PrivateRoute';
 import AdminRoute from '../components/common/AdminRoute';
 import Layout from '../components/common/Layout';
-
 // 분리된 라우트 모듈들 임포트
 import authRoutes from './authRoutes';
 import hrRoutes from './hrRoutes';

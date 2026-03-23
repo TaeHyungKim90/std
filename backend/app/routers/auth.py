@@ -1,11 +1,11 @@
 # auth.py
 import uuid
-from config import settings
+from core.config import settings
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
 from sqlalchemy.orm import Session
-from database import get_db
-from app.schemas import auth_schemas
-from app.controllers import auth_controller
+from db.session import get_db
+from schemas import auth_schemas
+from controllers import auth_controller
 
 router = APIRouter()
 

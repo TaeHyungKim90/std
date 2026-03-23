@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.hr_models import Attendance
-from app.models.auth_models import User
+from models.hr_models import Attendance
+from models.auth_models import User
 
 def get_all_attendance(db: Session, user_name: str = None, work_date: str = None):
     query = db.query(
