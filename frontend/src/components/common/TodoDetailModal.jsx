@@ -1,6 +1,6 @@
 import React from 'react';
-import { todoService } from '../../services/todoService';
-import { adminService } from '../../services/adminService';
+import { todoService } from '../../api/todoApi';
+import { adminApi } from '../../api/adminApi';
 import { useAuth } from '../../context/AuthContext';
 
 // 👈 Toast UI Viewer 및 CSS 임포트
@@ -26,7 +26,7 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
     if (window.confirm(confirmMsg)) {
       try {
         if (isAdminMode) {
-          await adminService.deleteTodoByAdmin(event.id);
+          await adminApi.deleteTodoByAdmin(event.id);
         } else {
           await todoService.deleteTodo(event.id);
         }

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
-import AdminDashboard from '../views/admin/AdminDashboard';
-import AdminTodoView from '../views/admin/AdminTodoView';
-import CategoryMgmtView from '../views/admin/CategoryMgmtView';
-import AdminAttendanceView from '../views/admin/AdminAttendanceView';
-import AdminUserView from '../views/admin/AdminUserView';
-import HolidayMgmtView from '../views/admin/HolidayMgmtView'
-import RecruitmentAdminView from '../views/admin/RecruitmentAdminView'
-import ApplicantStatusView from '../views/admin/ApplicantStatusView';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminTodoView from '../pages/admin/AdminTodo';
+import CategoryMgmtView from '../pages/admin/CategoryMgmt';
+import AdminAttendanceView from '../pages/admin/AdminAttendance';
+import AdminUserView from '../pages/admin/AdminUser';
+import HolidayMgmtView from '../pages/admin/HolidayMgmt'
+import RecruitmentAdminView from '../pages/admin/RecruitmentAdmin'
+import ApplicantStatusView from '../pages/admin/ApplicantStatus';
 
 const adminRoutes = (
   <Route path="/admin">

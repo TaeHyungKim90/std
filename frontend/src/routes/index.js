@@ -9,13 +9,14 @@ import Layout from '../components/common/Layout';
 import authRoutes from './authRoutes';
 import hrRoutes from './hrRoutes';
 import adminRoutes from './adminRoutes';
-
+import publicRoutes from './publicRoutes';
+import NotFoundPage from '../pages/public/NotFoundPage';
 const AppRoutes = () => {
   return (
     <Routes>
         {/* 1. 공개 라우트 (로그인 등) */}
         {authRoutes}
-        
+        {publicRoutes}
         {/* 2. 인증이 필요한 보호된 라우트 */}
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
@@ -31,16 +32,7 @@ const AppRoutes = () => {
         </Route>
         
         {/* 3. 404 처리 */}
-        <Route 
-          path="*" 
-          element={
-            <div style={{ padding: '50px', textAlign: 'center' }}>
-              <h2 style={{ color: '#e53e3e' }}>404</h2>
-              <p>요청하신 페이지를 찾을 수 없습니다.</p>
-              <button onClick={() => window.location.href='/'}>홈으로 돌아가기</button>
-            </div>
-          } 
-        />
+        <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };

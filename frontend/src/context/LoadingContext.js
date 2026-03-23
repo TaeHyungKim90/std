@@ -1,18 +1,18 @@
-import React, { createContext, useState } from 'react';
-import LoadingBar from '../views/common/LoadingBar';
+import React, { createContext, useState, useMemo } from 'react';
+import LoadingBar from '../components/common/LoadingBar';
 
-// 1. Context 생성
 export const LoadingContext = createContext();
 
-// 2. Provider 컴포넌트
 export const LoadingProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false);
 
-    // 3. value를 통해 상태(isLoading)와 제어 함수(setIsLoading)를 전역으로 배포
+    // 성능 최적화를 위해 value 객체를 메모이제이션 (선택 사항이지만 권장)
+    const value = useMemo(() => ({ isLoading, setIsLoading }), [isLoading]);
+
     return (
-        <LoadingContext value={{ isLoading, setIsLoading }}>
+        <LoadingContext value={value}>
             {children}
-            {/* 로딩바가 여기서 조건부 렌더링 됩니다. */}
+            {/* 전역 로딩 상태가 true일 때만 로딩바 표시 */}
             {isLoading && <LoadingBar />}
         </LoadingContext>
     );

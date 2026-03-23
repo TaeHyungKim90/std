@@ -1,0 +1,199 @@
+/* 공통 컨테이너 설정 */
+.careers-container {
+    margin: 0 auto;
+    padding: 60px 20px;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    color: #333;
+    max-width: 900px; /* 리스트 화면 기본 너비 */
+}
+
+/* =========================================
+   1. 공고 리스트 화면 (JobListView)
+========================================= */
+.careers-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.careers-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 15px;
+}
+
+.careers-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.job-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.job-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px 30px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-card:hover {
+    border-color: #4A90E2;
+    box-shadow: 0 10px 20px rgba(74, 144, 226, 0.08);
+    transform: translateY(-2px);
+}
+
+.job-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111;
+}
+
+.job-card .deadline {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #888;
+    background: #f3f4f6;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.no-jobs {
+    text-align: center;
+    padding: 60px 0;
+    color: #888;
+    font-size: 1.1rem;
+    background: #fafafa;
+    border-radius: 12px;
+}
+
+/* =========================================
+   2. 공고 상세 화면 (JobDetailView)
+========================================= */
+.btn-back {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.btn-back:hover {
+    color: #111;
+}
+
+.job-detail-box {
+    background: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    margin-top: 20px;
+}
+
+.job-detail-box h1 {
+    font-size: 2rem;
+    color: #111;
+    margin-bottom: 10px;
+}
+
+/* HTML 에디터 내용이 출력되는 영역 */
+.job-description-content {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+    color: #444;
+}
+
+.job-description-content p {
+    margin-bottom: 1em;
+}
+
+.job-description-content ul, 
+.job-description-content ol {
+    padding-left: 20px;
+    margin-bottom: 1em;
+}
+
+.btn-apply-large:hover {
+    background-color: #357ABD !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(74, 144, 226, 0.3);
+}
+
+/* =========================================
+   3. 입사 지원 폼 화면 (JobApplyView)
+========================================= */
+.apply-form-box {
+    background: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="tel"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    background: #fafafa;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+button[type="submit"]:hover:not(:disabled) {
+    background-color: #2F9262 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(61, 175, 122, 0.3);
+}
+
+button[type="submit"]:disabled {
+    background-color: #cbd5e1 !important;
+    cursor: not-allowed;
+}

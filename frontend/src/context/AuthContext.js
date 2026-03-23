@@ -1,71 +1,76 @@
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { authApi } from '../api/authApi';
+import { LoadingContext } from './LoadingContext';
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-//import { client } from '../utils/apiUtils';
-import { authService } from '../services/authService';
 export const AuthContext = createContext(null);
+
 export const AuthProvider = ({ children }) => {
+    // 1. 인증 관련 상태 정의
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userName, setUserName] = useState('');
     const [userNickname, setUserNickname] = useState('');
     const [userRole, setUserRole] = useState('user');
     const [userId, setUserId] = useState('');
-    const [loading, setLoading] = useState(true); // 앱 실행 초기 로딩 상태 관리
-    const logout = async() => {
+    const [loading, setLoading] = useState(true); // 앱 실행 초기 로딩 (Route 보호용)
+    
+    // 2. 전역 로딩 바 제어 함수 가져오기
+    const { setIsLoading } = useContext(LoadingContext);
+
+    // ✅ 공통 상태 초기화 함수 (중복 코드 제거 및 보안 강화)
+    const resetAuthState = useCallback(() => {
+        setIsLoggedIn(false);
+        setUserName('');
+        setUserNickname('');
+        setUserId('');
+        setUserRole('user');
+        localStorage.removeItem('accessToken');
+    }, []);
+
+    // ✅ 1. 로그아웃 함수 (useCallback으로 메모이제이션)
+    const logout = useCallback(async () => {
         try {
-            // ✅ 1. 백엔드의 로그아웃 API를 찔러서 브라우저의 '쿠키'를 완벽하게 박살냅니다! (좀비 부활 방지)
-            await authService.logout(); 
+            setIsLoading(true); // 전역 로딩 시작
+            await authApi.logout(); 
         } catch (error) {
             console.error("로그아웃 API 호출 실패:", error);
         } finally {
-            setIsLoggedIn(false);
-            setUserName('');
-            setUserNickname('');
-            setUserId('');
-            setUserRole('user');
-            localStorage.removeItem('accessToken');
+            resetAuthState(); // 모든 상태 초기화
+            setIsLoading(false); // 전역 로딩 종료
         }
-    };
-    const checkAuth = async () => {
+    }, [setIsLoading, resetAuthState]);
+
+    // ✅ 2. 인증 확인 함수 (useCallback으로 메모이제이션)
+    const checkAuth = useCallback(async () => {
         try {
-        // 서버에 인증 상태 확인 요청 (client는 apiUtils의 axios 인스턴스)
-        const res = await authService.checkAuth();
-        
-        // [핵심 로직] 서버가 보낸 isLoggedIn 값을 기준으로 상태 결정
-        if (res.data && res.data.isLoggedIn) {
-            setIsLoggedIn(true);
-            setUserName(res.data.userName);
-            setUserNickname(res.data.userNickname);
-            setUserId(res.data.userId);
-            setUserRole(res.data.role || 'user');
-            if (res.data.access_token) {
-                localStorage.setItem('accessToken', res.data.access_token);
+            setIsLoading(true);
+            const res = await authApi.checkAuth();
+            
+            if (res.data && res.data.isLoggedIn) {
+                setIsLoggedIn(true);
+                setUserName(res.data.userName);
+                setUserNickname(res.data.userNickname);
+                setUserId(res.data.userId);
+                setUserRole(res.data.role || 'user');
+                
+                if (res.data.access_token) {
+                    localStorage.setItem('accessToken', res.data.access_token);
+                }
+            } else {
+                resetAuthState(); // 로그인 상태가 아니면 초기화
             }
-        } else {
-            // 응답은 왔지만 로그인이 안 되어 있는 경우 (확실하게 로그아웃 상태 처리)
-            setIsLoggedIn(false);
-            setUserNickname('');
-            setUserName('');
-            setUserId('');
-            setUserRole('user');
-            localStorage.removeItem('accessToken');
-        }
         } catch (err) {
-            // 서버와의 통신 자체가 실패한 경우 (서버 다운, 401 에러 등)
             console.error("인증 확인 실패:", err);
-            setIsLoggedIn(false);
-            setUserNickname('');
-            setUserName('');
-            setUserId('');
-            setUserRole('user');
-            localStorage.removeItem('accessToken');
+            resetAuthState(); // 에러 발생 시 초기화
         } finally {
-            // 어떤 결과든 인증 확인 작업이 끝났으므로 로딩바 해제
-            setLoading(false);
+            setIsLoading(false);
+            setLoading(false); // 초기 인증 체크 완료 표시
         }
-    };
+    }, [setIsLoading, resetAuthState]);
+
+    // ✅ 3. 앱 구동 시 최초 1회 인증 확인
     useEffect(() => {
         checkAuth();
-    }, []);
+    }, [checkAuth]); // 의존성 배열에 checkAuth를 넣어 경고 해결
 
     return (
         // React 19 문법: .Provider 생략 가능
@@ -75,9 +80,11 @@ export const AuthProvider = ({ children }) => {
             userNickname, setUserNickname,
             userRole, setUserRole, 
             userId, setUserId,
-            loading, logout }}>
-        {children}
+            loading, logout 
+        }}>
+            {children}
         </AuthContext>
     );
 };
+
 export const useAuth = () => useContext(AuthContext);

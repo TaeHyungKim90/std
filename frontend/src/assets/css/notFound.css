@@ -1,0 +1,64 @@
+.notfound-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #F0EEE9; /* 프로젝트 기본 배경색 */
+}
+
+.notfound-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.notfound-code {
+    font-size: 8rem;
+    font-weight: 800;
+    color: #3DAF7A; /* Primary 컬러 */
+    margin: 0;
+    line-height: 1;
+}
+
+.notfound-title {
+    font-size: 1.8rem;
+    color: #141414;
+    margin-top: 10px;
+}
+
+.notfound-text {
+    color: #666;
+    line-height: 1.6;
+    margin: 20px 0 40px 0;
+}
+
+.notfound-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-back, .btn-home {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-back {
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    color: #4b5563;
+}
+
+.btn-home {
+    background-color: #3DAF7A;
+    border: none;
+    color: white;
+}
+
+.btn-back:hover { background-color: #f9fafb; }
+.btn-home:hover { background-color: #2d8a5f; }

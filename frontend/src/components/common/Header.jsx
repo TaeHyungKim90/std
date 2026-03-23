@@ -2,7 +2,7 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { authService } from '../../services/authService';
+import { authApi } from '../../api/authApi';
 import { MENU_ITEMS } from '../../constants/menu'; 
 import logo from '../../assets/icon/favicon.png';
 import '../../assets/css/header.css';
@@ -25,7 +25,7 @@ const Header = () => {
 
         try {
             setIsLoggingOut(true);
-            await authService.logout('/auth/logout');
+            await authApi.logout('/auth/logout');
             logout(); 
             navigate('/login');
         } catch (err) {
