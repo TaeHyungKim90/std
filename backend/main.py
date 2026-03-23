@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
 from database import init_db
-from app.routers import auth, admin, hr # 분리한 라우터들 가져오기
+from app.routers import auth, admin, hr,public,common # 분리한 라우터들 가져오기
 from config import settings
 
 @asynccontextmanager
@@ -33,14 +33,21 @@ app.add_middleware(
 )
 
 # 3. 라우터 등록 (Node.js의 엔드포인트 정의와 동일)
+app.include_router(common, prefix="/api/common", tags=["Common"])
 app.include_router(auth, prefix="/api/auth", tags=["Auth"])
 app.include_router(hr, prefix="/api/hr", tags=["HR"])
 app.include_router(admin, prefix="/api/admin", tags=["Admin"])
+app.include_router(public, prefix="/api/public", tags=["Public"])
+
 # 4. 정적 파일 및 프론트엔드 서빙 로직
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "..", "static")
+UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 if os.path.exists(STATIC_DIR):
     app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def read_root():
