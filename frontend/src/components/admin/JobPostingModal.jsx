@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { recruitmentApi } from '../../api/recruitmentApi';
-import { Editor } from '@toast-ui/react-editor';
-import '@toast-ui/editor/dist/toastui-editor.css';
+import SunEditor from 'suneditor-react';
+import 'suneditor/dist/css/suneditor.min.css';
 
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
     const [formData, setFormData] = useState({
@@ -10,28 +10,20 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
         deadline: '',
         status: 'open'
     });
-    const editorRef = useRef(null);
+
     useEffect(() => {
         if (editingJob) {
             setFormData({
                 ...editingJob,
                 deadline: editingJob.deadline ? editingJob.deadline.split('T')[0] : ''
             });
-            if (editorRef.current) {
-                editorRef.current.getInstance().setHTML(editingJob.description || '');
-            }
         } else {
             setFormData({ title: '', description: '', deadline: '', status: 'open' });
-            if (editorRef.current) {
-                editorRef.current.getInstance().setHTML('');
-            }
         }
     }, [editingJob, isOpen]);
-    const handleEditorChange = () => {
-        if (editorRef.current) {
-            const htmlContent = editorRef.current.getInstance().getHTML();
-            setFormData(prev => ({ ...prev, description: htmlContent }));
-        }
+
+    const handleEditorChange = (content) => {
+        setFormData(prev => ({ ...prev, description: content }));
     };
 
     const handleSubmit = async (e) => {
@@ -56,7 +48,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-content" style={{ maxWidth: '800px' }}>
                 <h2>{editingJob ? '공고 수정' : '새 채용 공고 등록'}</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
@@ -72,15 +64,24 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
                     <div className="form-group">
                         <label>직무 설명 (JD)</label>
                         <div style={{ marginTop: '10px' }}>
-                            <Editor
-                                ref={editorRef}
-                                initialValue={formData.description || " "} // 초기값 (빈칸 방지)
-                                previewStyle="vertical" // 미리보기 스타일 (vertical: 화면 분할)
-                                height="400px" // 에디터 높이
-                                initialEditType="wysiwyg" // 초기 모드 (wysiwyg 또는 markdown)
-                                useCommandShortcut={true}
-                                onChange={handleEditorChange} // 내용 변경 이벤트
-                                hideModeSwitch={true} // 하단 마크다운/위지윅 전환 탭 숨기기 (원하면 false로 변경)
+                            <SunEditor
+                                setContents={formData.description}
+                                onChange={handleEditorChange}
+                                height="400px"
+                                setOptions={{
+                                    buttonList: [
+                                        ['undo', 'redo'],
+                                        ['font', 'fontSize', 'formatBlock'],
+                                        ['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
+                                        ['fontColor', 'hiliteColor', 'textStyle'],
+                                        ['removeFormat'],
+                                        '/', // 두 번째 줄로 넘김
+                                        ['outdent', 'indent'],
+                                        ['align', 'horizontalRule', 'list', 'lineHeight'],
+                                        ['table', 'link', 'image', 'video'],
+                                        ['fullScreen', 'showBlocks', 'codeView']
+                                    ]
+                                }}
                             />
                         </div>
                     </div>
@@ -89,7 +90,8 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
                         <input 
                             type="date" 
                             value={formData.deadline} 
-                            onChange={e => setFormData({...formData, deadline: e.target.value})} 
+                            onChange={e => setFormData({...formData, deadline: e.target.value})}
+                            required 
                         />
                     </div>
                     <div className="modal-actions">

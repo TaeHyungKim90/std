@@ -11,14 +11,14 @@ import TodoSidebar from '../../components/hr/TodoSidebar';
 import TodoEditModal from '../../components/hr/TodoEditModal';
 import TodoDetailModal from '../../components/common/TodoDetailModal';
 
-import { Editor } from '@toast-ui/react-editor';
-import '@toast-ui/editor/dist/toastui-editor.css';
+// 🌟 SunEditor 로 교체
+import SunEditor from 'suneditor-react';
+import 'suneditor/dist/css/suneditor.min.css';
 
 import '../../assets/css/layout.css';
 import '../../assets/css/calendar.css';
 
 const TodoListView = () => {
-    // ... (상단 상태 선언부는 기존과 동일합니다) ...
     const [events, setEvents] = useState([]);
     const holidaysRef = useRef([]);
     const [categories, setCategories] = useState([]);
@@ -26,14 +26,13 @@ const TodoListView = () => {
     const { userId } = useAuth();
     const calendarRef = useRef(null);
     const externalEventsRef = useRef(null);
-    const colorEditorRef = useRef(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [modalMode, setModalMode] = useState('create');
 
-    const fetchCategoriesAndConfigs = useCallback(async () => { /* 기존 동일 */
+    const fetchCategoriesAndConfigs = useCallback(async () => {
         try {
             const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
             const masterCategories = catRes.data;
@@ -46,7 +45,7 @@ const TodoListView = () => {
         } catch (err) { console.error("카테고리 및 설정 로드 실패", err); }
     }, []);
 
-    const fetchTodos = useCallback(async () => { /* 기존 동일 */
+    const fetchTodos = useCallback(async () => {
         try {
             const currentYear = new Date().getFullYear().toString();
             const [todoRes, holidayRes] = await Promise.all([todoService.getTodos(), holidayApi.getHolidays(currentYear)]);
@@ -79,7 +78,6 @@ const TodoListView = () => {
         setIsDetailOpen(true); 
     };
     
-    // ✅ 달력 안에서 일정을 늘리거나 위치를 옮겼을 때
     const handleEventUpdate = async (info) => {
         const { event } = info;
         if (event.extendedProps.isHoliday) { info.revert(); return; }
@@ -102,14 +100,12 @@ const TodoListView = () => {
             });
             fetchTodos();
         } catch (e) { 
-            // 🚨 실패 시 알럿창 띄우고 위치 롤백
             const errorDetail = e.response?.data?.detail || "일정 수정 중 오류가 발생했습니다.";
             alert(errorDetail); 
             info.revert(); 
         }
     };
 
-    // ✅ 사이드바에서 드래그해서 달력에 떨어뜨렸을 때
     const handleEventReceive = async (info) => {
         const { event } = info;
         const newTodo = {
@@ -121,25 +117,27 @@ const TodoListView = () => {
             description: event.extendedProps?.description || '',
             status: "CREATED"
         };
-        
-        info.revert(); // 가짜 이벤트 잔상 제거 
-
+        info.revert(); 
         try {
             await todoService.createTodo(newTodo);
-            fetchTodos(); // DB 저장 성공 시 다시 그림
+            fetchTodos(); 
         } catch (e) {
-            // 🚨 연차 부족 시 알럿 출력
             const errorDetail = e.response?.data?.detail || "일정 등록 중 오류가 발생했습니다.";
             alert(errorDetail);
         }
     };
 
     const openColorModal = (cat) => { setColorModal({ isOpen: true, targetCat: cat, selectedColor: cat.color, selectedDescription: cat.default_description || '' }); };
-    const handleSaveColor = async () => { /* 기존 동일 */
-        try { await todoService.updateTodoConfig({ category_key: colorModal.targetCat.category_key, color: colorModal.selectedColor, default_description: colorModal.selectedDescription }); await fetchCategoriesAndConfigs(); setColorModal({ ...colorModal, isOpen: false }); } catch (err) { alert("색상 설정에 실패했습니다."); }
+    
+    const handleSaveColor = async () => { 
+        try { 
+            await todoService.updateTodoConfig({ category_key: colorModal.targetCat.category_key, color: colorModal.selectedColor, default_description: colorModal.selectedDescription }); 
+            await fetchCategoriesAndConfigs(); 
+            setColorModal({ ...colorModal, isOpen: false }); 
+        } catch (err) { alert("색상 설정에 실패했습니다."); }
     };
 
-    useEffect(() => { /* 기존 동일 */
+    useEffect(() => { 
         fetchTodos(); fetchCategoriesAndConfigs();
         let draggable;
         if (externalEventsRef.current) {
@@ -164,7 +162,7 @@ const TodoListView = () => {
                     events={events}
                     editable={true}
                     droppable={true}
-                    dayCellContent={(arg) => { /* 기존 동일 */
+                    dayCellContent={(arg) => { 
                         const dateStr = new Date(arg.date.getTime() - (arg.date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
                         const holiday = holidaysRef.current.find(h => h.holiday_date === dateStr);
                         const isHoliday = !!holiday;
@@ -200,7 +198,7 @@ const TodoListView = () => {
                     eventReceive={handleEventReceive}
                 />
             </section>
-            {/* 컬러 모달 및 공통 모달 부분 동일 유지 */}
+            
             {colorModal.isOpen && (
                 <div className="modal-overlay" onClick={() => setColorModal({...colorModal, isOpen: false})}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -208,14 +206,11 @@ const TodoListView = () => {
                             {colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 템플릿 설정
                         </h2>
                         
-                        {/* 🎨 인라인 스타일 싹 날리고 CSS 클래스로 교체! */}
                         <div className="color-palette-container">
                             {['#3DAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'].map(color => (
                                 <div 
                                     key={color} 
-                                    // 기본 클래스와 선택되었을 때의 클래스 조합
                                     className={`color-circle-btn ${colorModal.selectedColor === color ? 'selected' : ''}`}
-                                    // 🔥 변하는 배경색만 인라인으로 유지
                                     style={{ backgroundColor: color }} 
                                     onClick={() => setColorModal({...colorModal, selectedColor: color})}
                                 />
@@ -232,26 +227,19 @@ const TodoListView = () => {
                             />
                         </div>
 
-                        {/* 📝 에디터 적용 영역 */}
                         <div className="editor-wrapper">
                             <label className="modal-field-label">
                                 📝 기본 등록 멘트 (해당 카테고리 선택 시 자동 입력)
                             </label>
-                            <Editor
-                                ref={colorEditorRef}
-                                initialValue={colorModal.selectedDescription || " "}
-                                previewStyle="tab"
+                            <SunEditor
+                                setContents={colorModal.selectedDescription || " "}
+                                onChange={(content) => setColorModal(prev => ({ ...prev, selectedDescription: content }))}
                                 height="200px"
-                                initialEditType="wysiwyg"
-                                useCommandShortcut={true}
-                                hideModeSwitch={true}
-                                onChange={() => {
-                                    if (colorEditorRef.current) {
-                                        setColorModal(prev => ({ 
-                                            ...prev, 
-                                            selectedDescription: colorEditorRef.current.getInstance().getHTML() 
-                                        }));
-                                    }
+                                setOptions={{
+                                    buttonList: [
+                                        ['font', 'fontSize', 'bold', 'underline', 'italic', 'fontColor', 'hiliteColor'],
+                                        ['align', 'list', 'table', 'link']
+                                    ]
                                 }}
                             />
                         </div>

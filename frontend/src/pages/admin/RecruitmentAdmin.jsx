@@ -1,13 +1,17 @@
-// src/pages/admin/RecruitmentAdminView.jsx 수정
+// src/pages/admin/RecruitmentAdmin.jsx 수정
 
 import React, { useEffect, useState } from 'react';
 import { recruitmentApi } from '../../api/recruitmentApi';
 import JobPostingModal from '../../components/admin/JobPostingModal';
+import ApplicantListModal from '../../components/admin/ApplicantListModal';
 
-const RecruitmentAdminView = () => {
+const RecruitmentAdmin = () => {
     const [jobs, setJobs] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedJob, setSelectedJob] = useState(null);
+
+    const [isApplicantModalOpen, setIsApplicantModalOpen] = useState(false);
+    const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
 
     const loadJobs = async () => {
         try {
@@ -38,7 +42,10 @@ const RecruitmentAdminView = () => {
             console.error(err);
         }
     };
-
+    const handleApplicantClick = (job) => {
+        setSelectedJobForApplicants(job);
+        setIsApplicantModalOpen(true);
+    };
     return (
         <div className="bq-admin-view">
             <div className="admin-header">
@@ -72,7 +79,7 @@ const RecruitmentAdminView = () => {
                                 <td>{new Date(job.created_at).toLocaleDateString()}</td>
                                 <td>
                                     {/* 👉 세 가지 버튼으로 나누어 배치 */}
-                                    <button className="btn-save" style={{ marginRight: '5px' }} onClick={() => alert(`${job.id}번 지원자 목록으로 이동`)}>
+                                    <button className="btn-save" style={{ marginRight: '5px' }} onClick={() => handleApplicantClick(job)}>
                                         지원자
                                     </button>
                                     <button className="btn-edit" onClick={() => handleEditClick(job)}>수정</button>
@@ -92,8 +99,14 @@ const RecruitmentAdminView = () => {
                 onRefresh={loadJobs} 
                 editingJob={selectedJob} 
             />
+            <ApplicantListModal
+                isOpen={isApplicantModalOpen}
+                onClose={() => setIsApplicantModalOpen(false)}
+                jobId={selectedJobForApplicants?.id}
+                jobTitle={selectedJobForApplicants?.title}
+            />
         </div>
     );
 };
 
-export default RecruitmentAdminView;
+export default RecruitmentAdmin;

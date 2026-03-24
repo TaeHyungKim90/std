@@ -12,7 +12,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
-    "@toast-ui/react-editor": "^3.2.3",
     "axios": "^1.13.6",
     "emoji-picker-react": "^4.18.0",
     "lucide-react": "^0.577.0",
@@ -20,6 +19,8 @@
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1",
     "react-scripts": "^5.0.1",
+    "suneditor": "^2.47.8",
+    "suneditor-react": "^3.6.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

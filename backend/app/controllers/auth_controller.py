@@ -6,7 +6,7 @@ from schemas import auth_schemas
 from services import auth_service
 from sqlalchemy.orm import Session
 from core.config import settings
-
+from core.security import create_access_token, decode_auth_token
 KAKAO_CLIENT_ID = settings.KAKAO_CLIENT_ID
 KAKAO_CLIENT_SECRET = settings.KAKAO_CLIENT_SECRET
 KAKAO_REDIRECT_URI = settings.KAKAO_REDIRECT_URI
@@ -30,7 +30,7 @@ def _create_social_login_response(user):
         "userId": user.user_login_id, "userName": user.user_name,
         "userNickname": user.user_nickname, "role": user.role
     }
-    token = auth_service.create_access_token(token_data)
+    token = create_access_token(token_data)
     response = RedirectResponse(url="http://localhost:3000/")
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     return response
@@ -46,7 +46,7 @@ def login(db: Session, response: Response, login_id: str, pw: str):
         "userId": user.user_login_id, "userName": user.user_name,
         "userNickname": user.user_nickname, "role": user.role
     }
-    token = auth_service.create_access_token(token_data)
+    token = create_access_token(token_data)
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     
     return {
@@ -69,13 +69,13 @@ def check_auth(request: Request):
         if raw_token and raw_token != "null": # "null" 문자열 방어
             token = raw_token            
 
-    payload = auth_service.decode_auth_token(token) if token else None
+    payload = decode_auth_token(token) if token else None
 
     if not payload:
         cookie_token = request.cookies.get("accessToken")
         if cookie_token:
             token = cookie_token
-            payload = auth_service.decode_auth_token(token)
+            payload = decode_auth_token(token)
 
     if not payload or not payload.get("userName"):
         return {"isLoggedIn": False, "access_token": None}

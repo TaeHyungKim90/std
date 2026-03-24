@@ -1,15 +1,15 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import PublicHeader from './PublicHeader';
+import '../../assets/css/careers.css'; // 🌟 CSS를 여기서 단 한 번만 임포트합니다!
 
 const PublicLayout = () => {
     return (
-        <div className="public-layout" style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-            {/* 모든 공개 페이지 상단에 헤더 고정 */}
+        <div className="public-layout">
             <PublicHeader />
             
-            {/* Outlet 자리에 JobListView, JobDetailView 등이 쏙쏙 들어감 */}
-            <main className="public-content">
+            {/* 🌟 전역 배경 클래스 적용 (헤더 아래 모든 화면이 이 배경을 공유함) */}
+            <main className="careers-global-bg">
                 <Outlet />
             </main>
         </div>

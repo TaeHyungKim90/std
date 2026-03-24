@@ -3,9 +3,8 @@ import { todoService } from '../../api/todoApi';
 import { adminApi } from '../../api/adminApi';
 import { useAuth } from '../../context/AuthContext';
 
-// 👈 Toast UI Viewer 및 CSS 임포트
-import { Viewer } from '@toast-ui/react-editor';
-import '@toast-ui/editor/dist/toastui-editor-viewer.css'; // 뷰어 전용 CSS
+// 🌟 TUI 뷰어 버리고 SunEditor CSS만 임포트
+import 'suneditor/dist/css/suneditor.min.css';
 
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
   const { userId: currentUserId } = useAuth();
@@ -71,11 +70,15 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
             </div>
           </div>
 
-          {/* 👇 뷰어 적용 영역 */}
+          {/* 🌟 뷰어 적용 영역: SunEditor 클래스를 사용하여 출력 */}
           <div className="detail-item" style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', minHeight: '150px', backgroundColor: '#fafafa', textAlign: 'left' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: '#555', fontWeight: 'bold' }}>상세 내용</label>
             {event.description && event.description.trim() !== "" && event.description !== "<p><br></p>" ? (
-              <Viewer initialValue={event.description} />
+              <div 
+                className="sun-editor-editable" 
+                dangerouslySetInnerHTML={{ __html: event.description }} 
+                style={{ background: 'transparent', border: 'none', padding: '0', color: '#222' }}
+              />
             ) : (
               <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
                 등록된 상세 내용이 없습니다.

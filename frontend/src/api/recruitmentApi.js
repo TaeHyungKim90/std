@@ -29,6 +29,10 @@ export const recruitmentApi = {
     client.post(`${COMMON_PATH}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
-  submitApplication: (payload) => 
-    client.post(`${PUBLIC_PATH}/apply`, payload)
+  submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply`, payload),
+  signupApplicant: (payload) => client.post(`${PUBLIC_PATH}/signup`, payload),
+  loginApplicant: (payload) => client.post(`${PUBLIC_PATH}/login`, payload),
+  updateApplicant: (applicantId, payload) => client.put(`${PUBLIC_PATH}/update/${applicantId}`, payload),
+  getMyApplications: (applicantId) => client.get(`${PUBLIC_PATH}/my-applications/${applicantId}`),
+  cancelApplication: (applicantId, applicationId) => client.delete(`${PUBLIC_PATH}/my-applications/${applicantId}/${applicationId}`),
 };

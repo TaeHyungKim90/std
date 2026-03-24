@@ -39,13 +39,17 @@ client.interceptors.response.use(
       if (error.response && error.response.status === 401) {
         console.warn("세션이 만료되어 로그인이 필요합니다.");
         
-        // 1. 필요한 경우 경고창 띄우기
-        //alert("세션이 만료되었습니다. 다시 로그인해주세요.");
-
-        // 2. 로그인 페이지로 리다이렉트
-        // window.location.href를 사용하면 앱이 새로고침되며 모든 상태가 초기화됩니다.
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        // 🌟 해결 포인트 1: 로그인 API 자체에서 발생한 401(비번 틀림 등)은 리다이렉트 무시!
+        if (window.location.pathname.startsWith('/careers')) {
+          // 지원자가 채용 페이지에 있다면 -> 지원자용 로그인으로
+          if (window.location.pathname !== '/careers/login') {
+              window.location.href = '/careers/login';
+          }
+        } else {
+          // 직원이 사내 시스템에 있다면 -> 직원용 로그인으로
+          if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+          }
         }
       }
       

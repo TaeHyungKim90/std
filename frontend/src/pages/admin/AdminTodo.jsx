@@ -3,7 +3,7 @@ import '../../assets/css/admin.css';
 import TodoDetailModal from '../../components/common/TodoDetailModal.jsx';
 import { adminApi } from '../../api/adminApi.js';
 import { LoadingContext } from '../../context/LoadingContext';
-const AdminTodoView = () => {
+const AdminTodo = () => {
     const [allTodos, setAllTodos] = useState([]);
     const [categoryMap, setCategoryMap] = useState({}); // ✅ 표에 보여줄 한글 사전 (Object)
     const [categories, setCategories] = useState([]);   // ✅ 모달에 넘겨줄 원본 데이터 (Array)
@@ -129,4 +129,4 @@ const AdminTodoView = () => {
     );
 };
 
-export default AdminTodoView;
+export default AdminTodo;

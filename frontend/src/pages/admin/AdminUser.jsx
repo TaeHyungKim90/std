@@ -3,7 +3,7 @@ import { adminApi } from '../../api/adminApi';
 import UserModal from '../../components/admin/UserModal';
 import '../../assets/css/admin.css';
 
-const AdminUserView = () => {
+const AdminUser = () => {
     const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState(''); // ✅ 검색어 상태 추가
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,4 +129,4 @@ const AdminUserView = () => {
     );
 };
 
-export default AdminUserView;
+export default AdminUser;

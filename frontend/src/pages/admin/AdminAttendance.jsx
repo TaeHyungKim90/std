@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import '../../assets/css/admin.css';
 
-const AdminAttendanceView = () => {
+const AdminAttendance = () => {
     const [attendanceList, setAttendanceList] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -94,4 +94,4 @@ const AdminAttendanceView = () => {
     );
 };
 
-export default AdminAttendanceView;
+export default AdminAttendance;

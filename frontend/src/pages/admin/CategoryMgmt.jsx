@@ -4,7 +4,7 @@ import { LoadingContext } from '../../context/LoadingContext';
 import { adminApi } from '../../api/adminApi';
 import '../../assets/css/admin.css';
 
-const CategoryMgmtView = () => {
+const CategoryMgmt = () => {
     const [categories, setCategories] = useState([]);
     const { setIsLoading } = useContext(LoadingContext);
     
@@ -146,4 +146,4 @@ const CategoryMgmtView = () => {
     );
 };
 
-export default CategoryMgmtView;
+export default CategoryMgmt;

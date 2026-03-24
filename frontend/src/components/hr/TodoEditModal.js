@@ -1,14 +1,13 @@
-import React, { useActionState, useState, useEffect, useRef } from 'react';
+import React, { useActionState, useState, useEffect } from 'react';
 import { todoService } from '../../api/todoApi';
-import { Editor } from '@toast-ui/react-editor';
-import '@toast-ui/editor/dist/toastui-editor.css';
+import SunEditor from 'suneditor-react';
+import 'suneditor/dist/css/suneditor.min.css';
 
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
   const [selectedColor, setSelectedColor] = useState('#4a90e2');
   const [category, setCategory] = useState('');
-  const editorRef = useRef(null);
+  const [description, setDescription] = useState(''); // 에디터 내용을 관리할 새로운 State
 
-  // ✅ 반차 여부를 실시간으로 감지합니다.
   const isHalfVacation = category === 'vacation_am' || category === 'vacation_pm';
 
   useEffect(() => {
@@ -16,9 +15,11 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
       if (mode === 'edit' && event) {
         setSelectedColor(event.color || '#4a90e2');
         setCategory(event.category || '');
+        setDescription(event.description || '');
       } else if (categories.length > 0) {
         setCategory(categories[0].category_key);
         setSelectedColor(categories[0].color || '#4a90e2');
+        setDescription('');
       }
     }
   }, [isOpen, mode, event, categories]);
@@ -36,9 +37,6 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
     const title = formData.get("title");
     const start = formData.get("start_date");
     const end = isHalfVacation ? start : formData.get("end_date");
-    
-    // 👈 formData 대신 에디터에서 직접 HTML 내용을 뽑아옵니다.
-    const desc = editorRef.current ? editorRef.current.getInstance().getHTML() : "";
 
     if (new Date(start) > new Date(end)) return "종료일이 시작일보다 빠를 수 없습니다.";
 
@@ -48,7 +46,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
       end_date: `${end}T23:59:59`,
       color: selectedColor,
       category,
-      description: desc,
+      description: description, // State에서 직접 가져옴
       status: "CREATED"
     };
 
@@ -75,7 +73,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="color-indicator-bar" style={{ backgroundColor: selectedColor, height: '6px', borderRadius: '3px 3px 0 0', marginTop: '-20px', marginBottom: '15px' }}></div>
         <h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
         <form action={submitAction}>
@@ -101,16 +99,19 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
           </select>
           <input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
           
-          {/* 👇 텍스트에어리어를 지우고 에디터 장착! */}
           <div style={{ marginTop: '15px', marginBottom: '15px', textAlign: 'left' }}>
-              <Editor
-                  ref={editorRef}
-                  initialValue={mode === 'edit' ? (event?.description || " ") : " "}
-                  previewStyle="tab" // 모달 공간을 고려해 탭(Tab) 스타일로 뷰어 제공
-                  height="300px"
-                  initialEditType="wysiwyg"
-                  useCommandShortcut={true}
-                  hideModeSwitch={true}
+              <SunEditor
+                  setContents={description}
+                  onChange={setDescription}
+                  height="250px"
+                  setOptions={{
+                      buttonList: [
+                          ['undo', 'redo'],
+                          ['font', 'fontSize', 'formatBlock'],
+                          ['bold', 'underline', 'italic', 'strike', 'fontColor', 'hiliteColor'],
+                          ['align', 'list', 'table', 'link']
+                      ]
+                  }}
               />
           </div>
 

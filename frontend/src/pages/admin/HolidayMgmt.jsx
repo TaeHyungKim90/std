@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { holidayApi } from '../../api/holidayApi';
 import '../../assets/css/admin.css';
 
-const HolidayMgmtView = () => {
+const HolidayMgmt = () => {
     const [holidays, setHolidays] = useState([]);
     const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString()); 
     const [isSyncing, setIsSyncing] = useState(false); 
@@ -115,4 +115,4 @@ const HolidayMgmtView = () => {
     );
 };
 
-export default HolidayMgmtView;
+export default HolidayMgmt;

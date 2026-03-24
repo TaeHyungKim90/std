@@ -41,7 +41,7 @@ app.include_router(public, prefix="/api/public", tags=["Public"])
 
 # 4. 정적 파일 및 프론트엔드 서빙 로직
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "..", "static")
+STATIC_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "static"))
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
