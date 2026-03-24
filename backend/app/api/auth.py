@@ -176,7 +176,7 @@ async def naver_callback_handler(code: str, state: str, db: Session = Depends(ge
         })
         access_token = token_res.json().get("access_token")
         user_res = await client.get("https://openapi.naver.com/v1/nid/me", headers={"Authorization": f"Bearer {access_token}"})
-        user_info = user_res.json().get("response", {})
+        user_info = user_res.json()
 
     naver_data = user_info.get("response", {})
     naver_id = naver_data.get("id")
