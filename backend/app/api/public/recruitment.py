@@ -6,7 +6,7 @@ from db.session import get_db
 from schemas.public import recruitment_schemas
 from services.public import recruitment_service as service
 
-router = APIRouter(prefix="/public/recruitment", tags=["Public Recruitment"])
+router = APIRouter()
 
 # 1. [공개] 진행 중인 채용 공고 리스트 조회
 @router.get("/jobs", response_model=List[recruitment_schemas.JobPostingPublicResponse])
@@ -19,10 +19,7 @@ def get_public_jobs(db: Session = Depends(get_db)):
 
 # 2. [공개] 입사 지원서 제출
 @router.post("/apply")
-def submit_application(
-    data: recruitment_schemas.ApplicationCreate, 
-    db: Session = Depends(get_db)
-):
+def submit_application(data: recruitment_schemas.ApplicationCreate, db: Session = Depends(get_db)):
     """채용 공고에 지원서를 제출합니다. (중복 지원 체크 포함)"""
     try:
         return service.submit_application(db, data)
@@ -36,10 +33,7 @@ def submit_application(
 
 # 3. [공개] 지원자 전용 회원가입
 @router.post("/signup")
-def signup_applicant(
-    data: recruitment_schemas.ApplicantSignup, 
-    db: Session = Depends(get_db)
-):
+def signup_applicant(data: recruitment_schemas.ApplicantSignup, db: Session = Depends(get_db)):
     """지원자용 계정을 생성합니다."""
     try:
         applicant = service.signup_applicant(db, data)
@@ -54,10 +48,7 @@ def signup_applicant(
 
 # 4. [공개] 지원자 전용 로그인
 @router.post("/login")
-def login_applicant(
-    data: recruitment_schemas.ApplicantLogin, 
-    db: Session = Depends(get_db)
-):
+def login_applicant(data: recruitment_schemas.ApplicantLogin, db: Session = Depends(get_db)):
     """지원자 계정으로 로그인합니다."""
     try:
         applicant = service.authenticate_applicant(db, data.email_id, data.password)
@@ -78,10 +69,7 @@ def login_applicant(
 
 # 5. [공개] 내 지원 내역 조회
 @router.get("/my-applications/{applicant_id}")
-def get_my_applications(
-    applicant_id: int, 
-    db: Session = Depends(get_db)
-):
+def get_my_applications(applicant_id: int, db: Session = Depends(get_db)):
     """특정 지원자의 전체 지원 이력을 조회합니다."""
     try:
         return service.get_my_applications(db, applicant_id)
@@ -89,12 +77,8 @@ def get_my_applications(
         raise HTTPException(status_code=500, detail=f"지원 내역 조회 실패: {str(e)}")
 
 # 6. [공개] 지원 취소
-@router.delete("/cancel/{applicant_id}/{application_id}")
-def cancel_application(
-    applicant_id: int, 
-    application_id: int, 
-    db: Session = Depends(get_db)
-):
+@router.delete("/my-applications/{applicant_id}/{application_id}")
+def cancel_application(applicant_id: int, application_id: int, db: Session = Depends(get_db)):
     """제출한 지원서를 취소(삭제)합니다."""
     try:
         success, msg = service.delete_application(db, applicant_id, application_id)

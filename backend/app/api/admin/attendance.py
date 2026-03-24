@@ -5,7 +5,7 @@ from db.session import get_db
 from services.auth_service import get_current_admin
 from services.admin import attendance_service as service
 
-router = APIRouter(prefix="/admin/attendance", tags=["Admin Attendance"])
+router = APIRouter()
 
 @router.get("/all")
 def get_all_attendance(user_name: Optional[str] = None, work_date: Optional[str] = None, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):

@@ -15,10 +15,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
 @router.post("/upload", response_model=List[FileUploadResponse])
-async def upload_files(
-    files: List[UploadFile] = File(...), 
-    db: Session = Depends(get_db)
-):
+async def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     """
     공통 파일 업로드 API
     - 확장자 검증 및 용량(50MB) 제한 적용
