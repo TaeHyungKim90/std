@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
 from db.session import init_db
-from routers import auth, admin, hr,public,common # 분리한 라우터들 가져오기
+from api import auth, admin, hr,public,common # 분리한 라우터들 가져오기
 from core.config import settings
 
 @asynccontextmanager

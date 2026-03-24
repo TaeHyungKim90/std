@@ -1,4 +1,4 @@
-# database.py
+# session.py
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -21,10 +21,11 @@ def get_db():
     finally:
         db.close()
 def init_db():
+    from db import base
     from models.auth_models import User
     from models.hr_models import TodoCategoryType
-    from services.auth_service import get_password_hash
-    from models import recruitment_models
+    from core.security import get_password_hash
+    
     # 테이블 생성 (이미 있으면 무시됨)
     print("🚀 테이블 생성 시도 중...")
     Base.metadata.create_all(bind=engine)
