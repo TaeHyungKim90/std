@@ -41,7 +41,7 @@ def _create_social_login_response(user):
         "userNickname": user.user_nickname, "role": user.role
     }
     token = create_access_token(token_data)
-    response = RedirectResponse(url="http://localhost:3000/")
+    response = RedirectResponse(url="http://localhost:3000/oauth/callback?token={token}")
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     return response
 
