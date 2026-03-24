@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { recruitmentApi } from '../../api/recruitmentApi'; 
+import { client } from '../../api/axiosInstance'; // 🌟 파일 업로드를 위해 client 임포트
 import { formatPhoneNumber } from '../../utils/commonUtils';
 
 const JobApplyPage = () => {
@@ -57,19 +58,51 @@ const JobApplyPage = () => {
 
         setIsSubmitting(true);
         try {
-            const formData = new FormData();
-            formData.append("email_id", loggedInUser.email_id);
-            formData.append("password", "DUMMY_PW"); 
-            formData.append("name", loggedInUser.name);
-            formData.append("phone", loggedInUser.phone);
-            formData.append("job_id", job.id);
-            formData.append("resume_file", files.resume);
-            if (files.portfolio) formData.append("portfolio_file", files.portfolio);
+            // ==========================================
+            // STEP 1: 파일 먼저 서버에 업로드하기
+            // ==========================================
+            const fileFormData = new FormData();
+            // 백엔드 common.py 에서 files: List[UploadFile] 로 받으므로 키 이름은 "files"
+            fileFormData.append("files", files.resume);
+            if (files.portfolio) {
+                fileFormData.append("files", files.portfolio);
+            }
 
-            await recruitmentApi.applyForJob(formData);
+            // 공통 파일 업로드 API 호출 (/api/common/upload)
+            const uploadRes = await client.post('/common/upload', fileFormData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            // 업로드 결과 받기 (응답 배열)
+            const uploadedFiles = uploadRes.data; 
+            // 첫 번째 파일은 이력서, 두 번째 파일이 있다면 포트폴리오
+            const resumeFileUrl = uploadedFiles[0].file_path; // 백엔드 FileUploadResponse 스키마에 맞춤
+            const portfolioFileUrl = files.portfolio ? uploadedFiles[1].file_path : null;
+
+            // ==========================================
+            // STEP 2: 업로드된 파일 URL을 JSON에 담아서 지원서 제출
+            // ==========================================
+            const applicationData = {
+                email_id: loggedInUser.email_id,
+                password: "DUMMY_PW", // 지원서 제출용 (필요 없다면 스키마에서 빼는 것을 권장)
+                name: loggedInUser.name,
+                phone: loggedInUser.phone,
+                job_id: job.id,
+                resume_file_url: resumeFileUrl, // 🌟 백엔드가 원하는 정확한 키 이름으로 전달!
+            };
+
+            // 만약 스키마에 포트폴리오 필드가 있다면 추가
+            if (portfolioFileUrl) {
+                applicationData.portfolio_file_url = portfolioFileUrl;
+            }
+
+            // JSON 형태로 전송!
+            await recruitmentApi.submitApplication(applicationData);
+            
             alert("지원이 완료되었습니다! 좋은 결과가 있기를 바랍니다.");
             navigate('/careers/my-applications', { replace: true });
         } catch (error) {
+            console.error(error);
             alert(error.response?.data?.detail || "지원 중 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
@@ -106,7 +139,7 @@ const JobApplyPage = () => {
                         <input type="file" accept=".pdf,.zip" onChange={(e) => handleFileChange(e, 'portfolio')} />
                     </div>
                     <button type="submit" disabled={isSubmitting} style={{ padding: '16px', background: isSubmitting ? '#cbd5e1' : '#3DAF7A', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isSubmitting ? 'not-allowed' : 'pointer', width: '100%', marginTop: '20px', transition: 'all 0.2s' }}>
-                        {isSubmitting ? '제출 중...' : '지원서 최종 제출'}
+                        {isSubmitting ? '파일 업로드 및 제출 중...' : '지원서 최종 제출'}
                     </button>
                 </form>
             </div>

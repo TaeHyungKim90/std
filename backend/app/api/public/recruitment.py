@@ -31,7 +31,7 @@ def submit_application(data: recruitment_schemas.ApplicationCreate, db: Session 
         db.rollback()
         raise HTTPException(status_code=500, detail=f"지원서 제출 실패: {str(e)}")
 
-# 3. [공개] 지원자 전용 회원가입
+# 🌟 3. [공개] 지원자 전용 회원가입
 @router.post("/signup")
 def signup_applicant(data: recruitment_schemas.ApplicantSignup, db: Session = Depends(get_db)):
     """지원자용 계정을 생성합니다."""
@@ -46,18 +46,18 @@ def signup_applicant(data: recruitment_schemas.ApplicantSignup, db: Session = De
         db.rollback()
         raise HTTPException(status_code=500, detail=f"회원가입 실패: {str(e)}")
 
-# 4. [공개] 지원자 전용 로그인
+# 🌟 4. [공개] 지원자 전용 로그인
 @router.post("/login")
 def login_applicant(data: recruitment_schemas.ApplicantLogin, db: Session = Depends(get_db)):
     """지원자 계정으로 로그인합니다."""
     try:
-        applicant = service.authenticate_applicant(db, data.email_id, data.password)
+        applicant = service.login_applicant(db, data)
         if not applicant:
             raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
         
         return {
             "message": "로그인 성공",
-            "applicant_id": applicant.id,
+            "id": applicant.id,
             "name": applicant.name,
             "email_id": applicant.email_id,
             "phone": applicant.phone
@@ -66,8 +66,29 @@ def login_applicant(data: recruitment_schemas.ApplicantLogin, db: Session = Depe
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
+# 🌟 5. [공개] 지원자 정보 수정
+@router.put("/update/{applicant_id}")
+def update_applicant(applicant_id: int, data: recruitment_schemas.ApplicantUpdate, db: Session = Depends(get_db)):
+    try:
+        applicant = service.update_applicant_info(db, applicant_id, data)
+        if not applicant:
+            raise HTTPException(status_code=404, detail="계정 정보를 찾을 수 없습니다.")
+        
+        # 수정 후 갱신된 정보를 프론트(세션)로 다시 내려줌
+        return {
+            "message": "정보가 성공적으로 수정되었습니다.", 
+            "id": applicant.id, 
+            "name": applicant.name,
+            "email_id": applicant.email_id,
+            "phone": applicant.phone
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"정보 수정 실패: {str(e)}")
 
-# 5. [공개] 내 지원 내역 조회
+# 🌟 6. [공개] 내 지원 내역 조회
 @router.get("/my-applications/{applicant_id}")
 def get_my_applications(applicant_id: int, db: Session = Depends(get_db)):
     """특정 지원자의 전체 지원 이력을 조회합니다."""

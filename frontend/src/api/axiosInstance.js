@@ -19,6 +19,15 @@ export const client = axios.create({
  */
 client.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('accessToken'); 
+    
+    if (token && token !== 'null') {
+      // 서버가 'Bearer ' 형식을 기다리므로 앞에 붙여줍니다.
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // 토큰이 없으면 헤더를 깔끔하게 비워줍니다.
+      delete config.headers.Authorization;
+    }
     return config;
   },
   (error) => {
@@ -30,10 +39,7 @@ client.interceptors.request.use(
  * 모든 응답에 대해 에러가 발생하기 전/후에 가로채서 처리합니다.
  */
 client.interceptors.response.use(
-    (response) => {
-      // 200번대 응답은 그대로 반환
-      return response;
-    },
+    (response) => response,
     (error) => {
       // 에러 상태 코드가 401(Unauthorized)인 경우
       if (error.response && error.response.status === 401) {

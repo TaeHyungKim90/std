@@ -65,5 +65,5 @@ export const adminApi = {
   
   // 연차 일괄 정산
   syncVacations: () => 
-    client.post(`${PATH}/vacations/sync`), //
+    client.post(`${PATH}/users/vacations/sync`), //
 };
