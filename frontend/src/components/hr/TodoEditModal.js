@@ -1,5 +1,5 @@
 import React, { useActionState, useState, useEffect } from 'react';
-import { todoService } from '../../api/todoApi';
+import { todoService } from 'api/todoApi';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css';
 

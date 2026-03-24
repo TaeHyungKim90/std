@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { recruitmentApi } from '../../api/recruitmentApi'; 
+import { recruitmentApi } from 'api/recruitmentApi'; 
 
 const ApplicantSignupPage = () => {
     const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React, { useState, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from '../../api/authApi';
-import { LoadingContext } from '../../context/LoadingContext'; // ✅ 전역 로딩 추가
+import { authApi } from 'api/authApi';
+import { LoadingContext } from 'context/LoadingContext'; // ✅ 전역 로딩 추가
 import SocialButtons from './SocialButtons';
 
 const SignupForm = () => {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { recruitmentApi } from '../../api/recruitmentApi';
-import { openFileViewer } from '../../utils/fileUtils';
-import { LoadingContext } from '../../context/LoadingContext';
-import { formatPhoneNumber, formatDate } from '../../utils/commonUtils';
-import '../../assets/css/admin.css';
+import { recruitmentApi } from 'api/recruitmentApi';
+import { openFileViewer } from 'utils/fileUtils';
+import { LoadingContext } from 'context/LoadingContext';
+import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
+import 'assets/css/admin.css';
 
 const STATUS_OPTIONS = [
     { id: 'all', title: '전체 보기', color: '#111' },

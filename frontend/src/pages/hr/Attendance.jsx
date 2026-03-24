@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { attendanceApi } from '../../api/attendanceApi';
-import '../../assets/css/attendance.css';
+import { attendanceApi } from 'api/attendanceApi';
+import 'assets/css/attendance.css';
 
 const AttendanceView = () => {
   // 상태 관리

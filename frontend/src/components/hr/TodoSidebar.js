@@ -1,5 +1,5 @@
 import React, { forwardRef, useRef } from 'react';
-import { getContrastColor } from '../../utils/colorUtils';
+import { getContrastColor } from 'utils/colorUtils';
 
 const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
     // ✅ 1. 마우스를 누른 시작 좌표를 저장할 공간을 만듭니다.

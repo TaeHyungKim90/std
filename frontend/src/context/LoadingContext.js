@@ -1,5 +1,5 @@
 import React, { createContext, useState, useMemo } from 'react';
-import LoadingBar from '../components/common/LoadingBar';
+import LoadingBar from 'components/common/LoadingBar';
 
 export const LoadingContext = createContext();
 

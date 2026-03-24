@@ -1,9 +1,9 @@
 // src/components/auth/LoginForm.jsx (수정된 소스)
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from '../../api/authApi'
-import { AuthContext } from '../../context/AuthContext';
-import { LoadingContext } from '../../context/LoadingContext';
+import { authApi } from 'api/authApi'
+import { AuthContext } from 'context/AuthContext';
+import { LoadingContext } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
 
 const LoginForm = () => {

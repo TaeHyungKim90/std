@@ -1,11 +1,11 @@
 // src/components/layout/Header.js
 import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
-import { authApi } from '../../api/authApi';
-import { MENU_ITEMS } from '../../constants/menu'; 
-import logo from '../../assets/icon/favicon.png';
-import '../../assets/css/header.css';
+import { AuthContext } from 'context/AuthContext';
+import { authApi } from 'api/authApi';
+import { MENU_ITEMS } from 'constants/menu'; 
+import logo from 'assets/icon/favicon.png';
+import 'assets/css/header.css';
 
 const Header = () => {
     const { isLoggedIn, logout, userNickname, userRole, userName } = useContext(AuthContext);

@@ -1,7 +1,7 @@
 import React from 'react';
-import { todoService } from '../../api/todoApi';
-import { adminApi } from '../../api/adminApi';
-import { useAuth } from '../../context/AuthContext';
+import { todoService } from 'api/todoApi';
+import { adminApi } from 'api/adminApi';
+import { useAuth } from 'context/AuthContext';
 
 // 🌟 TUI 뷰어 버리고 SunEditor CSS만 임포트
 import 'suneditor/dist/css/suneditor.min.css';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react'; // lucide-react 아이콘 활용
-import '../../assets/css/notFound.css';
+import 'assets/css/notFound.css';
 
 const NotFoundPage = () => {
     const navigate = useNavigate();

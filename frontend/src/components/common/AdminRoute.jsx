@@ -1,8 +1,8 @@
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext } from 'context/AuthContext';
 import LoadingBar from './LoadingBar';
-import '../../assets/css/privateRoute.css';
+import 'assets/css/privateRoute.css';
 
 const AdminRoute = () => {
     const { isLoggedIn, userRole, loading } = useContext(AuthContext);

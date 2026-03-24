@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { recruitmentApi } from '../../api/recruitmentApi';
-import { openFileViewer } from '../../utils/fileUtils';
+import { recruitmentApi } from 'api/recruitmentApi';
+import { openFileViewer } from 'utils/fileUtils';
 
 const STATUS_MAP = {
     'applied': { text: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },

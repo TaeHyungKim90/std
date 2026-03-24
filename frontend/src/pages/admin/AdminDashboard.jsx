@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { adminApi } from '../../api/adminApi';
-import '../../assets/css/admin.css';
-import '../../assets/css/adminDashboard.css'; // ✅ 새로 분리된 CSS 임포트
+import { adminApi } from 'api/adminApi';
+import 'assets/css/admin.css';
+import 'assets/css/adminDashboard.css'; // ✅ 새로 분리된 CSS 임포트
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
 
     // 상태에 따라 CSS 클래스를 반환하도록 수정
     const getVacationStatus = (start, end) => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('sv-SE');
         const s = start.split('T')[0];
         const e = end.split('T')[0];
         

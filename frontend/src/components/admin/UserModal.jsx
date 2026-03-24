@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminApi } from '../../api/adminApi';
+import { adminApi } from 'api/adminApi';
 
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
     const [formData, setFormData] = useState({

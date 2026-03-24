@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { recruitmentApi } from '../../api/recruitmentApi';
+import { recruitmentApi } from 'api/recruitmentApi';
 
 const ApplicantProfileModal = ({ isOpen, onClose, loggedInUser, onUpdateSuccess }) => {
     // 내부 폼 상태

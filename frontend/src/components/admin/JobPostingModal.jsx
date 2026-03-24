@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { recruitmentApi } from '../../api/recruitmentApi';
+import { recruitmentApi } from 'api/recruitmentApi';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css';
 

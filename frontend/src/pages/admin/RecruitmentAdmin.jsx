@@ -1,9 +1,9 @@
 // src/pages/admin/RecruitmentAdmin.jsx 수정
 
 import React, { useEffect, useState } from 'react';
-import { recruitmentApi } from '../../api/recruitmentApi';
-import JobPostingModal from '../../components/admin/JobPostingModal';
-import ApplicantListModal from '../../components/admin/ApplicantListModal';
+import { recruitmentApi } from 'api/recruitmentApi';
+import JobPostingModal from 'components/admin/JobPostingModal';
+import ApplicantListModal from 'components/admin/ApplicantListModal';
 
 const RecruitmentAdmin = () => {
     const [jobs, setJobs] = useState([]);

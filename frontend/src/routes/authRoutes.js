@@ -1,8 +1,8 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
-import LoginPage from '../pages/auth/LoginPage';
-import SignupPage from '../pages/auth/SignupPage';
-import OAuthCallback from '../pages/auth/OAuthCallback';
+import LoginPage from 'pages/auth/LoginPage';
+import SignupPage from 'pages/auth/SignupPage';
+import OAuthCallback from 'pages/auth/OAuthCallback';
 
 const authRoutes = (
   <>

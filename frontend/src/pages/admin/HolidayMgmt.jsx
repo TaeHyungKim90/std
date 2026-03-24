@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { holidayApi } from '../../api/holidayApi';
-import '../../assets/css/admin.css';
+import { holidayApi } from 'api/holidayApi';
+import 'assets/css/admin.css';
 
 const HolidayMgmt = () => {
     const [holidays, setHolidays] = useState([]);

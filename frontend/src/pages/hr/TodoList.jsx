@@ -3,20 +3,20 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
-import { getContrastColor } from '../../utils/colorUtils';
-import { todoService } from '../../api/todoApi';
-import { holidayApi } from '../../api/holidayApi';
-import { useAuth } from '../../context/AuthContext';
-import TodoSidebar from '../../components/hr/TodoSidebar';
-import TodoEditModal from '../../components/hr/TodoEditModal';
-import TodoDetailModal from '../../components/common/TodoDetailModal';
+import { getContrastColor } from 'utils/colorUtils';
+import { todoService } from 'api/todoApi';
+import { holidayApi } from 'api/holidayApi';
+import { useAuth } from 'context/AuthContext';
+import TodoSidebar from 'components/hr/TodoSidebar';
+import TodoEditModal from 'components/hr/TodoEditModal';
+import TodoDetailModal from 'components/common/TodoDetailModal';
 
 // 🌟 SunEditor 로 교체
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css';
 
-import '../../assets/css/layout.css';
-import '../../assets/css/calendar.css';
+import 'assets/css/layout.css';
+import 'assets/css/calendar.css';
 
 const TodoListView = () => {
     const [events, setEvents] = useState([]);

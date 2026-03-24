@@ -1,8 +1,8 @@
 import React, { useState, useEffect,useContext } from 'react';
 import EmojiPicker from 'emoji-picker-react';
-import { LoadingContext } from '../../context/LoadingContext';
-import { adminApi } from '../../api/adminApi';
-import '../../assets/css/admin.css';
+import { LoadingContext } from 'context/LoadingContext';
+import { adminApi } from 'api/adminApi';
+import 'assets/css/admin.css';
 
 const CategoryMgmt = () => {
     const [categories, setCategories] = useState([]);

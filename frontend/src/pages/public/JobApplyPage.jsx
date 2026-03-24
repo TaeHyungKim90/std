@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { recruitmentApi } from '../../api/recruitmentApi'; 
-import { client } from '../../api/axiosInstance'; // 🌟 파일 업로드를 위해 client 임포트
-import { formatPhoneNumber } from '../../utils/commonUtils';
+import { recruitmentApi } from 'api/recruitmentApi'; 
+import { client } from 'api/axiosInstance'; // 🌟 파일 업로드를 위해 client 임포트
+import { formatPhoneNumber } from 'utils/commonUtils';
 
 const JobApplyPage = () => {
     const { state } = useLocation();

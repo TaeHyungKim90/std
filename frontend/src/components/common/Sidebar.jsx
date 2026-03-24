@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ADMIN_SUB_MENU } from '../../constants/menu';
-import '../../assets/css/sidebar.css'; // 새로운 사이드바 CSS 연결
+import { ADMIN_SUB_MENU } from 'constants/menu';
+import 'assets/css/sidebar.css'; // 새로운 사이드바 CSS 연결
 
 const Sidebar = () => {
     const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { adminApi } from '../../api/adminApi';
-import UserModal from '../../components/admin/UserModal';
-import '../../assets/css/admin.css';
+import { adminApi } from 'api/adminApi';
+import UserModal from 'components/admin/UserModal';
+import 'assets/css/admin.css';
 
 const AdminUser = () => {
     const [users, setUsers] = useState([]);

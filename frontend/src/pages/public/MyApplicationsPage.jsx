@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { recruitmentApi } from '../../api/recruitmentApi';
-import { formatDate } from '../../utils/commonUtils';
+import { recruitmentApi } from 'api/recruitmentApi';
+import { formatDate } from 'utils/commonUtils';
 
 const STATUS_MAP = {
     'applied': { text: '📄 서류 접수', color: '#4A90E2', bg: '#EFF6FF' },

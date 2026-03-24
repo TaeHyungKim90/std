@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../assets/css/loadingBar.css'; // 분리한 CSS 임포트
+import 'assets/css/loadingBar.css'; // 분리한 CSS 임포트
 
 const LoadingBar = () => {
     return (
