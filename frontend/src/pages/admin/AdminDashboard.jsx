@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from 'api/adminApi';
+import { formatDate } from 'utils/commonUtils';
 import 'assets/css/admin.css';
 import 'assets/css/adminDashboard.css'; // ✅ 새로 분리된 CSS 임포트
 
@@ -41,11 +42,6 @@ const AdminDashboard = () => {
         };
         loadDashboardData();
     }, []);
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
-    };
 
     // 상태에 따라 CSS 클래스를 반환하도록 수정
     const getVacationStatus = (start, end) => {

@@ -10,16 +10,16 @@ import './assets/css/layout.css';
 
 
 function App() {
-  return (
-    <LoadingProvider>
-      <AuthProvider>
-        <BrowserRouter>
-            {/* 모든 페이지에 공통으로 들어갈 레이아웃(헤더 등)이 있다면 여기에 위치 */}
-            <AppRoutes /> {/* 실제 주소에 따른 컴포넌트 렌더링 */}
-        </BrowserRouter>
-      </AuthProvider>
-    </LoadingProvider>
-  );
+    return (
+        <LoadingProvider>
+            <AuthProvider>
+                <BrowserRouter>
+                    {/* 모든 페이지에 공통으로 들어갈 레이아웃(헤더 등)이 있다면 여기에 위치 */}
+                    <AppRoutes /> {/* 실제 주소에 따른 컴포넌트 렌더링 */}
+                </BrowserRouter>
+            </AuthProvider>
+        </LoadingProvider>
+    );
 }
 
 export default App;

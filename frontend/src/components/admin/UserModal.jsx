@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { adminApi } from 'api/adminApi';
-
+import { formatDate } from 'utils/commonUtils';
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
     const [formData, setFormData] = useState({
         user_login_id: '', user_password: '', user_name: '', user_nickname: '',user_phone_number: '', role: 'user',join_date: '',resignation_date: ''
     });
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        return dateStr.split('T')[0];
-    };
     // 수정 모드일 경우 기존 데이터 세팅
     useEffect(() => {
         if (editingUser) {
