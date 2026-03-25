@@ -1,40 +1,53 @@
 from pydantic import BaseModel
+from typing import Optional, List
 from datetime import datetime
-from typing import List, Optional
-from enum import Enum
+from models.message_models import MessageType
 
-# 1. 메시지 타입 정의
-class MessageType(str, Enum):
-    INDIVIDUAL = "individual"  # 개별 (명세서)
-    GLOBAL = "global"          # 전체 공지
-
-# 2. 첨부파일 정보 (기존 UploadedFile 기반)
-class MessageAttachmentRead(BaseModel):
+# --- 첨부파일 & 유저 정보 응답용 ---
+class UploadedFileResponse(BaseModel):
     id: int
-    file_name: str
-    file_size: int
-    
+    file_path: str
+    original_name: str
+
     class Config:
         from_attributes = True
 
-# 3. [공용] 메시지 기본 정보
-class MessageBase(BaseModel):
+class AttachmentResponse(BaseModel):
+    id: int
+    file_id: int
+    file_info: Optional[UploadedFileResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class MessageUserResponse(BaseModel):
+    id: int
+    user_name: str
+
+    class Config:
+        from_attributes = True
+
+# --- 메인 메시지 DTO ---
+class MessageCreate(BaseModel):
     title: str
     content: Optional[str] = None
     message_type: MessageType = MessageType.INDIVIDUAL
+    is_global: bool = False
+    receiver_id: Optional[int] = None
+    file_ids: Optional[List[int]] = []  # 🌟 업로드된 파일 ID들을 배열로 받음
 
-# 4. [Admin용] 메시지 생성 요청
-class MessageCreate(MessageBase):
-    receiver_id: Optional[int] = None # 전체 공지일 땐 None 가능
-
-# 5. [User/Admin 공용] 메시지 상세 조회 응답
-class MessageRead(MessageBase):
+class MessageResponse(BaseModel):
     id: int
+    title: str
+    content: Optional[str] = None
+    message_type: MessageType
+    is_global: bool
     sender_id: int
-    receiver_id: Optional[int]
+    sender: Optional[MessageUserResponse] = None  # 보낸 사람 정보
+    receiver_id: Optional[int] = None
     created_at: datetime
     is_read: bool
-    attachments: List[MessageAttachmentRead] = []
+    attachments: List[AttachmentResponse] = []    # 첨부파일 목록
 
     class Config:
         from_attributes = True

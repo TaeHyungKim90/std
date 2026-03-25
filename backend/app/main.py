@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
 from db.session import init_db
-from api import auth, admin, hr,public,common # 분리한 라우터들 가져오기
+from api import api_router# 분리한 라우터들 가져오기
 from core.config import settings
 
 @asynccontextmanager
@@ -33,11 +33,9 @@ app.add_middleware(
 )
 
 # 3. 라우터 등록 (Node.js의 엔드포인트 정의와 동일)
-app.include_router(common, prefix="/api/common", tags=["Common"])
-app.include_router(auth, prefix="/api/auth", tags=["Auth"])
-app.include_router(hr, prefix="/api/hr", tags=["HR"])
-app.include_router(admin, prefix="/api/admin", tags=["Admin"])
-app.include_router(public, prefix="/api/public", tags=["Public"])
+app.include_router(api_router, prefix="/api")
+
+
 
 # 4. 정적 파일 및 프론트엔드 서빙 로직
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
