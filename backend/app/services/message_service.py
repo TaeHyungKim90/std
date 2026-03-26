@@ -35,6 +35,7 @@ def get_my_inbox(db: Session, user_id: int):
     """내 수신함 (나에게 온 메시지 + 전체 공지)"""
     return db.query(Message).options(
         joinedload(Message.sender),
+        joinedload(Message.receiver),
         joinedload(Message.attachments).joinedload(MessageAttachment.file_info)
     ).filter(
         or_(Message.receiver_id == user_id, Message.is_global == True)
@@ -43,6 +44,8 @@ def get_my_inbox(db: Session, user_id: int):
 def get_my_outbox(db: Session, sender_id: int):
     """내 발신함 (내가 보낸 메시지 - HR/관리자용)"""
     return db.query(Message).options(
+        joinedload(Message.sender),   
+        joinedload(Message.receiver),
         joinedload(Message.attachments).joinedload(MessageAttachment.file_info)
     ).filter(Message.sender_id == sender_id).order_by(Message.created_at.desc()).all()
 

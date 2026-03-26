@@ -8,7 +8,7 @@ from services import common_service as service
 from schemas.common_schemas import FileUploadResponse
 
 # 라우터 설정
-router = APIRouter(tags=["Common"])
+router = APIRouter()
 
 # 파일 업로드 정책 설정
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"}

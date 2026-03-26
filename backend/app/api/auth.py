@@ -10,7 +10,7 @@ from db.session import get_db
 from schemas import auth_schemas
 from services import auth_service as service
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter()
 
 # ==========================================
 # ⚙️ 환경 설정 및 공통 변수
@@ -33,15 +33,21 @@ COOKIE_OPTIONS = {
     "secure": IS_PROD,
     "path": "/"
 }
-
+def generate_user_token(user):
+    """💡 공통 헬퍼 함수: 유저 객체로 JWT 토큰 생성"""
+    token_data = {
+        "userId": user.user_login_id, 
+        "userName": user.user_name,
+        "userNickname": user.user_nickname, 
+        "role": user.role, 
+        "id": user.id,
+    }
+    return create_access_token(token_data)
 def _create_social_login_response(user):
     """💡 공통 헬퍼 함수: 소셜 로그인 토큰 발급 & 쿠키 세팅"""
-    token_data = {
-        "userId": user.user_login_id, "userName": user.user_name,
-        "userNickname": user.user_nickname, "role": user.role
-    }
-    token = create_access_token(token_data)
-    response = RedirectResponse(url="http://localhost:3000/oauth/callback?token={token}")
+    
+    token = generate_user_token(user)
+    response = RedirectResponse(url=f"http://localhost:3000/oauth/callback?token={token}")
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     return response
 
@@ -54,11 +60,7 @@ async def login(data: auth_schemas.LoginRequest, response: Response, db: Session
     """일반 로그인: ID/PW 검증 후 쿠키와 토큰 반환"""
     user = service.authenticate_user(db, data.id, data.pw)
     
-    token_data = {
-        "userId": user.user_login_id, "userName": user.user_name,
-        "userNickname": user.user_nickname, "role": user.role
-    }
-    token = create_access_token(token_data)
+    token=generate_user_token(user)
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     
     return {
@@ -69,30 +71,30 @@ async def login(data: auth_schemas.LoginRequest, response: Response, db: Session
 @router.post("/logout")
 async def logout(response: Response):
     """로그아웃: 쿠키 삭제"""
-    response.delete_cookie(
-        key=COOKIE_OPTIONS["key"], httponly=COOKIE_OPTIONS["httponly"],
-        path=COOKIE_OPTIONS["path"], samesite=COOKIE_OPTIONS["samesite"], secure=COOKIE_OPTIONS["secure"],
-    )
+    delete_options = {k: v for k, v in COOKIE_OPTIONS.items() if k != "max_age"}
+    response.delete_cookie(**delete_options)
+    
     return {"success": True, "message": "로그아웃 되었습니다."}
-
 @router.get("/check", response_model=auth_schemas.AuthCheckResponse)
 async def check_auth(request: Request):
     """인증 상태 확인: 헤더 또는 쿠키의 토큰 검증"""
     token = None
     auth_header = request.headers.get("Authorization")
+    
+    # 🌟 개선 2-1: 1단계 - 토큰부터 찾기 (헤더 먼저, 없으면 쿠키)
     if auth_header and auth_header.startswith("Bearer "):
         raw_token = auth_header.split(" ")[1]
         if raw_token and raw_token != "null":
             token = raw_token            
 
+    # 헤더에 토큰이 없다면 쿠키에서 찾음
+    if not token:
+        token = request.cookies.get("accessToken") # COOKIE_OPTIONS["key"] 로 써도 좋습니다.
+
+    # 🌟 개선 2-2: 2단계 - 토큰 해독은 딱 1번만!
     payload = decode_auth_token(token) if token else None
 
-    if not payload:
-        cookie_token = request.cookies.get("accessToken")
-        if cookie_token:
-            token = cookie_token
-            payload = decode_auth_token(token)
-
+    # 3단계 - 검증 및 반환
     if not payload or not payload.get("userName"):
         return {"isLoggedIn": False, "access_token": None}
 

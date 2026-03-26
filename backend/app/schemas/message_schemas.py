@@ -45,6 +45,7 @@ class MessageResponse(BaseModel):
     sender_id: int
     sender: Optional[MessageUserResponse] = None  # 보낸 사람 정보
     receiver_id: Optional[int] = None
+    receiver: Optional[MessageUserResponse] = None # 받는 사람 정보
     created_at: datetime
     is_read: bool
     attachments: List[AttachmentResponse] = []    # 첨부파일 목록

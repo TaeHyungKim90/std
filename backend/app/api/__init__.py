@@ -6,6 +6,7 @@ from .admin import router as admin
 from .hr import router as hr
 from .public import router as public
 from .messages import router as messages
+
 api_router = APIRouter()
 api_router.include_router(auth, prefix="/auth", tags=["Auth"])
 api_router.include_router(auth, prefix="/auth", tags=["Auth"])
