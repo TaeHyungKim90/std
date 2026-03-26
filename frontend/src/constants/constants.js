@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   ADMIN_HOLIDAYS : '/admin/holidays',
   ADMIN_RECRUITMENT : '/admin/recruitment',
   PUBLIC_RECRUITMENT : '/public/recruitment',
+  MESSAGES : '/messages',
   // 나중에 추가될 경로들
   // EMPLOYEES: '/hr/employees',
 };

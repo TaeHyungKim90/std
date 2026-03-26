@@ -8,6 +8,7 @@ import AdminUserView from 'pages/admin/AdminUser';
 import HolidayMgmtView from 'pages/admin/HolidayMgmt'
 import RecruitmentAdminView from 'pages/admin/RecruitmentAdmin'
 import ApplicantStatusView from 'pages/admin/ApplicantStatus';
+import AdminMessage from 'pages/admin/AdminMessage';
 
 const adminRoutes = (
   <Route path="/admin">
@@ -19,6 +20,7 @@ const adminRoutes = (
     <Route path="users" element={<AdminUserView />} />
     <Route path="recruitment" element={<RecruitmentAdminView />} />
     <Route path="applicants" element={<ApplicantStatusView />} />
+    <Route path="messages" element={<AdminMessage />} />
   </Route>
 );
 

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { recruitmentApi } from 'api/recruitmentApi';
 import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
-
+import 'assets/css/admin.css';
 const RecruitmentAdmin = () => {
     const [jobs, setJobs] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

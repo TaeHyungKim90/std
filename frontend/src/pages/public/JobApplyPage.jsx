@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi'; 
-import { client } from 'api/axiosInstance'; // 🌟 파일 업로드를 위해 client 임포트
+import { commonApi } from 'api/commonApi';
 import { formatPhoneNumber } from 'utils/commonUtils';
 
 const JobApplyPage = () => {
@@ -69,9 +69,7 @@ const JobApplyPage = () => {
             }
 
             // 공통 파일 업로드 API 호출 (/api/common/upload)
-            const uploadRes = await client.post('/common/upload', fileFormData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const uploadRes = await commonApi.uploadFiles(fileFormData);
             
             // 업로드 결과 받기 (응답 배열)
             const uploadedFiles = uploadRes.data; 
