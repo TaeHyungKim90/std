@@ -55,12 +55,14 @@ export const AuthProvider = ({ children }) => {
                 if (res.data.access_token) {
                     localStorage.setItem('accessToken', res.data.access_token);
                 }
+                return true;
             } else {
-                resetAuthState(); // 로그인 상태가 아니면 초기화
+                resetAuthState();
+                return false; // 로그인 상태가 아니면 초기화
             }
         } catch (err) {
-            console.error("인증 확인 실패:", err);
             resetAuthState(); // 에러 발생 시 초기화
+            return false;
         } finally {
             setIsLoading(false);
             setLoading(false); // 초기 인증 체크 완료 표시
@@ -80,7 +82,8 @@ export const AuthProvider = ({ children }) => {
             userNickname, setUserNickname,
             userRole, setUserRole, 
             userId, setUserId,
-            loading, logout 
+            loading, logout,
+            checkAuth
         }}>
             {children}
         </AuthContext>

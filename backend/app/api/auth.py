@@ -47,7 +47,7 @@ def _create_social_login_response(user):
     """💡 공통 헬퍼 함수: 소셜 로그인 토큰 발급 & 쿠키 세팅"""
     
     token = generate_user_token(user)
-    response = RedirectResponse(url=f"http://localhost:3000/oauth/callback?token={token}")
+    response = RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback")
     response.set_cookie(value=token, **COOKIE_OPTIONS)
     return response
 
