@@ -84,6 +84,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 
             const messagePayload = {
                 ...formData,
+                receiver_id: formData.is_global ? null : Number(formData.receiver_id),
                 file_ids: fileIds
             };
 

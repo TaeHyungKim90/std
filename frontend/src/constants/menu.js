@@ -1,6 +1,7 @@
 export const MENU_ITEMS = [
     { id: 'calendar', label: '캘린더', path: '/my/todos', adminOnly: false },
     { id: 'commute', label: '출퇴근', path: '/my/attendance', adminOnly: false },
+    { id: 'messages', label: '내 수신함', path: '/my/messages', adminOnly: false },
     { id: 'admin', label: '관리모드', path: '/admin/dashboard', adminOnly: true }
   ];
   

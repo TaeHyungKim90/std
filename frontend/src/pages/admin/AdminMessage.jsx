@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { messageApi } from 'api/messageApi'; // 경로에 맞게 수정
 import MessageSendModal from 'components/admin/MessageSendModal'; // 아까 만든 모달 임포트
 import { formatDate } from 'utils/commonUtils'; // 마스터님의 깔끔한 직접 임포트 방식!
+import MessageReadModal from 'components/common/MessageReadModal';
 import 'assets/css/admin.css';
 const AdminMessage = () => {
     const [messages, setMessages] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [isReadModalOpen, setIsReadModalOpen] = useState(false);
 
     // 내가 보낸 메시지(발신함) 목록 불러오기
     const fetchOutbox = async () => {
@@ -21,6 +25,11 @@ const AdminMessage = () => {
         fetchOutbox();
     }, []);
 
+    const handleReadMessage = (msg) => {
+        setSelectedMessage(msg);
+        setIsReadModalOpen(true);
+    };
+    
     return (
         <div className="bq-admin-view">
             <div className="admin-header">
@@ -55,7 +64,10 @@ const AdminMessage = () => {
                             </tr>
                         ) : (
                             messages.map(msg => (
-                                <tr key={msg.id}>
+                                <tr key={msg.id}
+                                    onClick={() => handleReadMessage(msg)} // 🌟 4. 클릭 이벤트 연결!
+                                    style={{ cursor: 'pointer' }} // 🌟 5. 마우스 올리면 손가락 모양으로!
+                                >
                                     <td>
                                         <span className={`role-badge ${msg.is_global ? 'admin' : 'user'}`}>
                                             {msg.is_global ? '📢 전체공지' : '👤 개별'}
@@ -83,6 +95,11 @@ const AdminMessage = () => {
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
                 onSuccess={fetchOutbox} 
+            />
+            <MessageReadModal 
+                isOpen={isReadModalOpen} 
+                onClose={() => setIsReadModalOpen(false)} 
+                message={selectedMessage} 
             />
         </div>
     );
