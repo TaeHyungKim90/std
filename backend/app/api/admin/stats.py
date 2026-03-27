@@ -9,4 +9,4 @@ router = APIRouter()
 
 @router.get("/") # /api/admin/stats/ 가 됨
 def read_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_admin)):
-    return stats_service.get_admin_stats(db)
+	return stats_service.get_admin_stats(db)

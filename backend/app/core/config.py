@@ -5,22 +5,22 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.pa
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 print(f"🔍 지금 .env 파일을 찾는 위치: {ENV_PATH}")
 class Settings(BaseSettings):
-    SECRET_KEY: str
-    ALGORITHM: str = "HS256"
-    #ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    ACCESS_TOKEN_EXPIRE_DAYS: int = 1
-    KAKAO_CLIENT_ID: str
-    KAKAO_CLIENT_SECRET: str
-    KAKAO_REDIRECT_URI: str = "http://localhost:8000/api/auth/kakao/callback"
-    NAVER_CLIENT_ID: str
-    NAVER_CLIENT_SECRET: str
-    NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
-    PUBLIC_DATA_API_KEY: str
-    ENVIRONMENT: str = "development"
-    CORS_ORIGINS: str = "http://localhost:3000,http://10.44.100.52:3000,http://127.0.0.1:3000"
-    FRONTEND_URL: str = "http://localhost:3000"
-    
-    class Config:
-        env_file = ENV_PATH
+	SECRET_KEY: str
+	ALGORITHM: str = "HS256"
+	#ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+	ACCESS_TOKEN_EXPIRE_DAYS: int = 1
+	KAKAO_CLIENT_ID: str
+	KAKAO_CLIENT_SECRET: str
+	KAKAO_REDIRECT_URI: str = "http://localhost:8000/api/auth/kakao/callback"
+	NAVER_CLIENT_ID: str
+	NAVER_CLIENT_SECRET: str
+	NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
+	PUBLIC_DATA_API_KEY: str
+	ENVIRONMENT: str = "development"
+	CORS_ORIGINS: str = "http://localhost:3000,http://10.44.100.52:3000,http://127.0.0.1:3000"
+	FRONTEND_URL: str = "http://localhost:3000"
+	
+	class Config:
+		env_file = ENV_PATH
 
 settings = Settings()
