@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
 import 'assets/css/admin.css';

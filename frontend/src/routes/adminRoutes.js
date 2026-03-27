@@ -12,15 +12,15 @@ import AdminMessage from 'pages/admin/AdminMessage';
 
 const adminRoutes = (
   <Route path="/admin">
-    <Route path="dashboard" element={<AdminDashboard />} />
-    <Route path="todos" element={<AdminTodoView />} />
-    <Route path="categories" element={<CategoryMgmtView />} />
-    <Route path="holidays" element={<HolidayMgmtView />} />
-    <Route path="attendance" element={<AdminAttendanceView />} />
-    <Route path="users" element={<AdminUserView />} />
-    <Route path="recruitment" element={<RecruitmentAdminView />} />
-    <Route path="applicants" element={<ApplicantStatusView />} />
-    <Route path="messages" element={<AdminMessage />} />
+	<Route path="dashboard" element={<AdminDashboard />} />
+	<Route path="todos" element={<AdminTodoView />} />
+	<Route path="categories" element={<CategoryMgmtView />} />
+	<Route path="holidays" element={<HolidayMgmtView />} />
+	<Route path="attendance" element={<AdminAttendanceView />} />
+	<Route path="users" element={<AdminUserView />} />
+	<Route path="recruitment" element={<RecruitmentAdminView />} />
+	<Route path="applicants" element={<ApplicantStatusView />} />
+	<Route path="messages" element={<AdminMessage />} />
   </Route>
 );
 

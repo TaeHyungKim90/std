@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { attendanceApi } from 'api/attendanceApi';
 import 'assets/css/attendance.css';
 
@@ -31,67 +32,82 @@ const AttendanceView = () => {
 
   // 오늘 상태 가져오기
   const fetchTodayStatus = async () => {
-    try {
-      const res = await attendanceApi.getTodayAttendance();
+    Notify.toastPromise(attendanceApi.getTodayAttendance(), {
+      loading: '오늘 출퇴근 기록을 확인하는 중입니다...',
+      success: '출퇴근 기록을 확인했습니다.',
+      error: '출퇴근 기록을 불러오지 못했습니다.'
+    }).then((res) => {
       setTodayRecord(res.data);
       if (res.data?.clock_in_location) {
         setLocationName(res.data.clock_in_location);
       }
-    } catch (err) {
+    }).catch((err) => {
       console.error("출퇴근 기록 로드 실패", err);
-    }
+    });
   };
 
   // 출근 처리
-  const handleClockIn = async () => {
-    if (!window.confirm(`${locationName}에서 출근 처리하시겠습니까?`)) return;
+	const handleClockIn = async () => {
+		if (!window.confirm(`${locationName}에서 출근 처리하시겠습니까?`)) return;
 
-    setLoading(true);
-    try {
-      // GPS 좌표 가져오기
-      const coords = await attendanceApi.getCurrentLocation();
-      
-      const data = {
-        location_name: locationName,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        note: ""
-      };
+		setLoading(true);
+		const clockInTask = async () => {
+			const coords = await attendanceApi.getCurrentLocation();
+			const data = {
+				location_name: locationName,
+				latitude: coords.latitude,
+				longitude: coords.longitude,
+				note: ""
+			};
+			return await attendanceApi.clockIn(data);
+		};
+		Notify.toastPromise(
+			clockInTask(),
+			{
+			  loading: '위치를 확인하고 출근 처리 중입니다... 📍',
+			  success: '정상적으로 출근 처리되었습니다. 🏢',
+			  error: (err) => err.message || "출근 처리 중 오류가 발생했습니다. 위치 권한을 확인해주세요."
+			}
+		  ).then(() => {
+			fetchTodayStatus();
+            setLoading(false);
+		  }).catch((err) => {
+            console.error("출근 처리 실패", err);
+            setLoading(false);
+          });
+	};
 
-      await attendanceApi.clockIn(data);
-      alert("정상적으로 출근 처리되었습니다.");
-      fetchTodayStatus();
-    } catch (err) {
-      alert(err.message || "출근 처리 중 오류가 발생했습니다. 위치 권한을 확인해주세요.");
-    } finally {
-      setLoading(false);
-    }
-  };
+	// 퇴근 처리
+	const handleClockOut = async () => {
+		if (!window.confirm(`${locationName}에서 퇴근 처리하시겠습니까?`)) return;
 
-  // 퇴근 처리
-  const handleClockOut = async () => {
-    if (!window.confirm(`${locationName}에서 퇴근 처리하시겠습니까?`)) return;
-
-    setLoading(true);
-    try {
-      const coords = await attendanceApi.getCurrentLocation();
-      
-      const data = {
-        location_name: locationName,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        note: ""
-      };
-
-      await attendanceApi.clockOut(data);
-      alert("오늘 하루도 고생하셨습니다!");
-      fetchTodayStatus();
-    } catch (err) {
-      alert("퇴근 처리 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
+		setLoading(true);
+		const clockOutTask = async () => {
+			const coords = await attendanceApi.getCurrentLocation();
+			const data = {
+				location_name: locationName,
+				latitude: coords.latitude,
+				longitude: coords.longitude,
+				note: ""
+			};
+			return await attendanceApi.clockOut(data);
+		};
+	  
+		Notify.toastPromise(
+			clockOutTask(),
+			{
+				loading: '위치를 확인하고 퇴근 처리 중입니다... 📍',
+				success: '오늘 하루도 고생하셨습니다! 🏃‍♂️',
+				error: (err) => err.message || "퇴근 처리 중 오류가 발생했습니다."
+			}
+		).then(() => {
+			fetchTodayStatus();
+            setLoading(false);
+		}).catch((err) => {
+            console.error("퇴근 처리 실패", err);
+            setLoading(false);
+        });
+	};
 
   // 근무 시간 포맷팅 (HH:mm:ss)
   const formatTime = (dateStr) => {

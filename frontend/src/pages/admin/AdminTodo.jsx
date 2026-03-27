@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import * as Notify from 'utils/toastUtils';
 import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
 import { adminApi } from 'api/adminApi.js';
 import { LoadingContext } from 'context/LoadingContext';
@@ -11,30 +12,31 @@ const AdminTodo = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { setIsLoading } = useContext(LoadingContext);
     const fetchData = async () => {
-        try {
-            setIsLoading(true);
-            // 1. 카테고리 마스터 데이터 불러오기
+        setIsLoading(true);
+        const fetchDataTask = async () => {
             const catRes = await adminApi.getCategoryTypes();
-            
-            // 💡 1-1. 모달창을 위해 원본 '배열' 저장
-            setCategories(catRes.data); 
+            const todoRes = await adminApi.getAllTodos();
+            return { catRes, todoRes };
+        };
 
-            // 💡 1-2. 표에 예쁘게 보여주기 위해 '사전' 만들기
+        Notify.toastPromise(fetchDataTask(), {
+            loading: '일정 데이터를 불러오는 중입니다...',
+            success: '일정 데이터를 불러왔습니다.',
+            error: '데이터를 불러오지 못했습니다.'
+        }).then(({ catRes, todoRes }) => {
+            setCategories(catRes.data);
+
             const newCatMap = {};
             catRes.data.forEach(cat => {
-                newCatMap[cat.category_key] = `${cat.icon} ${cat.category_name}`; 
+                newCatMap[cat.category_key] = `${cat.icon} ${cat.category_name}`;
             });
-            setCategoryMap(newCatMap); // (수정됨) setCategories가 아니라 setCategoryMap에 저장!
-
-            // 2. 전체 일정 데이터 불러오기
-            const todoRes = await adminApi.getAllTodos();
+            setCategoryMap(newCatMap);
             setAllTodos(todoRes.data);
-            
-        } catch (err) {
-            console.error("데이터 로드 실패", err);
-        } finally {
             setIsLoading(false);
-        }
+        }).catch((err) => {
+            console.error("데이터 로드 실패", err);
+            setIsLoading(false);
+        });
     };
 
     useEffect(() => { 
@@ -59,13 +61,15 @@ const AdminTodo = () => {
 
     const handleDelete = async (todoId) => {
         if (!window.confirm("관리자 권한으로 이 일정을 삭제하시겠습니까?")) return;
-        try {
-            await adminApi.deleteTodoByAdmin(todoId);
-            alert("삭제되었습니다.");
+        Notify.toastPromise(adminApi.deleteTodoByAdmin(todoId), {
+            loading: '일정을 삭제하는 중입니다...',
+            success: '삭제되었습니다.',
+            error: '삭제에 실패했습니다.'
+        }).then(() => {
             fetchData();
-        } catch (err) {
-            alert("삭제 실패");
-        }
+        }).catch((err) => {
+            console.error("삭제 실패", err);
+        });
     };
 
     return (

@@ -7,23 +7,23 @@ export const adminApi = {
    * GET /api/admin/all-todo-list
    */
   getAllTodos: () => 
-    client.get(`${PATH}/todos`),
+	client.get(`${PATH}/todos`),
 
   deleteTodoByAdmin: (id) => 
-    client.delete(`${PATH}/todos/${id}`),
+	client.delete(`${PATH}/todos/${id}`),
   /**
    * 2. 대시보드 통계 데이터 조회
    * GET /api/admin/dashboard
    */
   getDashboard: () => 
-    client.get(`${PATH}/stats`),
+	client.get(`${PATH}/stats`),
 
   /**
    * 3. 카테고리 마스터 목록 조회
    * GET /api/admin/category-types
    */
   getCategoryTypes: () => 
-    client.get(`${PATH}/category-types`),
+	client.get(`${PATH}/category-types`),
 
   /**
    * 4. 새로운 카테고리 마스터 등록
@@ -31,39 +31,39 @@ export const adminApi = {
    * @param {object} payload - { category_key, category_name, icon }
    */
   createCategoryType: (payload) => 
-    client.post(`${PATH}/category-types`, payload),
+	client.post(`${PATH}/category-types`, payload),
   // 카테고리 수정
   updateCategoryType: (id, payload) => 
-    client.patch(`${PATH}/category-types/${id}`, payload),
+	client.patch(`${PATH}/category-types/${id}`, payload),
 
   // 카테고리 삭제
   deleteCategoryType: (id) => 
-    client.delete(`${PATH}/category-types/${id}`),
+	client.delete(`${PATH}/category-types/${id}`),
   /**
    * ⏰ 출퇴근 기록 조회 (필터 포함)
    */
   getAllAttendance: (filters) =>
-    client.get(`${PATH}/attendance/all`,filters),
+	client.get(`${PATH}/attendance/all`,filters),
   /**
    * 👥 유저 관리 기능 추가
    */
 // 모든 사용자 목록 조회
   getUsers: () => 
-    client.get(`${PATH}/users`), //
+	client.get(`${PATH}/users`), //
 
   // 신규 사용자 등록
   createUser: (payload) => 
-    client.post(`${PATH}/users`, payload), //
+	client.post(`${PATH}/users`, payload), //
 
   // 사용자 정보 수정 (PATCH)
   updateUser: (userId, payload) => 
-    client.patch(`${PATH}/users/${userId}`, payload), //
+	client.patch(`${PATH}/users/${userId}`, payload), //
 
   // 사용자 삭제
   deleteUser: (userId) => 
-    client.delete(`${PATH}/users/${userId}`), //
+	client.delete(`${PATH}/users/${userId}`), //
   
   // 연차 일괄 정산
   syncVacations: () => 
-    client.post(`${PATH}/users/vacations/sync`), //
+	client.post(`${PATH}/users/vacations/sync`), //
 };

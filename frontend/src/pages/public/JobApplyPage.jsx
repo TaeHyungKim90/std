@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi'; 
 import { commonApi } from 'api/commonApi';
 import { formatPhoneNumber } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils'; 
 
 const JobApplyPage = () => {
     const { state } = useLocation();
@@ -14,18 +15,19 @@ const JobApplyPage = () => {
     const job = state?.job; 
 
     useEffect(() => {
+        let isMounted = true; 
         if (!job) {
-            alert("🚨 공고 등록페이지 - 잘못된 접근입니다.");
+            Notify.toastError("🚨 잘못된 접근입니다.");
             navigate('/careers', { replace: true });
             return;
         }
-
         const userStr = sessionStorage.getItem('applicant_user');
         if (!userStr) {
-            alert("로그인이 필요한 서비스입니다.");
+            Notify.toastWarn("로그인이 필요한 서비스입니다.");
             navigate('/careers/login', { state: { returnUrl: `/careers/${job.id}/apply`, job } });
             return;
         }
+        
         const user = JSON.parse(userStr);
         setLoggedInUser(user);
 
@@ -34,15 +36,17 @@ const JobApplyPage = () => {
                 const res = await recruitmentApi.getMyApplications(user.id);
                 const applications = res.data || res;
                 if (applications.some(app => app.job_id === job.id)) {
-                    alert("이미 지원이 완료된 공고입니다.\n[내 지원 내역] 페이지에서 확인해 주세요.");
-                    navigate('/careers/my-applications', { replace: true }); 
+                    if (isMounted) {
+                        Notify.toastWarn("이미 지원이 완료된 공고입니다.\n[내 지원 내역] 페이지에서 확인해 주세요.");
+                        navigate('/careers/my-applications', { replace: true }); 
+                    }
                 }
             } catch (error) {
                 console.error("중복 지원 검사 실패:", error);
             }
         };
         checkDuplicate();
-
+        return () => { isMounted = false; };
     }, [job, navigate]);
 
     const handleFileChange = (e, type) => {
@@ -52,59 +56,57 @@ const JobApplyPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!files.resume) {
-            alert("이력서를 첨부해 주세요.");
+            Notify.toastWarn("이력서를 첨부해 주세요.");
             return;
         }
 
         setIsSubmitting(true);
-        try {
-            // ==========================================
-            // STEP 1: 파일 먼저 서버에 업로드하기
-            // ==========================================
+        
+        const processApplicationTask = async () => {
+            // STEP 1: 파일 업로드
             const fileFormData = new FormData();
-            // 백엔드 common.py 에서 files: List[UploadFile] 로 받으므로 키 이름은 "files"
             fileFormData.append("files", files.resume);
-            if (files.portfolio) {
-                fileFormData.append("files", files.portfolio);
-            }
+            if (files.portfolio) fileFormData.append("files", files.portfolio);
 
-            // 공통 파일 업로드 API 호출 (/api/common/upload)
             const uploadRes = await commonApi.uploadFiles(fileFormData);
-            
-            // 업로드 결과 받기 (응답 배열)
             const uploadedFiles = uploadRes.data; 
-            // 첫 번째 파일은 이력서, 두 번째 파일이 있다면 포트폴리오
-            const resumeFileUrl = uploadedFiles[0].file_path; // 백엔드 FileUploadResponse 스키마에 맞춤
+            const resumeFileUrl = uploadedFiles[0].file_path; 
             const portfolioFileUrl = files.portfolio ? uploadedFiles[1].file_path : null;
 
-            // ==========================================
-            // STEP 2: 업로드된 파일 URL을 JSON에 담아서 지원서 제출
-            // ==========================================
+            // STEP 2: 지원서 제출
             const applicationData = {
                 email_id: loggedInUser.email_id,
-                password: "DUMMY_PW", // 지원서 제출용 (필요 없다면 스키마에서 빼는 것을 권장)
+                password: "DUMMY_PW", 
                 name: loggedInUser.name,
                 phone: loggedInUser.phone,
                 job_id: job.id,
-                resume_file_url: resumeFileUrl, // 🌟 백엔드가 원하는 정확한 키 이름으로 전달!
+                resume_file_url: resumeFileUrl, 
             };
+            if (portfolioFileUrl) applicationData.portfolio_file_url = portfolioFileUrl;
 
-            // 만약 스키마에 포트폴리오 필드가 있다면 추가
-            if (portfolioFileUrl) {
-                applicationData.portfolio_file_url = portfolioFileUrl;
-            }
-
-            // JSON 형태로 전송!
+            // 마지막 통신
             await recruitmentApi.submitApplication(applicationData);
-            
-            alert("지원이 완료되었습니다! 좋은 결과가 있기를 바랍니다.");
+            return true; // 에러 없이 여기까지 오면 성공!
+        };
+
+        // 🌟 2. 그 '임무'를 통째로 toastPromise에 넣어버립니다!
+        Notify.toastPromise(
+            processApplicationTask(), // 👈 방금 만든 두 개의 await가 든 묶음!
+            {
+                loading: '파일 업로드 및 지원서를 제출하고 있습니다... ⏳', 
+                success: '지원이 완료되었습니다! 좋은 결과가 있기를 바랍니다. 🎉',
+                error: (error) => error.response?.data?.detail || "지원 중 오류가 발생했습니다."
+            }
+        ).then(() => {
+            // 전부 다 성공했을 때의 처리
             navigate('/careers/my-applications', { replace: true });
-        } catch (error) {
-            console.error(error);
-            alert(error.response?.data?.detail || "지원 중 오류가 발생했습니다.");
-        } finally {
+        }).catch((error) => {
+            // 에러 로그
+            console.error("지원서 제출 에러:", error);
+        }).finally(() => {
+            // 버튼 비활성화 해제
             setIsSubmitting(false);
-        }
+        });
     };
 
     if (!loggedInUser || !job) return null;

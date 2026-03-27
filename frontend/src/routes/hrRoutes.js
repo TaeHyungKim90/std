@@ -6,9 +6,9 @@ import MyMessages from '../pages/hr/MyMessages';
 
 const hrRoutes = (
   <Route path="/my">
-    <Route path="todos" element={<TodoListView />} />
-    <Route path="attendance" element={<AttendanceView />} />
-    <Route path="/my/messages" element={<MyMessages />} />
+	<Route path="todos" element={<TodoListView />} />
+	<Route path="attendance" element={<AttendanceView />} />
+	<Route path="/my/messages" element={<MyMessages />} />
   </Route>
 );
 

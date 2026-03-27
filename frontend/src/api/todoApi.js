@@ -13,14 +13,14 @@ export const todoService = {
   updateTodoConfig: (configData) => client.put(`${PATH}/config`, configData),
 
   getTodos: (skip = 0, limit = 100) => 
-    client.get(`${PATH}/`, { params: { skip, limit } }),
+	client.get(`${PATH}/`, { params: { skip, limit } }),
 
   /**
    * 2. 새 일정 등록 (POST /api/todos/)
    * @param {object} todoData - { user_id, title, start_date, end_date, color, category, description }
    */
   createTodo: (todoData) => 
-    client.post(`${PATH}/`, todoData),
+	client.post(`${PATH}/`, todoData),
 
   /**
    * 3. 일정 수정 (PUT /api/todos/{todo_id})
@@ -28,12 +28,12 @@ export const todoService = {
    * @param {object} updateData - 수정한 필드들 (TodoUpdate 스키마 대응)
    */
   updateTodo: (id, updateData) => 
-    client.patch(`${PATH}/${id}`, updateData),
+	client.patch(`${PATH}/${id}`, updateData),
 
   /**
    * 4. 일정 삭제 (DELETE /api/todos/{todo_id})
    */
   deleteTodo: (id) => 
-    client.delete(`${PATH}/${id}`),
+	client.delete(`${PATH}/${id}`),
   
 };
