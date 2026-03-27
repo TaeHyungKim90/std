@@ -1,13 +1,13 @@
-import React, { useState, useEffect,useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import EmojiPicker from 'emoji-picker-react';
-import { LoadingContext } from 'context/LoadingContext';
+import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import 'assets/css/admin.css';
 
 const CategoryMgmt = () => {
 	const [categories, setCategories] = useState([]);
-	const { setIsLoading } = useContext(LoadingContext);
+	const { showLoading, hideLoading } = useLoading();
 	
 	// 신규 등록용 상태
 	const [showNewPicker, setShowNewPicker] = useState(false);
@@ -18,7 +18,7 @@ const CategoryMgmt = () => {
 	const [editForm, setEditForm] = useState({ category_key: '', category_name: '', icon: '' });
 
 	const fetchCategories = async () => {
-		setIsLoading(true);
+		showLoading("카테고리 마스터를 불러오는 중입니다... ⏳");
 		Notify.toastPromise(adminApi.getCategoryTypes(), {
 			loading: '카테고리를 불러오는 중입니다...',
 			success: '카테고리를 불러왔습니다.',
@@ -28,7 +28,7 @@ const CategoryMgmt = () => {
 		}).catch((err) => {
 			console.error("카테고리 로드 실패", err);		
 		}).finally(() => {
-			setIsLoading(false);
+			hideLoading();
 		});
 	};
 

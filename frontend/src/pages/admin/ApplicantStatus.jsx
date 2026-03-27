@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { openFileViewer } from 'utils/fileUtils';
-import { LoadingContext } from 'context/LoadingContext';
+import { useLoading } from 'context/LoadingContext';
 import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
 import 'assets/css/admin.css';
 
@@ -19,7 +19,7 @@ const ApplicantStatus = () => {
 	const [jobs, setJobs] = useState([]);
 	const [selectedJobId, setSelectedJobId] = useState('');
 	const [applications, setApplications] = useState([]);
-	const { setIsLoading } = useContext(LoadingContext);
+	const { showLoading, hideLoading } = useLoading();
 
 	// 🌟 검색 및 필터링 상태 추가
 	const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +27,7 @@ const ApplicantStatus = () => {
 
 	useEffect(() => {
 		const fetchJobs = async () => {
-			setIsLoading(true);
+			showLoading("채용 공고와 전형 상태를 불러오는 중입니다... ⏳");
 			Notify.toastPromise(recruitmentApi.getJobPostings(), {
 				loading: '채용 공고를 불러오는 중입니다...',
 				success: '채용 공고를 불러왔습니다.',
@@ -39,11 +39,11 @@ const ApplicantStatus = () => {
 			}).catch((err) => { 
 				console.error("공고 로드 실패", err); 
 			}).finally(() => {
-				setIsLoading(false);
+				hideLoading();
 			});
 		};
 		fetchJobs();
-	}, [setIsLoading]);
+	}, [showLoading, hideLoading]);
 
 	useEffect(() => {
 		if (!selectedJobId) {

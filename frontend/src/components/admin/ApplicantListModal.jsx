@@ -13,12 +13,12 @@ const STATUS_MAP = {
 
 const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
     const [applicants, setApplicants] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setModalLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen && jobId) {
             const fetchApplicants = async () => {
-                setIsLoading(true);
+                setModalLoading(true);
                 Notify.toastPromise(recruitmentApi.getApplicationsByJob(jobId), {
                     loading: '지원자 목록을 불러오는 중입니다...',
                     success: '지원자 목록을 불러왔습니다.',
@@ -31,7 +31,7 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
                 }).catch((error) => {
                     console.error("지원자 목록 로드 실패", error);
                 }).finally(() => {
-                    setIsLoading(false);
+                    setModalLoading(false);
                 });
             };
             fetchApplicants();

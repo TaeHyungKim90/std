@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
 import { adminApi } from 'api/adminApi.js';
-import { LoadingContext } from 'context/LoadingContext';
+import { useLoading } from 'context/LoadingContext';
 import 'assets/css/admin.css';
 const AdminTodo = () => {
 	const [allTodos, setAllTodos] = useState([]);
@@ -10,9 +10,9 @@ const AdminTodo = () => {
 	const [categories, setCategories] = useState([]);	// ✅ 모달에 넘겨줄 원본 데이터 (Array)
 	const [selectedTodo, setSelectedTodo] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const { setIsLoading } = useContext(LoadingContext);
+	const { showLoading, hideLoading } = useLoading();
 	const fetchData = async () => {
-		setIsLoading(true);
+		showLoading("관리자 일정 데이터를 동기화 중입니다... ⏳");
 		const fetchDataTask = async () => {
 			const catRes = await adminApi.getCategoryTypes();
 			const todoRes = await adminApi.getAllTodos();
@@ -35,7 +35,7 @@ const AdminTodo = () => {
 		}).catch((err) => {
 			console.error("데이터 로드 실패", err);
         }).finally(() => {
-			setIsLoading(false);
+			hideLoading();
 		});
 	};
 

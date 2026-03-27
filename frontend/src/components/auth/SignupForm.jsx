@@ -1,13 +1,13 @@
-import React, { useState, useContext, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from 'api/authApi';
-import { LoadingContext } from 'context/LoadingContext'; // ✅ 전역 로딩 추가
+import { useLoading } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
 
 const SignupForm = () => {
 	const navigate = useNavigate();
-	const { setIsLoading } = useContext(LoadingContext); // ✅ 전역 로딩 바 제어
+	const { showLoading, hideLoading } = useLoading();
 
 	const [formData, setFormData] = useState({
 		user_login_id: '',
@@ -46,7 +46,7 @@ const SignupForm = () => {
 	const handleCheckId = useCallback(async () => {
 		if (!formData.user_login_id) return Notify.toastWarn('아이디를 먼저 입력해 주세요.');
 
-		setIsLoading(true); // 로딩 바 켜기
+		showLoading("아이디 중복 여부를 확인 중입니다... ⏳");
 		Notify.toastPromise(authApi.checkId(formData.user_login_id), {
 			loading: '아이디 중복을 확인하는 중입니다...',
 			success: '아이디 중복 확인이 완료되었습니다.',
@@ -56,9 +56,9 @@ const SignupForm = () => {
 		}).catch((err) => {
 			console.error("중복 확인 실패:", err);
 		}).finally(() => {
-			setIsLoading(false); // 로딩 바 끄기
+			hideLoading();
 		});
-	}, [formData.user_login_id, setIsLoading]);
+	}, [formData.user_login_id, showLoading, hideLoading]);
 
 	// ✅ 회원가입 실행
 	const handleSignup = useCallback(async (e) => {
@@ -68,7 +68,7 @@ const SignupForm = () => {
 		if (idStatus !== 'available') return setError('아이디 중복 확인을 진행해 주세요.');
 		if (formData.user_password !== formData.password_confirm) return setError('비밀번호가 일치하지 않습니다.');
 
-		setIsLoading(true);
+		showLoading("회원가입 정보를 등록 중입니다... ⏳");
 		const signupTask = async () => {
 			const { password_confirm, ...submitData } = formData;
 			return authApi.signup(submitData);
@@ -86,9 +86,9 @@ const SignupForm = () => {
 		}).catch((err) => {
 			console.error("회원가입 실패:", err);
 		}).finally(() => {
-			setIsLoading(false);
+			hideLoading();
 		});
-	}, [formData, idStatus, navigate, setIsLoading]);
+	}, [formData, idStatus, navigate, showLoading, hideLoading]);
 
 	const isPasswordMatching = formData.user_password && formData.password_confirm && formData.user_password === formData.password_confirm;
 

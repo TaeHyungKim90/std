@@ -15,7 +15,7 @@ const STATUS_MAP = {
 const MyApplicationsPage = () => {
 	const navigate = useNavigate();
 	const [applications, setApplications] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoading, setPageLoading] = useState(true);
 	const [loggedInUser, setLoggedInUser] = useState(null);
 
 	useEffect(() => {
@@ -39,7 +39,7 @@ const MyApplicationsPage = () => {
 			}).catch((error) => {
 				console.error("지원 내역 로드 실패", error);
 			}).finally(() => {
-				setIsLoading(false);
+				setPageLoading(false);
 			});
 		};
 

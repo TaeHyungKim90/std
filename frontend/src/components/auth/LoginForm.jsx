@@ -4,7 +4,7 @@ import * as Notify from 'utils/toastUtils';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from 'api/authApi'
 import { AuthContext } from 'context/AuthContext';
-import { LoadingContext } from 'context/LoadingContext';
+import { useLoading } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
 
 const LoginForm = () => {
@@ -13,7 +13,7 @@ const LoginForm = () => {
 	const [error, setError] = useState('');
 	const [showKoreanWarning, setShowKoreanWarning] = useState(false);
 	const { isLoggedIn, loading, setIsLoggedIn, setUserRole, setUserName, setUserNickname } = useContext(AuthContext);
-	const { setIsLoading } = useContext(LoadingContext);
+	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const timerRef = useRef(null);
 	useEffect(() => {
@@ -47,7 +47,7 @@ const LoginForm = () => {
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		setError('');
-		setIsLoading(true);
+		showLoading("로그인 정보를 검증 중입니다... ⏳");
 		Notify.toastPromise(authApi.login(id, pw), {
 			loading: '로그인 중입니다...',
 			success: '로그인되었습니다.',
@@ -71,7 +71,7 @@ const LoginForm = () => {
 		}).catch((err) => {
 			console.error("로그인 실패:", err);
 		}).finally(() => {
-			setIsLoading(false);
+			hideLoading();
 		});
 	};
 
