@@ -78,19 +78,23 @@ export const useApiRequest = (apiCall) => {
 	const request = useCallback(async (...args) => {
 		setLoading(true);
 		setError(null);
-		try {
-			const response = await apiCall(...args);
+		return Notify.toastPromise(apiCall(...args), {
+			loading: '요청을 처리하는 중입니다...',
+			success: '요청이 완료되었습니다.',
+			error: (err) => {
+				const errMsg = err.response?.data?.detail || '서버 통신 중 오류가 발생했습니다.';
+				setError(errMsg);
+				return errMsg;
+			}
+		}).then((response) => {
 			setData(response.data);
 			return response.data; // 성공 시 실제 데이터 반환
-		} catch (err) {
-			// FastAPI에서 보낸 상세 에러 메시지가 있다면 추출
-			const errMsg = err.response?.data?.detail || '서버 통신 중 오류가 발생했습니다.';
-			setError(errMsg);
-			console.error("API Error:", errMsg);
+		}).catch((err) => {
+			console.error("API Error:", err);
 			throw err;
-		} finally {
+		}).finally(() => {
 			setLoading(false);
-		}
+		});
 	}, [apiCall]);
 
 	return { request, loading, data, error, setData }; // setData를 포함해 수동 업데이트 가능하게 함

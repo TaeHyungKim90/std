@@ -32,8 +32,15 @@ const TodoListView = () => {
 	const [modalMode, setModalMode] = useState('create');
 
 	const fetchCategoriesAndConfigs = useCallback(async () => {
-		try {
+		const fetchCategoriesTask = async () => {
 			const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
+			return { catRes, configRes };
+		};
+		Notify.toastPromise(fetchCategoriesTask(), {
+			loading: '카테고리 설정을 불러오는 중입니다...',
+			success: '카테고리 설정을 불러왔습니다.',
+			error: '카테고리 정보를 불러오지 못했습니다.'
+		}).then(({ catRes, configRes }) => {
 			const masterCategories = catRes.data;
 			const userConfigs = configRes.data;
 			const mergedCategories = masterCategories.map(cat => {
@@ -41,16 +48,22 @@ const TodoListView = () => {
 				return { ...cat, hasCustomConfig: !!userConf, color: userConf?.color || '#3DAF7A', default_description: userConf?.default_description || '' };
 			});
 			setCategories(mergedCategories);
-		} catch (err) { 
+		}).catch((err) => { 
 			console.error("카테고리 및 설정 로드 실패", err); 
-			Notify.toastError("카테고리 정보를 불러오지 못했습니다.");
-		}
+		});
 	}, []);
 
 	const fetchTodos = useCallback(async () => {
-		try {
+		const fetchTodosTask = async () => {
 			const currentYear = new Date().getFullYear().toString();
 			const [todoRes, holidayRes] = await Promise.all([todoService.getTodos(), holidayApi.getHolidays(currentYear)]);
+			return { todoRes, holidayRes };
+		};
+		Notify.toastPromise(fetchTodosTask(), {
+			loading: '일정 데이터를 불러오는 중입니다...',
+			success: '일정 데이터를 불러왔습니다.',
+			error: '일정 데이터를 불러오는데 실패했습니다.'
+		}).then(({ todoRes, holidayRes }) => {
 			const formattedTodos = todoRes.data.map(todo => {
 				const isOwner = todo.user_id === userId;
 				const endDate = new Date(todo.end_date);
@@ -67,10 +80,9 @@ const TodoListView = () => {
 			});
 			holidaysRef.current = holidayRes.data || [];
 			setEvents(formattedTodos);
-		} catch (err) { 
+		}).catch((err) => { 
 			console.error("데이터 로드 실패", err); 
-			Notify.toastError("일정 데이터를 불러오는데 실패했습니다.");
-		}
+		});
 	}, [userId]);
 
 	const handleSwitchToEdit = () => { setIsDetailOpen(false); setModalMode('edit'); setIsEditOpen(true); };
@@ -107,12 +119,15 @@ const TodoListView = () => {
 			{
 				loading: '일정을 수정하고 있습니다...',
 				success: '일정이 성공적으로 변경되었습니다! 🔄',
-				error: (e) => e.response?.data?.detail || "일정 수정 중 오류가 발생했습니다."
+				error: (e) => {
+					info.revert();
+					return e.response?.data?.detail || "일정 수정 중 오류가 발생했습니다.";
+				}
 			}
 		).then(() => {
 			fetchTodos();
-		}).catch(() => {
-			info.revert(); // 실패 시 달력 UI 원상복구
+		}).catch((err) => {
+			console.error("일정 수정 실패:", err);
 		});
 	};
 
@@ -137,6 +152,8 @@ const TodoListView = () => {
 			}
 		).then(() => {
 			fetchTodos(); 
+		}).catch((err) => {
+			console.error("일정 등록 실패:", err);
 		});
 	};
 

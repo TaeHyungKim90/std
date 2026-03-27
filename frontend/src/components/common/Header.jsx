@@ -24,16 +24,19 @@ const Header = () => {
 		if (isLoggingOut) return;
 		if (!window.confirm("로그아웃 하시겠습니까?")) return;
 
-		try {
-			setIsLoggingOut(true);
-			await authApi.logout('/auth/logout');
+		setIsLoggingOut(true);
+		Notify.toastPromise(authApi.logout('/auth/logout'), {
+			loading: '로그아웃 처리 중입니다...',
+			success: '로그아웃되었습니다.',
+			error: '로그아웃 처리 중 문제가 발생했습니다.'
+		}).then(() => {
 			logout();
 			navigate('/login');
-		} catch (err) {
-			alert("로그아웃 처리 중 문제가 발생했습니다.");
-		} finally {
+		}).catch((err) => {
+			console.error("로그아웃 실패:", err);
+		}).finally(() => {
 			setIsLoggingOut(false);
-		}
+		});
 	};
 
 	return (

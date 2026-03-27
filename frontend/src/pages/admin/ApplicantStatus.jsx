@@ -28,16 +28,19 @@ const ApplicantStatus = () => {
 	useEffect(() => {
 		const fetchJobs = async () => {
 			setIsLoading(true);
-			try {
-				const res = await recruitmentApi.getJobPostings();
+			Notify.toastPromise(recruitmentApi.getJobPostings(), {
+				loading: '채용 공고를 불러오는 중입니다...',
+				success: '채용 공고를 불러왔습니다.',
+				error: '공고 로드에 실패했습니다.'
+			}).then((res) => {
 				const data = res.data || res; 
 				setJobs(data);
 				if (data.length > 0) setSelectedJobId(data[0].id);
-			} catch (err) { 
+			}).catch((err) => { 
 				console.error("공고 로드 실패", err); 
-			} finally {
+			}).finally(() => {
 				setIsLoading(false);
-			}
+			});
 		};
 		fetchJobs();
 	}, [setIsLoading]);
@@ -50,15 +53,20 @@ const ApplicantStatus = () => {
 			return;
 		}
 		const fetchApplicants = async () => {
-			try {
-				const res = await recruitmentApi.getApplicationsByJob(selectedJobId);
+			Notify.toastPromise(recruitmentApi.getApplicationsByJob(selectedJobId), {
+				loading: '지원자 목록을 불러오는 중입니다...',
+				success: '지원자 목록을 불러왔습니다.',
+				error: () => {
+					setApplications([]);
+					return '지원자 로드에 실패했습니다.';
+				}
+			}).then((res) => {
 				setApplications(res.data || res);
 				setSearchTerm('');
 				setFilterStatus('all');
-			} catch (err) {
+			}).catch((err) => {
 				console.error("지원자 로드 실패:", err);
-				setApplications([]);
-			}
+			});
 		};
 		fetchApplicants();
 	}, [selectedJobId]);
@@ -77,14 +85,19 @@ const ApplicantStatus = () => {
 			app.id === appId ? { ...app, status: newStatus } : app
 		));
 
-		try {
+		const updateStatusTask = async () => {
 			await recruitmentApi.updateApplicationStatus(appId, newStatus);
-		} catch (err) {
-			alert("상태 변경 실패");
-			// 롤백 (데이터 다시 불러오기)
-			const res = await recruitmentApi.getApplicationsByJob(selectedJobId);
+			return recruitmentApi.getApplicationsByJob(selectedJobId);
+		};
+		Notify.toastPromise(updateStatusTask(), {
+			loading: '지원자 상태를 변경하는 중입니다...',
+			success: '지원자 상태가 변경되었습니다.',
+			error: '상태 변경에 실패했습니다.'
+		}).then((res) => {
 			setApplications(res.data || res);
-		}
+		}).catch((err) => {
+			console.error("상태 변경 실패:", err);
+		});
 	};
 
 

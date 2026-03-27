@@ -44,7 +44,7 @@ const SignupForm = () => {
 
 	// ✅ 아이디 중복 확인
 	const handleCheckId = useCallback(async () => {
-		if (!formData.user_login_id) return alert('아이디를 먼저 입력해 주세요.');
+		if (!formData.user_login_id) return Notify.toastWarn('아이디를 먼저 입력해 주세요.');
 
 		setIsLoading(true); // 로딩 바 켜기
 		Notify.toastPromise(authApi.checkId(formData.user_login_id), {
@@ -53,9 +53,9 @@ const SignupForm = () => {
 			error: '중복 확인 중 오류가 발생했습니다.'
 		}).then((res) => {
 			setIdStatus(res.data.available ? 'available' : 'duplicate');
-			setIsLoading(false); // 로딩 바 끄기
 		}).catch((err) => {
 			console.error("중복 확인 실패:", err);
+		}).finally(() => {
 			setIsLoading(false); // 로딩 바 끄기
 		});
 	}, [formData.user_login_id, setIsLoading]);
@@ -83,9 +83,9 @@ const SignupForm = () => {
 			}
 		}).then(() => {
 			navigate('/login');
-			setIsLoading(false);
 		}).catch((err) => {
 			console.error("회원가입 실패:", err);
+		}).finally(() => {
 			setIsLoading(false);
 		});
 	}, [formData, idStatus, navigate, setIsLoading]);

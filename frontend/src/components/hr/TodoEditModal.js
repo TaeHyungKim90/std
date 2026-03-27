@@ -54,6 +54,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		const apiRequest = mode === 'edit'
 			? todoService.updateTodo(event.id, todoData)
 			: todoService.createTodo(todoData);
+		let submitErrorMsg = null;
 
 		// 🌟 2. 지저분한 try-catch를 지우고 toastPromise로 리턴!
 		return Notify.toastPromise(
@@ -61,7 +62,10 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 			{
 				loading: mode === 'edit' ? '일정을 수정하고 있습니다...' : '새 일정을 등록하고 있습니다...',
 				success: mode === 'edit' ? '일정이 수정되었습니다. 📝' : '새 일정이 등록되었습니다. 📅',
-				error: (e) => e.response?.data?.detail || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`
+				error: (e) => {
+					submitErrorMsg = e.response?.data?.detail || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
+					return submitErrorMsg;
+				}
 			}
 		).then(async () => {
 			// 통신 성공 시 목록 갱신 및 모달 닫기
@@ -69,8 +73,9 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 			onClose();
 			return null; // 에러 메시지 없음 (성공)
 		}).catch((e) => {
-			// 에러 났을 때 formError 상태로 들어갈 메시지 리턴
-			return e.response?.data?.detail || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
+			console.error("일정 저장 실패:", e);
+		}).then((result) => {
+			return result ?? submitErrorMsg;
 		});
 	}, null);
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { messageApi } from 'api/messageApi';
 import MessageReadModal from 'components/common/MessageReadModal';
 import { formatDate } from 'utils/commonUtils';
@@ -10,12 +11,15 @@ const MyMessages = () => {
 
     // 🌟 내 수신함 가져오기
     const fetchInbox = async () => {
-        try {
-            const response = await messageApi.getInbox();
+        Notify.toastPromise(messageApi.getInbox(), {
+            loading: '수신함을 불러오는 중입니다...',
+            success: '수신함을 불러왔습니다.',
+            error: '수신함을 불러오지 못했습니다.'
+        }).then((response) => {
             setMessages(response.data || response);
-        } catch (error) {
+        }).catch((error) => {
             console.error("수신함 불러오기 실패:", error);
-        }
+        });
     };
 
     useEffect(() => {
@@ -29,15 +33,18 @@ const MyMessages = () => {
 
         // 안 읽은 개인 메시지인 경우 읽음 처리 (전체 공지는 로직에 따라 다를 수 있음)
         if (!msg.is_read) {
-            try {
-                await messageApi.markAsRead(msg.id);
+            Notify.toastPromise(messageApi.markAsRead(msg.id), {
+                loading: '읽음 상태를 반영하는 중입니다...',
+                success: '읽음 상태가 반영되었습니다.',
+                error: '읽음 처리에 실패했습니다.'
+            }).then(() => {
                 // 화면상에서도 즉시 '읽음'으로 상태 업데이트 (새로고침 없이)
                 setMessages(prevMessages => 
                     prevMessages.map(m => m.id === msg.id ? { ...m, is_read: true } : m)
                 );
-            } catch (error) {
+            }).catch((error) => {
                 console.error("읽음 처리 실패:", error);
-            }
+            });
         }
     };
 

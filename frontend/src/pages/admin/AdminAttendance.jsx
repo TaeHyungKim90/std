@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
 import 'assets/css/admin.css';
 
@@ -8,15 +9,17 @@ const AdminAttendance = () => {
 
     useEffect(() => {
         const fetchAttendanceData = async () => {
-            try {
-                // 백엔드 API 호출 (관리자용 전체 출퇴근 기록)
-                const res = await adminApi.getAllAttendance();
+            Notify.toastPromise(adminApi.getAllAttendance(), {
+                loading: '출퇴근 기록을 불러오는 중입니다...',
+                success: '출퇴근 기록을 불러왔습니다.',
+                error: '출퇴근 기록을 불러오지 못했습니다.'
+            }).then((res) => {
                 setAttendanceList(res.data);
-            } catch (err) {
+            }).catch((err) => {
                 console.error("데이터 로드 실패:", err);
-            } finally {
+            }).finally(() => {
                 setLoading(false);
-            }
+            });
         };
         fetchAttendanceData();
     }, []);

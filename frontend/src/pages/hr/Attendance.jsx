@@ -32,9 +32,10 @@ const AttendanceView = () => {
 
 	// 오늘 상태 가져오기
 	const fetchTodayStatus = async () => {
+		setLoading(true);
 		Notify.toastPromise(attendanceApi.getTodayAttendance(), {
-			loading: '오늘 출퇴근 기록을 확인하는 중입니다...',
-			success: '출퇴근 기록을 확인했습니다.',
+			loading: '',
+			success: '',
 			error: '출퇴근 기록을 불러오지 못했습니다.'
 		}).then((res) => {
 			setTodayRecord(res.data);
@@ -43,6 +44,8 @@ const AttendanceView = () => {
 			}
 		}).catch((err) => {
 			console.error("출퇴근 기록 로드 실패", err);
+		}).finally(() => {
+			setLoading(false);
 		});
 	};
 
@@ -70,9 +73,9 @@ const AttendanceView = () => {
 			}
 		).then(() => {
 			fetchTodayStatus();
-			setLoading(false);
 		}).catch((err) => {
 			console.error("출근 처리 실패", err);
+		}).finally(() => {
 			setLoading(false);
 		});
 	};
@@ -102,9 +105,9 @@ const AttendanceView = () => {
 			}
 		).then(() => {
 			fetchTodayStatus();
-			setLoading(false);
 		}).catch((err) => {
 			console.error("퇴근 처리 실패", err);
+		}).finally(() => {
 			setLoading(false);
 		});
 	};
@@ -150,14 +153,14 @@ const AttendanceView = () => {
 							onClick={handleClockIn}
 							disabled={isClockedIn || loading}
 						>
-							{isClockedIn ? '✅ 출근 완료' : '출근하기'}
+							{loading && !isClockedIn ? '확인 중...' : (isClockedIn ? '✅ 출근 완료' : '출근하기')}
 						</button>
 						<button
 							className={`btn-clock-out ${(!isClockedIn || isClockedOut) ? 'disabled' : ''}`}
 							onClick={handleClockOut}
 							disabled={!isClockedIn || isClockedOut || loading}
 						>
-							{isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}
+							{loading && isClockedOut ? '확인 중..' : (isClockedOut ? '✅ 퇴근 완료' : '퇴근하기')}
 						</button>
 					</div>
 				</div>

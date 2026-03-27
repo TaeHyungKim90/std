@@ -15,12 +15,15 @@ const RecruitmentAdmin = () => {
 	const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
 
 	const loadJobs = async () => {
-		try {
-			const res = await recruitmentApi.getJobPostings();
+		Notify.toastPromise(recruitmentApi.getJobPostings(), {
+			loading: '채용 공고를 불러오는 중입니다...',
+			success: '채용 공고를 불러왔습니다.',
+			error: '공고 목록을 불러오지 못했습니다.'
+		}).then((res) => {
 			setJobs(res.data);
-		} catch (err) {
+		}).catch((err) => {
 			console.error("공고 목록 로드 실패", err);
-		}
+		});
 	};
 
 	useEffect(() => { loadJobs(); }, []);
@@ -34,14 +37,15 @@ const RecruitmentAdmin = () => {
 	// 👉 공고 삭제 핸들러
 	const handleDeleteClick = async (jobId) => {
 		if (!window.confirm("정말 이 공고를 삭제하시겠습니까?\n(관련 지원자 정보가 함께 삭제될 수 있습니다)")) return;
-		try {
-			await recruitmentApi.deleteJobPosting(jobId);
-			alert("공고가 삭제되었습니다.");
-			loadJobs(); // 삭제 후 목록 새로고침
-		} catch (err) {
-			alert("삭제에 실패했습니다.");
+		Notify.toastPromise(recruitmentApi.deleteJobPosting(jobId), {
+			loading: '공고를 삭제하는 중입니다...',
+			success: '공고가 삭제되었습니다.',
+			error: '삭제에 실패했습니다.'
+		}).then(() => {
+			loadJobs();
+		}).catch((err) => {
 			console.error(err);
-		}
+		});
 	};
 	const handleApplicantClick = (job) => {
 		setSelectedJobForApplicants(job);

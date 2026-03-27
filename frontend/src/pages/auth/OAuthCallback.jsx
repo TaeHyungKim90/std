@@ -30,15 +30,16 @@ const OAuthCallback = () => {
 				{
 					loading: '인증 정보를 확인하고 있습니다... 🔐',
 					success: '환영합니다! 성공적으로 로그인되었습니다. 🎉',
-					error: '로그인에 실패했습니다. 다시 시도해 주세요. 🚫'
+					error: () => {
+						navigate('/login', { replace: true });
+						return '로그인에 실패했습니다. 다시 시도해 주세요. 🚫';
+					}
 				}
 			).then(() => {
 				// 성공 시 깔끔하게 메인으로 이동
 				navigate('/', { replace: true });
 			}).catch((error) => {
-				// 실패 시 에러 로그 남기고 로그인 페이지로 튕겨냄
 				console.error('소셜 로그인 처리 중 에러:', error);
-				navigate('/login', { replace: true });
 			});
 		};
 

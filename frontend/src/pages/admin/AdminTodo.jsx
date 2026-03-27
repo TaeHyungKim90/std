@@ -32,9 +32,9 @@ const AdminTodo = () => {
 			});
 			setCategoryMap(newCatMap);
 			setAllTodos(todoRes.data);
-			setIsLoading(false);
 		}).catch((err) => {
 			console.error("데이터 로드 실패", err);
+        }).finally(() => {
 			setIsLoading(false);
 		});
 	};

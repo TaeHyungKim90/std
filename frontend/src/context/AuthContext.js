@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { authApi } from 'api/authApi';
 import { LoadingContext } from './LoadingContext';
 
@@ -28,23 +29,34 @@ export const AuthProvider = ({ children }) => {
 
 	// ✅ 1. 로그아웃 함수 (useCallback으로 메모이제이션)
 	const logout = useCallback(async () => {
-		try {
-			setIsLoading(true); // 전역 로딩 시작
-			await authApi.logout(); 
-		} catch (error) {
+		setIsLoading(true); // 전역 로딩 시작
+		Notify.toastPromise(authApi.logout(), {
+			loading: '로그아웃 처리 중입니다...',
+			success: '로그아웃되었습니다.',
+			error: () => {
+				resetAuthState();
+				return '로그아웃 처리에 실패했습니다.';
+			}
+		}).then(() => {
+			resetAuthState();
+		}).catch((error) => {
 			console.error("로그아웃 API 호출 실패:", error);
-		} finally {
-			resetAuthState(); // 모든 상태 초기화
+		}).finally(() => {
 			setIsLoading(false); // 전역 로딩 종료
-		}
+		});
 	}, [setIsLoading, resetAuthState]);
 
 	// ✅ 2. 인증 확인 함수 (useCallback으로 메모이제이션)
 	const checkAuth = useCallback(async () => {
-		try {
-			setIsLoading(true);
-			const res = await authApi.checkAuth();
-			
+		setIsLoading(true);
+		return Notify.toastPromise(authApi.checkAuth(), {
+			loading: '인증 상태를 확인하는 중입니다...',
+			success: '인증 상태를 확인했습니다.',
+			error: () => {
+				resetAuthState();
+				return '인증 확인에 실패했습니다.';
+			}
+		}).then((res) => {
 			if (res.data && res.data.isLoggedIn) {
 				setIsLoggedIn(true);
 				setUserName(res.data.userName);
@@ -60,13 +72,14 @@ export const AuthProvider = ({ children }) => {
 				resetAuthState();
 				return false; // 로그인 상태가 아니면 초기화
 			}
-		} catch (err) {
-			resetAuthState(); // 에러 발생 시 초기화
-			return false;
-		} finally {
+		}).catch((err) => {
+			console.error("인증 확인 실패:", err);
+		}).then((result) => {
+			return typeof result === 'boolean' ? result : false;
+		}).finally(() => {
 			setIsLoading(false);
 			setLoading(false); // 초기 인증 체크 완료 표시
-		}
+		});
 	}, [setIsLoading, resetAuthState]);
 
 	// ✅ 3. 앱 구동 시 최초 1회 인증 확인

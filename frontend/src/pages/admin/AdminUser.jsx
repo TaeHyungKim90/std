@@ -11,10 +11,15 @@ const AdminUser = () => {
     const [editingUser, setEditingUser] = useState(null);
 
     const loadUsers = async () => {
-        try {
-            const res = await adminApi.getUsers();
+        Notify.toastPromise(adminApi.getUsers(), {
+            loading: '사용자 목록을 불러오는 중입니다...',
+            success: '사용자 목록을 불러왔습니다.',
+            error: '사용자 목록을 불러오지 못했습니다.'
+        }).then((res) => {
             setUsers(res.data);
-        } catch (err) { console.error("유저 로드 실패", err); }
+        }).catch((err) => {
+            console.error("유저 로드 실패", err);
+        });
     };
 
     useEffect(() => { loadUsers(); }, []);
@@ -26,10 +31,15 @@ const AdminUser = () => {
 
     const handleDelete = async (userId) => {
         if (window.confirm("정말 삭제하시겠습니까?")) {
-            try {
-                await adminApi.deleteUser(userId);
+            Notify.toastPromise(adminApi.deleteUser(userId), {
+                loading: '사용자를 삭제하는 중입니다...',
+                success: '사용자가 삭제되었습니다.',
+                error: '삭제에 실패했습니다.'
+            }).then(() => {
                 loadUsers();
-            } catch (err) { alert("삭제 실패"); }
+            }).catch((err) => {
+                console.error("삭제 실패", err);
+            });
         }
     };
 
@@ -57,11 +67,18 @@ const AdminUser = () => {
                         style={{ backgroundColor: '#4A90E2' }} 
                         onClick={async () => {
                             if(!window.confirm("현재 날짜를 기준으로 모든 직원의 연차를 정산하시겠습니까?")) return;
-                            try {
-                                const res = await adminApi.syncVacations(); 
-                                alert(res.data?.message || "연차 정산이 완료되었습니다.");
+                            Notify.toastPromise(adminApi.syncVacations(), {
+                                loading: '연차를 일괄 정산하는 중입니다...',
+                                success: '연차 정산이 완료되었습니다.',
+                                error: '정산에 실패했습니다.'
+                            }).then((res) => {
+                                if (res.data?.message) {
+                                    Notify.toastInfo(res.data.message);
+                                }
                                 loadUsers(); 
-                            } catch (err) { alert("정산 실패"); }
+                            }).catch((err) => {
+                                console.error("정산 실패", err);
+                            });
                         }}
                     >
                         🔄 연차 일괄 정산

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
 import { formatDate } from 'utils/commonUtils';
 import 'assets/css/admin.css';
@@ -20,10 +21,12 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         const loadDashboardData = async () => {
-            try {
-                setLoading(true);
-                // 1. 실제 백엔드 API 호출 (KPI 및 이달의 휴가자)
-                const res = await adminApi.getDashboard();
+            setLoading(true);
+            Notify.toastPromise(adminApi.getDashboard(), {
+                loading: '대시보드 데이터를 불러오는 중입니다...',
+                success: '대시보드 데이터를 불러왔습니다.',
+                error: '대시보드 데이터 로드에 실패했습니다.'
+            }).then((res) => {
                 setSummary({
                     user_count: res.data.user_count,
                     vacation_count: res.data.vacation_count,
@@ -33,12 +36,11 @@ const AdminDashboard = () => {
 
                 // 3. 백엔드에서 받아온 [전 직원 연차 현황] 세팅!
                 setEmployeeBalances(res.data.employee_balances || []);
-
-            } catch (err) {
+            }).catch((err) => {
                 console.error("관리자 대시보드 데이터 로드 실패", err);
-            } finally {
+            }).finally(() => {
                 setLoading(false);
-            }
+            });
         };
         loadDashboardData();
     }, []);

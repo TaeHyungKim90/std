@@ -30,14 +30,17 @@ const MyApplicationsPage = () => {
 		setLoggedInUser(user);
 
 		const fetchMyApps = async () => {
-			try {
-				const res = await recruitmentApi.getMyApplications(user.id);
+			Notify.toastPromise(recruitmentApi.getMyApplications(user.id), {
+				loading: '지원 내역을 불러오는 중입니다...',
+				success: '지원 내역을 불러왔습니다.',
+				error: '지원 내역을 불러오지 못했습니다.'
+			}).then((res) => {
 				setApplications(res.data || res);
-			} catch (error) {
+			}).catch((error) => {
 				console.error("지원 내역 로드 실패", error);
-			} finally {
+			}).finally(() => {
 				setIsLoading(false);
-			}
+			});
 		};
 
 		fetchMyApps();
@@ -46,13 +49,15 @@ const MyApplicationsPage = () => {
 	const handleCancelApplication = async (applicationId) => {
 		if (!window.confirm("정말 지원을 취소하시겠습니까?\n취소된 내역은 복구할 수 없습니다.")) return;
 
-		try {
-			await recruitmentApi.cancelApplication(loggedInUser.id, applicationId);
-			Notify.toastSuccess("지원이 성공적으로 취소되었습니다.");
+		Notify.toastPromise(recruitmentApi.cancelApplication(loggedInUser.id, applicationId), {
+			loading: '지원을 취소하는 중입니다...',
+			success: '지원이 성공적으로 취소되었습니다.',
+			error: '지원 취소 중 오류가 발생했습니다.'
+		}).then(() => {
 			setApplications(prev => prev.filter(app => app.id !== applicationId));
-		} catch (error) {
-			Notify.toastError(error.response?.data?.detail || "지원 취소 중 오류가 발생했습니다.");
-		}
+		}).catch((error) => {
+			console.error("지원 취소 실패:", error);
+		});
 	};
 
 	if (isLoading) return <div style={{ padding: '50px', textAlign: 'center' }}>데이터를 불러오는 중입니다...</div>;

@@ -18,15 +18,18 @@ const CategoryMgmt = () => {
 	const [editForm, setEditForm] = useState({ category_key: '', category_name: '', icon: '' });
 
 	const fetchCategories = async () => {
-		try {
-			setIsLoading(true);
-			const res = await adminApi.getCategoryTypes();
+		setIsLoading(true);
+		Notify.toastPromise(adminApi.getCategoryTypes(), {
+			loading: '카테고리를 불러오는 중입니다...',
+			success: '카테고리를 불러왔습니다.',
+			error: '카테고리를 불러오지 못했습니다.'
+		}).then((res) => {
 			setCategories(res.data);
-		} catch (err) {
-			alert("카테고리 로드 실패");
-		} finally {
+		}).catch((err) => {
+			console.error("카테고리 로드 실패", err);		
+		}).finally(() => {
 			setIsLoading(false);
-		}
+		});
 	};
 
 	useEffect(() => { 
@@ -36,13 +39,18 @@ const CategoryMgmt = () => {
 
 	// 1. 등록 핸들러
 	const handleCreate = async () => {
-		if (!newCat.category_key || !newCat.category_name) return alert("필드 내용을 모두 입력하세요.");
-		try {
-			await adminApi.createCategoryType(newCat);
+		if (!newCat.category_key || !newCat.category_name) return Notify.toastWarn("필드 내용을 모두 입력하세요.");
+		Notify.toastPromise(adminApi.createCategoryType(newCat), {
+			loading: '카테고리를 등록하는 중입니다...',
+			success: '카테고리가 등록되었습니다.',
+			error: '카테고리 등록에 실패했습니다.'
+		}).then(() => {
 			setNewCat({ category_key: '', category_name: '', icon: '' });
 			setShowNewPicker(false);
 			fetchCategories();
-		} catch (err) { alert("등록 실패"); }
+		}).catch((err) => {
+			console.error("카테고리 등록 실패", err);
+		});
 	};
 
 	// 2. 수정 모드 진입
@@ -54,22 +62,35 @@ const CategoryMgmt = () => {
 
 	// 3. 수정 저장
 	const handleUpdate = async (id) => {
-		try {
+		const updateTask = async () => {
 			const { category_key, ...updateData } = editForm;
-			await adminApi.updateCategoryType(id, updateData);
+			return adminApi.updateCategoryType(id, updateData);
+		};
+		Notify.toastPromise(updateTask(), {
+			loading: '카테고리를 수정하는 중입니다...',
+			success: '카테고리가 수정되었습니다.',
+			error: '카테고리 수정에 실패했습니다.'
+		}).then(() => {
 			setEditingId(null);
 			setShowEditPicker(false);
 			fetchCategories();
-		} catch (err) { alert("수정 실패"); }
+		}).catch((err) => {
+			console.error("카테고리 수정 실패", err);
+		});
 	};
 
 	// 4. 삭제 핸들러
 	const handleDelete = async (id) => {
 		if (!window.confirm("이 카테고리를 삭제하시겠습니까?")) return;
-		try {
-			await adminApi.deleteCategoryType(id);
+		Notify.toastPromise(adminApi.deleteCategoryType(id), {
+			loading: '카테고리를 삭제하는 중입니다...',
+			success: '카테고리가 삭제되었습니다.',
+			error: '카테고리 삭제에 실패했습니다.'
+		}).then(() => {
 			fetchCategories();
-		} catch (err) { alert("삭제 실패"); }
+		}).catch((err) => {
+			console.error("카테고리 삭제 실패", err);
+		});
 	};
 
 	return (

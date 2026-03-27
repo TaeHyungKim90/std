@@ -25,7 +25,7 @@ const AdminRoute = () => {
 
 	// 🚨 3. 로그인은 했지만 관리자가 아니라면 튕겨냄 (핵심!)
 	if (userRole !== 'admin') {
-		alert("관리자 권한이 필요합니다.");
+		Notify.toastWarn("관리자 권한이 필요합니다.");
 		return <Navigate to="/my/todos" replace />;
 	}
 

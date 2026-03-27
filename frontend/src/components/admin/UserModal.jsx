@@ -36,19 +36,25 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 			// 비밀번호가 빈 값인 경우(수정 모드) 아예 필드에서 제외하거나 처리
 			...(editingUser && !formData.user_password ? { user_password: undefined } : {})
 		};
-		try {
+		const saveTask = async () => {
 			if (editingUser) {
 				// 수정 시 아이디는 변경 불가하므로 제외하고 전송
 				const { user_login_id, ...updateData } = submissionData;
-				await adminApi.updateUser(editingUser.id, updateData);
+				return adminApi.updateUser(editingUser.id, updateData);
 			} else {
-				await adminApi.createUser(submissionData);
+				return adminApi.createUser(submissionData);
 			}
-			onRefresh(); // 리스트 새로고침
+		};
+		Notify.toastPromise(saveTask(), {
+			loading: editingUser ? '사용자 정보를 수정하는 중입니다...' : '사용자를 등록하는 중입니다...',
+			success: editingUser ? '사용자 정보가 수정되었습니다.' : '사용자가 등록되었습니다.',
+			error: '저장에 실패했습니다.'
+		}).then(() => {
+			onRefresh();
 			onClose();   // 모달 닫기
-		} catch (err) {
-			alert(err.response?.data?.detail || "저장 실패");
-		}
+		}).catch((err) => {
+			console.error("사용자 저장 실패:", err);
+		});
 	};
 
 	if (!isOpen) return null;

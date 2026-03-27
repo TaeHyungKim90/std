@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { messageApi } from 'api/messageApi'; // 경로에 맞게 수정
 import MessageSendModal from 'components/admin/MessageSendModal'; // 아까 만든 모달 임포트
 import { formatDate } from 'utils/commonUtils'; // 마스터님의 깔끔한 직접 임포트 방식!
@@ -13,12 +14,15 @@ const AdminMessage = () => {
 
     // 내가 보낸 메시지(발신함) 목록 불러오기
     const fetchOutbox = async () => {
-        try {
-            const response = await messageApi.getOutbox();
+        Notify.toastPromise(messageApi.getOutbox(), {
+            loading: '발신함을 불러오는 중입니다...',
+            success: '발신함을 불러왔습니다.',
+            error: '발신함을 불러오지 못했습니다.'
+        }).then((response) => {
             setMessages(response.data || response); // 응답 구조에 따라 조정
-        } catch (error) {
+        }).catch((error) => {
             console.error("발신함 불러오기 실패:", error);
-        }
+        });
     };
 
     useEffect(() => {

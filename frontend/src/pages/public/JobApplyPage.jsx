@@ -32,8 +32,11 @@ const JobApplyPage = () => {
         setLoggedInUser(user);
 
         const checkDuplicate = async () => {
-            try {
-                const res = await recruitmentApi.getMyApplications(user.id);
+            Notify.toastPromise(recruitmentApi.getMyApplications(user.id), {
+                loading: '기존 지원 내역을 확인하는 중입니다...',
+                success: '지원 내역 확인이 완료되었습니다.',
+                error: '중복 지원 확인에 실패했습니다.'
+            }).then((res) => {
                 const applications = res.data || res;
                 if (applications.some(app => app.job_id === job.id)) {
                     if (isMounted) {
@@ -41,9 +44,9 @@ const JobApplyPage = () => {
                         navigate('/careers/my-applications', { replace: true }); 
                     }
                 }
-            } catch (error) {
+            }).catch((error) => {
                 console.error("중복 지원 검사 실패:", error);
-            }
+            });
         };
         checkDuplicate();
         return () => { isMounted = false; };
@@ -104,7 +107,6 @@ const JobApplyPage = () => {
             // 에러 로그
             console.error("지원서 제출 에러:", error);
         }).finally(() => {
-            // 버튼 비활성화 해제
             setIsSubmitting(false);
         });
     };

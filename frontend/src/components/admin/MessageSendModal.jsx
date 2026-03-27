@@ -102,9 +102,9 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 		}).then(() => {
 			onSuccess();
 			onClose();
-			setIsSubmitting(false);
 		}).catch((error) => {
 			console.error("메시지 전송 실패:", error);
+		}).finally(() => {
 			setIsSubmitting(false);
 		});
 	};

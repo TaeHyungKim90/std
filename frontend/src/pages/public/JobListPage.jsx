@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Notify from 'utils/toastUtils';
 import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 
@@ -8,12 +9,15 @@ const JobListPage = () => {
 
 	useEffect(() => {
 		const fetchJobs = async () => {
-			try {
-				const res = await recruitmentApi.getPublicJobs();
+			Notify.toastPromise(recruitmentApi.getPublicJobs(), {
+				loading: '채용 공고를 불러오는 중입니다...',
+				success: '채용 공고를 불러왔습니다.',
+				error: '공고를 불러오지 못했습니다.'
+			}).then((res) => {
 				setJobs(res.data || res);
-			} catch (error) {
+			}).catch((error) => {
 				console.error("공고 로드 실패", error);
-			}
+			});
 		};
 		fetchJobs();
 	}, []);

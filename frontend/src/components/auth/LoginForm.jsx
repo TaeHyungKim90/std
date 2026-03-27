@@ -68,9 +68,9 @@ const LoginForm = () => {
 				setUserName(userName);
 				navigate('/my/todos');
 			}
-			setIsLoading(false);
 		}).catch((err) => {
 			console.error("로그인 실패:", err);
+		}).finally(() => {
 			setIsLoading(false);
 		});
 	};
