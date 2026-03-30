@@ -4,8 +4,6 @@ import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
 import PaginationBar from 'components/common/PaginationBar';
 import { adminApi } from 'api/adminApi.js';
 import { useLoading } from 'context/LoadingContext';
-import 'assets/css/admin.css';
-
 const PAGE_SIZE = 20;
 
 const AdminTodo = () => {

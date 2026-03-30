@@ -6,8 +6,6 @@ import { useAuth } from 'context/AuthContext';
 
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
 	const { userId: currentUserId } = useAuth();
 

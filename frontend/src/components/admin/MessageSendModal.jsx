@@ -7,8 +7,6 @@ import { adminApi } from 'api/adminApi';	 // 경로 확인
 
 // 🌟 SunEditor 임포트 (CSS 포함 필수)
 import SunEditor from 'suneditor-react';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);

@@ -4,8 +4,6 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import { openFileViewer } from 'utils/fileUtils';
 import { useLoading } from 'context/LoadingContext';
 import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
-import 'assets/css/admin.css';
-
 const STATUS_OPTIONS = [
 	{ id: 'all', title: '전체 보기', color: '#111' },
 	{ id: 'applied', title: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },

@@ -3,8 +3,6 @@ import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
-import 'assets/css/admin.css';
-
 const AdminUser = () => {
     const { showLoading, hideLoading } = useLoading();
     const [users, setUsers] = useState([]);

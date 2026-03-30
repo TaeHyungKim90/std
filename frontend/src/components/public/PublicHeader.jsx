@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import 'assets/css/header.css'; // 필요시 퍼블릭 전용 CSS 사용
 import ApplicantProfileModal from './ApplicantProfileModal';
 
 const PublicHeader = () => {

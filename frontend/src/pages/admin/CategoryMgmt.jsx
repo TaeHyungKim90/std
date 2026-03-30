@@ -3,8 +3,6 @@ import * as Notify from 'utils/toastUtils';
 import EmojiPicker from 'emoji-picker-react';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
-import 'assets/css/admin.css';
-
 const CategoryMgmt = () => {
 	const [categories, setCategories] = useState([]);
 	const { showLoading, hideLoading } = useLoading();

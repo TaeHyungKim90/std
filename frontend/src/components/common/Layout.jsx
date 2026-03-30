@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import 'assets/css/header.css';
 import Header from './Header'; // 이미 만든 헤더 임포트
 import Sidebar from './Sidebar';
 const Layout = ({ isLoggedIn, isAdmin, userNickname, isLoggingOut, handleLogout }) => {

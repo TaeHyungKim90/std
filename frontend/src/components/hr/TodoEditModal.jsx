@@ -3,8 +3,6 @@ import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { todoService } from 'api/todoApi';
 import SunEditor from 'suneditor-react';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');

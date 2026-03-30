@@ -3,7 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from 'context/AuthContext';
 import LoadingBar from './LoadingBar';
-import 'assets/css/privateRoute.css';
+import 'assets/css/admin.css';
 
 const AdminRoute = () => {
 	const { isLoggedIn, userRole, loading } = useContext(AuthContext);

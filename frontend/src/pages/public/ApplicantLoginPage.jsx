@@ -38,7 +38,7 @@ const ApplicantLoginPage = () => {
 	return (
 		<div className="careers-content-wrapper auth-center-wrapper"> 
 			<div className="glass-box auth-glass-box">
-				<h2>Gachi 지원자 로그인</h2>
+				<h2>가치플레이 지원자 로그인</h2>
 				
 				<form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
 					<input 

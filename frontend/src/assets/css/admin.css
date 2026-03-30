@@ -1,5 +1,7 @@
+@import './adminDashboard.css';
+
 /* =========================================
-   GACHI PLAY MODERN ADMIN DESIGN SYSTEM
+   VALUEPLAY MODERN ADMIN DESIGN SYSTEM
 ========================================= */
 /* 브랜드 색은 global.css :root 의 --primary / --accent 사용 */
 :root {

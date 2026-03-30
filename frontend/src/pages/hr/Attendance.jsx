@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { attendanceApi } from 'api/attendanceApi';
-import 'assets/css/attendance.css';
 
 const AttendanceView = () => {
 	// 상태 관리

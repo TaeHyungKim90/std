@@ -2,8 +2,6 @@ import React from 'react';
 import { formatDate } from 'utils/commonUtils';
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const MessageReadModal = ({ isOpen, onClose, message }) => {
     if (!isOpen || !message) return null;
 

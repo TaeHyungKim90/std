@@ -16,9 +16,6 @@ import TodoEditModal from 'components/hr/TodoEditModal';
 import TodoDetailModal from 'components/common/TodoDetailModal';
 import TodoTemplateModal from 'components/hr/TodoTemplateModal';
 
-//import 'assets/css/layout.css';
-import 'assets/css/calendar.css';
-
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
 	const holidaysRef = useRef([]);

@@ -4,8 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const JobDetailPage = () => {
 	const { state } = useLocation();
 	const navigate = useNavigate();

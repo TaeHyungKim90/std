@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { holidayApi } from 'api/holidayApi';
-import 'assets/css/admin.css';
-
 /** 현재 연도 기준 −1 ~ +3 (총 5개 연도) */
 const getYearSelectOptions = () => {
 	const y = new Date().getFullYear();

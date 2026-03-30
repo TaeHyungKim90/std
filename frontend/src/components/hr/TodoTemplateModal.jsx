@@ -1,6 +1,5 @@
 import React from 'react';
 import SunEditor from 'suneditor-react';
-import 'suneditor/dist/css/suneditor.min.css';
 import * as Notify from 'utils/toastUtils';
 import { todoService } from 'api/todoApi';
 

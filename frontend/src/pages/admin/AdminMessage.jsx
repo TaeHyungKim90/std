@@ -6,8 +6,6 @@ import MessageSendModal from 'components/admin/MessageSendModal';
 import { formatDate } from 'utils/commonUtils';
 import MessageReadModal from 'components/common/MessageReadModal';
 import PaginationBar from 'components/common/PaginationBar';
-import 'assets/css/admin.css';
-
 const PAGE_SIZE = 10;
 
 const AdminMessage = () => {

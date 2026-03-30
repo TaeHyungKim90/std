@@ -3,8 +3,6 @@ import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import { formatDate } from 'utils/commonUtils';
-import 'assets/css/admin.css';
-import 'assets/css/adminDashboard.css'; // ✅ 새로 분리된 CSS 임포트
 
 const AdminDashboard = () => {
     const { showLoading, hideLoading } = useLoading();

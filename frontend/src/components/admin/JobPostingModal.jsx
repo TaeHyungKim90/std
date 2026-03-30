@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { recruitmentApi } from 'api/recruitmentApi';
 import SunEditor from 'suneditor-react';
-import 'suneditor/dist/css/suneditor.min.css';
-
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 	const [formData, setFormData] = useState({
 		title: '',

@@ -11,7 +11,7 @@
     --success-color: #3DAF7A;     /* 성공 상태도 Primary와 톤앤매너 통일 */
     --completed-color: #adb5bd;
 
-    /* ✅ BQ(Gachiplay) 전용 변수 업데이트 */
+    /* ✅ BQ(valueplay) 전용 변수 업데이트 */
     --bq-bg-main: var(--background-color); 
     --bq-bg-card: var(--white-color);
     --bq-primary: var(--primary-color);

@@ -5,8 +5,6 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
 import PaginationBar from 'components/common/PaginationBar';
-import 'assets/css/admin.css';
-
 const PAGE_SIZE = 20;
 
 const RecruitmentAdmin = () => {

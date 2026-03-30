@@ -3,8 +3,6 @@ import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import PaginationBar from 'components/common/PaginationBar';
-import 'assets/css/admin.css';
-
 const PAGE_SIZE = 20;
 
 const AdminAttendance = () => {

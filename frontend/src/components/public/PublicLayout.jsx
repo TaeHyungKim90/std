@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import PublicHeader from './PublicHeader';
+import 'assets/css/header.css';
 import 'assets/css/careers.css'; // 🌟 CSS를 여기서 단 한 번만 임포트합니다!
 
 const PublicLayout = () => {

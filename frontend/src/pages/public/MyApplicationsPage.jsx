@@ -69,14 +69,14 @@ const MyApplicationsPage = () => {
 			<div className="glass-box" style={{ padding: '40px' }}>
 				<h2 style={{ fontSize: '2.2rem', margin: '0 0 10px 0', color: '#111', fontWeight: '800' }}>내 지원 내역</h2>
 				<p style={{ color: '#444', marginBottom: '40px', fontSize: '1.05rem', fontWeight: '500' }}>
-					{loggedInUser?.name}님이 Gachi와 함께한 여정입니다.
+					{loggedInUser?.name}님이 가치플레이와 함께한 여정입니다.
 				</p>
 
 				{applications.length === 0 ? (
 					<div style={{ textAlign: 'center', padding: '60px 0', background: 'rgba(255,255,255,0.5)', borderRadius: '12px', border: '1px dashed rgba(0,0,0,0.1)' }}>
 						<div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
 						<h3 style={{ color: '#333', marginBottom: '10px' }}>아직 지원한 내역이 없습니다.</h3>
-						<p style={{ color: '#666', marginBottom: '25px' }}>지금 바로 Gachi의 새로운 포지션에 도전해 보세요!</p>
+						<p style={{ color: '#666', marginBottom: '25px' }}>지금 바로 가치플레이의 새로운 포지션에 도전해 보세요!</p>
 						<button onClick={() => navigate('/careers')} style={{ padding: '12px 24px', background: '#3FAF7A', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>
 							채용 공고 보러가기
 						</button>
