@@ -6,8 +6,8 @@ export const authApi = {
    * 1. 일반 로그인
    * POST /api/auth/login
    */
-  login: (id, pw) => 
-	client.post(`${PATH}/login`, { id, pw }),
+  login: (id, pw) =>
+	client.post(`${PATH}/login`, { id, pw }, { skipGlobalErrorToast: true }),
   /**
    * 2. 로그아웃 (쿠키 삭제)
    * POST /api/auth/logout

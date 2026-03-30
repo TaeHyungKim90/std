@@ -4,8 +4,8 @@ import { todoService } from 'api/todoApi';
 import { adminApi } from 'api/adminApi';
 import { useAuth } from 'context/AuthContext';
 
-// 🌟 1. 파서(Parser) 임포트 추가!
-import parse from 'html-react-parser'; 
+import parse from 'html-react-parser';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import 'suneditor/dist/css/suneditor.min.css';
 
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
@@ -54,10 +54,11 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 	const displayIcon = targetCategory ? targetCategory.icon : '📌';
 	const displayName = targetCategory ? targetCategory.category_name : (event.category_name || event.category);
 
-	// 🌟 2. HTML을 안전하게 렌더링하고 이미지 스타일을 살려주는 파싱 함수
 	const parseContent = (htmlString) => {
-		// 빈 값이거나 에디터 기본 빈 태그일 경우 처리
 		if (!htmlString || htmlString.trim() === "" || htmlString === "<p><br></p>") return null;
+
+		const safe = sanitizeEditorHtml(htmlString);
+		if (!safe.trim()) return null;
 
 		const options = {
 			replace: (domNode) => {
@@ -88,7 +89,7 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 				}
 			}
 		};
-		return parse(htmlString, options);
+		return parse(safe, options);
 	};
 
 	// 본문 파싱 결과 저장

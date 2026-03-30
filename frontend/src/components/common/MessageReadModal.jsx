@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatDate } from 'utils/commonUtils';
-import parse from 'html-react-parser'; 
+import parse from 'html-react-parser';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import 'suneditor/dist/css/suneditor.min.css';
 
 const MessageReadModal = ({ isOpen, onClose, message }) => {
@@ -8,6 +9,9 @@ const MessageReadModal = ({ isOpen, onClose, message }) => {
 
     const parseContent = (htmlString) => {
         if (!htmlString) return null;
+
+        const safe = sanitizeEditorHtml(htmlString);
+        if (!safe.trim()) return null;
 
         const options = {
             replace: (domNode) => {
@@ -37,7 +41,7 @@ const MessageReadModal = ({ isOpen, onClose, message }) => {
                 }
             }
         };
-        return parse(htmlString, options);
+        return parse(safe, options);
     };
 
     return (

@@ -2,8 +2,8 @@ import React from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// 🌟 1. 파서(Parser) 임포트 추가!
-import parse from 'html-react-parser'; 
+import parse from 'html-react-parser';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import 'suneditor/dist/css/suneditor.min.css';
 
 const JobDetailPage = () => {
@@ -27,9 +27,11 @@ const JobDetailPage = () => {
 		}
 	};
 
-	// 🌟 2. HTML을 안전하게 렌더링하고 이미지 스타일을 살려주는 파싱 함수
 	const parseContent = (htmlString) => {
 		if (!htmlString) return '내용이 없습니다.';
+
+		const safe = sanitizeEditorHtml(htmlString);
+		if (!safe.trim()) return '내용이 없습니다.';
 
 		const options = {
 			replace: (domNode) => {
@@ -66,7 +68,7 @@ const JobDetailPage = () => {
 			}
 		};
 
-		return parse(htmlString, options);
+		return parse(safe, options);
 	};
 
 	return (
