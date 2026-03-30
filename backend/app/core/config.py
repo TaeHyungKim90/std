@@ -26,6 +26,10 @@ class Settings(BaseSettings):
 	DATABASE_URL: Optional[str] = None
 	# True일 때만 admin/1234 기본 계정 자동 생성. 운영(ENVIRONMENT=production)에서는 반드시 False 권장.
 	BOOTSTRAP_DEFAULT_ADMIN: bool = False
+	# True일 때만 /uploads 를 정적 파일로 직접 노출. 운영에서는 False + /api/common/files/{id} 사용 권장.
+	SERVE_UPLOADS_STATIC: bool = True
+	# True일 때만 `python main.py` 실행 시 프론트 npm start를 함께 띄움. 운영·CI에서는 False.
+	DEV_AUTO_START_REACT: bool = False
 
 	class Config:
 		env_file = ENV_PATH

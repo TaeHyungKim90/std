@@ -62,10 +62,9 @@ const LoginForm = () => {
 				return errMsg;
 			}
 		}).then((res) => {
-			const { success, access_token, userId, userNickname, role, userName } = res.data;
+			const { success, userNickname, role, userName } = res.data;
 			if (success) {
-				localStorage.setItem('accessToken', access_token);
-				localStorage.setItem('userId', userId);
+				// JWT는 서버가 Set-Cookie(httpOnly)로만 설정합니다.
 
 				setIsLoggedIn(true);
 				setUserNickname(userNickname);

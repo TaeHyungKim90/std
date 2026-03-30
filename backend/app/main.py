@@ -45,7 +45,9 @@ if not os.path.exists(UPLOAD_DIR):
 	os.makedirs(UPLOAD_DIR)
 if os.path.exists(STATIC_DIR):
 	app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="static")
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+# 운영: SERVE_UPLOADS_STATIC=False 로 두고 /api/common/files/{file_id} 만 사용 (인증 필요)
+if settings.SERVE_UPLOADS_STATIC and os.path.isdir(UPLOAD_DIR):
+	app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def read_root():
@@ -79,8 +81,8 @@ def run_react():
 	atexit.register(kill_react_server)
 
 if __name__ == "__main__":
-	# 리액트 서버를 별도 스레드에서 실행
-	if os.environ.get("REACT_SERVER_STARTED") != "1":
+	# 개발 편의: .env 에 DEV_AUTO_START_REACT=true 일 때만 CRA(npm start) 자동 실행
+	if settings.DEV_AUTO_START_REACT and os.environ.get("REACT_SERVER_STARTED") != "1":
 		os.environ["REACT_SERVER_STARTED"] = "1"
 		react_thread = threading.Thread(target=run_react, daemon=True)
 		react_thread.start()

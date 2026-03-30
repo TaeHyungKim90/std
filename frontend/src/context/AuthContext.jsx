@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }) => {
 		setUserNickname('');
 		setUserId('');
 		setUserRole('user');
-		localStorage.removeItem('accessToken');
 	}, []);
 
 	// ✅ 로그아웃: API + 상태 초기화는 여기서만 수행 (Header 등에서 이중 호출 금지)
@@ -57,10 +56,6 @@ export const AuthProvider = ({ children }) => {
 				setUserNickname(res.data.userNickname);
 				setUserId(res.data.userId);
 				setUserRole(res.data.role || 'user');
-				
-				if (res.data.access_token) {
-					localStorage.setItem('accessToken', res.data.access_token);
-				}
 				return true;
 			} else {
 				resetAuthState();

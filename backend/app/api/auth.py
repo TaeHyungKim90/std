@@ -28,10 +28,10 @@ IS_PROD = settings.ENVIRONMENT == "production"
 COOKIE_OPTIONS = {
 	"key": "accessToken",
 	"httponly": True,
-	"max_age": 24 * 60 * 60,
+	"max_age": settings.ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
 	"samesite": "lax",
 	"secure": IS_PROD,
-	"path": "/"
+	"path": "/",
 }
 def generate_user_token(user):
 	"""💡 공통 헬퍼 함수: 유저 객체로 JWT 토큰 생성"""
@@ -60,12 +60,15 @@ async def login(data: auth_schemas.LoginRequest, response: Response, db: Session
 	"""일반 로그인: ID/PW 검증 후 쿠키와 토큰 반환"""
 	user = service.authenticate_user(db, data.id, data.pw)
 	
-	token=generate_user_token(user)
+	token = generate_user_token(user)
 	response.set_cookie(value=token, **COOKIE_OPTIONS)
-	
+	# access_token은 httpOnly 쿠키로만 전달 (응답 JSON에 넣지 않음 → XSS로 토큰 유출 방지)
 	return {
-		"success": True, "access_token": token, "userName": user.user_name,
-		"userNickname": user.user_nickname, "userId": user.user_login_id, "role": user.role
+		"success": True,
+		"userName": user.user_name,
+		"userNickname": user.user_nickname,
+		"userId": user.user_login_id,
+		"role": user.role,
 	}
 
 @router.post("/logout")
@@ -99,12 +102,11 @@ async def check_auth(request: Request):
 		return {"isLoggedIn": False, "access_token": None}
 
 	return {
-		"isLoggedIn": True, 
+		"isLoggedIn": True,
 		"userName": payload.get("userName"),
-		"userNickname": payload.get("userNickname"), 
+		"userNickname": payload.get("userNickname"),
 		"role": payload.get("role"),
-		"access_token": token,
-		"userId": payload.get("userId")
+		"userId": payload.get("userId"),
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)

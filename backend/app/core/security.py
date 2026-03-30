@@ -10,8 +10,8 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_DAYS = settings.ACCESS_TOKEN_EXPIRE_DAYS
 
-# 비밀번호 해싱 도구 (기존 사용자 호환성을 위해 sha256_crypt 유지)
-pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+# bcrypt 신규 해시 + 기존 DB(sha256_crypt) 검증 호환
+pwd_context = CryptContext(schemes=["bcrypt", "sha256_crypt"], deprecated="auto")
 
 # ==========================================
 # 🔐 코어 보안 & 토큰 유틸리티

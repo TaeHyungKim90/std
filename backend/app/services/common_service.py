@@ -1,25 +1,25 @@
 import os
 import shutil
-from datetime import datetime
+import uuid
 from sqlalchemy.orm import Session
 from typing import List
 from fastapi import UploadFile
 from models.common_models import UploadedFile
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "..", "static", "uploads"))
+
 async def save_files_to_db_and_disk(db: Session, files: List[UploadFile]):
-	# 저장 디렉토리 설정
-	BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-	UPLOAD_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "..", "static", "uploads"))
-	
 	if not os.path.exists(UPLOAD_DIR):
 		os.makedirs(UPLOAD_DIR)
 
 	saved_files_info = []
 
 	for file in files:
-		# 파일명 생성 (밀리초까지 넣어서 중복 완전 방지)
-		timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-		saved_name = f"{timestamp}_{file.filename}"
+		# 저장 파일명은 원본명을 넣지 않고 UUID만 사용 (경로 추측·직링크 노출 완화)
+		_, ext = os.path.splitext(file.filename or "")
+		ext = ext.lower() if ext else ""
+		saved_name = f"{uuid.uuid4().hex}{ext}"
 		full_path = os.path.join(UPLOAD_DIR, saved_name)
 
 		# 파일 크기 계산

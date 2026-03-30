@@ -198,16 +198,28 @@ const TodoListView = () => {
 					events={events}
 					editable={true}
 					droppable={true}
-					dayCellContent={(arg) => { 
+					dayCellContent={(arg) => {
 						const dateStr = new Date(arg.date.getTime() - (arg.date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 						const holiday = holidaysRef.current.find(h => h.holiday_date === dateStr);
 						const isHoliday = !!holiday;
 						let dateColor = '';
-						if (isHoliday) { dateColor = '#FF4B4B'; } else if (arg.date.getDay() === 0) { dateColor = '#FF4B4B'; } else if (arg.date.getDay() === 6) { dateColor = '#2E8AF6'; }
+						if (isHoliday) {
+							dateColor = '#FF4B4B';
+						} else if (arg.date.getDay() === 0) {
+							dateColor = '#FF4B4B';
+						} else if (arg.date.getDay() === 6) {
+							dateColor = '#2E8AF6';
+						}
 						return (
-							<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', padding: '2px 4px' }}>
-								<span style={{ color: dateColor, fontWeight: isHoliday ? 'bold' : 'normal' }}>{arg.dayNumberText}</span>
-								{isHoliday && <span style={{ fontSize: '0.75rem', color: '#FF4B4B', fontWeight: 'bold', marginTop: '2px' }}>{holiday.holiday_name}</span>}
+							<div className={`fc-day-cell-custom${isHoliday ? ' fc-day-cell-custom--holiday' : ''}`}>
+								{isHoliday && (
+									<span className="fc-holiday-label" title={holiday.holiday_name}>
+										{holiday.holiday_name}
+									</span>
+								)}
+								<span className="fc-day-number-text" style={{ color: dateColor, fontWeight: isHoliday ? 'bold' : 'normal' }}>
+									{arg.dayNumberText}
+								</span>
 							</div>
 						);
 					}}

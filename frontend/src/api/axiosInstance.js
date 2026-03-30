@@ -24,15 +24,10 @@ function isCredentialLoginRequest(config) {
 	);
 }
 
+// 인증: httpOnly 쿠키(accessToken). localStorage JWT는 사용하지 않음(XSS 완화).
 client.interceptors.request.use(
 	(config) => {
-		const token = localStorage.getItem('accessToken');
-
-		if (token && token !== 'null') {
-			config.headers.Authorization = `Bearer ${token}`;
-		} else {
-			delete config.headers.Authorization;
-		}
+		delete config.headers.Authorization;
 		return config;
 	},
 	(error) => Promise.reject(error)
