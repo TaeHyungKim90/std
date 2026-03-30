@@ -9,17 +9,26 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # 수정된 경로 반영 (backend 폴더 구조에 맞춤)
 from db.session import init_db
 from api import api_router# 분리한 라우터들 가져오기
 from core.config import settings
+from core.limiter import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	init_db() # 👈 실행!
 	yield
 app = FastAPI(title="HR Management System", lifespan=lifespan)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# CORS보다 먼저 등록 → 요청 시 CORS가 바깥에서 먼저 처리(프리플라이트 등)
+app.add_middleware(SlowAPIMiddleware)
 
 # 2. CORS 설정 (React 연동 필수)
 # 반드시 allow_credentials=True여야 check-auth 세션 쿠키가 공유됩니다.

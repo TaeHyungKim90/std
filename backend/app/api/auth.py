@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.security import create_access_token, decode_auth_token
+from core.limiter import limiter
 from db.session import get_db
 from schemas import auth_schemas
 from services import auth_service as service
@@ -56,7 +57,8 @@ def _create_social_login_response(user):
 # ==========================================
 
 @router.post("/login", response_model=auth_schemas.LoginResponse)
-async def login(data: auth_schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, data: auth_schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
 	"""일반 로그인: ID/PW 검증 후 쿠키와 토큰 반환"""
 	user = service.authenticate_user(db, data.id, data.pw)
 	

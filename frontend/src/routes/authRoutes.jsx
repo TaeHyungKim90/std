@@ -1,18 +1,19 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import AuthLayout from 'components/auth/AuthLayout';
-import LoginPage from 'pages/auth/LoginPage';
-import SignupPage from 'pages/auth/SignupPage';
-import OAuthCallback from 'pages/auth/OAuthCallback';
+
+const LoginPage = lazy(() => import('pages/auth/LoginPage'));
+const SignupPage = lazy(() => import('pages/auth/SignupPage'));
+const OAuthCallback = lazy(() => import('pages/auth/OAuthCallback'));
 
 const authRoutes = (
-  <>
-  <Route element={<AuthLayout />}>
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/signup" element={<SignupPage />} />
-  </Route>
-  <Route path="/oauth/callback" element={<OAuthCallback />} />
-  </>
+	<>
+		<Route element={<AuthLayout />}>
+			<Route path="/login" element={<LoginPage />} />
+			<Route path="/signup" element={<SignupPage />} />
+		</Route>
+		<Route path="/oauth/callback" element={<OAuthCallback />} />
+	</>
 );
 
 export default authRoutes;

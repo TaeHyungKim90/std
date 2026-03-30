@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LoadingProvider } from './context/LoadingContext';
-import AppRoutes from './routes'; // 위에서 만든 라우터 파일 가져오기
+import LoadingBar from 'components/common/LoadingBar';
+import AppRoutes from './routes';
 
 // CSS 한곳에서 관리
 import './assets/css/global.css';
@@ -17,8 +18,9 @@ function App() {
 		<LoadingProvider>
 			<AuthProvider>
 				<BrowserRouter>
-					{/* 모든 페이지에 공통으로 들어갈 레이아웃(헤더 등)이 있다면 여기에 위치 */}
-					<AppRoutes /> {/* 실제 주소에 따른 컴포넌트 렌더링 */}
+					<Suspense fallback={<LoadingBar text="페이지를 불러오는 중..." />}>
+						<AppRoutes />
+					</Suspense>
 					<Toaster 
 						position="top-center" 
 						toastOptions={{
