@@ -4,13 +4,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from core.config import settings
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_NAME = "todo.db"
 DB_PATH = os.path.join(BASE_DIR, DB_NAME)
 
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
+_raw_url = (settings.DATABASE_URL or "").strip()
+SQLALCHEMY_DATABASE_URL = _raw_url if _raw_url else f"sqlite:///{DB_PATH}"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+_connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -32,19 +36,22 @@ def init_db():
 	
 	db = SessionLocal()
 	try:
-		# 관리자 계정 존재 여부 확인
-		admin = db.query(User).filter(User.user_login_id == "admin").first()
-		if not admin:
-			print("--- 🛠️ 초기 관리자 계정(admin)을 생성합니다 ---")
-			new_admin = User(
-				user_login_id="admin",
-				user_password=get_password_hash("1234"),
-				user_name="관리자",
-				user_nickname="관리자",
-				role="admin"
-			)
-			db.add(new_admin)
-			print("--- ✅ 생성 완료: ID(admin) / PW(1234) ---")
+		# 개발용 기본 관리자(admin/1234) — BOOTSTRAP_DEFAULT_ADMIN=true 일 때만 (운영에서는 False 권장)
+		if settings.BOOTSTRAP_DEFAULT_ADMIN:
+			admin = db.query(User).filter(User.user_login_id == "admin").first()
+			if not admin:
+				print("--- 🛠️ 초기 관리자 계정(admin)을 생성합니다 (BOOTSTRAP_DEFAULT_ADMIN) ---")
+				new_admin = User(
+					user_login_id="admin",
+					user_password=get_password_hash("1234"),
+					user_name="관리자",
+					user_nickname="관리자",
+					role="admin"
+				)
+				db.add(new_admin)
+				print("--- ✅ 생성 완료: ID(admin) / PW(1234) — 운영 배포 전 반드시 변경 또는 비활성화 ---")
+		elif settings.ENVIRONMENT == "production":
+			print("--- ℹ️ BOOTSTRAP_DEFAULT_ADMIN=false — 기본 관리자 자동 생성을 건너뜁니다. ---")
 		category_count = db.query(TodoCategoryType).count()
 		if category_count == 0:
 			print("--- 🏷️ 기본 카테고리(휴가, 주간보고) 생성 중 ---")

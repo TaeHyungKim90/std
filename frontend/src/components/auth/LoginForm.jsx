@@ -1,4 +1,6 @@
 // src/components/auth/LoginForm.jsx (수정된 소스)
+// 웹 브릿지(WebView ↔ 네이티브) 연결 테스트: 상위 페이지 `pages/auth/LoginPage.jsx`의
+// 「앱 브릿지 연결 테스트」 버튼에서 `window.ReactNativeWebView.postMessage` 호출로 검증합니다.
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useNavigate } from 'react-router-dom';

@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 # 프로젝트 기존 구조에 맞춘 Base 임포트
@@ -39,6 +39,23 @@ class Message(Base):
 	
 	# 메시지 삭제 시 연결된 attachment 기록도 함께 삭제 (파일 실제 삭제는 별도 로직)
 	attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
+	# 전체 공지(is_global)는 사용자별 읽음을 이 테이블로만 판별 (messages.is_read는 개별 메시지용)
+	read_receipts = relationship("MessageReadReceipt", back_populates="message", cascade="all, delete-orphan")
+
+
+class MessageReadReceipt(Base):
+	"""전체 공지: 사용자별 읽음 여부 (공지 1건이 여러 사용자에게 각각 다른 읽음 상태)"""
+	__tablename__ = "message_read_receipts"
+	__table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_message_read_user"),)
+
+	id = Column(Integer, primary_key=True, autoincrement=True)
+	message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+	read_at = Column(DateTime, default=datetime.now)
+
+	message = relationship("Message", back_populates="read_receipts")
+	user = relationship("User", foreign_keys=[user_id])
+
 
 class MessageAttachment(Base):
 	__tablename__ = "message_attachments"
