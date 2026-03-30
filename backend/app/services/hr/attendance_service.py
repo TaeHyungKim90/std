@@ -1,7 +1,79 @@
+from datetime import date, datetime, time
+
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import date, datetime
-# ✅ 모듈 안의 특정 클래스들을 직접 임포트합니다.
-from models.hr_models import Attendance
+from sqlalchemy import or_
+
+from models.hr_models import Attendance, Todo
+from models.auth_models import User
+
+_VACATION_TODO_CATEGORIES = [
+	"vacation_full",
+	"vacation_am",
+	"vacation_pm",
+	"vacation_special",
+	"vacation_sick",
+	"official_leave",
+]
+
+
+def is_vacation_status(status_str: str | None) -> bool:
+	"""Attendance.status 문자열 기반 휴가 키워드 판별."""
+	if status_str is None:
+		return False
+	s = str(status_str)
+	s_upper = s.upper()
+	return (
+		"VACATION" in s_upper
+		or "VAC" in s_upper
+		or "휴가" in s
+		or "연차" in s
+		or "병가" in s
+	)
+
+
+def _is_user_on_vacation_by_todos(db: Session, user_id: str, target_date: date) -> bool:
+	day_start = datetime.combine(target_date, time.min)
+	day_end = datetime.combine(target_date, time.max)
+	q = (
+		db.query(Todo.id)
+		.filter(Todo.user_id == user_id)
+		.filter(Todo.category.in_(_VACATION_TODO_CATEGORIES))
+		.filter(Todo.start_date <= day_end)
+		.filter(or_(Todo.end_date == None, Todo.end_date >= day_start))  # noqa: E711
+	)
+	return q.first() is not None
+
+
+def assert_user_can_clock_in(db: Session, user_id: str, current_time: datetime) -> None:
+	"""출근(clock-in) 최상단 방어 로직.
+
+	1) 입사일 미등록자 차단
+	2) 오늘이 휴가면 차단
+	"""
+	user = db.query(User).filter(User.user_login_id == user_id).first()
+	if not user or user.join_date is None:
+		raise HTTPException(
+			status_code=400,
+			detail="입사일이 등록되지 않은 계정은 출근할 수 없습니다.",
+		)
+
+	today_date = current_time.date()
+
+	# 이미 존재하는 Attendance가 휴가 상태면 차단
+	record = get_today_attendance(db, user_id, today_date)
+	if record and is_vacation_status(record.status):
+		raise HTTPException(
+			status_code=400,
+			detail="휴가 중에는 출근을 기록할 수 없습니다.",
+		)
+
+	# HR todos(연차/휴가 일정)로도 휴가면 차단
+	if _is_user_on_vacation_by_todos(db, user_id, today_date):
+		raise HTTPException(
+			status_code=400,
+			detail="휴가 중에는 출근을 기록할 수 없습니다.",
+		)
 
 # 1. 특정 날짜의 내 출퇴근 기록 조회
 def get_today_attendance(db: Session, user_id: str, today_date: date):
@@ -14,6 +86,9 @@ def get_today_attendance(db: Session, user_id: str, today_date: date):
 # 2. 출근 데이터 생성 (Create)
 def create_clock_in(db: Session, user_id: str, current_time: datetime, status: str, location: str, lat: float, lng: float, note: str = None):
 	"""새로운 출퇴근 레코드를 생성하고 출근 정보를 기록합니다."""
+	# 최상단 방어 로직: 입사일 미등록자/휴가자 차단
+	assert_user_can_clock_in(db, user_id, current_time)
+
 	new_record = Attendance(
 		user_id=user_id,
 		work_date=current_time.date(),

@@ -21,10 +21,18 @@ def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(ge
 	"""[유저] 출근 처리 (중복 출근 방지 로직 포함)"""
 	user_id = current_user.get("userId")
 	now = datetime.now()
-	
-	if service.get_today_attendance(db, user_id, now.date()):
+
+	# 최상단 방어 로직: 입사일 미등록자/휴가자 출근 차단
+	service.assert_user_can_clock_in(db, user_id, now)
+
+	record = service.get_today_attendance(db, user_id, now.date())
+	if record:
+		# 이미 존재하는 Attendance가 휴가 상태인 경우는 방어 로직에서 잡아야 하지만,
+		# 혹시 모를 예외를 위해 여기서도 메시지를 분기합니다.
+		if service.is_vacation_status(record.status):
+			raise HTTPException(status_code=400, detail="휴가 중에는 출근을 기록할 수 없습니다.")
 		raise HTTPException(status_code=400, detail="이미 출근 기록이 존재합니다.")
-	
+
 	return service.create_clock_in(db, user_id, now, status="NORMAL", location=req.location_name, lat=req.latitude, lng=req.longitude, note=req.note)
 
 @router.post("/clock-out", response_model=attendance_schemas.AttendanceResponse)

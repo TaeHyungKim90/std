@@ -13,6 +13,8 @@ export const AuthProvider = ({ children }) => {
 	const [userNickname, setUserNickname] = useState('');
 	const [userRole, setUserRole] = useState('user');
 	const [userId, setUserId] = useState('');
+	const [joinDate, setJoinDate] = useState(null);
+	const [resignationDate, setResignationDate] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const isLoggedInRef = useRef(false);
 
@@ -29,6 +31,8 @@ export const AuthProvider = ({ children }) => {
 		setUserNickname('');
 		setUserId('');
 		setUserRole('user');
+		setJoinDate(null);
+		setResignationDate(null);
 	}, []);
 
 	// ✅ 로그아웃: API + 상태 초기화는 여기서만 수행 (Header 등에서 이중 호출 금지)
@@ -63,6 +67,8 @@ export const AuthProvider = ({ children }) => {
 				setUserNickname(res.data.userNickname);
 				setUserId(res.data.userId);
 				setUserRole(res.data.role || 'user');
+				setJoinDate(res.data.join_date ?? null);
+				setResignationDate(res.data.resignation_date ?? null);
 				return true;
 			} else {
 				resetAuthState();
@@ -105,6 +111,8 @@ export const AuthProvider = ({ children }) => {
 			userNickname, setUserNickname,
 			userRole, setUserRole, 
 			userId, setUserId,
+			joinDate, setJoinDate,
+			resignationDate, setResignationDate,
 			loading, logout,
 			checkAuth
 		}}>

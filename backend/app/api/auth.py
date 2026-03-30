@@ -42,6 +42,8 @@ def generate_user_token(user):
 		"userNickname": user.user_nickname, 
 		"role": user.role, 
 		"id": user.id,
+		"join_date": user.join_date.isoformat() if user.join_date else None,
+		"resignation_date": user.resignation_date.isoformat() if user.resignation_date else None,
 	}
 	return create_access_token(token_data)
 def _create_social_login_response(user):
@@ -109,6 +111,8 @@ async def check_auth(request: Request):
 		"userNickname": payload.get("userNickname"),
 		"role": payload.get("role"),
 		"userId": payload.get("userId"),
+		"join_date": payload.get("join_date"),
+		"resignation_date": payload.get("resignation_date"),
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)

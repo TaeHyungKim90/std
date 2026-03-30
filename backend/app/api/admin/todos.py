@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from db.session import get_db
 from services.auth_service import get_current_admin
 from services.admin import todos_service
+from schemas.hr import todos_schemas
 
 router = APIRouter()
 
@@ -25,3 +26,13 @@ def delete_todo_by_admin(todo_id: int, db: Session = Depends(get_db), current_ad
 	if not success:
 		raise HTTPException(status_code=404, detail="삭제하려는 일정을 찾을 수 없습니다.")
 	return {"success": True, "message": "관리자 권한으로 삭제되었습니다."}
+
+
+@router.get("/vacations/for-date", response_model=list[todos_schemas.Todo])
+def get_vacation_todos_for_date(
+	work_date: str = Query(..., description="조회할 날짜 (YYYY-MM-DD)"),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	"""[관리자] work_date에 걸친 연차/휴가(HR todos) 목록 조회 (직원별 포함)"""
+	return todos_service.get_vacation_todos_for_date(db, work_date)

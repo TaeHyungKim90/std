@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { attendanceApi } from 'api/attendanceApi';
+import { useAuth } from 'context/AuthContext';
 
 const AttendanceView = () => {
+	const { joinDate, loading: authLoading } = useAuth();
 	// 상태 관리
 	const [todayRecord, setTodayRecord] = useState(null); // 오늘 출퇴근 데이터
 	const [currentTime, setCurrentTime] = useState(new Date()); // 실시간 시계
@@ -121,6 +123,26 @@ const AttendanceView = () => {
 	const isClockedIn = !!todayRecord?.clock_in_time;
 	const isClockedOut = !!todayRecord?.clock_out_time;
 
+	const isJoinDateMissing = !authLoading && joinDate == null;
+	const hasVacationKeyword = (statusStr) => {
+		if (!statusStr) return false;
+		const s = String(statusStr);
+		const upper = s.toUpperCase();
+		return (
+			s.includes('휴가') ||
+			s.includes('연차') ||
+			upper.includes('VACATION') ||
+			upper.includes('VAC')
+		);
+	};
+	const isVacationToday = hasVacationKeyword(todayRecord?.status);
+
+	const disabledReason = isJoinDateMissing
+		? '입사일이 등록되지 않은 계정입니다.'
+		: isVacationToday
+			? '오늘은 휴가(연차)이므로 출근할 수 없습니다.'
+			: '';
+
 	return (
 		<div className="attendance-container">
 			<div className="attendance-card">
@@ -150,18 +172,37 @@ const AttendanceView = () => {
 						<button
 							className={`btn-clock-in ${isClockedIn ? 'disabled' : ''}`}
 							onClick={handleClockIn}
-							disabled={isClockedIn || loading}
+							disabled={isClockedIn || loading || isJoinDateMissing || isVacationToday}
+							title={disabledReason || ''}
 						>
-							{loading && !isClockedIn ? '확인 중...' : (isClockedIn ? '✅ 출근 완료' : '출근하기')}
+							{loading && !isClockedIn ? '확인 중...' : isClockedIn ? '✅ 출근 완료' : '출근하기'}
 						</button>
 						<button
 							className={`btn-clock-out ${(!isClockedIn || isClockedOut) ? 'disabled' : ''}`}
 							onClick={handleClockOut}
-							disabled={!isClockedIn || isClockedOut || loading}
+							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing || isVacationToday}
+							title={disabledReason || ''}
 						>
-							{loading && isClockedOut ? '확인 중..' : (isClockedOut ? '✅ 퇴근 완료' : '퇴근하기')}
+							{loading && isClockedOut ? '확인 중..' : isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}
 						</button>
 					</div>
+
+					{disabledReason ? (
+						<div
+							style={{
+								marginTop: 12,
+								padding: '12px 14px',
+								borderRadius: 10,
+								border: '1px solid #f0d5d5',
+								background: '#fff5f5',
+								color: '#b42318',
+								fontWeight: 700,
+								fontSize: '0.9rem',
+							}}
+						>
+							{disabledReason}
+						</div>
+					) : null}
 				</div>
 
 				{/* 하단 상세 정보 */}

@@ -25,6 +25,8 @@ class AuthCheckResponse(BaseModel):
 	role: Optional[str] = None
 	access_token: Optional[str] = None
 	userId: Optional[str] = None
+	join_date: Optional[date] = None
+	resignation_date: Optional[date] = None
 
 # 4. 사용자 생성 요청 (회원가입/관리자 등록)
 class UserCreate(BaseModel):
