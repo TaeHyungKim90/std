@@ -19,7 +19,7 @@ yarn-debug.log*
 yarn-error.log*
 /frontend/build/
 /frontend/dist/
-
+/mobile-app
 # 에디터 및 OS 관련
 .vscode/
 .idea/
