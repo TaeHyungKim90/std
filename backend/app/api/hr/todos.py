@@ -30,9 +30,10 @@ def update_todo_config(config_in: todos_schemas.TodoConfigBase, db: Session = De
 # --- 할 일(Todo) 본체 ---
 @router.get("/", response_model=List[todos_schemas.Todo])
 def read_todos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-	"""내 모든 일정을 조회합니다."""
+	"""일정 목록 조회. 관리자는 전체(타인 주간보고 포함), 일반 사용자는 타인 주간보고 제외."""
 	user_id = current_user.get("userId")
-	return service.get_todos(db, user_id=user_id, skip=skip, limit=limit)
+	is_admin = current_user.get("role") == "admin"
+	return service.get_todos(db, user_id=user_id, skip=skip, limit=limit, is_admin=is_admin)
 
 @router.post("/", response_model=todos_schemas.Todo)
 def create_todo(todo: todos_schemas.TodoCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):

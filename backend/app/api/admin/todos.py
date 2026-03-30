@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from db.session import get_db
 from services.auth_service import get_current_admin
@@ -7,9 +7,16 @@ from services.admin import todos_service
 router = APIRouter()
 
 @router.get("/")
-def read_all_todos(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-	"""[관리자] 전 직원의 모든 일정을 작성자 정보와 함께 조회합니다."""
-	return todos_service.get_all_todos_with_author(db)
+def read_all_todos(
+	skip: int = Query(0, ge=0),
+	limit: int = Query(20, ge=1, le=100),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	"""[관리자] 전 직원 일정 목록(페이징)."""
+	items = todos_service.get_all_todos_with_author(db, skip=skip, limit=limit)
+	total = todos_service.count_all_todos(db)
+	return {"items": items, "total": total}
 
 @router.delete("/{todo_id}")
 def delete_todo_by_admin(todo_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):

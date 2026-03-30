@@ -9,13 +9,17 @@ export const messageApi = {
 	sendMessage: (messageData) => 
 		client.post(`${PATH}`, messageData),
 
-	// 내 수신함 조회
-	getInbox: () => 
-		client.get(`${PATH}/inbox`),
+	// 내 수신함 조회 (페이징: skip, limit)
+	getInbox: (params = {}) =>
+		client.get(`${PATH}/inbox`, {
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+		}),
 
-	// 내 발신함 조회 (관리자/HR용)
-	getOutbox: () => 
-		client.get(`${PATH}/outbox`),
+	// 내 발신함 조회 (페이징)
+	getOutbox: (params = {}) =>
+		client.get(`${PATH}/outbox`, {
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+		}),
 
 	// 메시지 읽음 처리
 	markAsRead: (messageId) => 

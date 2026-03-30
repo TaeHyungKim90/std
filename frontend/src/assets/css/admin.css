@@ -1,12 +1,11 @@
 /* =========================================
    GACHI PLAY MODERN ADMIN DESIGN SYSTEM
 ========================================= */
+/* 브랜드 색은 global.css :root 의 --primary / --accent 사용 */
 :root {
-    --primary: #3FAF7A;       /* 가치플레이 Primary (민트그린) */
-    --accent: #FF6A3D;        /* Signal Orange (경고/삭제) */
-    --bg-main: #F4F6F5;       /* 아주 연한 배경 (세련된 느낌) */
-    --text-main: #141414;     /* 기본 텍스트 */
-    --text-dim: #666666;      /* 보조 텍스트 */
+    --bg-main: #F4F6F5;
+    --text-main: #141414;
+    --text-dim: #666666;
     --white-glass: rgba(255, 255, 255, 0.7);
     --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
     --shadow-hover: 0 15px 35px rgba(63, 175, 122, 0.15);
@@ -23,32 +22,36 @@
     margin: 0 auto;          
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 14px;
     flex: 1;
     min-height: 0;
     min-width: 0;
 }
 
 .admin-header {
-    margin-bottom: 10px;
+    margin-bottom: 0;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
 }
 .admin-header h2 { 
     margin-top: 0;
-    font-size: 2rem; 
+    font-size: 1.45rem; 
+    line-height: 1.25;
     color: var(--text-main); 
-    margin-bottom: 5px; 
+    margin-bottom: 4px; 
     font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
-    margin-right: 20px;
+    margin-right: 12px;
 }
 .admin-header h2 span { color: var(--primary); }
 .admin-header p { 
     color: var(--text-dim); 
-    font-size: 1rem; 
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
 }
 
 /* =========================================
@@ -115,13 +118,14 @@
 /* =========================================
    4. 🌟 테이블 공통 디자인 (가독성 극대화 모던 룩)
 ========================================= */
+/* 세로 스크롤은 .bq-main-content에 맡기고, 여기서는 가로만 (이중 스크롤·낮은 max-height로 인한 답답함 방지) */
 .admin-table-wrapper {
-    max-height: calc(100vh - 280px);
-    overflow-y: auto; overflow-x: auto; 
+    overflow-x: auto;
+    overflow-y: visible;
     background-color: var(--white-glass); 
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.8); 
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: var(--shadow-soft);
     width: 100%;
     max-width: 100%;
@@ -136,15 +140,21 @@
 .admin-table th {
     position: sticky; top: 0; z-index: 10; 
     background-color: #F8F9FA; color: #444; 
-    font-weight: 800; padding: 16px 20px; text-align: left;
+    font-weight: 800;
+    padding: 10px 14px;
+    line-height: 1.3;
+    text-align: left;
     border-bottom: 2px solid #ddd; white-space: nowrap;
+    font-size: 0.8125rem;
 }
 .admin-table td { 
-    padding: 16px 20px; 
+    padding: 8px 14px;
+    line-height: 1.35;
     border-bottom: 1px solid #eee; 
     border-right: none !important; /* 세로선 완벽 제거 */
     color: #222; 
-    vertical-align: middle; 
+    vertical-align: middle;
+    font-size: 0.875rem;
 }
 
 /* 🌟 홀/짝 줄무늬 (Zebra) */
@@ -157,61 +167,99 @@
     transition: background-color 0.2s ease;
 }
 
-.role-badge { padding: 6px 14px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; }
+.role-badge { padding: 4px 10px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; line-height: 1.2; }
 .role-badge.admin { background: #fee2e2; color: #ef4444; }
 .role-badge.user { background: #e0f2fe; color: #0284c7; }
 
 /* =========================================
-   5. 공용 버튼 디자인
+   5. 공용 버튼 (관리자 뷰 안에서만 — layout.css 일정 모달·폼과 클래스명 충돌 방지)
 ========================================= */
-.btn-primary, .btn-save, .btn-add {
+.bq-admin-view .btn-primary,
+.bq-admin-view .btn-save,
+.bq-admin-view .btn-add {
     background: var(--primary); color: white; border: none;
     padding: 10px 22px; border-radius: var(--radius-pill);
     font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
-.btn-save { padding: 8px 18px; font-size: 13px; }
-.btn-primary:hover, .btn-save:hover, .btn-add:hover { background: #328C62; transform: translateY(-1px); }
+.bq-admin-view .btn-save { padding: 8px 18px; font-size: 13px; }
+.bq-admin-view .btn-primary:hover,
+.bq-admin-view .btn-save:hover,
+.bq-admin-view .btn-add:hover { background: #328C62; transform: translateY(-1px); }
 
-.btn-edit {
+.bq-admin-view .btn-edit {
     background: #fff; color: var(--primary); border: 1px solid var(--primary);
     padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
     font-size: 12px; margin-right: 6px; transition: all 0.2s; font-weight: 600;
 }
-.btn-edit:hover { background: var(--primary); color: #fff; }
+.bq-admin-view .btn-edit:hover { background: var(--primary); color: #fff; }
 
-.btn-delete, .btn-delete-small {
+/* 표 안 액션만 — TodoDetailModal 등 모달 안 .btn-delete 는 layout.css 규칙 유지 */
+.bq-admin-view .admin-table .btn-delete,
+.bq-admin-view .admin-table .btn-delete-small {
     background: #fff; color: var(--accent); border: 1px solid var(--accent);
     padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
     font-size: 12px; transition: all 0.2s; font-weight: 600;
 }
-.btn-delete:hover, .btn-delete-small:hover { background: var(--accent); color: #fff; }
+.bq-admin-view .admin-table .btn-delete:hover,
+.bq-admin-view .admin-table .btn-delete-small:hover { background: var(--accent); color: #fff; }
 
-.btn-cancel {
+.bq-admin-view .admin-table .btn-cancel {
     background: #E8EBE9; color: var(--text-main); border: none;
     padding: 8px 18px; border-radius: var(--radius-pill); cursor: pointer;
     font-size: 13px; transition: all 0.2s; font-weight: 600;
 }
-.btn-cancel:hover { background: #dce0de; }
+.bq-admin-view .admin-table .btn-cancel:hover { background: #dce0de; }
+
+/* 관리자 전용 모달(UserModal 등)은 보통 .bq-admin-view 밖에 렌더 → 동일 pill 스타일을 .modal-content 에서도 */
+.modal-content .btn-primary,
+.modal-content .btn-save,
+.modal-content .btn-add {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.modal-content .btn-save { padding: 8px 18px; font-size: 13px; }
+.modal-content .btn-primary:hover,
+.modal-content .btn-save:hover,
+.modal-content .btn-add:hover { background: #328C62; transform: translateY(-1px); }
+
+.modal-content .btn-cancel {
+    background: #E8EBE9;
+    color: var(--text-main);
+    border: none;
+    padding: 8px 18px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.modal-content .btn-cancel:hover { background: #dce0de; }
+
+/* layout.css 의 .btn-save { flex:2 } 가 모달 푸터에서 과하게 늘어나지 않도록 */
+.modal-content .modal-actions .btn-save,
+.modal-content .modal-actions .btn-cancel,
+.modal-content .modal-actions .btn-primary {
+    flex: 0 0 auto;
+}
 
 /* =========================================
-   6. 모달 시스템
+   6. 관리자 모달 폼 (DOM이 .bq-admin-view 밖일 수 있음 → .modal-content 기준)
 ========================================= */
-.modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center; z-index: 1000;
-}
-.modal-content { 
-    background: #fff; padding: 35px; border-radius: var(--radius-card); 
-    width: 100%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-}
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dim); font-size: 0.95rem; }
-.form-group input, .form-group select { 
+.modal-content .form-group { margin-bottom: 20px; }
+.modal-content .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dim); font-size: 0.95rem; }
+.modal-content .form-group input,
+.modal-content .form-group select {
     width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; outline: none; transition: 0.2s;
 }
-.form-group input:focus, .form-group select:focus { border-color: var(--primary); }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
+.modal-content .form-group input:focus,
+.modal-content .form-group select:focus { border-color: var(--primary); }
+/* .modal-content .modal-actions → layout.css 에서 공통 정의 */
 .status-badge {
     padding: 6px 14px; 
     border-radius: var(--radius-pill); 
@@ -257,11 +305,21 @@
    8. 🌟 리스트 전용: 필터, 검색, 상태변경 버튼
 ========================================= */
 .admin-filter-section {
-    background: #fff; padding: 20px 25px; border-radius: 12px; border: 1px solid #eaeaea; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #eaeaea;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
-.admin-search-group { display: flex; align-items: center; gap: 10px; }
-.admin-search-group span { font-weight: 700; color: #333; }
-.admin-search-input { padding: 10px; width: 250px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+.admin-search-group { display: flex; align-items: center; gap: 8px; }
+.admin-search-group span { font-weight: 700; color: #333; font-size: 0.875rem; }
+.admin-search-input { padding: 7px 10px; width: 250px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.875rem; outline: none; transition: border-color 0.2s; }
 .admin-search-input:focus { border-color: var(--primary); }
 .admin-filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
 .admin-filter-btn { padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 1px solid #ddd; background-color: #fff; color: #666; transition: all 0.2s; }
@@ -272,6 +330,10 @@
 
 .admin-status-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-weight: 700; font-size: 0.9rem; outline: none; cursor: pointer; background-color: #fff; transition: all 0.2s; }
 .admin-status-select:hover { border-color: var(--primary); }
+
+.admin-pagination-bar {
+    flex-shrink: 0;
+}
 
 /* =========================================
    9. 모바일 반응형 처리
@@ -284,11 +346,11 @@
     .admin-management-grid { grid-template-columns: 1fr; gap: 15px; }
     .mgmt-section { padding: 20px; }
     .bq-btn-admin-action { padding: 14px; font-size: 1rem; }
-    .btn-primary { width: 100%; padding: 12px; }
+    .bq-admin-view .btn-primary { width: 100%; padding: 12px; }
     .category-add-box { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
     .admin-table-wrapper { border: 1px solid #eee; -webkit-overflow-scrolling: touch; }
     .admin-table { min-width: 600px; font-size: 0.9rem; }
     .admin-table th, .admin-table td { padding: 10px 8px; font-size: 13px; }
     .modal-content { width: 92%; margin: 10px; padding: 25px; max-height: 90vh; overflow-y: auto; }
-    .modal-actions { flex-direction: column; gap: 10px; }
+    .modal-content .modal-actions { flex-direction: column; gap: 10px; }
 }

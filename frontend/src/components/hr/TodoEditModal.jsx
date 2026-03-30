@@ -1,5 +1,6 @@
 import React, { useActionState, useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 import { todoService } from 'api/todoApi';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css';
@@ -63,7 +64,9 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 				loading: mode === 'edit' ? '일정을 수정하고 있습니다...' : '새 일정을 등록하고 있습니다...',
 				success: mode === 'edit' ? '일정이 수정되었습니다. 📝' : '새 일정이 등록되었습니다. 📅',
 				error: (e) => {
-					submitErrorMsg = e.response?.data?.detail || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
+					submitErrorMsg =
+						formatApiDetail(e.response?.data?.detail) ||
+						`${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
 					return submitErrorMsg;
 				}
 			}

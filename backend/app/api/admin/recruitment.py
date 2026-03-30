@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List
 from db.session import get_db
@@ -8,10 +8,15 @@ from services.auth_service import get_current_admin
 
 router = APIRouter()
 
-# 1. 모든 공고 조회
-@router.get("/jobs", response_model=List[recruitment_schemas.JobPostingResponse])
-def get_jobs(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-	return recruitment_service.get_all_job_postings(db)
+# 1. 모든 공고 조회 (페이징)
+@router.get("/jobs", response_model=recruitment_schemas.JobPostingListPage)
+def get_jobs(
+	skip: int = Query(0, ge=0),
+	limit: int = Query(20, ge=1, le=100),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return recruitment_service.get_all_job_postings(db, skip=skip, limit=limit)
 
 # 2. 모든 공고 (CUD)
 @router.post("/jobs", response_model=recruitment_schemas.JobPostingResponse)

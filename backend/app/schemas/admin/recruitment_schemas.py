@@ -24,6 +24,11 @@ class JobPostingResponse(JobPostingBase):
 	class Config:
 		from_attributes = True
 
+
+class JobPostingListPage(BaseModel):
+	items: List[JobPostingResponse]
+	total: int
+
 # --- 2. 지원자 계정 (Applicant) ---
 class ApplicantResponse(BaseModel):
 	id: int

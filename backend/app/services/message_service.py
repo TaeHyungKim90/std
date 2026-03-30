@@ -35,15 +35,18 @@ def _message_to_response(msg: Message, effective_is_read: bool) -> MessageRespon
 	return MessageResponse.model_validate(msg, from_attributes=True).model_copy(update={"is_read": effective_is_read})
 
 
-def get_my_inbox(db: Session, user_id: int):
-	"""내 수신함 (나에게 온 메시지 + 전체 공지). 공지는 사용자별 읽음(receipt) 기준."""
-	messages = db.query(Message).options(
+def get_my_inbox(db: Session, user_id: int, skip: int = 0, limit: int = 20):
+	"""내 수신함 (나에게 온 메시지 + 전체 공지). 공지는 사용자별 읽음(receipt) 기준. 페이징."""
+	base = db.query(Message).options(
 		joinedload(Message.sender),
 		joinedload(Message.receiver),
 		joinedload(Message.attachments).joinedload(MessageAttachment.file_info)
 	).filter(
 		or_(Message.receiver_id == user_id, Message.is_global == True)
-	).order_by(Message.created_at.desc()).all()
+	).order_by(Message.created_at.desc())
+
+	total = base.count()
+	messages = base.offset(skip).limit(limit).all()
 
 	global_ids = [m.id for m in messages if m.is_global]
 	receipt_ids: set[int] = set()
@@ -61,15 +64,21 @@ def get_my_inbox(db: Session, user_id: int):
 		else:
 			effective = m.is_read
 		out.append(_message_to_response(m, effective))
-	return out
+	return {"items": out, "total": total}
 
-def get_my_outbox(db: Session, sender_id: int):
-	"""내 발신함 (내가 보낸 메시지 - HR/관리자용)"""
-	return db.query(Message).options(
-		joinedload(Message.sender), 
+
+def get_my_outbox(db: Session, sender_id: int, skip: int = 0, limit: int = 20):
+	"""내 발신함 (내가 보낸 메시지). 페이징."""
+	base = db.query(Message).options(
+		joinedload(Message.sender),
 		joinedload(Message.receiver),
 		joinedload(Message.attachments).joinedload(MessageAttachment.file_info)
-	).filter(Message.sender_id == sender_id).order_by(Message.created_at.desc()).all()
+	).filter(Message.sender_id == sender_id).order_by(Message.created_at.desc())
+
+	total = base.count()
+	items = base.offset(skip).limit(limit).all()
+	out = [MessageResponse.model_validate(m, from_attributes=True) for m in items]
+	return {"items": out, "total": total}
 
 def mark_as_read(db: Session, message_id: int, user_id: int):
 	"""메시지 읽음 처리. 전체 공지는 사용자별 receipt만 추가하고 messages.is_read는 건드리지 않음."""

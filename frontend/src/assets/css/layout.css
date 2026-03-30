@@ -247,6 +247,45 @@
 .info-item:last-child { margin-bottom: 0; }
 .category-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; color: #fff; font-size: 0.85rem; font-weight: bold; }
 
+/* modal 없이 쓰는 폼 행 (지원 페이지 등) */
+.form-group {
+    margin-bottom: 18px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+/* 모달 하단 액션줄 — admin.css 미로드 페이지(수신함 등)에서도 정렬 유지 */
+.modal-content .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+/* TodoDetailModal 등: admin.css 미로드 시에도 보조 버튼 */
+.btn-secondary {
+    background: #fff;
+    color: #141414;
+    border: 1px solid #E2DFD8;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-secondary:hover {
+    background: #f8f8f8;
+    border-color: #ccc;
+}
+
 /* ==========================================
    5. 모바일 반응형 완벽 대응 (768px 이하)
    ========================================== */

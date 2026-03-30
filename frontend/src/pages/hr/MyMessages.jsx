@@ -1,21 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { messageApi } from 'api/messageApi';
 import MessageReadModal from 'components/common/MessageReadModal';
+import PaginationBar from 'components/common/PaginationBar';
 import { formatDate } from 'utils/commonUtils';
+
+const PAGE_SIZE = 20;
 
 const MyMessages = () => {
     const { showLoading, hideLoading } = useLoading();
     const [messages, setMessages] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // 🌟 내 수신함 가져오기
-    const fetchInbox = async () => {
-        const response = await messageApi.getInbox();
-        setMessages(response.data || response);
-    };
+    const fetchInbox = useCallback(async () => {
+        const skip = (page - 1) * PAGE_SIZE;
+        const response = await messageApi.getInbox({ skip, limit: PAGE_SIZE });
+        const d = response.data;
+        setMessages(Array.isArray(d?.items) ? d.items : []);
+        setTotal(typeof d?.total === 'number' ? d.total : 0);
+    }, [page]);
 
     useEffect(() => {
         showLoading("수신함을 불러오는 중입니다... ⏳");
@@ -25,7 +32,7 @@ const MyMessages = () => {
                 Notify.toastError("수신함을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
-    }, [showLoading, hideLoading]);
+    }, [fetchInbox, showLoading, hideLoading]);
 
     // 🌟 메시지 클릭 시: 모달 띄우기 & '안 읽음'이면 '읽음'으로 처리
     const handleReadMessage = async (msg) => {
@@ -109,6 +116,7 @@ const MyMessages = () => {
                     </tbody>
                 </table>
             </div>
+            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
 
             {/* 메시지 읽기 팝업 모달 */}
             <MessageReadModal 

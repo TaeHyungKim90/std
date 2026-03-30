@@ -1,10 +1,13 @@
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
 from models.auth_models import UserVacation
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
+
+# todo_category_type.category_key 및 Todo.category와 동일 (주간보고 = 비공개, 타인 열람 제한)
+_WEEKLY_CATEGORY_KEY = "weekly"
 
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
 def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
@@ -33,14 +36,17 @@ def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 		# 반차는 기간이 늘어나도 0.5일 고정 (프론트에서도 막지만 백엔드 이중 방어)
 		return 0.5
 
-# 모든 목록 조회
-def get_todos(db: Session, user_id: str, skip: int = 0, limit: int = 100):
-	return db.query(Todo).options(
-		joinedload(Todo.author)
-	).filter(
+# 모든 목록 조회 (캘린더)
+# - 관리자: 전체 일정
+# - 일반: 본인 일정 전체 + 타인의 weekly(주간보고) 제외 일정
+def get_todos(db: Session, user_id: str, skip: int = 0, limit: int = 100, is_admin: bool = False):
+	q = db.query(Todo).options(joinedload(Todo.author))
+	if is_admin:
+		return q.offset(skip).limit(limit).all()
+	return q.filter(
 		or_(
-			Todo.category != "report",
-			and_(Todo.category == "report", Todo.user_id == user_id)
+			Todo.user_id == user_id,
+			or_(Todo.category.is_(None), Todo.category != _WEEKLY_CATEGORY_KEY),
 		)
 	).offset(skip).limit(limit).all()
 

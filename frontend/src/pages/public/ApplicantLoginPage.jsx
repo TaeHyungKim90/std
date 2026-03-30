@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi'; 
 
@@ -17,7 +18,9 @@ const ApplicantLoginPage = () => {
 			{
 				loading: '로그인 중입니다...', // 🌀 로딩
 				success: (res) => `${res.data.name}님 환영합니다! 🎉`, 
-				error: (error) => error.response?.data?.detail || "이메일 또는 비밀번호가 일치하지 않습니다."
+				error: (error) =>
+					formatApiDetail(error.response?.data?.detail) ||
+					'이메일 또는 비밀번호가 일치하지 않습니다.'
 			}
 		).then((res) => {
 			// 성공 시 실행할 후속 작업 (세션 저장 및 페이지 이동)

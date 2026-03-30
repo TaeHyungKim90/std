@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 
 /**
  * Axios 인스턴스 (토큰 인터셉터 + 공통 에러 처리)
@@ -60,7 +61,8 @@ client.interceptors.response.use(
 
 		if (!config.skipGlobalErrorToast) {
 			const errorMsg =
-				error.response?.data?.detail || '서버와 통신 중 오류가 발생했습니다.';
+				formatApiDetail(error.response?.data?.detail) ||
+				'서버와 통신 중 오류가 발생했습니다.';
 			Notify.toastError(errorMsg);
 		}
 

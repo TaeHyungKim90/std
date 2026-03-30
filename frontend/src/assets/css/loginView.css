@@ -190,14 +190,17 @@ body {
     font-size: 1.1rem;
 }
 
-.input-group {
+/* 전역 .input-group 금지 — 출퇴근(Attendance) 등과 클래스명 충돌 방지 */
+.bq-login-view-container .input-group,
+.login-container .input-group {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px; /* 기존 login-input의 마진을 가져옴 */
+    margin-bottom: 15px;
 }
 
-.input-group .login-input {
-    margin-bottom: 0; /* 그룹 내에서는 마진 제거 */
+.bq-login-view-container .input-group .login-input,
+.login-container .input-group .login-input {
+    margin-bottom: 0;
     flex: 1;
 }
 

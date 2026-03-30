@@ -1,24 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
-import { messageApi } from 'api/messageApi'; // 경로에 맞게 수정
-import MessageSendModal from 'components/admin/MessageSendModal'; // 아까 만든 모달 임포트
-import { formatDate } from 'utils/commonUtils'; // 마스터님의 깔끔한 직접 임포트 방식!
+import { messageApi } from 'api/messageApi';
+import MessageSendModal from 'components/admin/MessageSendModal';
+import { formatDate } from 'utils/commonUtils';
 import MessageReadModal from 'components/common/MessageReadModal';
+import PaginationBar from 'components/common/PaginationBar';
 import 'assets/css/admin.css';
+
+const PAGE_SIZE = 10;
+
 const AdminMessage = () => {
     const { showLoading, hideLoading } = useLoading();
     const [messages, setMessages] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isReadModalOpen, setIsReadModalOpen] = useState(false);
 
-    // 내가 보낸 메시지(발신함) 목록 불러오기
-    const fetchOutbox = async () => {
-        const response = await messageApi.getOutbox();
-        setMessages(response.data || response);
-    };
+    const fetchOutbox = useCallback(async () => {
+        const skip = (page - 1) * PAGE_SIZE;
+        const response = await messageApi.getOutbox({ skip, limit: PAGE_SIZE });
+        const d = response.data;
+        setMessages(Array.isArray(d?.items) ? d.items : []);
+        setTotal(typeof d?.total === 'number' ? d.total : 0);
+    }, [page]);
 
     const refreshOutbox = () =>
         fetchOutbox().catch((error) => {
@@ -34,7 +42,7 @@ const AdminMessage = () => {
                 Notify.toastError("발신함을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
-    }, [showLoading, hideLoading]);
+    }, [fetchOutbox, showLoading, hideLoading]);
 
     const handleReadMessage = (msg) => {
         setSelectedMessage(msg);
@@ -101,6 +109,7 @@ const AdminMessage = () => {
                     </tbody>
                 </table>
             </div>
+            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
 
             <MessageSendModal 
                 isOpen={isModalOpen} 

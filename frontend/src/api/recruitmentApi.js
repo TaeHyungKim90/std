@@ -6,7 +6,10 @@ const PUBLIC_PATH = API_ENDPOINTS.PUBLIC_RECRUITMENT;
 
 export const recruitmentApi = {
 	// 1. 채용 공고 관리
-	getJobPostings: () => client.get(`${ADMIN_PATH}/jobs`),
+	getJobPostings: (params = {}) =>
+		client.get(`${ADMIN_PATH}/jobs`, {
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+		}),
 	createJobPosting: (payload) => client.post(`${ADMIN_PATH}/jobs`, payload),
 	updateJobPosting: (jobId, payload) => client.put(`${ADMIN_PATH}/jobs/${jobId}`, payload),
 	deleteJobPosting: (jobId) => client.delete(`${ADMIN_PATH}/jobs/${jobId}`),
@@ -23,7 +26,10 @@ export const recruitmentApi = {
 // ==========================================
 // 🌟 [Public] 일반 지원자용 API
 // ==========================================
-	getPublicJobs: () => client.get(`${PUBLIC_PATH}/jobs`),
+	getPublicJobs: (params = {}) =>
+		client.get(`${PUBLIC_PATH}/jobs`, {
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+		}),
 	
 	submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply`, payload),
 	signupApplicant: (payload) => client.post(`${PUBLIC_PATH}/signup`, payload),

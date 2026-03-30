@@ -2,9 +2,16 @@ from sqlalchemy.orm import Session
 from models import recruitment_models # 🚨 경로가 맞는지 확인 (기존: models)
 from schemas.public import recruitment_schemas # 🚨 경로가 맞는지 확인 (기존: schemas.public)
 
-def get_public_jobs(db: Session):
-	"""현재 진행 중(open)인 채용 공고만 가져옵니다."""
-	return db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.status == "open").all()
+def get_public_jobs(db: Session, skip: int = 0, limit: int = 20):
+	"""현재 진행 중(open)인 채용 공고만 페이징 조회."""
+	q = (
+		db.query(recruitment_models.JobPosting)
+		.filter(recruitment_models.JobPosting.status == "open")
+		.order_by(recruitment_models.JobPosting.created_at.desc())
+	)
+	total = q.count()
+	items = q.offset(skip).limit(limit).all()
+	return {"items": items, "total": total}
 
 def submit_application(db: Session, data: recruitment_schemas.ApplicationCreate):
 	"""지원자 계정을 확인/생성하고 지원 내역을 접수합니다."""

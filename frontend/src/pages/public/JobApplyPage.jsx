@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi'; 
 import { commonApi } from 'api/commonApi';
 import { formatPhoneNumber } from 'utils/commonUtils';
-import * as Notify from 'utils/toastUtils'; 
+import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError'; 
 
 const JobApplyPage = () => {
     const { state } = useLocation();
@@ -98,7 +99,9 @@ const JobApplyPage = () => {
             {
                 loading: '파일 업로드 및 지원서를 제출하고 있습니다... ⏳', 
                 success: '지원이 완료되었습니다! 좋은 결과가 있기를 바랍니다. 🎉',
-                error: (error) => error.response?.data?.detail || "지원 중 오류가 발생했습니다."
+                error: (error) =>
+                    formatApiDetail(error.response?.data?.detail) ||
+                    '지원 중 오류가 발생했습니다.'
             }
         ).then(() => {
             // 전부 다 성공했을 때의 처리

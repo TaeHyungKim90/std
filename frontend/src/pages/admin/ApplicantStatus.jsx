@@ -29,10 +29,20 @@ const ApplicantStatus = () => {
 		const fetchJobs = async () => {
 			showLoading("채용 공고와 전형 상태를 불러오는 중입니다... ⏳");
 			try {
-				const res = await recruitmentApi.getJobPostings();
-				const data = res.data || res;
-				setJobs(data);
-				if (data.length > 0) setSelectedJobId(data[0].id);
+				// API는 limit 최대 100(le=100). 공고가 많으면 페이지를 이어 붙입니다.
+				const pageSize = 100;
+				const all = [];
+				let skip = 0;
+				for (;;) {
+					const res = await recruitmentApi.getJobPostings({ skip, limit: pageSize });
+					const d = res.data;
+					const items = Array.isArray(d?.items) ? d.items : [];
+					all.push(...items);
+					if (items.length < pageSize) break;
+					skip += pageSize;
+				}
+				setJobs(all);
+				if (all.length > 0) setSelectedJobId(all[0].id);
 			} catch (err) {
 				console.error("공고 로드 실패", err);
 				Notify.toastError("공고 로드에 실패했습니다.");
@@ -163,8 +173,11 @@ const ApplicantStatus = () => {
 				</div>
 			</div>
 
-			{/* 🌟 2. 지원자 리스트 (표 형태) */}
-			<div className="admin-table-wrapper">
+			{/* 🌟 2. 지원자 리스트 (표 형태, 긴 목록은 영역 내 스크롤) */}
+			<div
+				className="admin-table-wrapper"
+				style={{ maxHeight: 'min(70vh, 640px)', overflowY: 'auto' }}
+			>
 				<table className="admin-table">
 					<thead>
 						<tr>

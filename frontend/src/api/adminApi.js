@@ -6,8 +6,10 @@ export const adminApi = {
    * 1. 모든 사용자의 일정 목록 조회 (관리자용)
    * GET /api/admin/all-todo-list
    */
-  getAllTodos: () => 
-	client.get(`${PATH}/todos`),
+  getAllTodos: (params = {}) =>
+	client.get(`${PATH}/todos`, {
+		params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+	}),
 
   deleteTodoByAdmin: (id) => 
 	client.delete(`${PATH}/todos/${id}`),
@@ -42,8 +44,8 @@ export const adminApi = {
   /**
    * ⏰ 출퇴근 기록 조회 (필터 포함)
    */
-  getAllAttendance: (filters) =>
-	client.get(`${PATH}/attendance/all`,filters),
+  getAllAttendance: (params = {}) =>
+	client.get(`${PATH}/attendance/all`, { params }),
   /**
    * 👥 유저 관리 기능 추가
    */

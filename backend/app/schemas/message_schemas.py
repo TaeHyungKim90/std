@@ -52,3 +52,8 @@ class MessageResponse(BaseModel):
 
 	class Config:
 		from_attributes = True
+
+
+class MessageListPage(BaseModel):
+	items: List[MessageResponse]
+	total: int

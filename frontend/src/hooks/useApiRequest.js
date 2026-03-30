@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 
 /**
  * axios `client` 호출을 감싸 로딩/데이터/에러 상태와 toastPromise를 묶습니다.
@@ -18,7 +19,9 @@ export const useApiRequest = (apiCall) => {
 				loading: '요청을 처리하는 중입니다...',
 				success: '요청이 완료되었습니다.',
 				error: (err) => {
-					const errMsg = err.response?.data?.detail || '서버 통신 중 오류가 발생했습니다.';
+					const errMsg =
+						formatApiDetail(err.response?.data?.detail) ||
+						'서버 통신 중 오류가 발생했습니다.';
 					setError(errMsg);
 					return errMsg;
 				}

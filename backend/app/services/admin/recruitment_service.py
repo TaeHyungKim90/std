@@ -19,8 +19,11 @@ def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, 
 	db.refresh(new_job)
 	return new_job
 
-def get_all_job_postings(db: Session):
-	return db.query(recruitment_models.JobPosting).order_by(recruitment_models.JobPosting.created_at.desc()).all()
+def get_all_job_postings(db: Session, skip: int = 0, limit: int = 20):
+	q = db.query(recruitment_models.JobPosting).order_by(recruitment_models.JobPosting.created_at.desc())
+	total = q.count()
+	items = q.offset(skip).limit(limit).all()
+	return {"items": items, "total": total}
 
 def update_job_posting(db: Session, job_id: int, data: recruitment_schemas.JobPostingUpdate):
 	job = db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.id == job_id).first()

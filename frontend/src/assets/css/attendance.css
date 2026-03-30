@@ -45,16 +45,22 @@
     margin-bottom: 30px;
 }
 
-.input-group {
+/* 라벨 + 셀렉트 세로 배치 (loginView 의 flex input-group 과 분리) */
+.attendance-card .input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     margin-bottom: 25px;
 }
 
-.input-group label {
+.attendance-card .input-group label {
     display: block;
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 10px;
     color: #333;
+    white-space: nowrap;
 }
 
 .bq-select {

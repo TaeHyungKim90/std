@@ -6,6 +6,10 @@ from models.auth_models import UserVacation
 def get_all_todos_with_author(db: Session, skip: int = 0, limit: int = 100):
 	return db.query(Todo).options(joinedload(Todo.author)).order_by(Todo.created_at.desc()).offset(skip).limit(limit).all()
 
+
+def count_all_todos(db: Session) -> int:
+	return db.query(Todo).count()
+
 def delete_todo_by_admin(db: Session, todo_id: int):
 	todo = db.query(Todo).filter(Todo.id == todo_id).first()
 	if not todo:

@@ -22,6 +22,10 @@
     --bq-text-main: var(--font-color);
     --bq-text-bright: var(--font-color);  
     --bq-text-dim: #8A8A8A;               /* 서브 텍스트용 부드러운 회색 */
+
+    /* admin.css 등과 공유 — 단일 브랜드 색 (기존 --primary-color와 동일) */
+    --primary: var(--primary-color);
+    --accent: var(--danger-color);
 }
 
 body {

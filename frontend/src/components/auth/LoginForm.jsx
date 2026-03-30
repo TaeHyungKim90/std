@@ -3,6 +3,7 @@
 // 「앱 브릿지 연결 테스트」 버튼에서 `window.ReactNativeWebView.postMessage` 호출로 검증합니다.
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from 'api/authApi'
 import { AuthContext } from 'context/AuthContext';
@@ -54,7 +55,9 @@ const LoginForm = () => {
 			loading: '로그인 중입니다...',
 			success: '로그인되었습니다.',
 			error: (err) => {
-				const errMsg = err.response?.data?.detail || '로그인 중 오류가 발생했습니다.';
+				const errMsg =
+					formatApiDetail(err.response?.data?.detail) ||
+					'로그인 중 오류가 발생했습니다.';
 				setError(errMsg);
 				return errMsg;
 			}

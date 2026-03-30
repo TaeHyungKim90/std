@@ -12,6 +12,11 @@ class JobPostingPublicResponse(BaseModel):
 	class Config:
 		from_attributes = True
 
+
+class JobPostingPublicListPage(BaseModel):
+	items: List[JobPostingPublicResponse]
+	total: int
+
 # 2. 일반 지원자가 폼을 제출할 때 사용하는 포맷
 class ApplicationCreate(BaseModel):
 	job_id: int

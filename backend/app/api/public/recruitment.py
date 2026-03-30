@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
 
 from db.session import get_db
 from schemas.public import recruitment_schemas
@@ -8,12 +7,16 @@ from services.public import recruitment_service as service
 
 router = APIRouter()
 
-# 1. [공개] 진행 중인 채용 공고 리스트 조회
-@router.get("/jobs", response_model=List[recruitment_schemas.JobPostingPublicResponse])
-def get_public_jobs(db: Session = Depends(get_db)):
-	"""현재 게시 중인 모든 채용 공고를 가져옵니다."""
+# 1. [공개] 진행 중인 채용 공고 리스트 조회 (페이징)
+@router.get("/jobs", response_model=recruitment_schemas.JobPostingPublicListPage)
+def get_public_jobs(
+	skip: int = Query(0, ge=0),
+	limit: int = Query(20, ge=1, le=100),
+	db: Session = Depends(get_db),
+):
+	"""현재 게시 중인 채용 공고를 페이징으로 가져옵니다."""
 	try:
-		return service.get_public_jobs(db)
+		return service.get_public_jobs(db, skip=skip, limit=limit)
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=f"공고 조회 실패: {str(e)}")
 

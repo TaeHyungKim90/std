@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatApiDetail } from 'utils/formatApiError';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -85,7 +86,7 @@ const TodoListView = () => {
 		const event = info.event.toPlainObject(); 
 		const props = event.extendedProps; 
 		if (props.isHoliday) return; 
-		setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || 'report', color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); 
+		setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || 'weekly', color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); 
 		setIsDetailOpen(true); 
 	};
 	
@@ -108,14 +109,17 @@ const TodoListView = () => {
 		Notify.toastPromise(
 			todoService.updateTodo(event.id, {
 				title: event.extendedProps.title, start_date: startDate, end_date: endDate,
-				category: event.extendedProps.category || 'report', color: event.backgroundColor
+				category: event.extendedProps.category || 'weekly', color: event.backgroundColor
 			}),
 			{
 				loading: '일정을 수정하고 있습니다...',
 				success: '일정이 성공적으로 변경되었습니다! 🔄',
 				error: (e) => {
 					info.revert();
-					return e.response?.data?.detail || "일정 수정 중 오류가 발생했습니다.";
+					return (
+						formatApiDetail(e.response?.data?.detail) ||
+						"일정 수정 중 오류가 발생했습니다."
+					);
 				}
 			}
 		).then(() => {
@@ -132,7 +136,7 @@ const TodoListView = () => {
 			start_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T00:00:00`,
 			end_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T23:59:59`,
 			color: event.backgroundColor, 
-			category: event.extendedProps?.category || 'report', 
+			category: event.extendedProps?.category || 'weekly', 
 			description: event.extendedProps?.description || '',
 			status: "CREATED"
 		};
@@ -142,7 +146,9 @@ const TodoListView = () => {
 			{
 				loading: '새로운 일정을 등록하고 있습니다...',
 				success: '일정이 성공적으로 등록되었습니다! 🎉',
-				error: (e) => e.response?.data?.detail || "일정 등록 중 오류가 발생했습니다."
+				error: (e) =>
+					formatApiDetail(e.response?.data?.detail) ||
+					"일정 등록 중 오류가 발생했습니다."
 			}
 		).then(() => {
 			refreshTodosAfterMutation();

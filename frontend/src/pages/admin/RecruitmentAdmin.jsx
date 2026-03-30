@@ -1,25 +1,32 @@
-// src/pages/admin/RecruitmentAdmin.jsx 수정
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
 import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
+import PaginationBar from 'components/common/PaginationBar';
 import 'assets/css/admin.css';
+
+const PAGE_SIZE = 20;
+
 const RecruitmentAdmin = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
+	const [total, setTotal] = useState(0);
+	const [page, setPage] = useState(1);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedJob, setSelectedJob] = useState(null);
 
 	const [isApplicantModalOpen, setIsApplicantModalOpen] = useState(false);
 	const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
 
-	const loadJobs = async () => {
-		const res = await recruitmentApi.getJobPostings();
-		setJobs(res.data);
-	};
+	const loadJobs = useCallback(async () => {
+		const skip = (page - 1) * PAGE_SIZE;
+		const res = await recruitmentApi.getJobPostings({ skip, limit: PAGE_SIZE });
+		const d = res.data;
+		setJobs(Array.isArray(d?.items) ? d.items : []);
+		setTotal(typeof d?.total === 'number' ? d.total : 0);
+	}, [page]);
 
 	const refreshJobs = () =>
 		loadJobs().catch((err) => {
@@ -35,7 +42,7 @@ const RecruitmentAdmin = () => {
 				Notify.toastError("공고 목록을 불러오지 못했습니다.");
 			})
 			.finally(() => hideLoading());
-	}, [showLoading, hideLoading]);
+	}, [loadJobs, showLoading, hideLoading]);
 
 	// 👉 수정 모달 열기 핸들러
 	const handleEditClick = (job) => {
@@ -106,6 +113,7 @@ const RecruitmentAdmin = () => {
 					</tbody>
 				</table>
 			</div>
+			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
 
 			<JobPostingModal 
 				isOpen={isModalOpen} 
