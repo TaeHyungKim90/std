@@ -1,20 +1,47 @@
 import * as Notify from 'utils/toastUtils';
+
+/** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
+function getApiOrigin() {
+	const base = process.env.REACT_APP_API_BASE_URL || '';
+	if (typeof base === 'string' && /\/api\/?$/i.test(base)) {
+		return base.replace(/\/?api\/?$/i, '').replace(/\/$/, '') || 'http://localhost:8000';
+	}
+	return (process.env.REACT_APP_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+}
+
 /**
- * 서버에 저장된 파일을 브라우저 새 창(탭)에서 열어주는 공통 함수
- * @param {string} fileUrl - DB에 저장된 파일 상대 경로 (예: /uploads/20260319_resume.pdf)
+ * 서버에 저장된 파일을 브라우저 새 창에서 엽니다.
+ * - `SERVE_UPLOADS_STATIC=false` 인 경우: httpOnly 쿠키가 전달되도록 같은 API 호스트의
+ *   `GET /api/common/files/by-saved-name/...` 로 엽니다 (직원 로그인 필요).
+ * - `REACT_APP_FILE_DOWNLOAD_VIA_API=false` 이면 예전처럼 `/uploads/...` 직접 URL (정적 마운트 필요).
+ *
+ * @param {string} fileUrl - DB 경로 (예: /uploads/uuid.pdf) 또는 http(s) URL
  */
 export const openFileViewer = (fileUrl) => {
 	if (!fileUrl) {
-		Notify.toastWarn("등록된 파일이 없습니다.");
+		Notify.toastWarn('등록된 파일이 없습니다.');
 		return;
 	}
 
-	// 🚨 환경변수에 백엔드 주소가 있다면 사용하고, 없다면 기본 로컬 주소 사용
-	const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-	
-	// 파일 URL이 이미 http로 시작하는 외부 링크라면 그대로 사용, 아니면 base URL을 붙임
-	const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${baseUrl}${fileUrl}`;
+	if (fileUrl.startsWith('http')) {
+		window.open(fileUrl, '_blank', 'noopener,noreferrer');
+		return;
+	}
 
-	// 새 창(탭)에서 파일 열기 (보안을 위해 noopener, noreferrer 추가)
+	const origin = getApiOrigin();
+	const preferApi = process.env.REACT_APP_FILE_DOWNLOAD_VIA_API !== 'false';
+
+	if (preferApi && fileUrl.startsWith('/uploads/')) {
+		const saved = fileUrl.replace(/^\/uploads\//, '').split('?')[0];
+		if (!saved) {
+			Notify.toastWarn('파일 경로가 올바르지 않습니다.');
+			return;
+		}
+		const fullUrl = `${origin}/api/common/files/by-saved-name/${encodeURIComponent(saved)}`;
+		window.open(fullUrl, '_blank', 'noopener,noreferrer');
+		return;
+	}
+
+	const fullUrl = `${origin}${fileUrl}`;
 	window.open(fullUrl, '_blank', 'noopener,noreferrer');
 };
