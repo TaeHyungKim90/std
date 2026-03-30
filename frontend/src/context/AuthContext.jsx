@@ -1,6 +1,7 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { authApi } from 'api/authApi';
+import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
 import { useLoading } from './LoadingContext';
 
@@ -12,10 +13,15 @@ export const AuthProvider = ({ children }) => {
 	const [userNickname, setUserNickname] = useState('');
 	const [userRole, setUserRole] = useState('user');
 	const [userId, setUserId] = useState('');
-	const [loading, setLoading] = useState(true); 
-	
+	const [loading, setLoading] = useState(true);
+	const isLoggedInRef = useRef(false);
+
 	// 🌟 2. 옛날 방식 대신 새로운 리모컨 함수 가져오기!
 	const { showLoading, hideLoading } = useLoading();
+
+	useEffect(() => {
+		isLoggedInRef.current = isLoggedIn;
+	}, [isLoggedIn]);
 
 	const resetAuthState = useCallback(() => {
 		setIsLoggedIn(false);
@@ -36,6 +42,7 @@ export const AuthProvider = ({ children }) => {
 			}
 		}).then(() => {
 			resetAuthState();
+			broadcastLogoutSignal();
 		}).catch((error) => {
 			console.error("로그아웃 API 호출 실패:", error);
 		});
@@ -75,6 +82,21 @@ export const AuthProvider = ({ children }) => {
 	useEffect(() => {
 		checkAuth();
 	}, [checkAuth]);
+
+	// 다른 탭에서 로그아웃 → 직원 세션이 있던 탭만 상태 초기화 + 안내 (지원자 전용 탭은 무시)
+	useEffect(() => {
+		return subscribeLogoutFromOtherTabs(() => {
+			if (!isLoggedInRef.current) return;
+			resetAuthState();
+			Notify.toastInfo('다른 탭에서 로그아웃되어 세션이 종료되었습니다.');
+			const path = window.location.pathname;
+			if (path.startsWith('/careers')) {
+				window.location.reload();
+				return;
+			}
+			window.location.replace('/login');
+		});
+	}, [resetAuthState]);
 
 	return (
 		<AuthContext value={{ 
