@@ -3,7 +3,7 @@ import shutil
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException, status
 from models.common_models import UploadedFile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -50,3 +50,36 @@ async def save_files_to_db_and_disk(db: Session, files: List[UploadFile]):
 		db.refresh(db_file)
 
 	return saved_files_info
+
+
+def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uploaded_row: UploadedFile) -> None:
+	"""메시지 첨부가 아닌 파일은 관리자만. 첨부는 발신/수신 또는 전체 공지(로그인 직원)만."""
+	from models.message_models import MessageAttachment, Message
+
+	if current_user.get("role") == "admin":
+		return
+
+	uid = current_user.get("id")
+	if uid is None:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
+
+	links = db.query(MessageAttachment).filter(MessageAttachment.file_id == uploaded_row.id).all()
+	if not links:
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="이 파일에 접근할 권한이 없습니다.",
+		)
+
+	for link in links:
+		msg = db.query(Message).filter(Message.id == link.message_id).first()
+		if not msg:
+			continue
+		if getattr(msg, "is_global", False):
+			return
+		if msg.receiver_id == uid or msg.sender_id == uid:
+			return
+
+	raise HTTPException(
+		status_code=status.HTTP_403_FORBIDDEN,
+		detail="이 파일에 접근할 권한이 없습니다.",
+	)

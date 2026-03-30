@@ -19,7 +19,7 @@ const ApplicantLoginPage = () => {
 				loading: '로그인 중입니다...', // 🌀 로딩
 				success: (res) => `${res.data.name}님 환영합니다! 🎉`, 
 				error: (error) =>
-					formatApiDetail(error.response?.data?.detail) ||
+					formatApiDetail(error) ||
 					'이메일 또는 비밀번호가 일치하지 않습니다.'
 			}
 		).then((res) => {

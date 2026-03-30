@@ -30,7 +30,7 @@ const ApplicantProfileModal = ({ isOpen, onClose, loggedInUser, onUpdateSuccess 
 				loading: '정보를 수정하고 있습니다...',
 				success: '회원 정보가 성공적으로 변경되었습니다! 🎉', // 기존 alert 대체
 				error: (error) =>
-					formatApiDetail(error.response?.data?.detail) || '정보 수정에 실패했습니다.' // 기존 alert 대체
+					formatApiDetail(error) || '정보 수정에 실패했습니다.' // 기존 alert 대체
 			}
 		).then((res) => {
 			// 성공 시 세션 업데이트 및 후속 처리

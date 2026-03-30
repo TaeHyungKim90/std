@@ -2,6 +2,7 @@ import React from 'react';
 import { formatDate } from 'utils/commonUtils';
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import { openAuthenticatedDownloadByFileId } from 'utils/fileUtils';
 const MessageReadModal = ({ isOpen, onClose, message }) => {
     if (!isOpen || !message) return null;
 
@@ -95,9 +96,28 @@ const MessageReadModal = ({ isOpen, onClose, message }) => {
                         <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem' }}>
                             {message.attachments.map(file => (
                                 <li key={file.id}>
-                                    <a href={`/api/common/download/${file.id}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            openAuthenticatedDownloadByFileId(
+                                                file.file_id,
+                                                file.file_info?.original_name || file.file_name
+                                            )
+                                        }
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            padding: 0,
+                                            cursor: 'pointer',
+                                            color: 'var(--primary)',
+                                            textDecoration: 'underline',
+                                            fontWeight: 'bold',
+                                            font: 'inherit',
+                                            textAlign: 'left',
+                                        }}
+                                    >
                                         {file.file_info?.original_name || file.file_name || '첨부파일 다운로드'}
-                                    </a>
+                                    </button>
                                 </li>
                             ))}
                         </ul>

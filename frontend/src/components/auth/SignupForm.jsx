@@ -79,7 +79,7 @@ const SignupForm = () => {
 			success: '회원가입이 완료되었습니다. 로그인해 주세요.',
 			error: (err) => {
 				const errMsg =
-					formatApiDetail(err.response?.data?.detail) ||
+					formatApiDetail(err) ||
 					'회원가입 중 오류가 발생했습니다.';
 				setError(errMsg);
 				return errMsg;

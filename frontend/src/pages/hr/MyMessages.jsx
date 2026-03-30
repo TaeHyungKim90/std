@@ -5,14 +5,15 @@ import { messageApi } from 'api/messageApi';
 import MessageReadModal from 'components/common/MessageReadModal';
 import PaginationBar from 'components/common/PaginationBar';
 import { formatDate } from 'utils/commonUtils';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 
 const PAGE_SIZE = 20;
 
 const MyMessages = () => {
     const { showLoading, hideLoading } = useLoading();
     const [messages, setMessages] = useState([]);
-    const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(null);
+    const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -29,7 +30,7 @@ const MyMessages = () => {
         fetchInbox()
             .catch((error) => {
                 console.error("수신함 불러오기 실패:", error);
-                Notify.toastError("수신함을 불러오지 못했습니다.");
+                Notify.toastError(error.message || "수신함을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
     }, [fetchInbox, showLoading, hideLoading]);
@@ -116,7 +117,7 @@ const MyMessages = () => {
                     </tbody>
                 </table>
             </div>
-            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 
             {/* 메시지 읽기 팝업 모달 */}
             <MessageReadModal 

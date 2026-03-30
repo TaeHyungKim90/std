@@ -47,6 +47,21 @@ async def download_file_by_saved_name(
 	row = db.query(UploadedFile).filter(UploadedFile.saved_name == safe).first()
 	if not row:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="파일을 찾을 수 없습니다.")
+	service.assert_user_may_download_uploaded_file(db, current_user, row)
+	return _file_response_for_row(row)
+
+
+@router.get("/download/{file_id}")
+async def download_file_legacy_path(
+	file_id: int,
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""`/files/{file_id}` 와 동일. 구 경로·북마크용 (`/api/common/download/1`)."""
+	row = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
+	if not row:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="파일을 찾을 수 없습니다.")
+	service.assert_user_may_download_uploaded_file(db, current_user, row)
 	return _file_response_for_row(row)
 
 
@@ -63,6 +78,7 @@ async def download_file(
 	row = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
 	if not row:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="파일을 찾을 수 없습니다.")
+	service.assert_user_may_download_uploaded_file(db, current_user, row)
 	return _file_response_for_row(row)
 
 

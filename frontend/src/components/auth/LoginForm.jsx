@@ -56,8 +56,7 @@ const LoginForm = () => {
 			success: '로그인되었습니다.',
 			error: (err) => {
 				const errMsg =
-					formatApiDetail(err.response?.data?.detail) ||
-					'로그인 중 오류가 발생했습니다.';
+					formatApiDetail(err) || '로그인 중 오류가 발생했습니다.';
 				setError(errMsg);
 				return errMsg;
 			}

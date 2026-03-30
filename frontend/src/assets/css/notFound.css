@@ -1,64 +1,112 @@
+/* 404 전용 — 전역 button/레이아웃과 충돌 방지 */
 .notfound-container {
-    height: 100vh;
+    box-sizing: border-box;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    margin: 0;
+    padding: 24px 16px;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #F0EEE9; /* 프로젝트 기본 배경색 */
+    background-color: var(--bq-bg-main, #f0eee9);
 }
 
 .notfound-content {
     text-align: center;
-    padding: 40px;
+    padding: 40px 24px;
+    max-width: 520px;
+    width: 100%;
 }
 
 .notfound-code {
-    font-size: 8rem;
+    font-size: clamp(4rem, 18vw, 8rem);
     font-weight: 800;
-    color: #3DAF7A; /* Primary 컬러 */
+    color: var(--primary-color, #3daf7a);
     margin: 0;
     line-height: 1;
+    letter-spacing: -0.02em;
 }
 
 .notfound-title {
-    font-size: 1.8rem;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
     color: #141414;
-    margin-top: 10px;
+    margin: 12px 0 0 0;
+    font-weight: 700;
 }
 
 .notfound-text {
     color: #666;
-    line-height: 1.6;
-    margin: 20px 0 40px 0;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    margin: 16px 0 28px 0;
 }
 
 .notfound-actions {
     display: flex;
-    gap: 15px;
+    flex-wrap: wrap;
+    gap: 12px;
     justify-content: center;
+    align-items: stretch;
 }
 
-.btn-back, .btn-home {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 8px;
+.notfound-actions .btn-back,
+.notfound-actions .btn-home {
+    box-sizing: border-box;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-size: 0.95rem;
     font-weight: 600;
+    line-height: 1.25;
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.btn-back {
+.notfound-actions .btn-back svg,
+.notfound-actions .btn-home svg {
+    flex-shrink: 0;
+    display: block;
+    vertical-align: middle;
+}
+
+.notfound-actions .btn-back {
     background-color: #fff;
     border: 1px solid #d1d5db;
     color: #4b5563;
 }
 
-.btn-home {
-    background-color: #3DAF7A;
-    border: none;
-    color: white;
+.notfound-actions .btn-home {
+    background-color: var(--primary-color, #3daf7a);
+    border: 1px solid transparent;
+    color: #fff;
 }
 
-.btn-back:hover { background-color: #f9fafb; }
-.btn-home:hover { background-color: #2d8a5f; }
+.notfound-actions .btn-back:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.notfound-actions .btn-home:hover {
+    background-color: #2d8a5f;
+}
+
+@media (max-width: 480px) {
+    .notfound-actions {
+        flex-direction: column;
+    }
+
+    .notfound-actions .btn-back,
+    .notfound-actions .btn-home {
+        width: 100%;
+    }
+}

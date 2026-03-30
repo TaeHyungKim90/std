@@ -6,13 +6,14 @@ import MessageSendModal from 'components/admin/MessageSendModal';
 import { formatDate } from 'utils/commonUtils';
 import MessageReadModal from 'components/common/MessageReadModal';
 import PaginationBar from 'components/common/PaginationBar';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 const PAGE_SIZE = 10;
 
 const AdminMessage = () => {
     const { showLoading, hideLoading } = useLoading();
     const [messages, setMessages] = useState([]);
-    const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(null);
+    const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [selectedMessage, setSelectedMessage] = useState(null);
@@ -37,7 +38,7 @@ const AdminMessage = () => {
         fetchOutbox()
             .catch((error) => {
                 console.error("발신함 불러오기 실패:", error);
-                Notify.toastError("발신함을 불러오지 못했습니다.");
+                Notify.toastError(error.message || "발신함을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
     }, [fetchOutbox, showLoading, hideLoading]);
@@ -107,7 +108,7 @@ const AdminMessage = () => {
                     </tbody>
                 </table>
             </div>
-            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+            <PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 
             <MessageSendModal 
                 isOpen={isModalOpen} 

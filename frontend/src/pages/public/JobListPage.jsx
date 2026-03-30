@@ -4,14 +4,15 @@ import { useLoading } from 'context/LoadingContext';
 import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 
 const PAGE_SIZE = 12;
 
 const JobListPage = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
-	const [total, setTotal] = useState(0);
-	const [page, setPage] = useState(1);
+	const [total, setTotal] = useState(null);
+	const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
 	const navigate = useNavigate();
 
 	const fetchJobs = useCallback(async () => {
@@ -24,7 +25,7 @@ const JobListPage = () => {
 			setTotal(typeof d?.total === 'number' ? d.total : 0);
 		} catch (error) {
 			console.error('공고 로드 실패', error);
-			Notify.toastError('공고를 불러오지 못했습니다.');
+			Notify.toastError(error.message || '공고를 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 		}
@@ -73,7 +74,7 @@ const JobListPage = () => {
 						{jobs.length === 0 && (
 							<p style={{ textAlign: 'center', color: '#666', padding: 24 }}>이 페이지에 표시할 공고가 없습니다.</p>
 						)}
-						<PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+						<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 					</>
 				)}
 			</div>

@@ -17,11 +17,13 @@ const NotFoundPage = () => {
 				</p>
 				
 				<div className="notfound-actions">
-					<button className="btn-back" onClick={() => navigate(-1)}>
-						<ArrowLeft size={18} /> 이전으로
+					<button type="button" className="btn-back" onClick={() => navigate(-1)}>
+						<ArrowLeft size={18} strokeWidth={2} aria-hidden />
+						이전으로
 					</button>
-					<button className="btn-home" onClick={() => navigate('/')}>
-						<Home size={18} /> 홈으로 이동
+					<button type="button" className="btn-home" onClick={() => navigate('/')}>
+						<Home size={18} strokeWidth={2} aria-hidden />
+						홈으로 이동
 					</button>
 				</div>
 			</div>

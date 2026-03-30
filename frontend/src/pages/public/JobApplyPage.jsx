@@ -100,7 +100,7 @@ const JobApplyPage = () => {
                 loading: '파일 업로드 및 지원서를 제출하고 있습니다... ⏳', 
                 success: '지원이 완료되었습니다! 좋은 결과가 있기를 바랍니다. 🎉',
                 error: (error) =>
-                    formatApiDetail(error.response?.data?.detail) ||
+                    formatApiDetail(error) ||
                     '지원 중 오류가 발생했습니다.'
             }
         ).then(() => {

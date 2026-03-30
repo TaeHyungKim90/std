@@ -3,13 +3,14 @@ import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import PaginationBar from 'components/common/PaginationBar';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 const PAGE_SIZE = 20;
 
 const AdminAttendance = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [attendanceList, setAttendanceList] = useState([]);
-	const [total, setTotal] = useState(0);
-	const [page, setPage] = useState(1);
+	const [total, setTotal] = useState(null);
+	const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
 	const [loading, setLoading] = useState(true);
 
 	const fetchAttendanceData = useCallback(async () => {
@@ -22,7 +23,7 @@ const AdminAttendance = () => {
 			setTotal(typeof body?.total === 'number' ? body.total : 0);
 		} catch (err) {
 			console.error('데이터 로드 실패:', err);
-			Notify.toastError('출퇴근 기록을 불러오지 못했습니다.');
+			Notify.toastError(err.message || '출퇴근 기록을 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 			setLoading(false);
@@ -107,7 +108,7 @@ const AdminAttendance = () => {
 							</tbody>
 						</table>
 					</div>
-					<PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+					<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 				</>
 			)}
 		</div>

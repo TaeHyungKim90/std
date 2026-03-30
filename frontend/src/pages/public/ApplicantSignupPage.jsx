@@ -26,7 +26,7 @@ const ApplicantSignupPage = () => {
 				loading: '회원가입을 처리하고 있습니다...', // 🌀 로딩 메시지
 				success: '회원가입이 완료되었습니다! 로그인해 주세요. 🎉', // 🟢 성공 메시지
 				error: (err) =>
-					`회원가입 실패: ${formatApiDetail(err.response?.data?.detail) || '알 수 없는 오류가 발생했습니다.'}` // 🔴 실패 메시지
+					`회원가입 실패: ${formatApiDetail(err) || '알 수 없는 오류가 발생했습니다.'}` // 🔴 실패 메시지
 			}
 		).then(() => {
 			// 성공했을 때만 로그인 페이지로 이동!

@@ -1,7 +1,13 @@
 import React from 'react';
 
 /**
- * 1-based page, skip = (page - 1) * pageSize
+ * 페이지네이션 UI (1-based).
+ * 페이지 상태는 부모에서 `useSearchParams` + `usePaginationSearchParams` 등으로 URL과 동기화하는 것을 권장합니다.
+ *
+ * @param {number} page 현재 페이지 (1 이상)
+ * @param {number} pageSize 페이지당 건수
+ * @param {number} total 전체 건수
+ * @param {(nextPage: number) => void} onPageChange 페이지 변경 시 (URL `setSearchParams` 등과 연결)
  */
 const PaginationBar = ({ page, pageSize, total, onPageChange, className = '' }) => {
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));

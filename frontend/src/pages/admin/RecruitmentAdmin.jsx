@@ -5,13 +5,14 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
 import PaginationBar from 'components/common/PaginationBar';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 const PAGE_SIZE = 20;
 
 const RecruitmentAdmin = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
-	const [total, setTotal] = useState(0);
-	const [page, setPage] = useState(1);
+	const [total, setTotal] = useState(null);
+	const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedJob, setSelectedJob] = useState(null);
 
@@ -37,7 +38,7 @@ const RecruitmentAdmin = () => {
 		loadJobs()
 			.catch((err) => {
 				console.error("공고 목록 로드 실패", err);
-				Notify.toastError("공고 목록을 불러오지 못했습니다.");
+				Notify.toastError(err.message || "공고 목록을 불러오지 못했습니다.");
 			})
 			.finally(() => hideLoading());
 	}, [loadJobs, showLoading, hideLoading]);
@@ -111,7 +112,7 @@ const RecruitmentAdmin = () => {
 					</tbody>
 				</table>
 			</div>
-			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 
 			<JobPostingModal 
 				isOpen={isModalOpen} 

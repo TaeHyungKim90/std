@@ -4,12 +4,13 @@ import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
 import PaginationBar from 'components/common/PaginationBar';
 import { adminApi } from 'api/adminApi.js';
 import { useLoading } from 'context/LoadingContext';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 const PAGE_SIZE = 20;
 
 const AdminTodo = () => {
 	const [allTodos, setAllTodos] = useState([]);
-	const [total, setTotal] = useState(0);
-	const [page, setPage] = useState(1);
+	const [total, setTotal] = useState(null);
+	const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
 	const [categoryMap, setCategoryMap] = useState({});
 	const [categories, setCategories] = useState([]);
 	const [selectedTodo, setSelectedTodo] = useState(null);
@@ -34,7 +35,7 @@ const AdminTodo = () => {
 			setTotal(typeof body?.total === 'number' ? body.total : 0);
 		} catch (err) {
 			console.error('데이터 로드 실패', err);
-			Notify.toastError('데이터를 불러오지 못했습니다.');
+			Notify.toastError(err.message || '데이터를 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 		}
@@ -142,7 +143,7 @@ const AdminTodo = () => {
 					</tbody>
 				</table>
 			</div>
-			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 
 			{isModalOpen && (
 				<TodoDetailModal

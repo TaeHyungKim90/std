@@ -4,7 +4,7 @@ import { formatApiDetail } from 'utils/formatApiError';
 
 /**
  * axios `client` 호출을 감싸 로딩/데이터/에러 상태와 toastPromise를 묶습니다.
- * 인터셉터 전역 토스트와 겹치면 API 호출 config에 `{ skipGlobalErrorToast: true }`를 넣으세요.
+ * 에러는 axios 인터셉터에서 `Error(message)`로 통일됩니다. `formatApiDetail(err)`로 메시지 추출.
  */
 export const useApiRequest = (apiCall) => {
 	const [loading, setLoading] = useState(false);
@@ -20,8 +20,7 @@ export const useApiRequest = (apiCall) => {
 				success: '요청이 완료되었습니다.',
 				error: (err) => {
 					const errMsg =
-						formatApiDetail(err.response?.data?.detail) ||
-						'서버 통신 중 오류가 발생했습니다.';
+						formatApiDetail(err) || '서버 통신 중 오류가 발생했습니다.';
 					setError(errMsg);
 					return errMsg;
 				}

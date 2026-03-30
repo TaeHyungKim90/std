@@ -114,7 +114,7 @@ const TodoListView = () => {
 				error: (e) => {
 					info.revert();
 					return (
-						formatApiDetail(e.response?.data?.detail) ||
+						formatApiDetail(e) ||
 						"일정 수정 중 오류가 발생했습니다."
 					);
 				}
@@ -144,7 +144,7 @@ const TodoListView = () => {
 				loading: '새로운 일정을 등록하고 있습니다...',
 				success: '일정이 성공적으로 등록되었습니다! 🎉',
 				error: (e) =>
-					formatApiDetail(e.response?.data?.detail) ||
+					formatApiDetail(e) ||
 					"일정 등록 중 오류가 발생했습니다."
 			}
 		).then(() => {

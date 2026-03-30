@@ -1,4 +1,5 @@
 import * as Notify from 'utils/toastUtils';
+import { client } from 'api/axiosInstance';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
 export function getApiOrigin() {
@@ -35,6 +36,30 @@ export function getFilePreviewUrl(fileUrl) {
  *
  * @param {string} fileUrl - DB 경로 (예: /uploads/uuid.pdf) 또는 http(s) URL
  */
+/**
+ * 인증이 필요한 `GET /api/common/download/{fileId}` 를 Axios로 받아 새 탭에서 엽니다.
+ * (직접 `<a href="/api/...">` 는 브라우저 전체가 JSON 에러 페이지로 바뀌므로 사용하지 않습니다.)
+ * @param {number} fileId - uploaded_files.id
+ * @param {string} [fallbackName] - 표시·다운로드용 파일명 힌트
+ */
+export async function openAuthenticatedDownloadByFileId(fileId, fallbackName) {
+	try {
+		const res = await client.get(`/common/download/${fileId}`, {
+			responseType: 'blob',
+		});
+		const blob = res.data;
+		if (!(blob instanceof Blob) || blob.size === 0) {
+			Notify.toastError('파일을 불러오지 못했습니다.');
+			return;
+		}
+		const url = URL.createObjectURL(blob);
+		window.open(url, '_blank', 'noopener,noreferrer');
+		setTimeout(() => URL.revokeObjectURL(url), 120_000);
+	} catch (err) {
+		Notify.toastError(err.message || '파일을 열 수 없습니다.');
+	}
+}
+
 export const openFileViewer = (fileUrl) => {
 	if (!fileUrl) {
 		Notify.toastWarn('등록된 파일이 없습니다.');

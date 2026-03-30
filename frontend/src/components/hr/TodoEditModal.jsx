@@ -63,7 +63,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 				success: mode === 'edit' ? '일정이 수정되었습니다. 📝' : '새 일정이 등록되었습니다. 📅',
 				error: (e) => {
 					submitErrorMsg =
-						formatApiDetail(e.response?.data?.detail) ||
+						formatApiDetail(e) ||
 						`${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
 					return submitErrorMsg;
 				}
