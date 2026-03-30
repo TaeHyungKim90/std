@@ -1,30 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { messageApi } from 'api/messageApi';
 import MessageReadModal from 'components/common/MessageReadModal';
 import { formatDate } from 'utils/commonUtils';
 
 const MyMessages = () => {
+    const { showLoading, hideLoading } = useLoading();
     const [messages, setMessages] = useState([]);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // 🌟 내 수신함 가져오기
     const fetchInbox = async () => {
-        Notify.toastPromise(messageApi.getInbox(), {
-            loading: '수신함을 불러오는 중입니다...',
-            success: '수신함을 불러왔습니다.',
-            error: '수신함을 불러오지 못했습니다.'
-        }).then((response) => {
-            setMessages(response.data || response);
-        }).catch((error) => {
-            console.error("수신함 불러오기 실패:", error);
-        });
+        const response = await messageApi.getInbox();
+        setMessages(response.data || response);
     };
 
     useEffect(() => {
-        fetchInbox();
-    }, []);
+        showLoading("수신함을 불러오는 중입니다... ⏳");
+        fetchInbox()
+            .catch((error) => {
+                console.error("수신함 불러오기 실패:", error);
+                Notify.toastError("수신함을 불러오지 못했습니다.");
+            })
+            .finally(() => hideLoading());
+    }, [showLoading, hideLoading]);
 
     // 🌟 메시지 클릭 시: 모달 띄우기 & '안 읽음'이면 '읽음'으로 처리
     const handleReadMessage = async (msg) => {

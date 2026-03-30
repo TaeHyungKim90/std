@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { messageApi } from 'api/messageApi'; // 경로 확인
 import { commonApi } from 'api/commonApi';	 // 경로 확인
 import { adminApi } from 'api/adminApi';	 // 경로 확인
@@ -9,6 +10,7 @@ import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css';
 
 const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
+	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,15 +33,16 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	}, [isOpen]);
 
 	const fetchUsers = async () => {
-		Notify.toastPromise(adminApi.getUsers(), {
-			loading: '직원 목록을 불러오는 중입니다...',
-			success: '직원 목록을 불러왔습니다.',
-			error: '직원 목록을 불러오지 못했습니다.'
-		}).then((response) => {
+		showLoading("직원 목록을 불러오는 중입니다... ⏳");
+		try {
+			const response = await adminApi.getUsers();
 			setUsers(response.data || []);
-		}).catch((error) => {
+		} catch (error) {
 			console.error("직원 목록 로드 실패:", error);
-		});
+			Notify.toastError("직원 목록을 불러오지 못했습니다.");
+		} finally {
+			hideLoading();
+		}
 	};
 
 	const handleInputChange = (e) => {

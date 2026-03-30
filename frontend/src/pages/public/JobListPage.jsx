@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 
 const JobListPage = () => {
+	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
 	const navigate = useNavigate();
 
 	useEffect(() => {
 		const fetchJobs = async () => {
-			Notify.toastPromise(recruitmentApi.getPublicJobs(), {
-				loading: '채용 공고를 불러오는 중입니다...',
-				success: '채용 공고를 불러왔습니다.',
-				error: '공고를 불러오지 못했습니다.'
-			}).then((res) => {
+			showLoading("채용 공고를 불러오는 중입니다... ⏳");
+			try {
+				const res = await recruitmentApi.getPublicJobs();
 				setJobs(res.data || res);
-			}).catch((error) => {
+			} catch (error) {
 				console.error("공고 로드 실패", error);
-			});
+				Notify.toastError("공고를 불러오지 못했습니다.");
+			} finally {
+				hideLoading();
+			}
 		};
 		fetchJobs();
-	}, []);
+	}, [showLoading, hideLoading]);
 
 	return (
 		<div className="careers-content-wrapper">

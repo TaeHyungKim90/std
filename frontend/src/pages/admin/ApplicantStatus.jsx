@@ -28,19 +28,17 @@ const ApplicantStatus = () => {
 	useEffect(() => {
 		const fetchJobs = async () => {
 			showLoading("채용 공고와 전형 상태를 불러오는 중입니다... ⏳");
-			Notify.toastPromise(recruitmentApi.getJobPostings(), {
-				loading: '채용 공고를 불러오는 중입니다...',
-				success: '채용 공고를 불러왔습니다.',
-				error: '공고 로드에 실패했습니다.'
-			}).then((res) => {
-				const data = res.data || res; 
+			try {
+				const res = await recruitmentApi.getJobPostings();
+				const data = res.data || res;
 				setJobs(data);
 				if (data.length > 0) setSelectedJobId(data[0].id);
-			}).catch((err) => { 
-				console.error("공고 로드 실패", err); 
-			}).finally(() => {
+			} catch (err) {
+				console.error("공고 로드 실패", err);
+				Notify.toastError("공고 로드에 실패했습니다.");
+			} finally {
 				hideLoading();
-			});
+			}
 		};
 		fetchJobs();
 	}, [showLoading, hideLoading]);
@@ -53,23 +51,22 @@ const ApplicantStatus = () => {
 			return;
 		}
 		const fetchApplicants = async () => {
-			Notify.toastPromise(recruitmentApi.getApplicationsByJob(selectedJobId), {
-				loading: '지원자 목록을 불러오는 중입니다...',
-				success: '지원자 목록을 불러왔습니다.',
-				error: () => {
-					setApplications([]);
-					return '지원자 로드에 실패했습니다.';
-				}
-			}).then((res) => {
+			showLoading("지원자 목록을 불러오는 중입니다... ⏳");
+			try {
+				const res = await recruitmentApi.getApplicationsByJob(selectedJobId);
 				setApplications(res.data || res);
 				setSearchTerm('');
 				setFilterStatus('all');
-			}).catch((err) => {
+			} catch (err) {
 				console.error("지원자 로드 실패:", err);
-			});
+				setApplications([]);
+				Notify.toastError("지원자 로드에 실패했습니다.");
+			} finally {
+				hideLoading();
+			}
 		};
 		fetchApplicants();
-	}, [selectedJobId]);
+	}, [selectedJobId, showLoading, hideLoading]);
 
 	// 🌟 상태 변경 로직 (드래그 대신 Select 선택 방식)
 	const handleStatusChange = async (appId, newStatus) => {

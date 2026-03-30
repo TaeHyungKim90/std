@@ -17,23 +17,25 @@ const CategoryMgmt = () => {
 	const [showEditPicker, setShowEditPicker] = useState(false);
 	const [editForm, setEditForm] = useState({ category_key: '', category_name: '', icon: '' });
 
-	const fetchCategories = async () => {
-		showLoading("카테고리 마스터를 불러오는 중입니다... ⏳");
-		Notify.toastPromise(adminApi.getCategoryTypes(), {
-			loading: '카테고리를 불러오는 중입니다...',
-			success: '카테고리를 불러왔습니다.',
-			error: '카테고리를 불러오지 못했습니다.'
-		}).then((res) => {
-			setCategories(res.data);
-		}).catch((err) => {
-			console.error("카테고리 로드 실패", err);		
-		}).finally(() => {
-			hideLoading();
-		});
+	const loadCategoryList = async () => {
+		const res = await adminApi.getCategoryTypes();
+		setCategories(res.data);
 	};
 
-	useEffect(() => { 
-		fetchCategories();
+	const fetchCategories = async (withOverlay = true) => {
+		if (withOverlay) showLoading("카테고리 마스터를 불러오는 중입니다... ⏳");
+		try {
+			await loadCategoryList();
+		} catch (err) {
+			console.error("카테고리 로드 실패", err);
+			Notify.toastError("카테고리를 불러오지 못했습니다.");
+		} finally {
+			if (withOverlay) hideLoading();
+		}
+	};
+
+	useEffect(() => {
+		fetchCategories(true);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -47,7 +49,7 @@ const CategoryMgmt = () => {
 		}).then(() => {
 			setNewCat({ category_key: '', category_name: '', icon: '' });
 			setShowNewPicker(false);
-			fetchCategories();
+			fetchCategories(false);
 		}).catch((err) => {
 			console.error("카테고리 등록 실패", err);
 		});
@@ -73,7 +75,7 @@ const CategoryMgmt = () => {
 		}).then(() => {
 			setEditingId(null);
 			setShowEditPicker(false);
-			fetchCategories();
+			fetchCategories(false);
 		}).catch((err) => {
 			console.error("카테고리 수정 실패", err);
 		});
@@ -87,7 +89,7 @@ const CategoryMgmt = () => {
 			success: '카테고리가 삭제되었습니다.',
 			error: '카테고리 삭제에 실패했습니다.'
 		}).then(() => {
-			fetchCategories();
+			fetchCategories(false);
 		}).catch((err) => {
 			console.error("카테고리 삭제 실패", err);
 		});

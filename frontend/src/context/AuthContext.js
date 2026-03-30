@@ -26,12 +26,11 @@ export const AuthProvider = ({ children }) => {
 		localStorage.removeItem('accessToken');
 	}, []);
 
-	// ✅ 1. 로그아웃 (Micro 액션 -> 토스트만 띄움!)
-	const logout = useCallback(async () => {
-		// 로그아웃은 버튼 클릭 액션이므로 전체 로딩바 없이 토스트만 부드럽게 띄웁니다.
-		Notify.toastPromise(authApi.logout(), {
+	// ✅ 로그아웃: API + 상태 초기화는 여기서만 수행 (Header 등에서 이중 호출 금지)
+	const logout = useCallback(() => {
+		return Notify.toastPromise(authApi.logout(), {
 			loading: '로그아웃 처리 중입니다... 🚪',
-			success: '안전하게 로그아웃되었습니다. 👋',
+			success: '안전하게 로그아웃되었습니다. ',
 			error: () => {
 				resetAuthState();
 				return '로그아웃 처리에 실패했습니다.';

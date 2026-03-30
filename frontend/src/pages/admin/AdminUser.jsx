@@ -1,28 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
 import 'assets/css/admin.css';
 
 const AdminUser = () => {
+    const { showLoading, hideLoading } = useLoading();
     const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState(''); // ✅ 검색어 상태 추가
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
     const loadUsers = async () => {
-        Notify.toastPromise(adminApi.getUsers(), {
-            loading: '사용자 목록을 불러오는 중입니다...',
-            success: '사용자 목록을 불러왔습니다.',
-            error: '사용자 목록을 불러오지 못했습니다.'
-        }).then((res) => {
-            setUsers(res.data);
-        }).catch((err) => {
-            console.error("유저 로드 실패", err);
-        });
+        const res = await adminApi.getUsers();
+        setUsers(res.data);
     };
 
-    useEffect(() => { loadUsers(); }, []);
+    const refreshUsers = () =>
+        loadUsers().catch((err) => {
+            console.error("유저 로드 실패", err);
+            Notify.toastError("사용자 목록을 불러오지 못했습니다.");
+        });
+
+    useEffect(() => {
+        showLoading("사용자 목록을 불러오는 중입니다... ⏳");
+        loadUsers()
+            .catch((err) => {
+                console.error("유저 로드 실패", err);
+                Notify.toastError("사용자 목록을 불러오지 못했습니다.");
+            })
+            .finally(() => hideLoading());
+    }, [showLoading, hideLoading]);
 
     const openModal = (user = null) => {
         setEditingUser(user);
@@ -75,7 +84,7 @@ const AdminUser = () => {
                                 if (res.data?.message) {
                                     Notify.toastInfo(res.data.message);
                                 }
-                                loadUsers(); 
+                                refreshUsers();
                             }).catch((err) => {
                                 console.error("정산 실패", err);
                             });
@@ -142,7 +151,7 @@ const AdminUser = () => {
                 </table>
             </div>
 
-            <UserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onRefresh={loadUsers} editingUser={editingUser} />
+            <UserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onRefresh={refreshUsers} editingUser={editingUser} />
         </div>
     );
 };

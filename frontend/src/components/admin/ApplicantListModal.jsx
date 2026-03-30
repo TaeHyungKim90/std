@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { openFileViewer } from 'utils/fileUtils';
 
@@ -12,6 +13,7 @@ const STATUS_MAP = {
 };
 
 const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
+    const { showLoading, hideLoading } = useLoading();
     const [applicants, setApplicants] = useState([]);
     const [isLoading, setModalLoading] = useState(false);
 
@@ -19,26 +21,24 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
         if (isOpen && jobId) {
             const fetchApplicants = async () => {
                 setModalLoading(true);
-                Notify.toastPromise(recruitmentApi.getApplicationsByJob(jobId), {
-                    loading: '지원자 목록을 불러오는 중입니다...',
-                    success: '지원자 목록을 불러왔습니다.',
-                    error: () => {
-                        setApplicants([]);
-                        return '지원자 목록을 불러오지 못했습니다.';
-                    }
-                }).then((res) => {
+                showLoading("지원자 목록을 불러오는 중입니다... ⏳");
+                try {
+                    const res = await recruitmentApi.getApplicationsByJob(jobId);
                     setApplicants(res.data || res);
-                }).catch((error) => {
+                } catch (error) {
                     console.error("지원자 목록 로드 실패", error);
-                }).finally(() => {
+                    setApplicants([]);
+                    Notify.toastError("지원자 목록을 불러오지 못했습니다.");
+                } finally {
+                    hideLoading();
                     setModalLoading(false);
-                });
+                }
             };
             fetchApplicants();
         } else {
-            setApplicants([]); 
+            setApplicants([]);
         }
-    }, [isOpen, jobId]);
+    }, [isOpen, jobId, showLoading, hideLoading]);
 
     if (!isOpen) return null;
 

@@ -1,9 +1,7 @@
 // src/components/layout/Header.js
 import React, { useContext, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { AuthContext } from 'context/AuthContext';
-import { authApi } from 'api/authApi';
 import { MENU_ITEMS } from 'constants/menu';
 import logo from 'assets/icon/favicon.png';
 import 'assets/css/header.css';
@@ -25,18 +23,16 @@ const Header = () => {
 		if (!window.confirm("로그아웃 하시겠습니까?")) return;
 
 		setIsLoggingOut(true);
-		Notify.toastPromise(authApi.logout('/auth/logout'), {
-			loading: '로그아웃 처리 중입니다...',
-			success: '로그아웃되었습니다.',
-			error: '로그아웃 처리 중 문제가 발생했습니다.'
-		}).then(() => {
-			logout();
-			navigate('/login');
-		}).catch((err) => {
-			console.error("로그아웃 실패:", err);
-		}).finally(() => {
-			setIsLoggingOut(false);
-		});
+		logout()
+			.then(() => {
+				navigate('/login');
+			})
+			.catch((err) => {
+				console.error("로그아웃 실패:", err);
+			})
+			.finally(() => {
+				setIsLoggingOut(false);
+			});
 	};
 
 	return (

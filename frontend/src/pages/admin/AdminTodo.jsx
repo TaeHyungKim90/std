@@ -13,17 +13,9 @@ const AdminTodo = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const fetchData = async () => {
 		showLoading("관리자 일정 데이터를 동기화 중입니다... ⏳");
-		const fetchDataTask = async () => {
+		try {
 			const catRes = await adminApi.getCategoryTypes();
 			const todoRes = await adminApi.getAllTodos();
-			return { catRes, todoRes };
-		};
-
-		Notify.toastPromise(fetchDataTask(), {
-			loading: '일정 데이터를 불러오는 중입니다...',
-			success: '일정 데이터를 불러왔습니다.',
-			error: '데이터를 불러오지 못했습니다.'
-		}).then(({ catRes, todoRes }) => {
 			setCategories(catRes.data);
 
 			const newCatMap = {};
@@ -32,11 +24,12 @@ const AdminTodo = () => {
 			});
 			setCategoryMap(newCatMap);
 			setAllTodos(todoRes.data);
-		}).catch((err) => {
+		} catch (err) {
 			console.error("데이터 로드 실패", err);
-        }).finally(() => {
+			Notify.toastError("데이터를 불러오지 못했습니다.");
+		} finally {
 			hideLoading();
-		});
+		}
 	};
 
 	useEffect(() => {

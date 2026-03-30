@@ -1,28 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import 'assets/css/admin.css';
 
 const AdminAttendance = () => {
+    const { showLoading, hideLoading } = useLoading();
     const [attendanceList, setAttendanceList] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchAttendanceData = async () => {
-            Notify.toastPromise(adminApi.getAllAttendance(), {
-                loading: '출퇴근 기록을 불러오는 중입니다...',
-                success: '출퇴근 기록을 불러왔습니다.',
-                error: '출퇴근 기록을 불러오지 못했습니다.'
-            }).then((res) => {
+            showLoading("출퇴근 기록을 불러오는 중입니다... ⏳");
+            try {
+                const res = await adminApi.getAllAttendance();
                 setAttendanceList(res.data);
-            }).catch((err) => {
+            } catch (err) {
                 console.error("데이터 로드 실패:", err);
-            }).finally(() => {
+                Notify.toastError("출퇴근 기록을 불러오지 못했습니다.");
+            } finally {
+                hideLoading();
                 setLoading(false);
-            });
+            }
         };
         fetchAttendanceData();
-    }, []);
+    }, [showLoading, hideLoading]);
     const formatTime = (timeStr) => {
         if (!timeStr) return '-';
         // 'T'를 공백으로 바꾸고, '.' 뒤의 마이크로초를 제거

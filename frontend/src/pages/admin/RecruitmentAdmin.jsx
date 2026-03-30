@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
 import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
 import 'assets/css/admin.css';
 const RecruitmentAdmin = () => {
+	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedJob, setSelectedJob] = useState(null);
@@ -15,18 +17,25 @@ const RecruitmentAdmin = () => {
 	const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
 
 	const loadJobs = async () => {
-		Notify.toastPromise(recruitmentApi.getJobPostings(), {
-			loading: '채용 공고를 불러오는 중입니다...',
-			success: '채용 공고를 불러왔습니다.',
-			error: '공고 목록을 불러오지 못했습니다.'
-		}).then((res) => {
-			setJobs(res.data);
-		}).catch((err) => {
-			console.error("공고 목록 로드 실패", err);
-		});
+		const res = await recruitmentApi.getJobPostings();
+		setJobs(res.data);
 	};
 
-	useEffect(() => { loadJobs(); }, []);
+	const refreshJobs = () =>
+		loadJobs().catch((err) => {
+			console.error("공고 목록 로드 실패", err);
+			Notify.toastError("공고 목록을 불러오지 못했습니다.");
+		});
+
+	useEffect(() => {
+		showLoading("채용 공고를 불러오는 중입니다... ⏳");
+		loadJobs()
+			.catch((err) => {
+				console.error("공고 목록 로드 실패", err);
+				Notify.toastError("공고 목록을 불러오지 못했습니다.");
+			})
+			.finally(() => hideLoading());
+	}, [showLoading, hideLoading]);
 
 	// 👉 수정 모달 열기 핸들러
 	const handleEditClick = (job) => {
@@ -101,7 +110,7 @@ const RecruitmentAdmin = () => {
 			<JobPostingModal 
 				isOpen={isModalOpen} 
 				onClose={() => setIsModalOpen(false)} 
-				onRefresh={loadJobs} 
+				onRefresh={refreshJobs} 
 				editingJob={selectedJob} 
 			/>
 			<ApplicantListModal

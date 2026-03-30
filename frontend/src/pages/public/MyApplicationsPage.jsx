@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { formatDate } from 'utils/commonUtils';
@@ -13,6 +14,7 @@ const STATUS_MAP = {
 };
 
 const MyApplicationsPage = () => {
+	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const [applications, setApplications] = useState([]);
 	const [isLoading, setPageLoading] = useState(true);
@@ -30,21 +32,21 @@ const MyApplicationsPage = () => {
 		setLoggedInUser(user);
 
 		const fetchMyApps = async () => {
-			Notify.toastPromise(recruitmentApi.getMyApplications(user.id), {
-				loading: '지원 내역을 불러오는 중입니다...',
-				success: '지원 내역을 불러왔습니다.',
-				error: '지원 내역을 불러오지 못했습니다.'
-			}).then((res) => {
+			showLoading("지원 내역을 불러오는 중입니다... ⏳");
+			try {
+				const res = await recruitmentApi.getMyApplications(user.id);
 				setApplications(res.data || res);
-			}).catch((error) => {
+			} catch (error) {
 				console.error("지원 내역 로드 실패", error);
-			}).finally(() => {
+				Notify.toastError("지원 내역을 불러오지 못했습니다.");
+			} finally {
+				hideLoading();
 				setPageLoading(false);
-			});
+			}
 		};
 
 		fetchMyApps();
-	}, [navigate]);
+	}, [navigate, showLoading, hideLoading]);
 
 	const handleCancelApplication = async (applicationId) => {
 		if (!window.confirm("정말 지원을 취소하시겠습니까?\n취소된 내역은 복구할 수 없습니다.")) return;

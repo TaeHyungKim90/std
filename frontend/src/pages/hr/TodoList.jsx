@@ -8,6 +8,7 @@ import { getContrastColor } from 'utils/colorUtils';
 import { todoService } from 'api/todoApi';
 import { holidayApi } from 'api/holidayApi';
 import { useAuth } from 'context/AuthContext';
+import { useLoading } from 'context/LoadingContext';
 
 import TodoSidebar from 'components/hr/TodoSidebar';
 import TodoEditModal from 'components/hr/TodoEditModal';
@@ -23,6 +24,7 @@ const TodoListView = () => {
 	const [categories, setCategories] = useState([]);
 	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3DAF7A', selectedDescription: ''});
 	const { userId } = useAuth();
+	const { showLoading, hideLoading } = useLoading();
 	const calendarRef = useRef(null);
 	const externalEventsRef = useRef(null);
 	const [isEditOpen, setIsEditOpen] = useState(false);
@@ -32,58 +34,50 @@ const TodoListView = () => {
 	const [modalMode, setModalMode] = useState('create');
 
 	const fetchCategoriesAndConfigs = useCallback(async () => {
-		const fetchCategoriesTask = async () => {
-			const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
-			return { catRes, configRes };
-		};
-		Notify.toastPromise(fetchCategoriesTask(), {
-			loading: '카테고리 설정을 불러오는 중입니다...',
-			success: '카테고리 설정을 불러왔습니다.',
-			error: '카테고리 정보를 불러오지 못했습니다.'
-		}).then(({ catRes, configRes }) => {
-			const masterCategories = catRes.data;
-			const userConfigs = configRes.data;
-			const mergedCategories = masterCategories.map(cat => {
-				const userConf = userConfigs.find(c => c.category_key === cat.category_key);
-				return { ...cat, hasCustomConfig: !!userConf, color: userConf?.color || '#3DAF7A', default_description: userConf?.default_description || '' };
-			});
-			setCategories(mergedCategories);
-		}).catch((err) => { 
-			console.error("카테고리 및 설정 로드 실패", err); 
+		const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
+		const masterCategories = catRes.data;
+		const userConfigs = configRes.data;
+		const mergedCategories = masterCategories.map(cat => {
+			const userConf = userConfigs.find(c => c.category_key === cat.category_key);
+			return { ...cat, hasCustomConfig: !!userConf, color: userConf?.color || '#3DAF7A', default_description: userConf?.default_description || '' };
 		});
+		setCategories(mergedCategories);
 	}, []);
 
 	const fetchTodos = useCallback(async () => {
-		const fetchTodosTask = async () => {
-			const currentYear = new Date().getFullYear().toString();
-			const [todoRes, holidayRes] = await Promise.all([todoService.getTodos(), holidayApi.getHolidays(currentYear)]);
-			return { todoRes, holidayRes };
-		};
-		Notify.toastPromise(fetchTodosTask(), {
-			loading: '일정 데이터를 불러오는 중입니다...',
-			success: '일정 데이터를 불러왔습니다.',
-			error: '일정 데이터를 불러오는데 실패했습니다.'
-		}).then(({ todoRes, holidayRes }) => {
-			const formattedTodos = todoRes.data.map(todo => {
-				const isOwner = todo.user_id === userId;
-				const endDate = new Date(todo.end_date);
-				endDate.setSeconds(endDate.getSeconds() + 1);
-				const nickname = todo.author?.user_nickname || '';
-				const name = todo.author?.user_name || '';
-				const eventTextColor = getContrastColor(todo.color);
-				
-				return {
-					id: todo.id.toString(), title: `[${nickname}(${name})] ${todo.title}`,
-					start: todo.start_date, end: endDate, allDay: true, backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
-					startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
-				};
-			});
-			holidaysRef.current = holidayRes.data || [];
-			setEvents(formattedTodos);
-		}).catch((err) => { 
-			console.error("데이터 로드 실패", err); 
+		const currentYear = new Date().getFullYear().toString();
+		const [todoRes, holidayRes] = await Promise.all([todoService.getTodos(), holidayApi.getHolidays(currentYear)]);
+		const formattedTodos = todoRes.data.map(todo => {
+			const isOwner = todo.user_id === userId;
+			const endDate = new Date(todo.end_date);
+			endDate.setSeconds(endDate.getSeconds() + 1);
+			const nickname = todo.author?.user_nickname || '';
+			const name = todo.author?.user_name || '';
+			const eventTextColor = getContrastColor(todo.color);
+
+			return {
+				id: todo.id.toString(), title: `[${nickname}(${name})] ${todo.title}`,
+				start: todo.start_date, end: endDate, allDay: true, backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
+				startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
+			};
 		});
+		holidaysRef.current = holidayRes.data || [];
+		setEvents(formattedTodos);
 	}, [userId]);
+
+	const refreshTodosAfterMutation = useCallback(() => {
+		return fetchTodos().catch((err) => {
+			console.error("일정 목록 새로고침 실패", err);
+			Notify.toastError("일정 목록을 새로고침하지 못했습니다.");
+		});
+	}, [fetchTodos]);
+
+	const refreshCategoriesAfterSave = useCallback(() => {
+		return fetchCategoriesAndConfigs().catch((err) => {
+			console.error("카테고리 설정 새로고침 실패", err);
+			Notify.toastError("카테고리 정보를 불러오지 못했습니다.");
+		});
+	}, [fetchCategoriesAndConfigs]);
 
 	const handleSwitchToEdit = () => { setIsDetailOpen(false); setModalMode('edit'); setIsEditOpen(true); };
 	const handleDateClick = (info) => { setSelectedDate({ start: info.dateStr, end: info.dateStr }); setModalMode('create'); setIsEditOpen(true); };
@@ -125,7 +119,7 @@ const TodoListView = () => {
 				}
 			}
 		).then(() => {
-			fetchTodos();
+			refreshTodosAfterMutation();
 		}).catch((err) => {
 			console.error("일정 수정 실패:", err);
 		});
@@ -151,7 +145,7 @@ const TodoListView = () => {
 				error: (e) => e.response?.data?.detail || "일정 등록 중 오류가 발생했습니다."
 			}
 		).then(() => {
-			fetchTodos(); 
+			refreshTodosAfterMutation();
 		}).catch((err) => {
 			console.error("일정 등록 실패:", err);
 		});
@@ -159,17 +153,34 @@ const TodoListView = () => {
 
 	const openColorModal = (cat) => { setColorModal({ isOpen: true, targetCat: cat, selectedColor: cat.color, selectedDescription: cat.default_description || '' }); };
 
-	useEffect(() => { 
-		fetchTodos(); fetchCategoriesAndConfigs();
+	useEffect(() => {
+		let cancelled = false;
 		let draggable;
-		if (externalEventsRef.current) {
+
+		(async () => {
+			showLoading("캘린더 초기 데이터를 불러오는 중입니다... ⏳");
+			try {
+				await Promise.all([fetchCategoriesAndConfigs(), fetchTodos()]);
+			} catch (err) {
+				console.error("초기 데이터 로드 실패", err);
+				Notify.toastError("초기 데이터를 불러오지 못했습니다.");
+			} finally {
+				if (!cancelled) hideLoading();
+			}
+
+			if (cancelled || !externalEventsRef.current) return;
+
 			draggable = new Draggable(externalEventsRef.current, {
 				itemSelector: '.fc-event',
 				eventData: (eventEl) => ({ title: eventEl.getAttribute('data-title'), color: eventEl.getAttribute('data-color'), extendedProps: { category: eventEl.getAttribute('data-category'), description: eventEl.getAttribute('data-description') } }),
 			});
-		}
-		return () => { if (draggable) draggable.destroy(); };
-	}, [fetchTodos, fetchCategoriesAndConfigs]);
+		})();
+
+		return () => {
+			cancelled = true;
+			if (draggable) draggable.destroy();
+		};
+	}, [fetchTodos, fetchCategoriesAndConfigs, showLoading, hideLoading]);
 
 	return (
 		<div className="calendar-page-container">
@@ -222,10 +233,10 @@ const TodoListView = () => {
 			</section>
 			
 			{/* 🌟 지저분했던 인라인 모달이 컴포넌트 한 줄로 깔끔해졌습니다! */}
-			<TodoTemplateModal isOpen={colorModal.isOpen} onClose={() => setColorModal({...colorModal, isOpen: false})} colorModal={colorModal} setColorModal={setColorModal} fetchCategoriesAndConfigs={fetchCategoriesAndConfigs} />
+			<TodoTemplateModal isOpen={colorModal.isOpen} onClose={() => setColorModal({...colorModal, isOpen: false})} colorModal={colorModal} setColorModal={setColorModal} fetchCategoriesAndConfigs={refreshCategoriesAfterSave} />
 
-			<TodoEditModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={fetchTodos} categories={categories} />
-			<TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={fetchTodos} onEditClick={handleSwitchToEdit} categories={categories} />
+			<TodoEditModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} categories={categories} />
+			<TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} onEditClick={handleSwitchToEdit} categories={categories} />
 		</div>
 	);
 };

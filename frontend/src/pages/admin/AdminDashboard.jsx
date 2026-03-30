@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import { formatDate } from 'utils/commonUtils';
 import 'assets/css/admin.css';
 import 'assets/css/adminDashboard.css'; // ✅ 새로 분리된 CSS 임포트
 
 const AdminDashboard = () => {
+    const { showLoading, hideLoading } = useLoading();
     const [loading, setLoading] = useState(true);
 
     // 실제 데이터 상태
@@ -22,28 +24,26 @@ const AdminDashboard = () => {
     useEffect(() => {
         const loadDashboardData = async () => {
             setLoading(true);
-            Notify.toastPromise(adminApi.getDashboard(), {
-                loading: '대시보드 데이터를 불러오는 중입니다...',
-                success: '대시보드 데이터를 불러왔습니다.',
-                error: '대시보드 데이터 로드에 실패했습니다.'
-            }).then((res) => {
+            showLoading("대시보드 데이터를 불러오는 중입니다... ⏳");
+            try {
+                const res = await adminApi.getDashboard();
                 setSummary({
                     user_count: res.data.user_count,
                     vacation_count: res.data.vacation_count,
                     category_count: res.data.category_count,
                     today_vacations: res.data.today_vacations || []
                 });
-
-                // 3. 백엔드에서 받아온 [전 직원 연차 현황] 세팅!
                 setEmployeeBalances(res.data.employee_balances || []);
-            }).catch((err) => {
+            } catch (err) {
                 console.error("관리자 대시보드 데이터 로드 실패", err);
-            }).finally(() => {
+                Notify.toastError("대시보드 데이터 로드에 실패했습니다.");
+            } finally {
+                hideLoading();
                 setLoading(false);
-            });
+            }
         };
         loadDashboardData();
-    }, []);
+    }, [showLoading, hideLoading]);
 
     // 상태에 따라 CSS 클래스를 반환하도록 수정
     const getVacationStatus = (start, end) => {
