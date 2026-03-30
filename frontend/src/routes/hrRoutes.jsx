@@ -8,7 +8,7 @@ const hrRoutes = (
   <Route path="/my">
 	<Route path="todos" element={<TodoListView />} />
 	<Route path="attendance" element={<AttendanceView />} />
-	<Route path="/my/messages" element={<MyMessages />} />
+	<Route path="messages" element={<MyMessages />} />
   </Route>
 );
 
