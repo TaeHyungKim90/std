@@ -1,12 +1,30 @@
 import * as Notify from 'utils/toastUtils';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
-function getApiOrigin() {
+export function getApiOrigin() {
 	const base = process.env.REACT_APP_API_BASE_URL || '';
 	if (typeof base === 'string' && /\/api\/?$/i.test(base)) {
 		return base.replace(/\/?api\/?$/i, '').replace(/\/$/, '') || 'http://localhost:8000';
 	}
 	return (process.env.REACT_APP_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+}
+
+/**
+ * 미리보기·iframe/img src용 절대 URL (인증 쿠키가 필요한 API 경로 포함).
+ * @param {string} fileUrl - DB 경로 또는 http(s)
+ * @returns {string|null}
+ */
+export function getFilePreviewUrl(fileUrl) {
+	if (!fileUrl) return null;
+	if (fileUrl.startsWith('http')) return fileUrl;
+	const origin = getApiOrigin();
+	const preferApi = process.env.REACT_APP_FILE_DOWNLOAD_VIA_API !== 'false';
+	if (preferApi && fileUrl.startsWith('/uploads/')) {
+		const saved = fileUrl.replace(/^\/uploads\//, '').split('?')[0];
+		if (!saved) return null;
+		return `${origin}/api/common/files/by-saved-name/${encodeURIComponent(saved)}`;
+	}
+	return `${origin}${fileUrl}`;
 }
 
 /**
@@ -28,20 +46,10 @@ export const openFileViewer = (fileUrl) => {
 		return;
 	}
 
-	const origin = getApiOrigin();
-	const preferApi = process.env.REACT_APP_FILE_DOWNLOAD_VIA_API !== 'false';
-
-	if (preferApi && fileUrl.startsWith('/uploads/')) {
-		const saved = fileUrl.replace(/^\/uploads\//, '').split('?')[0];
-		if (!saved) {
-			Notify.toastWarn('파일 경로가 올바르지 않습니다.');
-			return;
-		}
-		const fullUrl = `${origin}/api/common/files/by-saved-name/${encodeURIComponent(saved)}`;
-		window.open(fullUrl, '_blank', 'noopener,noreferrer');
+	const fullUrl = getFilePreviewUrl(fileUrl);
+	if (!fullUrl) {
+		Notify.toastWarn('파일 경로가 올바르지 않습니다.');
 		return;
 	}
-
-	const fullUrl = `${origin}${fileUrl}`;
 	window.open(fullUrl, '_blank', 'noopener,noreferrer');
 };

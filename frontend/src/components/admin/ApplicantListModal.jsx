@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
-import { openFileViewer } from 'utils/fileUtils';
+import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
 
 const STATUS_MAP = {
     'applied': { text: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
@@ -16,6 +16,7 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
     const { showLoading, hideLoading } = useLoading();
     const [applicants, setApplicants] = useState([]);
     const [isLoading, setModalLoading] = useState(false);
+    const [filePreview, setFilePreview] = useState(null);
 
     useEffect(() => {
         if (isOpen && jobId) {
@@ -43,6 +44,7 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
     if (!isOpen) return null;
 
     return (
+        <>
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
             {/* 모달 창 크기 및 구조 */}
             <div style={{ background: 'white', padding: '30px 40px', borderRadius: '12px', maxWidth: '900px', width: '90%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}> 
@@ -91,12 +93,12 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
                                             <td style={{ padding: '16px 12px' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                                     {app.resume_file_url && (
-                                                        <button onClick={() => openFileViewer(app.resume_file_url)} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
+                                                        <button type="button" onClick={() => setFilePreview({ url: app.resume_file_url, label: '이력서' })} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
                                                             📄 이력서
                                                         </button>
                                                     )}
                                                     {app.portfolio_file_url && (
-                                                        <button onClick={() => openFileViewer(app.portfolio_file_url)} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
+                                                        <button type="button" onClick={() => setFilePreview({ url: app.portfolio_file_url, label: '포트폴리오' })} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
                                                             🎨 포플
                                                         </button>
                                                     )}
@@ -125,6 +127,13 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
                 </div>
             </div>
         </div>
+        <AdminFilePreviewModal
+            isOpen={!!filePreview}
+            onClose={() => setFilePreview(null)}
+            fileUrl={filePreview?.url}
+            fileLabel={filePreview?.label}
+        />
+        </>
     );
 };
 

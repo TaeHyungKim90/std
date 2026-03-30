@@ -337,6 +337,129 @@
     flex-shrink: 0;
 }
 
+/* 지원 서류 미리보기 (관리자) */
+.admin-file-preview-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.admin-file-preview-panel {
+    background: #fff;
+    border-radius: 12px;
+    width: min(960px, 96vw);
+    height: min(88vh, 900px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.admin-file-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.admin-file-preview-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #111;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-file-preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-file-preview-tab-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: #333;
+}
+
+.admin-file-preview-tab-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.admin-file-preview-close {
+    font-size: 1.75rem;
+    line-height: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    padding: 0 4px;
+}
+
+.admin-file-preview-close:hover {
+    color: #111;
+}
+
+.admin-file-preview-body {
+    flex: 1;
+    min-height: 0;
+    background: #f5f5f5;
+    position: relative;
+}
+
+.admin-file-preview-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #525659;
+}
+
+.admin-file-preview-img-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.admin-file-preview-img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.admin-file-preview-fallback {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+    color: #555;
+}
+
 /* =========================================
    9. 모바일 반응형 처리
 ========================================= */

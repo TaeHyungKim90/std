@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { recruitmentApi } from 'api/recruitmentApi';
-import { openFileViewer } from 'utils/fileUtils';
+import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
 import { useLoading } from 'context/LoadingContext';
 import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
 const STATUS_OPTIONS = [
@@ -22,6 +22,7 @@ const ApplicantStatus = () => {
 	// 🌟 검색 및 필터링 상태 추가
 	const [searchTerm, setSearchTerm] = useState('');
 	const [filterStatus, setFilterStatus] = useState('all');
+	const [filePreview, setFilePreview] = useState(null);
 
 	useEffect(() => {
 		const fetchJobs = async () => {
@@ -200,12 +201,12 @@ const ApplicantStatus = () => {
 									{/* 파일 버튼 래퍼도 클래스로 분리! */}
 									<div className="admin-file-buttons">
 										{app.resume_file_url && (
-											<button onClick={() => openFileViewer(app.resume_file_url)} className="btn-edit">
+											<button type="button" onClick={() => setFilePreview({ url: app.resume_file_url, label: '이력서' })} className="btn-edit">
 												📄 이력서
 											</button>
 										)}
 										{app.portfolio_file_url && (
-											<button onClick={() => openFileViewer(app.portfolio_file_url)} className="btn-delete">
+											<button type="button" onClick={() => setFilePreview({ url: app.portfolio_file_url, label: '포트폴리오' })} className="btn-delete">
 												🎨 포플
 											</button>
 										)}
@@ -240,6 +241,12 @@ const ApplicantStatus = () => {
 					</tbody>
 				</table>
 			</div>
+			<AdminFilePreviewModal
+				isOpen={!!filePreview}
+				onClose={() => setFilePreview(null)}
+				fileUrl={filePreview?.url}
+				fileLabel={filePreview?.label}
+			/>
 		</div>
 	);
 };

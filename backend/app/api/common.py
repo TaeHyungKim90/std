@@ -27,6 +27,7 @@ def _file_response_for_row(row: UploadedFile):
 		full_path,
 		filename=row.original_name,
 		media_type=media,
+		content_disposition_type="inline",
 	)
 
 
