@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import 'assets/css/attendance.css';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
@@ -236,42 +237,19 @@ const AdminAttendance = () => {
 				<h2>⏰ 일일 근태 현황 대시보드</h2>
 				<p>선택한 날짜의 출근/휴가/미출근 현황을 한눈에 확인하세요.</p>
 
-				<div
-					style={{
-						marginTop: 12,
-						display: 'flex',
-						alignItems: 'center',
-						gap: 12,
-						flexWrap: 'wrap',
-					}}
-				>
-					<label style={{ fontWeight: 700, color: '#222' }}>
+				<div className="adm-attendance__date-toolbar">
+					<label className="adm-attendance__date-label">
 						날짜
 						<input
 							type="date"
 							value={selectedDate}
 							onChange={(e) => handleChangeDate(e.target.value)}
-							style={{
-								marginLeft: 10,
-								padding: '8px 10px',
-								borderRadius: 8,
-								border: '1px solid #d9d9d9',
-								background: '#fff',
-								fontWeight: 600,
-							}}
+							className="adm-attendance__date-input"
 						/>
 						<button
 							type="button"
 							onClick={() => handleChangeDate(todayYmd)}
-							style={{
-								marginLeft: 10,
-								padding: '8px 12px',
-								borderRadius: 8,
-								border: '1px solid #d9d9d9',
-								background: '#fff',
-								fontWeight: 700,
-								cursor: 'pointer',
-							}}
+							className="adm-attendance__today-btn"
 						>
 							오늘
 						</button>
@@ -280,78 +258,43 @@ const AdminAttendance = () => {
 			</div>
 
 			{/* 상단 요약 카운터 */}
-			<div
-				style={{
-					marginTop: 16,
-					display: 'grid',
-					gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-					gap: 12,
-				}}
-			>
-				<div
-					style={{
-						border: '1px solid #e8e8e8',
-						borderRadius: 12,
-						padding: 14,
-						background: '#fff',
-					}}
-				>
-					<div style={{ color: '#666', fontWeight: 600, fontSize: 13 }}>
+			<div className="adm-attendance__summary-grid">
+				<div className="adm-attendance__summary-card adm-attendance__summary-card--total">
+					<div className="adm-attendance__summary-label">
 						전체 직원 수
 					</div>
-					<div style={{ fontSize: 22, fontWeight: 900, color: '#111', marginTop: 6 }}>
+					<div className="adm-attendance__summary-value">
 						{summaryLoading ? '...' : summary.totalEmployees}
 					</div>
 				</div>
-				<div
-					style={{
-						border: '1px solid #d8f3ea',
-						borderRadius: 12,
-						padding: 14,
-						background: '#f3fffb',
-					}}
-				>
-					<div style={{ color: '#1f7a5a', fontWeight: 700, fontSize: 13 }}>
+				<div className="adm-attendance__summary-card adm-attendance__summary-card--attended">
+					<div className="adm-attendance__summary-label">
 						출근 완료
 					</div>
-					<div style={{ fontSize: 22, fontWeight: 900, color: '#0f5d46', marginTop: 6 }}>
+					<div className="adm-attendance__summary-value">
 						{summaryLoading ? '...' : summary.attendedCompleted}
 					</div>
 				</div>
-				<div
-					style={{
-						border: '1px solid #e9e2ff',
-						borderRadius: 12,
-						padding: 14,
-						background: '#f7f4ff',
-					}}
-				>
-					<div style={{ color: '#5a2bb8', fontWeight: 700, fontSize: 13 }}>
+				<div className="adm-attendance__summary-card adm-attendance__summary-card--vacation">
+					<div className="adm-attendance__summary-label">
 						{isPublicHoliday ? '공휴일' : isWeekend ? '휴일' : '휴가'}
 					</div>
-					<div style={{ fontSize: 22, fontWeight: 900, color: '#4a1f9a', marginTop: 6 }}>
+					<div className="adm-attendance__summary-value">
 						{summaryLoading ? '...' : summary.vacationCount}
 					</div>
 				</div>
-				<div
-					style={{
-						border: '1px solid #ffe1e1',
-						borderRadius: 12,
-						padding: 14,
-						background: '#fff5f5',
-					}}
-				>
-					<div style={{ color: '#b42318', fontWeight: 700, fontSize: 13 }}>
+				<div className="adm-attendance__summary-card adm-attendance__summary-card--absent">
+					<div className="adm-attendance__summary-label">
 						미출근(지각/결근 등)
 					</div>
-					<div style={{ fontSize: 22, fontWeight: 900, color: '#9f1c14', marginTop: 6 }}>
+					<div className="adm-attendance__summary-value">
 						{summaryLoading ? '...' : summary.absentCount}
 					</div>
 				</div>
 			</div>
 
 			{loading ? (
-				<div style={{ textAlign: 'center', padding: '50px' }}>데이터를 불러오는 중...</div>
+				<div className="adm-attendance__loading">데이터를 불러오는 중...</div>
 			) : (
 				<>
 					<div className="admin-table-wrapper">
@@ -369,39 +312,21 @@ const AdminAttendance = () => {
 							<tbody>
 								{attendanceList.length > 0 ? (
 									attendanceList.map((record, index) => (
-										<tr key={record.user_id || record.id || index}>
+										<tr
+											key={record.user_id || record.id || index}
+											className="stagger-item"
+											style={{ animationDelay: `${index * 0.04}s` }}
+										>
 											<td>
 												<button
 													type="button"
 													onClick={() => openDrawerForRecord(record)}
-													style={{
-														display: 'block',
-														width: '100%',
-														textAlign: 'left',
-														background: 'none',
-														border: 'none',
-														padding: 0,
-														cursor: 'pointer',
-														font: 'inherit',
-													}}
+													className="adm-attendance__user-link-btn"
 												>
-													<div
-														style={{
-															fontWeight: '600',
-															color: '#1565c0',
-															textDecoration: 'underline',
-															textUnderlineOffset: 3,
-														}}
-													>
+													<div className="adm-attendance__user-name">
 														{record.user_name}
 													</div>
-													<div
-														style={{
-															fontSize: '0.8rem',
-															color: '#0d47a1',
-															marginTop: 2,
-														}}
-													>
+													<div className="adm-attendance__user-id">
 														({record.user_id || '아이디 미상'})
 													</div>
 												</button>
@@ -412,7 +337,7 @@ const AdminAttendance = () => {
 													formatTime(record.clock_in_time)
 												) : (
 													<span
-														className="badge"
+														className="badge adm-attendance__clock-badge"
 														style={{
 															backgroundColor:
 																!record.clock_in_time &&
@@ -429,7 +354,6 @@ const AdminAttendance = () => {
 																	  vacationTodoUserIdSet.has(record.user_id)
 																		? '#5a2bb8'
 																		: '#9f1c14',
-															fontWeight: 800,
 														}}
 													>
 														{isPublicHoliday
@@ -445,24 +369,18 @@ const AdminAttendance = () => {
 											</td>
 											<td>{formatTime(record.clock_out_time) || '-'}</td>
 											<td>
-												<span
-													className="badge"
-													style={{ backgroundColor: '#f1f3f5', color: '#666' }}
-												>
+												<span className="badge adm-attendance__location-badge">
 													{record.clock_in_location || '미지정'}
 												</span>
 											</td>
-											<td style={{ color: '#4a90e2', fontWeight: 'bold' }}>
+											<td className="adm-attendance__cell-work">
 												{formatWorkTime(record.work_minutes)}
 											</td>
 										</tr>
 									))
 								) : (
 									<tr>
-										<td
-											colSpan="6"
-											style={{ textAlign: 'center', padding: '30px', color: '#999' }}
-										>
+										<td colSpan="6" className="adm-attendance__empty-cell">
 											기록된 출퇴근 내역이 없습니다.
 										</td>
 									</tr>

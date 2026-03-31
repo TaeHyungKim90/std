@@ -1,4 +1,60 @@
 /* src/assets/css/global.css */
+
+@keyframes scaleBlurIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+        filter: blur(4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes staggerDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: var(--stagger-to-opacity, 1);
+        transform: translateY(0);
+    }
+}
+
+/* 페이지·모달·패널 등장 — 최상위 래퍼에 부착 */
+.dynamic-enter {
+    animation: scaleBlurIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: center center;
+}
+
+aside.uta-drawer-panel.dynamic-enter {
+    transform-origin: top right;
+}
+
+/* 리스트 순차 등장 — 항목에 부착 + style로 animationDelay */
+.stagger-item {
+    --stagger-to-opacity: 1;
+    opacity: 0;
+    animation: staggerDropIn 0.4s ease-out forwards;
+}
+
+/* 컴포넌트에서 명시적으로 쓸 수 있는 버튼 유틸 */
+.btn-dynamic {
+    transition: all 0.2s ease;
+}
+
+.btn-dynamic:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-dynamic:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
 :root {
     /* 🎨 2026 가치플레이 HR 브랜드 컬러 팔레트 적용 */
     --primary-color: #3DAF7A;     /* Primary (Trustworthy Green) */
@@ -47,4 +103,12 @@ body {
 }
 .toastui-editor-defaultUI .ProseMirror {
     font-family: 'Noto Sans KR', sans-serif !important;
+}
+
+/* OAuthCallback.jsx — AuthLayout 밖 단독 라우트 */
+.oauth-callback-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }

@@ -40,14 +40,14 @@ const ApplicantLoginPage = () => {
 			<div className="glass-box auth-glass-box">
 				<h2>가치플레이 지원자 로그인</h2>
 				
-				<form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+				<form onSubmit={handleLoginSubmit} className="applicant-login__form">
 					<input 
 						type="email" 
 						placeholder="이메일 입력" 
 						required 
 						value={loginForm.email_id} 
 						onChange={(e) => setLoginForm({...loginForm, email_id: e.target.value})} 
-						style={{ padding: '14px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', fontSize: '1rem', background: 'rgba(255,255,255,0.9)' }}
+						className="applicant-login__input"
 					/>
 					<input 
 						type="password" 
@@ -55,17 +55,17 @@ const ApplicantLoginPage = () => {
 						required 
 						value={loginForm.password} 
 						onChange={(e) => setLoginForm({...loginForm, password: e.target.value})} 
-						style={{ padding: '14px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', fontSize: '1rem', background: 'rgba(255,255,255,0.9)' }} 
+						className="applicant-login__input"
 					/>
 					
-					<button type="submit" style={{ padding: '15px', background: '#3FAF7A', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1.05rem', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', transition: 'all 0.2s' }}>
+					<button type="submit" className="applicant-login__submit">
 						로그인
 					</button>
 				</form>
 				
-				<div style={{ textAlign: 'center', marginTop: '25px', fontSize: '0.95rem', color: '#444' }}>
+				<div className="applicant-login__footer">
 					아직 계정이 없으신가요? &nbsp;
-					<Link to="/careers/signup" style={{ color: '#3FAF7A', textDecoration: 'none', fontWeight: 'bold' }}>회원가입</Link>
+					<Link to="/careers/signup" className="applicant-login__footer-link">회원가입</Link>
 				</div>
 			</div>
 		</div>

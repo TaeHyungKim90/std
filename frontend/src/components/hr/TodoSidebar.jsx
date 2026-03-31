@@ -22,13 +22,13 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
         <aside ref={ref} id="external-events" className="calendar-sidebar">
             <h4 className="sidebar-title">
                 📅 빠른 등록 템플릿 
-                <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal', display: 'block' }}>
+                <span className="sidebar-title__hint">
                     (클릭하여 색상 변경)
                 </span>
             </h4>
 
             {categories.length > 0 ? (
-                categories.map(cat => {
+                categories.map((cat, index) => {
                     const bgColor = cat.hasCustomConfig ? cat.color : '#ffffff';
                     const textColor = cat.hasCustomConfig ? getContrastColor(bgColor) : '#333';
                     const borderColor = cat.hasCustomConfig ? cat.color : '#ddd';
@@ -36,7 +36,7 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
                     return (
                         <div 
                             key={cat.id}
-                            className='fc-event'
+                            className='fc-event stagger-item'
                             onClick={() => openColorModal(cat)}
                             data-title={cat.category_name} 
                             data-color={cat.color}
@@ -45,6 +45,7 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
                             onMouseDown={handleMouseDown}
                             onMouseUp={(e) => handleMouseUp(e, cat)}
                             style={{ 
+                                animationDelay: `${index * 0.04}s`,
                                 backgroundColor: bgColor, 
                                 color: textColor, // ✅ 자동 반전된 글자색 적용
                                 borderColor: borderColor,
@@ -62,7 +63,7 @@ const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {
                     );
                 })
             ) : (
-                <p style={{ fontSize: '0.85rem', color: '#888' }}>카테고리를 불러오는 중...</p>
+                <p className="todo-sidebar__loading-text">카테고리를 불러오는 중...</p>
             )}
         </aside>
     );

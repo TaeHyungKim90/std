@@ -103,3 +103,68 @@
 @media (max-width: 1024px) {
     .hr-content-row { grid-template-columns: 1fr; }
 }
+
+/* AdminDashboard.jsx — KPI 및 빈 상태 */
+.admin-dashboard__loading {
+    text-align: center;
+    padding: 100px;
+    color: #888;
+}
+
+.mgmt-section--kpi {
+    text-align: center;
+}
+
+.mgmt-section--kpi h3 {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.admin-dashboard__kpi-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.admin-dashboard__kpi-value--accent {
+    color: var(--primary);
+}
+
+.admin-dashboard__kpi-suffix {
+    font-size: 1.2rem;
+    color: #888;
+    margin-left: 5px;
+}
+
+.admin-dashboard__system-status {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #4a90e2;
+    margin-top: 10px;
+}
+
+.hr-list__empty {
+    text-align: center;
+    padding: 40px 0;
+    color: #aaa;
+}
+
+.hr-widget-header__meta {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 600;
+}
+
+.hr-list-item--balance {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.admin-dashboard__balance-strong--warn {
+    color: #ff6a3d;
+}
+
+.admin-dashboard__balance-strong--ok {
+    color: #3daf7a;
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import 'assets/css/layout.css';
 import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
 import { formatDate } from 'utils/commonUtils';
@@ -61,7 +62,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 
 	return (
 		<div className="modal-overlay">
-			<div className="modal-content">
+			<div className="modal-content dynamic-enter">
 				<h3>{editingUser ? "정보 수정" : "사용자 등록"}</h3>
 				<form onSubmit={handleSave}>
 					{/* 기존 필드들 */}
@@ -97,13 +98,13 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 						/>
 					</div>
 					{/* 추가된 날짜 필드들 */}
-					<div className="form-row" style={{ display: 'flex', gap: '10px' }}>
-						<div className="form-group" style={{ flex: 1 }}>
+					<div className="form-row modal-form-row">
+						<div className="form-group">
 							<label>입사일</label>
 							<input type="date" value={formData.join_date || ''}
 								onChange={e => setFormData({ ...formData, join_date: e.target.value })} />
 						</div>
-						<div className="form-group" style={{ flex: 1 }}>
+						<div className="form-group">
 							<label>퇴사일</label>
 							<input type="date" value={formData.resignation_date || ''}
 								onChange={e => setFormData({ ...formData, resignation_date: e.target.value })} />

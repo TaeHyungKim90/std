@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { recruitmentApi } from 'api/recruitmentApi';
 import SunEditor from 'suneditor-react';
+import 'assets/css/admin.css';
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 	const [formData, setFormData] = useState({
 		title: '',
@@ -51,7 +52,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 
 	return (
 		<div className="modal-overlay">
-			<div className="modal-content" style={{ maxWidth: '800px' }}>
+			<div className="modal-content dynamic-enter job-posting-modal__content">
 				<h2>{editingJob ? '공고 수정' : '새 채용 공고 등록'}</h2>
 				<form onSubmit={handleSubmit}>
 					<div className="form-group">
@@ -66,7 +67,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 					</div>
 					<div className="form-group">
 						<label>직무 설명 (JD)</label>
-						<div style={{ marginTop: '10px' }}>
+						<div className="job-posting-modal__editor-offset">
 							<SunEditor
 								setContents={formData.description}
 								onChange={handleEditorChange}

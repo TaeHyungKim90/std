@@ -82,18 +82,11 @@ const LoginForm = () => {
 		// ✅ login-wrapper를 제거하고 login-container만 남깁니다.
 		// 기존의 login-wrapper에 있던 배경색과 꽉 찬 높이가 제거되어 부모의 배경 이미지가 보입니다.
 		<div className="login-container">
-			<form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column' }}>
+			<form onSubmit={handleLogin} className="login-form-stack">
 				<h2 className="login-title">LOGIN</h2>
 				{error && <p className="error-message">{error}</p>}
 				{showKoreanWarning && (
-					<p className="korean-warning" style={{
-						color: '#ff4d4f',
-						fontSize: '12px',
-						marginBottom: '5px',
-						textAlign: 'center',
-						fontWeight: 'bold',
-						animation: 'shake 0.2s ease-in-out' // 흔들리는 효과(CSS 필요)
-					}}>
+					<p className="korean-warning korean-warning--inline">
 						⚠️ 영문 및 숫자만 입력 가능합니다.
 					</p>
 				)}

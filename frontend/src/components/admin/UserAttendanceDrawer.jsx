@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import 'assets/css/attendance.css';
 import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
 import {
@@ -68,6 +69,34 @@ const getStatusBadge = (status) => {
 	return { className: 'badge-red', label: status };
 };
 
+/** @param {string | undefined | null} status */
+const classifyAttendanceSummaryBucket = (status) => {
+	const st = normalizeStatus(status);
+	if (!st) return null;
+
+	if (st.includes('NORMAL')) return 'normal';
+
+	if (st.includes('HOLIDAY') || st.includes('휴일') || st.includes('공휴')) return null;
+
+	if (
+		st.includes('VACATION') ||
+		st.includes('LEAVE') ||
+		st.includes('ANNUAL') ||
+		st.includes('휴가') ||
+		st.includes('연차')
+	) {
+		return 'vacation';
+	}
+
+	if (st.includes('SICK') || st.includes('병가')) return 'vacation';
+
+	if (st.includes('LATE') || st.includes('MISSED') || st.includes('지각')) return 'late';
+
+	if (st.includes('ABSENT') || st.includes('결근')) return 'absent';
+
+	return null;
+};
+
 /**
  * @param {{ userId: string; userName?: string; onClose: () => void }} props
  */
@@ -106,6 +135,16 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 			navLabel: `${month}월 ${weekIndex}주차 (${labelStart} ~ ${labelEnd})`,
 		};
 	}, [baseDate, viewMode]);
+
+	const statusSummary = useMemo(() => {
+		const counts = { normal: 0, late: 0, absent: 0, vacation: 0 };
+		if (!Array.isArray(items)) return counts;
+		for (const row of items) {
+			const bucket = classifyAttendanceSummaryBucket(row?.status);
+			if (bucket) counts[bucket] += 1;
+		}
+		return counts;
+	}, [items]);
 
 	const loadRange = useCallback(async () => {
 		if (!userId) return;
@@ -175,11 +214,33 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 		<>
 			<button type="button" aria-label="닫기" onClick={onClose} className="uta-drawer-overlay" />
 
-			<aside role="dialog" aria-modal="true" className="uta-drawer-panel">
+			<aside role="dialog" aria-modal="true" className="uta-drawer-panel dynamic-enter">
 				<div className="uta-header-top">
 					<div className="uta-title-block">
-						<div className="uta-title">
-							{userName ? userName : userId}
+						<div className="uta-title-row">
+							<div className="uta-title">{userName ? userName : userId}</div>
+							{!loading ? (
+								<div
+									className="uta-header-summary"
+									role="status"
+									aria-label={`이번 기간 근태 요약: 정상 ${statusSummary.normal}, 지각 ${statusSummary.late}, 결근 ${statusSummary.absent}, 휴가 ${statusSummary.vacation}`}
+								>
+									{[
+										{ key: 'normal', label: '정상', count: statusSummary.normal, mod: 'uta-summary-normal' },
+										{ key: 'late', label: '지각', count: statusSummary.late, mod: 'uta-summary-late' },
+										{ key: 'absent', label: '결근', count: statusSummary.absent, mod: 'uta-summary-absent' },
+										{ key: 'vacation', label: '휴가', count: statusSummary.vacation, mod: 'uta-summary-vacation' },
+									].map((b, i) => (
+										<span
+											key={b.key}
+											className={`uta-summary-badge ${b.mod}`}
+											style={{ animationDelay: `${0.06 + i * 0.045}s` }}
+										>
+											{b.label} {b.count}
+										</span>
+									))}
+								</div>
+							) : null}
 						</div>
 						<div className="uta-subtitle">
 							근태 상세
@@ -237,12 +298,16 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 								</tr>
 							</thead>
 							<tbody>
-								{items.map((row) => {
+								{items.map((row, index) => {
 									const weekend = isWeekendYmd(row.work_date);
 									const badge = getStatusBadge(row.status);
 
 									return (
-										<tr key={row.id} className={weekend ? 'uta-tr-weekend' : undefined}>
+										<tr
+											key={row.id}
+											className={`stagger-item${weekend ? ' uta-tr-weekend' : ''}`}
+											style={{ animationDelay: `${index * 0.04}s` }}
+										>
 											<td className="uta-td-date">{formatYmdToMd(row.work_date)}</td>
 											<td className="uta-td-dow">{formatYmdToWeekKo(row.work_date)}</td>
 

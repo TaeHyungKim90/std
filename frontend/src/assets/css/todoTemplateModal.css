@@ -1,0 +1,29 @@
+/* TodoTemplateModal.jsx — 팔레트 원 backgroundColor는 동적 인라인 */
+
+.todo-template-modal__content {
+    max-width: 600px;
+}
+
+.todo-template-modal__title {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.todo-template-modal__custom-color-row {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.todo-template-modal__native-color {
+    vertical-align: middle;
+    cursor: pointer;
+    border: none;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border-radius: 4px;
+}
+
+.todo-template-modal__form-actions {
+    margin-top: 25px;
+}

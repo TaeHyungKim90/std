@@ -83,23 +83,23 @@ const RecruitmentAdmin = () => {
 							<th>공고명</th>
 							<th>마감일</th>
 							<th>등록일</th>
-							<th style={{ minWidth: '220px' }}>관리</th> {/* 버튼 들어갈 자리 넓힘 */}
+							<th className="recruitment-admin__th-actions">관리</th> {/* 버튼 들어갈 자리 넓힘 */}
 						</tr>
 					</thead>
 					<tbody>
-						{jobs?.length > 0 ? jobs.map(job => (
-							<tr key={job.id}>
+						{jobs?.length > 0 ? jobs.map((job, index) => (
+							<tr key={job.id} className="stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 								<td>
 									<span className={`status-badge ${job.status}`}>
 										{job.status === 'open' ? '진행중' : '마감'}
 									</span>
 								</td>
-								<td style={{ textAlign: 'left', fontWeight: 'bold' }}>{job.title}</td>
+								<td className="recruitment-admin__cell-title">{job.title}</td>
 								<td>{job.deadline || '상시채용'}</td>
 								<td>{new Date(job.created_at).toLocaleDateString()}</td>
 								<td>
 									{/* 👉 세 가지 버튼으로 나누어 배치 */}
-									<button className="btn-save" style={{ marginRight: '5px' }} onClick={() => handleApplicantClick(job)}>
+									<button className="btn-save recruitment-admin__btn-lead" onClick={() => handleApplicantClick(job)}>
 										지원자
 									</button>
 									<button className="btn-edit" onClick={() => handleEditClick(job)}>수정</button>
@@ -107,7 +107,7 @@ const RecruitmentAdmin = () => {
 								</td>
 							</tr>
 						)) : (
-							<tr><td colSpan="5" style={{ textAlign: 'center', padding: '30px' }}>등록된 공고가 없습니다.</td></tr>
+							<tr><td colSpan="5" className="admin-table__empty">등록된 공고가 없습니다.</td></tr>
 						)}
 					</tbody>
 				</table>

@@ -43,16 +43,17 @@ const JobListPage = () => {
 			</header>
 			<div>
 				{total === 0 ? (
-					<div className="glass-box" style={{ textAlign: 'center', padding: '60px 0', color: '#555' }}>
+					<div className="glass-box job-list__empty-glass">
 						현재 진행 중인 채용 공고가 없습니다.
 					</div>
 				) : (
 					<>
 						<div className="job-cards">
-							{jobs.map((job) => (
+							{jobs.map((job, index) => (
 								<div
 									key={job.id}
-									className="job-card"
+									className="job-card stagger-item"
+									style={{ animationDelay: `${index * 0.04}s` }}
 									onClick={() => navigate(`/careers/${job.id}`, { state: { job } })}
 									onKeyDown={(e) => {
 										if (e.key === 'Enter' || e.key === ' ') {
@@ -72,7 +73,7 @@ const JobListPage = () => {
 							))}
 						</div>
 						{jobs.length === 0 && (
-							<p style={{ textAlign: 'center', color: '#666', padding: 24 }}>이 페이지에 표시할 공고가 없습니다.</p>
+							<p className="job-list__page-empty">이 페이지에 표시할 공고가 없습니다.</p>
 						)}
 						<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 					</>

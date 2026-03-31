@@ -127,8 +127,8 @@ const CategoryMgmt = () => {
 					</tr>
 				</thead>
 				<tbody>
-					{categories.map(cat => (
-						<tr key={cat.id}>
+					{categories.map((cat, index) => (
+						<tr key={cat.id} className="stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 							{editingId === cat.id ? (
 								<>
 									<td><code>{cat.category_key}</code></td>

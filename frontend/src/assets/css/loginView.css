@@ -259,6 +259,60 @@ body {
 .social-divider::before { margin-right: 15px; }
 .social-divider::after { margin-left: 15px; }
 
+/* 로그인/회원가입 폼 세로 스택 */
+.login-form-stack {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+.korean-warning--inline {
+    color: #ff4d4f;
+    font-size: 12px;
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: bold;
+    animation: shake 0.2s ease-in-out;
+}
+
+.social-login-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.status-message--success {
+    color: #3DAF7A;
+}
+
+.status-message--error {
+    color: #FF6A3D;
+}
+
+.login-input.login-input--confirm-password {
+    margin-bottom: 15px;
+}
+
+.login-input.login-input--confirm-password.login-input--mb-tight {
+    margin-bottom: 5px;
+}
+
+.circle-btn__letter--kakao {
+    font-weight: bold;
+    color: #191919;
+}
+
+.circle-btn__letter--naver {
+    font-weight: bold;
+    color: #fff;
+}
+
 /* --- 2. 동그란 버튼들을 가로로 묶는 컨테이너 --- */
 .social-login-group {
     display: flex;

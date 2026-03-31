@@ -152,6 +152,18 @@
     font-size: 1.1rem;
 }
 
+/* Attendance.jsx (HR 근태) — 비활성 사유 배너 */
+.attendance-hr__disabled-banner {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #f0d5d5;
+    background: #fff5f5;
+    color: #b42318;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
 /* 모바일 최적화 */
 /* ==========================================
    📱 모바일 & 태블릿 최적화 (2단계 대응)
@@ -274,6 +286,14 @@
     min-width: 0;
 }
 
+.uta-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    min-width: 0;
+}
+
 .uta-title {
     font-size: 1.35rem;
     font-weight: 950;
@@ -282,6 +302,67 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* 헤더 요약 뱃지: scaleBlurIn + staggerDropIn 느낌 혼합 */
+@keyframes utaSummaryBadgeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.94);
+        filter: blur(3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.uta-header-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    min-width: 0;
+}
+
+.uta-summary-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.8125rem; /* 13px */
+    font-weight: 850;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    animation: utaSummaryBadgeIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.uta-summary-normal {
+    background: rgba(63, 175, 122, 0.14);
+    color: #1E7E55;
+}
+
+.uta-summary-late {
+    /* badge-missed / 결근 계열과 동일 팔레트 */
+    background: rgba(239, 68, 68, 0.12);
+    color: #DC2626;
+}
+
+.uta-summary-absent {
+    background: rgba(239, 68, 68, 0.12);
+    color: #DC2626;
+}
+
+.uta-summary-vacation {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1D4ED8;
 }
 
 .uta-subtitle {
@@ -509,11 +590,17 @@
     align-items: center;
     justify-content: center;
     min-width: 96px;
-    transition: background 0.1s ease;
+    transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
 }
 
 .uta-btn-edit:hover {
     background: rgba(20, 20, 20, 0.04);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.uta-btn-edit:active {
+    transform: scale(0.96);
 }
 
 .uta-btn-save {
@@ -525,6 +612,17 @@
     cursor: pointer;
     font-weight: 950;
     width: 100%;
+    transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.2s ease;
+}
+
+.uta-btn-save:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    filter: brightness(1.03);
+}
+
+.uta-btn-save:active:not(:disabled) {
+    transform: scale(0.96);
 }
 
 .uta-btn-save:disabled {
@@ -541,6 +639,26 @@
     cursor: pointer;
     font-weight: 950;
     width: 100%;
+    transition: all 0.2s ease;
+}
+
+.uta-close-btn,
+.uta-nav-btn,
+.uta-btn-cancel {
+    transition: all 0.2s ease;
+}
+
+.uta-close-btn:hover:not(:disabled),
+.uta-nav-btn:hover:not(:disabled),
+.uta-btn-cancel:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.uta-close-btn:active:not(:disabled),
+.uta-nav-btn:active:not(:disabled),
+.uta-btn-cancel:active:not(:disabled) {
+    transform: scale(0.96);
 }
 
 /* Badges */
@@ -554,6 +672,12 @@
     font-size: 0.9rem;
     line-height: 1;
     white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(20, 20, 20, 0.12);
 }
 
 .badge-normal {
@@ -572,6 +696,168 @@
 .badge-vacation {
     background: rgba(59, 130, 246, 0.12); /* 연한 파랑 */
     color: #1D4ED8; /* 진한 파랑 */
+}
+
+/* =========================================================
+   AdminAttendance — 일일 근태 대시보드 (.adm-attendance-*)
+   ========================================================= */
+.adm-attendance__date-toolbar {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.adm-attendance__date-label {
+    font-weight: 700;
+    color: #222;
+}
+
+.adm-attendance__date-input {
+    margin-left: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    font-weight: 600;
+}
+
+.adm-attendance__today-btn {
+    margin-left: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.adm-attendance__summary-grid {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.adm-attendance__summary-card {
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.adm-attendance__summary-card--total {
+    border: 1px solid #e8e8e8;
+    background: #fff;
+}
+
+.adm-attendance__summary-card--attended {
+    border: 1px solid #d8f3ea;
+    background: #f3fffb;
+}
+
+.adm-attendance__summary-card--vacation {
+    border: 1px solid #e9e2ff;
+    background: #f7f4ff;
+}
+
+.adm-attendance__summary-card--absent {
+    border: 1px solid #ffe1e1;
+    background: #fff5f5;
+}
+
+.adm-attendance__summary-label {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.adm-attendance__summary-card--total .adm-attendance__summary-label {
+    color: #666;
+}
+
+.adm-attendance__summary-card--attended .adm-attendance__summary-label {
+    color: #1f7a5a;
+    font-weight: 700;
+}
+
+.adm-attendance__summary-card--vacation .adm-attendance__summary-label {
+    color: #5a2bb8;
+    font-weight: 700;
+}
+
+.adm-attendance__summary-card--absent .adm-attendance__summary-label {
+    color: #b42318;
+    font-weight: 700;
+}
+
+.adm-attendance__summary-value {
+    font-size: 22px;
+    font-weight: 900;
+    margin-top: 6px;
+}
+
+.adm-attendance__summary-card--total .adm-attendance__summary-value {
+    color: #111;
+}
+
+.adm-attendance__summary-card--attended .adm-attendance__summary-value {
+    color: #0f5d46;
+}
+
+.adm-attendance__summary-card--vacation .adm-attendance__summary-value {
+    color: #4a1f9a;
+}
+
+.adm-attendance__summary-card--absent .adm-attendance__summary-value {
+    color: #9f1c14;
+}
+
+.adm-attendance__loading {
+    text-align: center;
+    padding: 50px;
+}
+
+.adm-attendance__user-link-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.adm-attendance__user-name {
+    font-weight: 600;
+    color: #1565c0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.adm-attendance__user-id {
+    font-size: 0.8rem;
+    color: #0d47a1;
+    margin-top: 2px;
+}
+
+.adm-attendance__clock-badge {
+    font-weight: 800;
+}
+
+.adm-attendance__location-badge {
+    background-color: #f1f3f5;
+    color: #666;
+}
+
+.adm-attendance__cell-work {
+    color: #4a90e2;
+    font-weight: bold;
+}
+
+.adm-attendance__empty-cell {
+    text-align: center;
+    padding: 30px;
+    color: #999;
 }
 
 /* Responsive safety */

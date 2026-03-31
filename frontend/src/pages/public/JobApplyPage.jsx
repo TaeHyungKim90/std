@@ -117,33 +117,33 @@ const JobApplyPage = () => {
     if (!loggedInUser || !job) return null;
 
     return (
-        <div className="careers-content-wrapper" style={{ maxWidth: '750px' }}>
+        <div className="careers-content-wrapper job-apply__wrapper">
             <button className="btn-back" onClick={() => navigate(-1)}>
                 ← 뒤로가기
             </button>
             <div className="glass-box apply-form-box">
-                <h2 style={{ marginBottom: '10px', color: '#111' }}>{job.title}</h2>
-                <p style={{ color: '#555', marginBottom: '30px', fontWeight: '500' }}>아래 정보를 확인하고 이력서를 제출해 주세요.</p>
+                <h2 className="job-apply__title">{job.title}</h2>
+                <p className="job-apply__lead">아래 정보를 확인하고 이력서를 제출해 주세요.</p>
                 
-                <div style={{ background: 'rgba(255,255,255,0.5)', padding: '20px', borderRadius: '12px', marginBottom: '30px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                    <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#333' }}>지원자 기본 정보</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '10px', fontSize: '0.95rem', color: '#555' }}>
-                        <span>이름:</span> <strong style={{ color: '#111' }}>{loggedInUser.name}</strong>
-                        <span>이메일:</span> <strong style={{ color: '#111' }}>{loggedInUser.email_id}</strong>
-                        <span>연락처:</span> <strong style={{ color: '#111' }}>{formatPhoneNumber(loggedInUser.phone)}</strong>
+                <div className="job-apply__applicant-card">
+                    <h3 className="job-apply__applicant-title">지원자 기본 정보</h3>
+                    <div className="job-apply__applicant-grid">
+                        <span>이름:</span> <strong className="job-apply__applicant-strong">{loggedInUser.name}</strong>
+                        <span>이메일:</span> <strong className="job-apply__applicant-strong">{loggedInUser.email_id}</strong>
+                        <span>연락처:</span> <strong className="job-apply__applicant-strong">{formatPhoneNumber(loggedInUser.phone)}</strong>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>이력서 (PDF 등, 필수) <span style={{color: '#E74C3C'}}>*</span></label>
+                        <label>이력서 (PDF 등, 필수) <span className="job-apply__req-star">*</span></label>
                         <input type="file" accept=".pdf,.doc,.docx" required onChange={(e) => handleFileChange(e, 'resume')} />
                     </div>
                     <div className="form-group">
                         <label>포트폴리오 (선택)</label>
                         <input type="file" accept=".pdf,.zip" onChange={(e) => handleFileChange(e, 'portfolio')} />
                     </div>
-                    <button type="submit" disabled={isSubmitting} style={{ padding: '16px', background: isSubmitting ? '#cbd5e1' : '#3DAF7A', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isSubmitting ? 'not-allowed' : 'pointer', width: '100%', marginTop: '20px', transition: 'all 0.2s' }}>
+                    <button type="submit" disabled={isSubmitting} className={`job-apply__submit ${isSubmitting ? 'job-apply__submit--busy' : 'job-apply__submit--ready'}`}>
                         {isSubmitting ? '파일 업로드 및 제출 중...' : '지원서 최종 제출'}
                     </button>
                 </form>

@@ -129,22 +129,22 @@ const HolidayMgmt = () => {
 		<div className="bq-admin-view">
 			<div className="admin-header">
 				<h2>🏖️ <span>공휴일</span> 관리</h2>
-				<div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+				<div className="holiday-mgmt__toolbar">
 					{/* 상단으로 끌어올린 연도 필터 및 동기화 버튼 */}
-					<select className="bq-select" style={{ width: '120px', margin: 0 }} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
+					<select className="bq-select holiday-mgmt__year-select" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
 						{yearOptions.map((y) => (
 							<option key={y} value={y}>{y}년</option>
 						))}
 					</select>
-					<button className="btn-primary" style={{ backgroundColor: '#4A90E2' }} onClick={handleSync} disabled={isSyncing}>
+					<button className="btn-primary btn-primary--sync-blue" onClick={handleSync} disabled={isSyncing}>
 						{isSyncing ? "⏳ 처리중..." : "🌐 공공데이터 연동"}
 					</button>
 				</div>
 			</div>
 
 			{/* 깔끔한 신규 등록 박스 */}
-			<div style={{ marginBottom: '8px' }}>
-				<div className="category-add-box" style={{ flexWrap: 'nowrap' }}>
+			<div className="holiday-mgmt__form-outer">
+				<div className="category-add-box category-add-box--single-line">
 					<input type="date" className="cat-input" value={newHoliday.holiday_date} onChange={e => setNewHoliday({ ...newHoliday, holiday_date: e.target.value })} aria-invalid={isDateYearMismatch} />
 					<select className="cat-input" value={newHoliday.is_official} onChange={e => setNewHoliday({ ...newHoliday, is_official: e.target.value })}>
 						<option value="true">🔴 법정 공휴일</option>
@@ -152,21 +152,15 @@ const HolidayMgmt = () => {
 					</select>
 					<input type="text" className="cat-input" placeholder="휴일명 (예: 대체공휴일)" value={newHoliday.holiday_name} onChange={e => setNewHoliday({ ...newHoliday, holiday_name: e.target.value })} />
 					<input type="text" className="cat-input" placeholder="비고 (선택)" value={newHoliday.description} onChange={e => setNewHoliday({ ...newHoliday, description: e.target.value })} />
-					<button className="btn-save" onClick={handleCreate} style={{ whiteSpace: 'nowrap', padding: '12px 20px' }}>추가하기</button>
+					<button className="btn-save holiday-mgmt__add-btn" onClick={handleCreate}>추가하기</button>
 				</div>
-				<p style={{ fontSize: '0.82rem', color: '#64748b', margin: '8px 0 0', lineHeight: 1.45 }}>
+				<p className="holiday-mgmt__hint">
 					목록은 상단에서 고른 <strong>{yearFilter}년</strong> 휴일만 표시됩니다. 다른 연도를 넣으려면 먼저 연도를 바꾼 뒤 등록하세요.
 				</p>
 				{isDateYearMismatch && (
 					<p
 						role="status"
-						style={{
-							fontSize: '0.88rem',
-							color: '#c2410c',
-							margin: '8px 0 0',
-							fontWeight: 600,
-							lineHeight: 1.45
-						}}
+						className="holiday-mgmt__date-warning"
 					>
 						선택한 날짜는 {newHolidayDateYear}년입니다. 지금 목록은 {yearFilter}년만 보여 주므로, 등록 후에도 여기서는 보이지 않습니다. 연도를 {newHolidayDateYear}년으로 바꾸거나 날짜를 {yearFilter}년으로 맞춰 주세요.
 					</p>
@@ -177,30 +171,30 @@ const HolidayMgmt = () => {
 				<table className="admin-table">
 					<thead>
 						<tr>
-							<th style={{ width: '20%' }}>날짜</th>
-							<th style={{ width: '15%' }}>구분</th>
-							<th style={{ width: '30%' }}>휴일명</th>
-							<th style={{ width: '20%' }}>비고</th>
-							<th style={{ width: '15%' }}>관리</th>
+							<th className="holiday-mgmt__th--20">날짜</th>
+							<th className="holiday-mgmt__th--15">구분</th>
+							<th className="holiday-mgmt__th--30">휴일명</th>
+							<th className="holiday-mgmt__th--20">비고</th>
+							<th className="holiday-mgmt__th--15">관리</th>
 						</tr>
 					</thead>
 					<tbody>
-						{holidays.length > 0 ? holidays.map((holiday) => (
-							<tr key={holiday.id}>
+						{holidays.length > 0 ? holidays.map((holiday, index) => (
+							<tr key={holiday.id} className="stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 								<td><strong>{holiday.holiday_date}</strong></td>
 								<td>
 									{holiday.is_official ? (
 										<span className="role-badge admin">법정공휴일</span>
 									) : (
-										<span className="role-badge user" style={{ background: '#e8f5e9', color: '#2e7d32' }}>회사지정</span>
+										<span className="role-badge user role-badge--company-custom">회사지정</span>
 									)}
 								</td>
-								<td style={{ fontWeight: '600', color: '#141414' }}>{holiday.holiday_name}</td>
-								<td style={{ color: '#888' }}>{holiday.description || '-'}</td>
+								<td className="holiday-mgmt__cell-name">{holiday.holiday_name}</td>
+								<td className="holiday-mgmt__cell-desc">{holiday.description || '-'}</td>
 								<td><button className="btn-delete-small" onClick={() => handleDelete(holiday.id, holiday.holiday_name)}>삭제</button></td>
 							</tr>
 						)) : (
-							<tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>해당 연도에 등록된 휴일이 없습니다.</td></tr>
+							<tr><td colSpan="5" className="admin-table__empty">해당 연도에 등록된 휴일이 없습니다.</td></tr>
 						)}
 					</tbody>
 				</table>

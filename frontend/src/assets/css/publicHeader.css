@@ -1,0 +1,87 @@
+/* PublicHeader.jsx */
+
+.public-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-bottom: 1px solid #eaeaea;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.public-header__brand-nav {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.public-header__logo-link {
+    text-decoration: none;
+    color: #111;
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.public-header__nav {
+    display: flex;
+    gap: 20px;
+    font-weight: 600;
+}
+
+.public-header__nav-link {
+    text-decoration: none;
+    color: #333;
+}
+
+.public-header__actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.public-header__profile-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.public-header__profile-btn:hover {
+    background-color: #f3f4f6;
+}
+
+.public-header__user-name {
+    color: #4A90E2;
+    font-weight: bold;
+    font-size: 1.05rem;
+}
+
+.public-header__gear {
+    font-size: 1rem;
+}
+
+.public-header__btn-logout {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.public-header__btn-login {
+    padding: 8px 24px;
+    border-radius: 6px;
+    border: none;
+    background: #111;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}

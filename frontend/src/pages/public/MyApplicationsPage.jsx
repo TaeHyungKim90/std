@@ -62,50 +62,56 @@ const MyApplicationsPage = () => {
 		});
 	};
 
-	if (isLoading) return <div style={{ padding: '50px', textAlign: 'center' }}>데이터를 불러오는 중입니다...</div>;
+	if (isLoading) return <div className="my-applications__loading">데이터를 불러오는 중입니다...</div>;
 
 	return (
-		<div className="careers-content-wrapper" style={{ maxWidth: '850px' }}>
-			<div className="glass-box" style={{ padding: '40px' }}>
-				<h2 style={{ fontSize: '2.2rem', margin: '0 0 10px 0', color: '#111', fontWeight: '800' }}>내 지원 내역</h2>
-				<p style={{ color: '#444', marginBottom: '40px', fontSize: '1.05rem', fontWeight: '500' }}>
+		<div className="careers-content-wrapper careers-content-wrapper--narrow">
+			<div className="glass-box">
+				<h2 className="my-applications__title">내 지원 내역</h2>
+				<p className="my-applications__lead">
 					{loggedInUser?.name}님이 가치플레이와 함께한 여정입니다.
 				</p>
 
 				{applications.length === 0 ? (
-					<div style={{ textAlign: 'center', padding: '60px 0', background: 'rgba(255,255,255,0.5)', borderRadius: '12px', border: '1px dashed rgba(0,0,0,0.1)' }}>
-						<div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
-						<h3 style={{ color: '#333', marginBottom: '10px' }}>아직 지원한 내역이 없습니다.</h3>
-						<p style={{ color: '#666', marginBottom: '25px' }}>지금 바로 가치플레이의 새로운 포지션에 도전해 보세요!</p>
-						<button onClick={() => navigate('/careers')} style={{ padding: '12px 24px', background: '#3FAF7A', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>
+					<div className="my-applications__empty">
+						<div className="my-applications__empty-icon">📝</div>
+						<h3 className="my-applications__empty-title">아직 지원한 내역이 없습니다.</h3>
+						<p className="my-applications__empty-desc">지금 바로 가치플레이의 새로운 포지션에 도전해 보세요!</p>
+						<button type="button" onClick={() => navigate('/careers')} className="my-applications__cta">
 							채용 공고 보러가기
 						</button>
 					</div>
 				) : (
-					<div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-						{applications.map(app => {
+					<div className="my-applications__list">
+						{applications.map((app, index) => {
 							const statusInfo = STATUS_MAP[app.status] || { text: '알 수 없음', color: '#666', bg: '#f3f4f6' };
 							
 							return (
-								<div key={app.id} className="my-app-card">
+								<div key={app.id} className="my-app-card stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 									<div>
-										<h3 style={{ margin: '0 0 10px 0', fontSize: '1.25rem', color: '#111', fontWeight: '700' }}>{app.job_title}</h3>
-										<p style={{ margin: 0, fontSize: '0.95rem', color: '#555', fontWeight: '500' }}>
+										<h3 className="my-applications__card-title">{app.job_title}</h3>
+										<p className="my-applications__card-date">
 											지원 일자: {formatDate(app.applied_at)}
 										</p>
 									</div>
-									<div style={{ textAlign: 'right' }}>
-										<div style={{ display: 'inline-block', padding: '8px 16px', borderRadius: '20px', fontWeight: '800', fontSize: '0.95rem', color: statusInfo.color, backgroundColor: statusInfo.bg, border: `1px solid ${statusInfo.color}33` }}>
+									<div className="my-applications__card-aside">
+										<div
+											className="my-applications__status-chip"
+											style={{
+												color: statusInfo.color,
+												backgroundColor: statusInfo.bg,
+												border: `1px solid ${statusInfo.color}33`,
+											}}
+										>
 											{statusInfo.text}
 										</div>
 										
 										{app.status === 'applied' && (
-											<div style={{ marginTop: '12px' }}>
+											<div className="my-applications__cancel-wrap">
 												<button 
+													type="button"
 													onClick={() => handleCancelApplication(app.id)}
-													style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.8)', border: '1px solid #ff4d4f', color: '#ff4d4f', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
-													onMouseOver={(e) => { e.currentTarget.style.background = '#ff4d4f'; e.currentTarget.style.color = '#fff'; }}
-													onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.8)'; e.currentTarget.style.color = '#ff4d4f'; }}
+													className="my-applications__cancel-btn"
 												>
 													지원 취소
 												</button>

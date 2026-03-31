@@ -479,3 +479,354 @@
     .modal-content { width: 92%; margin: 10px; padding: 25px; max-height: 90vh; overflow-y: auto; }
     .modal-content .modal-actions { flex-direction: column; gap: 10px; }
 }
+
+/* === Dynamic & Playful: 버튼 탄성(호버 번짐 + active 눌림) === */
+.bq-admin-view .btn-primary:not(:disabled),
+.bq-admin-view .btn-save:not(:disabled),
+.bq-admin-view .btn-add:not(:disabled),
+.bq-admin-view .btn-edit:not(:disabled),
+.bq-admin-view .admin-table .btn-delete:not(:disabled),
+.bq-admin-view .admin-table .btn-delete-small:not(:disabled),
+.bq-admin-view .admin-table .btn-cancel:not(:disabled),
+.bq-admin-view .admin-filter-btn:not(:disabled),
+.bq-btn-admin-action:not(:disabled),
+.modal-content .btn-primary:not(:disabled),
+.modal-content .btn-save:not(:disabled),
+.modal-content .btn-add:not(:disabled),
+.modal-content .btn-cancel:not(:disabled),
+.modal-content .modal-actions button:not(:disabled) {
+    transition: all 0.2s ease;
+}
+
+.bq-admin-view .btn-edit:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bq-admin-view .admin-table .btn-delete:not(:disabled):hover,
+.bq-admin-view .admin-table .btn-delete-small:not(:disabled):hover,
+.bq-admin-view .admin-table .btn-cancel:not(:disabled):hover,
+.bq-admin-view .admin-filter-btn:not(:disabled):hover,
+.modal-content .btn-cancel:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bq-admin-view .btn-primary:not(:disabled):hover,
+.bq-admin-view .btn-save:not(:disabled):hover,
+.bq-admin-view .btn-add:not(:disabled):hover,
+.modal-content .btn-primary:not(:disabled):hover,
+.modal-content .btn-save:not(:disabled):hover,
+.modal-content .btn-add:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bq-admin-view .btn-primary:not(:disabled):active,
+.bq-admin-view .btn-save:not(:disabled):active,
+.bq-admin-view .btn-add:not(:disabled):active,
+.bq-admin-view .btn-edit:not(:disabled):active,
+.bq-admin-view .admin-table .btn-delete:not(:disabled):active,
+.bq-admin-view .admin-table .btn-delete-small:not(:disabled):active,
+.bq-admin-view .admin-table .btn-cancel:not(:disabled):active,
+.bq-admin-view .admin-filter-btn:not(:disabled):active,
+.bq-btn-admin-action:not(:disabled):active,
+.modal-content .btn-primary:not(:disabled):active,
+.modal-content .btn-save:not(:disabled):active,
+.modal-content .btn-add:not(:disabled):active,
+.modal-content .btn-cancel:not(:disabled):active,
+.modal-content .modal-actions button:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+.admin-file-preview-tab-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.admin-file-preview-tab-btn:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+.emoji-btn:not(:disabled) {
+    transition: all 0.2s ease;
+}
+
+.emoji-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.emoji-btn:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+/* ========== 인라인 스타일 분리: 페이지별 ========== */
+
+/* AdminUser.jsx */
+.admin-user__header-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.admin-user__search-input {
+    width: 250px;
+    margin: 0;
+    padding: 10px;
+}
+
+.btn-primary--sync-blue {
+    background-color: #4a90e2;
+}
+
+.admin-user__name-cell {
+    font-weight: bold;
+}
+
+.admin-user__resigned-tag {
+    font-size: 0.75rem;
+    color: #ff6a3d;
+    margin-left: 5px;
+}
+
+.admin-user__join-date {
+    font-size: 0.9rem;
+}
+
+.admin-user__resign-date {
+    font-size: 0.8rem;
+    color: #ff6a3d;
+}
+
+.admin-user__vac-remain {
+    color: #3faf7a;
+    font-weight: bold;
+}
+
+.admin-user__vac-total {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.admin-table__empty {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+}
+
+.admin-table__empty--lg {
+    text-align: center;
+    padding: 60px;
+    color: #888;
+}
+
+/* HolidayMgmt.jsx */
+.holiday-mgmt__toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.holiday-mgmt__year-select {
+    width: 120px;
+    margin: 0;
+}
+
+.holiday-mgmt__form-outer {
+    margin-bottom: 8px;
+}
+
+.category-add-box--single-line {
+    flex-wrap: nowrap;
+}
+
+.holiday-mgmt__add-btn {
+    white-space: nowrap;
+    padding: 12px 20px;
+}
+
+.holiday-mgmt__hint {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 8px 0 0;
+    line-height: 1.45;
+}
+
+.holiday-mgmt__date-warning {
+    font-size: 0.88rem;
+    color: #c2410c;
+    margin: 8px 0 0;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.holiday-mgmt__th--20 {
+    width: 20%;
+}
+
+.holiday-mgmt__th--15 {
+    width: 15%;
+}
+
+.holiday-mgmt__th--30 {
+    width: 30%;
+}
+
+.role-badge--company-custom {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.holiday-mgmt__cell-name {
+    font-weight: 600;
+    color: #141414;
+}
+
+.holiday-mgmt__cell-desc {
+    color: #888;
+}
+
+/* ApplicantStatus.jsx */
+.applicant-status__header--spaced {
+    margin-bottom: 20px;
+}
+
+.applicant-status__table-scroll {
+    max-height: min(70vh, 640px);
+    overflow-y: auto;
+}
+
+.applicant-status__th--center {
+    text-align: center;
+}
+
+.applicant-status__th--narrow {
+    width: 150px;
+}
+
+.applicant-status__td--strong {
+    font-weight: bold;
+}
+
+.applicant-status__td--center {
+    text-align: center;
+}
+
+/* RecruitmentAdmin.jsx */
+.recruitment-admin__th-actions {
+    min-width: 220px;
+}
+
+.recruitment-admin__cell-title {
+    text-align: left;
+    font-weight: bold;
+}
+
+.recruitment-admin__btn-lead {
+    margin-right: 5px;
+}
+
+/* AdminTodo.jsx */
+.admin-todo__empty {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+.admin-todo__category-badge {
+    background-color: #f0eee9;
+    color: #141414;
+    border: 1px solid #e2dfd8;
+}
+
+.admin-todo__title-cell {
+    cursor: pointer;
+    color: #3daf7a;
+    font-weight: 600;
+}
+
+.admin-todo__del-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* AdminMessage.jsx */
+.admin-message__empty-cell {
+    text-align: center;
+}
+
+.admin-message__read-label {
+    font-weight: bold;
+}
+
+.admin-message__read-label--read {
+    color: var(--primary);
+}
+
+.admin-message__read-label--unread {
+    color: var(--accent);
+}
+
+.admin-message__row {
+    cursor: pointer;
+}
+
+/* MessageSendModal.jsx */
+.admin-message-send__modal-content {
+    max-width: 800px;
+}
+
+.admin-message-send__title {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--text-main);
+    font-weight: 800;
+}
+
+.admin-message-send__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.admin-message-send__checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.admin-message-send__accent-text {
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.admin-message-send__required-mark {
+    color: red;
+}
+
+.admin-message-send__editor-frame {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.admin-message-send__file-input {
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+/* JobPostingModal.jsx */
+.job-posting-modal__content {
+    max-width: 800px;
+}
+
+.job-posting-modal__editor-offset {
+    margin-top: 10px;
+}
+
+/* AdminUser.jsx — 퇴사 행 */
+.admin-user__row--resigned {
+    --stagger-to-opacity: 0.6;
+    background-color: #fafafa;
+}

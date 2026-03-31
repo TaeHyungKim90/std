@@ -78,13 +78,14 @@ const AdminMessage = () => {
                     <tbody>
                         {messages.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center' }}>보낸 메시지가 없습니다.</td>
+                                <td colSpan="6" className="admin-message__empty-cell">보낸 메시지가 없습니다.</td>
                             </tr>
                         ) : (
-                            messages.map(msg => (
+                            messages.map((msg, index) => (
                                 <tr key={msg.id}
+                                    className="stagger-item admin-message__row"
                                     onClick={() => handleReadMessage(msg)} // 🌟 4. 클릭 이벤트 연결!
-                                    style={{ cursor: 'pointer' }} // 🌟 5. 마우스 올리면 손가락 모양으로!
+                                    style={{ animationDelay: `${index * 0.04}s` }} // 🌟 5. 마우스 올리면 손가락 모양으로!
                                 >
                                     <td>
                                         <span className={`role-badge ${msg.is_global ? 'admin' : 'user'}`}>
@@ -96,7 +97,7 @@ const AdminMessage = () => {
                                     <td>{formatDate(msg.created_at)}</td>
                                     <td>
                                         {msg.is_global ? '-' : (
-                                            <span style={{ color: msg.is_read ? 'var(--primary)' : 'var(--accent)', fontWeight: 'bold' }}>
+                                            <span className={`admin-message__read-label ${msg.is_read ? 'admin-message__read-label--read' : 'admin-message__read-label--unread'}`}>
                                                 {msg.is_read ? '읽음' : '안 읽음'}
                                             </span>
                                         )}

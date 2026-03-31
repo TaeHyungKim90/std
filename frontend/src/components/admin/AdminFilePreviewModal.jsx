@@ -29,7 +29,7 @@ const AdminFilePreviewModal = ({ isOpen, onClose, fileUrl, fileLabel = '첨부 �
 	return (
 		<div className="admin-file-preview-backdrop" role="presentation" onClick={onClose}>
 			<div
-				className="admin-file-preview-panel"
+				className="admin-file-preview-panel dynamic-enter"
 				role="dialog"
 				aria-modal="true"
 				aria-label={fileLabel}

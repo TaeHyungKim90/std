@@ -1,4 +1,5 @@
 import React from 'react';
+import 'assets/css/layout.css';
 
 /**
  * 페이지네이션 UI (1-based).
@@ -23,41 +24,24 @@ const PaginationBar = ({ page, pageSize, total, onPageChange, className = '' }) 
 	const from = (safePage - 1) * pageSize + 1;
 	const to = Math.min(safePage * pageSize, total);
 
-	const btnStyle = (disabled) => ({
-		padding: '8px 16px',
-		borderRadius: 8,
-		border: '1px solid #ccc',
-		background: disabled ? '#f0f0f0' : '#fff',
-		cursor: disabled ? 'not-allowed' : 'pointer',
-		fontSize: '0.9rem',
-	});
-
 	return (
 		<div
-			className={`admin-pagination-bar ${className}`.trim()}
-			style={{
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				gap: 10,
-				marginTop: 8,
-				flexWrap: 'wrap',
-			}}
+			className={`pagination-bar admin-pagination-bar ${className}`.trim()}
 		>
 			<button
 				type="button"
-				style={btnStyle(safePage <= 1)}
+				className="pagination-bar__nav-btn"
 				disabled={safePage <= 1}
 				onClick={() => go(safePage - 1)}
 			>
 				이전
 			</button>
-			<span style={{ color: '#444', fontSize: '0.9rem' }}>
+			<span className="pagination-bar__meta">
 				{from}–{to} / 총 {total}건 (페이지 {safePage}/{totalPages})
 			</span>
 			<button
 				type="button"
-				style={btnStyle(safePage >= totalPages)}
+				className="pagination-bar__nav-btn"
 				disabled={safePage >= totalPages}
 				onClick={() => go(safePage + 1)}
 			>

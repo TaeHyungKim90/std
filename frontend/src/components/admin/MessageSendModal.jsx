@@ -7,6 +7,7 @@ import { adminApi } from 'api/adminApi';	 // 경로 확인
 
 // 🌟 SunEditor 임포트 (CSS 포함 필수)
 import SunEditor from 'suneditor-react';
+import 'assets/css/admin.css';
 const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);
@@ -117,28 +118,28 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 		<div className="modal-overlay">
 
 			{/* 🌟 에디터가 들어가므로 maxWidth를 800px로 넓힘 */}
-			<div className="modal-content" style={{ maxWidth: '800px' }}>
-				<h2 style={{ marginTop: 0, marginBottom: '25px', color: 'var(--text-main)', fontWeight: '800' }}>
+			<div className="modal-content dynamic-enter admin-message-send__modal-content">
+				<h2 className="admin-message-send__title">
 					새 메시지 발송
 				</h2>
 
 				<form onSubmit={handleSubmit}>
 					<div className="form-group">
-						<label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+						<label className="admin-message-send__checkbox-label">
 							<input
 								type="checkbox"
 								name="is_global"
 								checked={formData.is_global}
 								onChange={handleInputChange}
-								style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+								className="admin-message-send__checkbox"
 							/>
-							<span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>전체 공지사항으로 보내기</span>
+							<span className="admin-message-send__accent-text">전체 공지사항으로 보내기</span>
 						</label>
 					</div>
 
 					{!formData.is_global && (
 						<div className="form-group">
-							<label>수신자 선택 <span style={{ color: 'red' }}>*</span></label>
+							<label>수신자 선택 <span className="admin-message-send__required-mark">*</span></label>
 							<select
 								name="receiver_id"
 								value={formData.receiver_id}
@@ -156,7 +157,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 					)}
 
 					<div className="form-group">
-						<label>메시지 제목 <span style={{ color: 'red' }}>*</span></label>
+						<label>메시지 제목 <span className="admin-message-send__required-mark">*</span></label>
 						<input
 							type="text"
 							name="title"
@@ -170,7 +171,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 					{/* 🌟 SunEditor 탑재 영역 */}
 					<div className="form-group">
 						<label>상세 내용</label>
-						<div style={{ border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden' }}>
+						<div className="admin-message-send__editor-frame">
 							<SunEditor
 								setContents={formData.content}
 								onChange={handleEditorChange}
@@ -196,7 +197,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 						<input
 							type="file"
 							onChange={handleFileChange}
-							style={{ padding: '10px', background: '#f8f9fa' }}
+							className="admin-message-send__file-input"
 						/>
 					</div>
 

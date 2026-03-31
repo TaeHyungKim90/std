@@ -306,3 +306,117 @@
     .btn-cancel { order: 2; } /* 모바일에서는 취소 버튼이 아래로 가도록 순서 변경 */
     .btn-save { order: 1; }
 }
+
+/* === Dynamic & Playful: 폼·모달 버튼 (admin.css 미로드 HR 화면) === */
+.form-actions button:not(:disabled),
+.modal-content .modal-actions button:not(:disabled),
+.modal-content .btn-secondary:not(:disabled) {
+    transition: all 0.2s ease;
+}
+
+.form-actions button:not(:disabled):hover,
+.modal-content .modal-actions button:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content .btn-delete:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-actions button:not(:disabled):active,
+.modal-content .modal-actions button:not(:disabled):active,
+.modal-content .btn-secondary:not(:disabled):active,
+.modal-content .btn-delete:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+/* MyMessages.jsx (HR 수신함 — admin.css 미로드) */
+.my-messages__empty-cell {
+    text-align: center;
+    padding: 40px 0;
+    color: #666;
+}
+
+.my-messages__row {
+    cursor: pointer;
+}
+
+.my-messages__row--unread {
+    background: #f0f8ff;
+}
+
+.my-messages__row--read {
+    background: transparent;
+}
+
+.my-messages__title--read {
+    font-weight: normal;
+    color: var(--text-main);
+}
+
+.my-messages__title--unread {
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.my-messages__date {
+    color: var(--text-dim);
+}
+
+.my-messages__status {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.my-messages__status--read {
+    color: var(--text-dim);
+}
+
+.my-messages__status--unread {
+    color: var(--primary);
+}
+
+/* UserModal.jsx — 날짜 행 */
+.modal-form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-form-row .form-group {
+    flex: 1;
+}
+
+/* PaginationBar.jsx */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-bar__meta {
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.pagination-bar__nav-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.pagination-bar__nav-btn:disabled {
+    background: #f0f0f0;
+    cursor: not-allowed;
+}

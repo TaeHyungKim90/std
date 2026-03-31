@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import 'assets/css/applicantListModal.css';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
@@ -45,71 +46,74 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
 
     return (
         <>
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            {/* 모달 창 크기 및 구조 */}
-            <div style={{ background: 'white', padding: '30px 40px', borderRadius: '12px', maxWidth: '900px', width: '90%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}> 
-                
-                {/* 🌟 1. 모달 헤더 (총 접수자 수 추가) */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #111', paddingBottom: '15px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '15px' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#111' }}>📋 지원자 목록 - {jobTitle}</h2>
-                        <span style={{ fontSize: '1rem', color: '#E74C3C', fontWeight: 'bold', marginBottom: '2px' }}>
+        <div className="applicant-list-modal__backdrop">
+            <div className="dynamic-enter applicant-list-modal__panel">
+                <div className="applicant-list-modal__header">
+                    <div className="applicant-list-modal__title-row">
+                        <h2 className="applicant-list-modal__title">📋 지원자 목록 - {jobTitle}</h2>
+                        <span className="applicant-list-modal__count">
                             (총 접수자: {applicants.length}명)
                         </span>
                     </div>
-                    <button onClick={onClose} style={{ fontSize: '1.8rem', background: 'none', border: 'none', cursor: 'pointer', color: '#999', lineHeight: '1' }}>&times;</button>
+                    <button type="button" onClick={onClose} className="applicant-list-modal__close">&times;</button>
                 </div>
-                
-                {/* 🌟 2. 모달 본문 (테이블 디자인 및 스크롤 개선) */}
-                <div style={{ overflowY: 'auto', flex: 1, paddingRight: '5px' }}>
+
+                <div className="applicant-list-modal__body-scroll">
                     {isLoading ? (
-                        <div style={{ textAlign: 'center', padding: '50px 0', color: '#666' }}>데이터를 불러오는 중입니다...</div>
+                        <div className="applicant-list-modal__loading">데이터를 불러오는 중입니다...</div>
                     ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
-                            <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', boxShadow: '0 1px 0 #ddd', zIndex: 1 }}>
+                        <table className="applicant-list-modal__table">
+                            <thead className="applicant-list-modal__thead">
                                 <tr>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>이름</th>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>연락처</th>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>이메일</th>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>현재 상태</th>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>첨부 서류</th>
-                                    <th style={{ padding: '15px 12px', borderBottom: '1px solid #ddd', color: '#333', fontWeight: 'bold' }}>지원일</th>
+                                    <th className="applicant-list-modal__th">이름</th>
+                                    <th className="applicant-list-modal__th">연락처</th>
+                                    <th className="applicant-list-modal__th">이메일</th>
+                                    <th className="applicant-list-modal__th">현재 상태</th>
+                                    <th className="applicant-list-modal__th">첨부 서류</th>
+                                    <th className="applicant-list-modal__th">지원일</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {applicants.length > 0 ? applicants.map(app => {
+                                {applicants.length > 0 ? applicants.map((app, index) => {
                                     const statusInfo = STATUS_MAP[app.status] || { text: '알 수 없음', color: '#666', bg: '#f3f4f6' };
-                                    
+
                                     return (
-                                        <tr key={app.id} style={{ borderBottom: '1px solid #eee', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#fcfcfc'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                                            <td style={{ padding: '16px 12px', fontWeight: 'bold', color: '#111' }}>{app.applicant?.name}</td>
-                                            <td style={{ padding: '16px 12px', color: '#555' }}>{app.applicant?.phone || '-'}</td>
-                                            <td style={{ padding: '16px 12px', color: '#555' }}>{app.applicant?.email_id}</td>
-                                            <td style={{ padding: '16px 12px' }}>
-                                                <span style={{ padding: '6px 12px', borderRadius: '20px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                        <tr key={app.id} className="stagger-item applicant-list-modal__row" style={{ animationDelay: `${index * 0.04}s` }}>
+                                            <td className="applicant-list-modal__td applicant-list-modal__td--name">{app.applicant?.name}</td>
+                                            <td className="applicant-list-modal__td applicant-list-modal__td--muted">{app.applicant?.phone || '-'}</td>
+                                            <td className="applicant-list-modal__td applicant-list-modal__td--muted">{app.applicant?.email_id}</td>
+                                            <td className="applicant-list-modal__td">
+                                                <span
+                                                    className="applicant-list-modal__status-pill"
+                                                    style={{
+                                                        backgroundColor: statusInfo.bg,
+                                                        color: statusInfo.color,
+                                                        border: `1px solid ${statusInfo.color}33`,
+                                                    }}
+                                                >
                                                     {statusInfo.text}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '16px 12px' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                            <td className="applicant-list-modal__td">
+                                                <div className="applicant-list-modal__file-actions">
                                                     {app.resume_file_url && (
-                                                        <button type="button" onClick={() => setFilePreview({ url: app.resume_file_url, label: '이력서' })} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
+                                                        <button type="button" className="applicant-list-modal__file-btn" onClick={() => setFilePreview({ url: app.resume_file_url, label: '이력서' })}>
                                                             📄 이력서
                                                         </button>
                                                     )}
                                                     {app.portfolio_file_url && (
-                                                        <button type="button" onClick={() => setFilePreview({ url: app.portfolio_file_url, label: '포트폴리오' })} style={{ padding: '6px 10px', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', color: '#333', fontWeight: '500' }}>
+                                                        <button type="button" className="applicant-list-modal__file-btn" onClick={() => setFilePreview({ url: app.portfolio_file_url, label: '포트폴리오' })}>
                                                             🎨 포플
                                                         </button>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px 12px', color: '#888', fontSize: '0.9rem' }}>{new Date(app.applied_at).toLocaleDateString()}</td>
+                                            <td className="applicant-list-modal__td applicant-list-modal__td--date">{new Date(app.applied_at).toLocaleDateString()}</td>
                                         </tr>
                                     );
                                 }) : (
                                     <tr>
-                                        <td colSpan="6" style={{ textAlign: 'center', padding: '60px 0', color: '#888', fontSize: '1.1rem' }}>
+                                        <td colSpan="6" className="applicant-list-modal__empty">
                                             아직 이 공고에 지원한 사람이 없습니다.
                                         </td>
                                     </tr>
@@ -119,11 +123,8 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
                     )}
                 </div>
 
-                {/* 🌟 3. 모달 하단 버튼 */}
-                <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #eee', textAlign: 'right' }}>
-                    <button onClick={onClose} style={{ padding: '10px 24px', background: '#f3f4f6', color: '#333', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
-                        닫기
-                    </button>
+                <div className="applicant-list-modal__footer">
+                    <button type="button" onClick={onClose} className="applicant-list-modal__footer-btn">닫기</button>
                 </div>
             </div>
         </div>

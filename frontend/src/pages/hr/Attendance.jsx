@@ -183,18 +183,7 @@ const AttendanceView = () => {
 					</div>
 
 					{disabledReason ? (
-						<div
-							style={{
-								marginTop: 12,
-								padding: '12px 14px',
-								borderRadius: 10,
-								border: '1px solid #f0d5d5',
-								background: '#fff5f5',
-								color: '#b42318',
-								fontWeight: 700,
-								fontSize: '0.9rem',
-							}}
-						>
+						<div className="attendance-hr__disabled-banner">
 							{disabledReason}
 						</div>
 					) : null}

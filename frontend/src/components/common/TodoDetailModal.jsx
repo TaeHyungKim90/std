@@ -6,6 +6,7 @@ import { useAuth } from 'context/AuthContext';
 
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import 'assets/css/todoDetailModal.css';
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
 	const { userId: currentUserId } = useAuth();
 
@@ -95,14 +96,14 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
-		<div className="modal-content detail-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+		<div className="modal-content detail-modal dynamic-enter todo-detail-modal__content" onClick={e => e.stopPropagation()}>
 			<button className="close-x" onClick={onClose}>&times;</button>
 			
 			<div className="modal-header" style={{ borderBottom: `4px solid ${event.color}` }}>
 			<span className="category-badge" style={{ backgroundColor: event.color }}>
 				{displayIcon} {displayName}
 			</span>
-			<h2>일정 상세조회 {isAdminMode && <span style={{fontSize:'0.8rem', color:'red'}}>(관리자)</span>}</h2>
+			<h2>일정 상세조회 {isAdminMode && <span className="todo-detail-modal__admin-tag">(관리자)</span>}</h2>
 			</div>
 
 			<div className="modal-body">
@@ -119,24 +120,23 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 			</div>
 
 			{/* 🌟 3. dangerouslySetInnerHTML 걷어내고 파서 결과물 출력 */}
-			<div className="detail-item" style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', minHeight: '150px', backgroundColor: '#fafafa', textAlign: 'left' }}>
-				<label style={{ display: 'block', marginBottom: '10px', color: '#555', fontWeight: 'bold' }}>상세 내용</label>
+			<div className="detail-item todo-detail-modal__description-block">
+				<label className="todo-detail-modal__description-label">상세 내용</label>
 				{parsedDescription ? (
 				<div 
-					className="sun-editor-editable" 
-					style={{ background: 'transparent', border: 'none', padding: '0', color: '#222' }}
+					className="sun-editor-editable todo-detail-modal__sun-body" 
 				>
 					{parsedDescription}
 				</div>
 				) : (
-				<p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+				<p className="todo-detail-modal__empty-text">
 					등록된 상세 내용이 없습니다.
 				</p>
 				)}
 			</div>
 			</div>
 
-			<div className="form-actions detail-actions" style={{ marginTop: '20px' }}>
+			<div className="form-actions detail-actions todo-detail-modal__actions">
 			{canDelete && (
 				<button className="btn-delete" onClick={handleDelete}>일정 삭제</button>
 			)}
@@ -149,7 +149,7 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 			</div>
 			
 			{!isAuthor && !isAdminMode && (
-			<p style={{ textAlign: 'center', fontSize: '0.8rem', color: '#aaa', marginTop: '10px' }}>
+			<p className="todo-detail-modal__hint">
 				※ 본인이 작성한 일정만 수정 및 삭제가 가능합니다.
 			</p>
 			)}

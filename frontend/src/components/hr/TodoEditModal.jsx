@@ -3,6 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { todoService } from 'api/todoApi';
 import SunEditor from 'suneditor-react';
+import 'assets/css/todoEditModal.css';
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');
@@ -87,8 +88,8 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-				<div className="color-indicator-bar" style={{ backgroundColor: selectedColor, height: '6px', borderRadius: '3px 3px 0 0', marginTop: '-20px', marginBottom: '15px' }}></div>
+			<div className="modal-content dynamic-enter todo-edit-modal__content" onClick={e => e.stopPropagation()}>
+				<div className="color-indicator-bar todo-edit__color-bar" style={{ backgroundColor: selectedColor }}></div>
 				<h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
 				<form action={submitAction}>
 					<div className="date-group">
@@ -113,7 +114,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 					</select>
 					<input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
 
-					<div style={{ marginTop: '15px', marginBottom: '15px', textAlign: 'left' }}>
+					<div className="todo-edit__editor-shell">
 						<SunEditor
 							setContents={description}
 							onChange={setDescription}

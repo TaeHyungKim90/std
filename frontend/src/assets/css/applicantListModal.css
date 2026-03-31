@@ -1,0 +1,172 @@
+/* ApplicantListModal — 지원자 목록 모달 */
+
+.applicant-list-modal__backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.applicant-list-modal__panel {
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.applicant-list-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #111;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.applicant-list-modal__title-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+}
+
+.applicant-list-modal__title {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #111;
+}
+
+.applicant-list-modal__count {
+    font-size: 1rem;
+    color: #e74c3c;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.applicant-list-modal__close {
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.applicant-list-modal__body-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 5px;
+}
+
+.applicant-list-modal__loading {
+    text-align: center;
+    padding: 50px 0;
+    color: #666;
+}
+
+.applicant-list-modal__table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.applicant-list-modal__thead {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    box-shadow: 0 1px 0 #ddd;
+    z-index: 1;
+}
+
+.applicant-list-modal__th {
+    padding: 15px 12px;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    font-weight: bold;
+}
+
+.applicant-list-modal__row {
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.applicant-list-modal__row:hover {
+    background: #fcfcfc;
+}
+
+.applicant-list-modal__td {
+    padding: 16px 12px;
+}
+
+.applicant-list-modal__td--name {
+    font-weight: bold;
+    color: #111;
+}
+
+.applicant-list-modal__td--muted {
+    color: #555;
+}
+
+.applicant-list-modal__td--date {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.applicant-list-modal__status-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.applicant-list-modal__file-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.applicant-list-modal__file-btn {
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #333;
+    font-weight: 500;
+}
+
+.applicant-list-modal__empty {
+    text-align: center;
+    padding: 60px 0;
+    color: #888;
+    font-size: 1.1rem;
+}
+
+.applicant-list-modal__footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: right;
+}
+
+.applicant-list-modal__footer-btn {
+    padding: 10px 24px;
+    background: #f3f4f6;
+    color: #333;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+}

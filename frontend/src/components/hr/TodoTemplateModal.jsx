@@ -2,6 +2,7 @@ import React from 'react';
 import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
 import { todoService } from 'api/todoApi';
+import 'assets/css/todoTemplateModal.css';
 
 const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCategoriesAndConfigs }) => {
 	if (!isOpen) return null;
@@ -26,8 +27,8 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-				<h2 style={{ textAlign: 'center', marginBottom: '10px' }}>
+			<div className="modal-content dynamic-enter todo-template-modal__content" onClick={e => e.stopPropagation()}>
+				<h2 className="todo-template-modal__title">
 					{colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 템플릿 설정
 				</h2>
 				
@@ -42,13 +43,13 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 					))}
 				</div>
 
-				<div style={{ textAlign: 'center', marginBottom: '30px' }}>
+				<div className="todo-template-modal__custom-color-row">
 					<label className="modal-field-label inline">직접 선택:</label>
 					<input 
 						type="color" 
 						value={colorModal.selectedColor} 
 						onChange={e => setColorModal({...colorModal, selectedColor: e.target.value})} 
-						style={{ verticalAlign: 'middle', cursor: 'pointer', border: 'none', width: '35px', height: '35px', padding: '0', borderRadius: '4px' }} 
+						className="todo-template-modal__native-color"
 					/>
 				</div>
 
@@ -69,7 +70,7 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 					/>
 				</div>
 
-				<div className="form-actions" style={{ marginTop: '25px' }}>
+				<div className="form-actions todo-template-modal__form-actions">
 					<button type="button" className="btn-cancel" onClick={onClose}>취소</button>
 					<button type="button" className="btn-save" onClick={handleSaveColor}>저장</button>
 				</div>

@@ -57,7 +57,7 @@ const AdminDashboard = () => {
     const getInitials = (name) => (name ? name.charAt(0) : '👤');
 
     if (loading) {
-        return <div style={{ textAlign: 'center', padding: '100px', color: '#888' }}>대시보드 데이터를 불러오는 중입니다...</div>;
+        return <div className="admin-dashboard__loading">대시보드 데이터를 불러오는 중입니다...</div>;
     }
 
     return (
@@ -69,27 +69,27 @@ const AdminDashboard = () => {
 
             {/* 1. KPI 지표 (실제 API 데이터) */}
             <div className="hr-stats-grid">
-                <div className="mgmt-section" style={{ textAlign: 'center' }}>
-                    <h3 style={{ color: 'var(--text-dim)', fontSize: '1rem', marginBottom: '10px' }}>총 임직원</h3>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--text-main)' }}>
-                        {summary.user_count || 0}<span style={{ fontSize: '1.2rem', color: '#888', marginLeft: '5px' }}>명</span>
+                <div className="mgmt-section mgmt-section--kpi">
+                    <h3>총 임직원</h3>
+                    <div className="admin-dashboard__kpi-value">
+                        {summary.user_count || 0}<span className="admin-dashboard__kpi-suffix">명</span>
                     </div>
                 </div>
-                <div className="mgmt-section" style={{ textAlign: 'center' }}>
-                    <h3 style={{ color: 'var(--text-dim)', fontSize: '1rem', marginBottom: '10px' }}>진행중인 휴가</h3>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary)' }}>
-                        {summary.vacation_count || 0}<span style={{ fontSize: '1.2rem', color: '#888', marginLeft: '5px' }}>건</span>
+                <div className="mgmt-section mgmt-section--kpi">
+                    <h3>진행중인 휴가</h3>
+                    <div className="admin-dashboard__kpi-value admin-dashboard__kpi-value--accent">
+                        {summary.vacation_count || 0}<span className="admin-dashboard__kpi-suffix">건</span>
                     </div>
                 </div>
-                <div className="mgmt-section" style={{ textAlign: 'center' }}>
-                    <h3 style={{ color: 'var(--text-dim)', fontSize: '1rem', marginBottom: '10px' }}>운영 카테고리</h3>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--text-main)' }}>
-                        {summary.category_count || 0}<span style={{ fontSize: '1.2rem', color: '#888', marginLeft: '5px' }}>개</span>
+                <div className="mgmt-section mgmt-section--kpi">
+                    <h3>운영 카테고리</h3>
+                    <div className="admin-dashboard__kpi-value">
+                        {summary.category_count || 0}<span className="admin-dashboard__kpi-suffix">개</span>
                     </div>
                 </div>
-                <div className="mgmt-section" style={{ textAlign: 'center' }}>
-                    <h3 style={{ color: 'var(--text-dim)', fontSize: '1rem', marginBottom: '10px' }}>시스템 상태</h3>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#4A90E2', marginTop: '10px' }}>
+                <div className="mgmt-section mgmt-section--kpi">
+                    <h3>시스템 상태</h3>
+                    <div className="admin-dashboard__system-status">
                         🟢 정상 가동중
                     </div>
                 </div>
@@ -106,10 +106,10 @@ const AdminDashboard = () => {
                     
                     <div className="hr-list scrollable-list">
                         {summary.today_vacations && summary.today_vacations.length > 0 ? (
-                            summary.today_vacations.map((vac) => {
+                            summary.today_vacations.map((vac, index) => {
                                 const status = getVacationStatus(vac.start_date, vac.end_date);
                                 return (
-                                    <div key={vac.id} className="hr-list-item">
+                                    <div key={vac.id} className="hr-list-item stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
                                         <div className="user-info">
                                             <div className="user-avatar" style={{ background: status.bg, color: status.color }}>
                                                 {getInitials(vac.user_name)}
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
                                 );
                             })
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>
+                            <div className="hr-list__empty">
                                 이번 달 예정된 휴가 일정이 없습니다.
                             </div>
                         )}
@@ -137,20 +137,20 @@ const AdminDashboard = () => {
                 <div className="hr-widget">
                     <div className="hr-widget-header">
                         <h3>📊 전 직원 연차 현황</h3>
-                        <span style={{ fontSize: '0.85rem', color: '#888', fontWeight: '600' }}>총 {employeeBalances.length}명</span>
+                        <span className="hr-widget-header__meta">총 {employeeBalances.length}명</span>
                     </div>
                     
                     <div className="hr-list scrollable-list">
-                        {employeeBalances.map((emp) => {
+                        {employeeBalances.map((emp, index) => {
                             const useRatio = emp.total_days > 0 ? (emp.used_days / emp.total_days) * 100 : 0;
                             const isWarning = useRatio > 80; // 80% 이상 사용 시 주황색 경고
                             
                             return (
-                                <div key={emp.id} className="hr-list-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                <div key={emp.id} className="hr-list-item hr-list-item--balance stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
                                     <div className="progress-text">
                                         <span>{emp.user_name}</span>
                                         <span className="progress-subtext">
-                                            잔여 <strong style={{ color: isWarning ? '#FF6A3D' : '#3DAF7A' }}>{emp.remaining_days}</strong> / {emp.total_days}일
+                                            잔여 <strong className={isWarning ? 'admin-dashboard__balance-strong--warn' : 'admin-dashboard__balance-strong--ok'}>{emp.remaining_days}</strong> / {emp.total_days}일
                                         </span>
                                     </div>
                                     <div className="progress-container">

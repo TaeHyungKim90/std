@@ -84,7 +84,6 @@ const JobDetailPage = () => {
 				{/* 🌟 3. dangerouslySetInnerHTML 제거 및 parseContent 적용 */}
 				<div 
 					className="sun-editor-editable job-viewer-wrapper" 
-					style={{ background: 'transparent', border: 'none', color: '#222' }}
 				>
 					{parseContent(job.description)}
 				</div>

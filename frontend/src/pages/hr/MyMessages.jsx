@@ -80,16 +80,17 @@ const MyMessages = () => {
                     <tbody>
                         {messages.length === 0 ? (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '40px 0', color: '#666' }}>
+                                <td colSpan="5" className="my-messages__empty-cell">
                                     도착한 메시지가 없습니다.
                                 </td>
                             </tr>
                         ) : (
-                            messages.map(msg => (
+                            messages.map((msg, index) => (
                                 <tr 
                                     key={msg.id} 
+                                    className={`stagger-item my-messages__row ${msg.is_read ? 'my-messages__row--read' : 'my-messages__row--unread'}`}
                                     onClick={() => handleReadMessage(msg)}
-                                    style={{ cursor: 'pointer', background: msg.is_read ? 'transparent' : '#f0f8ff' }} // 안읽은 메시지는 살짝 푸른 배경
+                                    style={{ animationDelay: `${index * 0.04}s` }}
                                 >
                                     <td>
                                         <span className={`role-badge ${msg.is_global ? 'admin' : 'user'}`}>
@@ -97,17 +98,13 @@ const MyMessages = () => {
                                         </span>
                                     </td>
                                     {/* 안 읽은 메시지는 굵게 표시 */}
-                                    <td style={{ fontWeight: msg.is_read ? 'normal' : 'bold', color: 'var(--text-main)' }}>
+                                    <td className={msg.is_read ? 'my-messages__title--read' : 'my-messages__title--unread'}>
                                         {msg.title} {msg.attachments?.length > 0 && '📎'}
                                     </td>
                                     <td>{msg.sender?.user_name || '알 수 없음'}</td>
-                                    <td style={{ color: 'var(--text-dim)' }}>{formatDate(msg.created_at)}</td>
+                                    <td className="my-messages__date">{formatDate(msg.created_at)}</td>
                                     <td>
-                                        <span style={{ 
-                                            color: msg.is_read ? 'var(--text-dim)' : 'var(--primary)', 
-                                            fontWeight: 'bold',
-                                            fontSize: '0.9rem'
-                                        }}>
+                                        <span className={`my-messages__status ${msg.is_read ? 'my-messages__status--read' : 'my-messages__status--unread'}`}>
                                             {msg.is_read ? '읽음' : '새 메시지 🔴'}
                                         </span>
                                     </td>

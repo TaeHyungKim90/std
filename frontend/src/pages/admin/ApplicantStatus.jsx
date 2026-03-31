@@ -124,7 +124,7 @@ const ApplicantStatus = () => {
 
 	return (
 		<div className="bq-admin-view">
-			<div className="admin-header" style={{ marginBottom: '20px' }}>
+			<div className="admin-header applicant-status__header--spaced">
 				<h2>📊 지원자 전형 현황</h2>
 				<select className="bq-select" value={selectedJobId} onChange={(e) => setSelectedJobId(e.target.value)}>
 					<option value="">공고를 선택하세요</option>
@@ -174,8 +174,7 @@ const ApplicantStatus = () => {
 
 			{/* 🌟 2. 지원자 리스트 (표 형태, 긴 목록은 영역 내 스크롤) */}
 			<div
-				className="admin-table-wrapper"
-				style={{ maxHeight: 'min(70vh, 640px)', overflowY: 'auto' }}
+				className="admin-table-wrapper applicant-status__table-scroll"
 			>
 				<table className="admin-table">
 					<thead>
@@ -183,21 +182,21 @@ const ApplicantStatus = () => {
 							<th>이름</th>
 							<th>이메일</th>
 							<th>연락처</th>
-							<th style={{ textAlign: 'center'}}>첨부 서류</th>
+							<th className="applicant-status__th--center">첨부 서류</th>
 							<th>지원 일자</th>
-							<th style={{ width: '150px' }}>진행 상태 변경</th>
+							<th className="applicant-status__th--narrow">진행 상태 변경</th>
 						</tr>
 					</thead>
 					<tbody>
 					{filteredApplications.length > 0 ? (
 						/* index % 2 하던 로직 삭제! (CSS가 알아서 해줍니다) */
-						filteredApplications.map((app) => (
-							<tr key={app.id}>
-								<td style={{ fontWeight: 'bold' }}>{app.applicant?.name}</td>
+						filteredApplications.map((app, index) => (
+							<tr key={app.id} className="stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
+								<td className="applicant-status__td--strong">{app.applicant?.name}</td>
 								<td>{app.applicant?.email_id}</td>
 								<td>{formatPhoneNumber(app.applicant?.phone)}</td>
 								
-								<td style={{ textAlign: 'center' }}>
+								<td className="applicant-status__td--center">
 									{/* 파일 버튼 래퍼도 클래스로 분리! */}
 									<div className="admin-file-buttons">
 										{app.resume_file_url && (
@@ -214,7 +213,7 @@ const ApplicantStatus = () => {
 								</td>
 
 								<td>{formatDate(app.applied_at)}</td>
-								<td style={{ textAlign: 'center' }}>
+								<td className="applicant-status__td--center">
 									<select 
 										className="admin-status-select"
 										value={app.status} 
@@ -233,7 +232,7 @@ const ApplicantStatus = () => {
 						))
 					) : (
 						<tr>
-							<td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: '#888' }}>
+							<td colSpan="6" className="admin-table__empty--lg">
 								조건에 맞는 지원자가 없습니다.
 							</td>
 						</tr>

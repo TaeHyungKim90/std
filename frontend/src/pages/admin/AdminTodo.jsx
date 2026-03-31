@@ -94,33 +94,27 @@ const AdminTodo = () => {
 					<tbody>
 						{allTodos.length === 0 ? (
 							<tr>
-								<td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+								<td colSpan={5} className="admin-todo__empty">
 									표시할 일정이 없습니다.
 								</td>
 							</tr>
 						) : null}
-						{allTodos.map((todo) => (
+						{allTodos.map((todo, index) => (
 							<React.Fragment key={todo.id}>
-								<tr className="admin-row">
+								<tr className="admin-row stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 									<td>
 										{todo.author?.user_nickname}({todo.user_id})
 									</td>
 									<td>
 										<span
-											className={`category-badge ${todo.category}`}
-											style={{
-												backgroundColor: '#F0EEE9',
-												color: '#141414',
-												border: '1px solid #E2DFD8',
-											}}
+											className={`category-badge admin-todo__category-badge ${todo.category}`}
 										>
 											{categoryMap[todo.category] || todo.category}
 										</span>
 									</td>
 									<td
 										onClick={() => handleOpenModal(todo)}
-										className="todo-title-cell"
-										style={{ cursor: 'pointer', color: '#3DAF7A', fontWeight: '600' }}
+										className="todo-title-cell admin-todo__title-cell"
 									>
 										{todo.title}
 									</td>
@@ -131,8 +125,7 @@ const AdminTodo = () => {
 										<button
 											type="button"
 											onClick={() => handleDelete(todo.id)}
-											className="btn-delete-small"
-											style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+											className="btn-delete-small admin-todo__del-btn"
 										>
 											삭제
 										</button>

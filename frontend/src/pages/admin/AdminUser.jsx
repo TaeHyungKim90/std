@@ -59,19 +59,17 @@ const AdminUser = () => {
         <div className="bq-admin-view">
             <div className="admin-header">
                 <h2>👥 사용자 관리</h2>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div className="admin-user__header-toolbar">
                     {/* ✅ 실시간 검색창 추가 */}
                     <input 
                         type="text" 
                         placeholder="이름 또는 아이디 검색..." 
-                        className="bq-input"
-                        style={{ width: '250px', margin: 0, padding: '10px' }}
+                        className="bq-input admin-user__search-input"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <button 
-                        className="btn-primary" 
-                        style={{ backgroundColor: '#4A90E2' }} 
+                        className="btn-primary btn-primary--sync-blue" 
                         onClick={async () => {
                             if(!window.confirm("현재 날짜를 기준으로 모든 직원의 연차를 정산하시겠습니까?")) return;
                             Notify.toastPromise(adminApi.syncVacations(), {
@@ -111,16 +109,20 @@ const AdminUser = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredUsers.length > 0 ? filteredUsers.map(u => {
+                        {filteredUsers.length > 0 ? filteredUsers.map((u, index) => {
                             const isResigned = !!u.resignation_date; // ✅ 퇴사자 여부 확인
                             
                             return (
                                 // ✅ 퇴사자는 투명도를 주고 배경색을 어둡게 처리
-                                <tr key={u.id} style={{ opacity: isResigned ? 0.6 : 1, backgroundColor: isResigned ? '#fafafa' : 'transparent' }}>
+                                <tr
+                                    key={u.id}
+                                    className={`stagger-item admin-user__row${isResigned ? ' admin-user__row--resigned' : ''}`}
+                                    style={{ animationDelay: `${index * 0.04}s` }}
+                                >
                                     <td>{u.user_login_id}</td>
-                                    <td style={{ fontWeight: 'bold' }}>
+                                    <td className="admin-user__name-cell">
                                         {u.user_name} 
-                                        {isResigned && <span style={{fontSize:'0.75rem', color:'#FF6A3D', marginLeft:'5px'}}>(퇴사)</span>}
+                                        {isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
                                     </td>
                                     <td>{u.user_nickname || '-'}</td>
                                     <td>{u.user_phone_number || '-'}</td>
@@ -129,12 +131,12 @@ const AdminUser = () => {
                                     </td>
                                     <td>{u.created_at?.split('T')[0]}</td>
                                     <td>
-                                        <div style={{ fontSize: '0.9rem' }}>{u.join_date?.split('T')[0] || '-'}</div>
-                                        {isResigned && <div style={{ fontSize: '0.8rem', color: '#FF6A3D' }}>~ {u.resignation_date?.split('T')[0]}</div>}
+                                        <div className="admin-user__join-date">{u.join_date?.split('T')[0] || '-'}</div>
+                                        {isResigned && <div className="admin-user__resign-date">~ {u.resignation_date?.split('T')[0]}</div>}
                                     </td>
                                     <td>
-                                        <span style={{ color: '#3FAF7A', fontWeight: 'bold' }}>{u.vacation?.remaining_days || 0}일</span>
-                                        <span style={{ color: '#888', fontSize: '0.85rem' }}> / {u.vacation?.total_days || 0}일</span>
+                                        <span className="admin-user__vac-remain">{u.vacation?.remaining_days || 0}일</span>
+                                        <span className="admin-user__vac-total"> / {u.vacation?.total_days || 0}일</span>
                                     </td>
                                     <td>
                                         <button className="btn-edit" onClick={() => openModal(u)}>수정</button>
@@ -143,7 +145,7 @@ const AdminUser = () => {
                                 </tr>
                             );
                         }) : (
-                            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#888' }}>검색 결과가 없습니다.</td></tr>
+                            <tr><td colSpan="8" className="admin-table__empty">검색 결과가 없습니다.</td></tr>
                         )}
                     </tbody>
                 </table>

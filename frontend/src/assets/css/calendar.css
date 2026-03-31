@@ -36,6 +36,18 @@
     padding-bottom: 10px;
 }
 
+.sidebar-title__hint {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: normal;
+    display: block;
+}
+
+.todo-sidebar__loading-text {
+    font-size: 0.85rem;
+    color: #888;
+}
+
 .calendar-sidebar .fc-event {
     margin-bottom: 12px;
     padding: 12px;

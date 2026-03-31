@@ -97,7 +97,7 @@ const SignupForm = () => {
 
 	return (
 		<div className="login-container">
-			<form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column' }}>
+			<form onSubmit={handleSignup} className="login-form-stack">
 				<h2 className="login-title">SIGN UP</h2>
 
 				{error && <p className="error-message">{error}</p>}
@@ -115,13 +115,13 @@ const SignupForm = () => {
 					<button type="button" onClick={handleCheckId} className="btn-check-id">중복 확인</button>
 				</div>
 
-				{idStatus === 'available' && <div className="status-message" style={{ color: '#3DAF7A' }}>✅ 사용 가능한 아이디입니다.</div>}
-				{idStatus === 'duplicate' && <div className="status-message" style={{ color: '#FF6A3D' }}>❌ 이미 사용 중인 아이디입니다.</div>}
+				{idStatus === 'available' && <div className="status-message status-message--success">✅ 사용 가능한 아이디입니다.</div>}
+				{idStatus === 'duplicate' && <div className="status-message status-message--error">❌ 이미 사용 중인 아이디입니다.</div>}
 
 				<input type="password" name="user_password" placeholder="비밀번호" value={formData.user_password} onChange={handleNoKoreanChange} className="login-input" required />
-				<input type="password" name="password_confirm" placeholder="비밀번호 확인" value={formData.password_confirm} onChange={handleNoKoreanChange} className="login-input" required style={{ marginBottom: isPasswordMatching ? '5px' : '15px' }} />
+				<input type="password" name="password_confirm" placeholder="비밀번호 확인" value={formData.password_confirm} onChange={handleNoKoreanChange} className={`login-input login-input--confirm-password${isPasswordMatching ? ' login-input--mb-tight' : ''}`} required />
 
-				{isPasswordMatching && <div className="status-message" style={{ color: '#3DAF7A' }}>✅ 비밀번호가 일치합니다.</div>}
+				{isPasswordMatching && <div className="status-message status-message--success">✅ 비밀번호가 일치합니다.</div>}
 
 				<input type="text" name="user_name" placeholder="이름 (실명)" value={formData.user_name} onChange={handleChange} className="login-input" required />
 				<input type="text" name="user_nickname" placeholder="닉네임" value={formData.user_nickname} onChange={handleChange} className="login-input" required />

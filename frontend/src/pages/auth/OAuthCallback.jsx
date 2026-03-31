@@ -47,7 +47,7 @@ const OAuthCallback = () => {
 	}, [checkAuth, navigate]);
 
 	return (
-		<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+		<div className="oauth-callback-page">
 			<h2>소셜 로그인 처리 중입니다... 🚀</h2>
 		</div>
 	);
