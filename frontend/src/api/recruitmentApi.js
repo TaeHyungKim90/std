@@ -36,7 +36,9 @@ export const recruitmentApi = {
 	signupApplicant: (payload) => client.post(`${PUBLIC_PATH}/signup`, payload),
 	loginApplicant: (payload) =>
 		client.post(`${PUBLIC_PATH}/login`, payload, { skipGlobalErrorToast: true }),
+	logoutApplicant: () => client.post(`${PUBLIC_PATH}/logout`),
+	getApplicantMe: () => client.get(`${PUBLIC_PATH}/me`),
 	updateApplicant: (applicantId, payload) => client.put(`${PUBLIC_PATH}/update/${applicantId}`, payload),
-	getMyApplications: (applicantId) => client.get(`${PUBLIC_PATH}/my-applications/${applicantId}`),
-	cancelApplication: (applicantId, applicationId) => client.delete(`${PUBLIC_PATH}/my-applications/${applicantId}/${applicationId}`),
+	getMyApplications: () => client.get(`${PUBLIC_PATH}/my-applications`),
+	cancelApplication: (applicationId) => client.delete(`${PUBLIC_PATH}/my-applications/${applicationId}`),
 };

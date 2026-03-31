@@ -35,7 +35,7 @@ const MyApplicationsPage = () => {
 		const fetchMyApps = async () => {
 			showLoading("지원 내역을 불러오는 중입니다... ⏳");
 			try {
-				const res = await recruitmentApi.getMyApplications(user.id);
+				const res = await recruitmentApi.getMyApplications();
 				setApplications(res.data || res);
 			} catch (error) {
 				console.error("지원 내역 로드 실패", error);
@@ -52,7 +52,7 @@ const MyApplicationsPage = () => {
 	const handleCancelApplication = async (applicationId) => {
 		if (!window.confirm("정말 지원을 취소하시겠습니까?\n취소된 내역은 복구할 수 없습니다.")) return;
 
-		Notify.toastPromise(recruitmentApi.cancelApplication(loggedInUser.id, applicationId), {
+		Notify.toastPromise(recruitmentApi.cancelApplication(applicationId), {
 			loading: '지원을 취소하는 중입니다...',
 			success: '지원이 성공적으로 취소되었습니다.',
 			error: '지원 취소 중 오류가 발생했습니다.'

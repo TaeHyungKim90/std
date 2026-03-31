@@ -1,11 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
 from sqlalchemy.orm import Session
 
 from db.session import get_db
 from schemas.public import recruitment_schemas
 from services.public import recruitment_service as service
+from services.public.applicant_auth import get_current_applicant
+from core.config import settings
+from core.security import create_access_token
 
 router = APIRouter()
+IS_PROD = settings.ENVIRONMENT == "production"
+APPLICANT_COOKIE_OPTIONS = {
+	"key": "applicantToken",
+	"httponly": True,
+	"max_age": settings.ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+	"samesite": "lax",
+	"secure": IS_PROD,
+	"path": "/",
+}
 
 # 1. [공개] 진행 중인 채용 공고 리스트 조회 (페이징)
 @router.get("/jobs", response_model=recruitment_schemas.JobPostingPublicListPage)
@@ -51,12 +63,23 @@ def signup_applicant(data: recruitment_schemas.ApplicantSignup, db: Session = De
 
 # 🌟 4. [공개] 지원자 전용 로그인
 @router.post("/login")
-def login_applicant(data: recruitment_schemas.ApplicantLogin, db: Session = Depends(get_db)):
+def login_applicant(data: recruitment_schemas.ApplicantLogin, response: Response, db: Session = Depends(get_db)):
 	"""지원자 계정으로 로그인합니다."""
 	try:
 		applicant = service.login_applicant(db, data)
 		if not applicant:
 			raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+
+		token = create_access_token(
+			{
+				"applicantId": applicant.id,
+				"email_id": applicant.email_id,
+				"name": applicant.name,
+				"phone": applicant.phone,
+				"type": "applicant",
+			}
+		)
+		response.set_cookie(value=token, **APPLICANT_COOKIE_OPTIONS)
 		
 		return {
 			"message": "로그인 성공",
@@ -69,10 +92,37 @@ def login_applicant(data: recruitment_schemas.ApplicantLogin, db: Session = Depe
 		raise
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
+
+
+@router.post("/logout")
+def logout_applicant(response: Response):
+	"""지원자 로그아웃: 쿠키 삭제"""
+	delete_options = {k: v for k, v in APPLICANT_COOKIE_OPTIONS.items() if k != "max_age"}
+	response.delete_cookie(**delete_options)
+	return {"success": True, "message": "로그아웃 되었습니다."}
+
+
+@router.get("/me")
+def get_applicant_me(current_applicant: dict = Depends(get_current_applicant)):
+	"""지원자 세션 확인(쿠키 기반)"""
+	return {
+		"isLoggedIn": True,
+		"id": current_applicant.get("applicantId"),
+		"email_id": current_applicant.get("email_id"),
+		"name": current_applicant.get("name"),
+		"phone": current_applicant.get("phone"),
+	}
 # 🌟 5. [공개] 지원자 정보 수정
 @router.put("/update/{applicant_id}")
-def update_applicant(applicant_id: int, data: recruitment_schemas.ApplicantUpdate, db: Session = Depends(get_db)):
+def update_applicant(
+	applicant_id: int,
+	data: recruitment_schemas.ApplicantUpdate,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
 	try:
+		if int(current_applicant.get("applicantId")) != int(applicant_id):
+			raise HTTPException(status_code=403, detail="본인 계정만 수정할 수 있습니다.")
 		applicant = service.update_applicant_info(db, applicant_id, data)
 		if not applicant:
 			raise HTTPException(status_code=404, detail="계정 정보를 찾을 수 없습니다.")
@@ -93,18 +143,31 @@ def update_applicant(applicant_id: int, data: recruitment_schemas.ApplicantUpdat
 
 # 🌟 6. [공개] 내 지원 내역 조회
 @router.get("/my-applications/{applicant_id}")
-def get_my_applications(applicant_id: int, db: Session = Depends(get_db)):
+def get_my_applications(
+	applicant_id: int,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
 	"""특정 지원자의 전체 지원 이력을 조회합니다."""
 	try:
+		if int(current_applicant.get("applicantId")) != int(applicant_id):
+			raise HTTPException(status_code=403, detail="본인 지원 내역만 조회할 수 있습니다.")
 		return service.get_my_applications(db, applicant_id)
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=f"지원 내역 조회 실패: {str(e)}")
 
 # 6. [공개] 지원 취소
 @router.delete("/my-applications/{applicant_id}/{application_id}")
-def cancel_application(applicant_id: int, application_id: int, db: Session = Depends(get_db)):
+def cancel_application(
+	applicant_id: int,
+	application_id: int,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
 	"""제출한 지원서를 취소(삭제)합니다."""
 	try:
+		if int(current_applicant.get("applicantId")) != int(applicant_id):
+			raise HTTPException(status_code=403, detail="본인 지원 내역만 취소할 수 있습니다.")
 		success, msg = service.delete_application(db, applicant_id, application_id)
 		if not success:
 			raise HTTPException(status_code=400, detail=msg)
@@ -114,3 +177,24 @@ def cancel_application(applicant_id: int, application_id: int, db: Session = Dep
 	except Exception as e:
 		db.rollback()
 		raise HTTPException(status_code=500, detail=f"지원 취소 실패: {str(e)}")
+
+
+# 신규 권장 API(지원자 ID 노출/의존 제거)
+@router.get("/my-applications")
+def get_my_applications_me(
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
+	return service.get_my_applications(db, int(current_applicant.get("applicantId")))
+
+
+@router.delete("/my-applications/{application_id}")
+def cancel_my_application_me(
+	application_id: int,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
+	success, msg = service.delete_application(db, int(current_applicant.get("applicantId")), application_id)
+	if not success:
+		raise HTTPException(status_code=400, detail=msg)
+	return {"message": msg}

@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ApplicantProfileModal from './ApplicantProfileModal';
 import 'assets/css/publicHeader.css';
 import { PATHS } from 'constants/paths';
+import { recruitmentApi } from 'api/recruitmentApi';
 
 const PublicHeader = () => {
 	const navigate = useNavigate();
@@ -15,15 +16,37 @@ const PublicHeader = () => {
 
 	useEffect(() => {
 		const user = sessionStorage.getItem('applicant_user');
-		if (user) setLoggedInUser(JSON.parse(user));
-		else setLoggedInUser(null);
+		if (user) {
+			setLoggedInUser(JSON.parse(user));
+			return;
+		}
+
+		// 쿠키 세션이 남아있는데 sessionStorage가 비어있는 경우 복구
+		recruitmentApi.getApplicantMe().then((res) => {
+			if (res?.data?.isLoggedIn) {
+				sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
+				setLoggedInUser(res.data);
+			} else {
+				setLoggedInUser(null);
+			}
+		}).catch(() => {
+			setLoggedInUser(null);
+		});
 	}, [location.pathname]);
 
 	const handleLogout = () => {
-		sessionStorage.removeItem('applicant_user');
-		setLoggedInUser(null);
-		Notify.toastSuccess("로그아웃 되었습니다.");
-		navigate(PATHS.CAREERS);
+		Notify.toastPromise(
+			recruitmentApi.logoutApplicant(),
+			{
+				loading: '로그아웃 중입니다...',
+				success: '로그아웃 되었습니다.',
+				error: '로그아웃에 실패했습니다.',
+			}
+		).finally(() => {
+			sessionStorage.removeItem('applicant_user');
+			setLoggedInUser(null);
+			navigate(PATHS.CAREERS);
+		});
 	};
 
 	return (
