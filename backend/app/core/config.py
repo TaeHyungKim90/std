@@ -30,6 +30,8 @@ class Settings(BaseSettings):
 	NAVER_CLIENT_SECRET: str
 	NAVER_REDIRECT_URI: str = _DEV_NAVER_REDIRECT_URI
 	PUBLIC_DATA_API_KEY: str
+	# 공공데이터포털(공휴일) API 엔드포인트. 필요 시 버전/도메인 변경을 .env로 대응.
+	HOLIDAY_API_URL: str = "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
 	ENVIRONMENT: str = "development"
 	CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 	FRONTEND_URL: str = "http://localhost:3000"
@@ -41,6 +43,9 @@ class Settings(BaseSettings):
 	SERVE_UPLOADS_STATIC: bool = True
 	# True일 때만 `python main.py` 실행 시 프론트 npm start를 함께 띄움. 운영·CI에서는 False.
 	DEV_AUTO_START_REACT: bool = False
+	# 레거시 공개 지원서 제출(/api/public/recruitment/apply) 허용 여부.
+	# 운영에서는 False 권장(지원자 쿠키 세션 기반 /apply/me만 사용).
+	ALLOW_LEGACY_PUBLIC_APPLY: bool = True
 
 	class Config:
 		env_file = ENV_PATH

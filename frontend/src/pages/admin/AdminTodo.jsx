@@ -5,7 +5,8 @@ import PaginationBar from 'components/common/PaginationBar';
 import { adminApi } from 'api/adminApi.js';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-const PAGE_SIZE = 20;
+import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 
 const AdminTodo = () => {
 	const [allTodos, setAllTodos] = useState([]);

@@ -6,7 +6,8 @@ import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
 import PaginationBar from 'components/common/PaginationBar';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-const PAGE_SIZE = 20;
+import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 
 const RecruitmentAdmin = () => {
 	const { showLoading, hideLoading } = useLoading();

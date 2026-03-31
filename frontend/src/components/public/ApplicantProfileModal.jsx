@@ -34,9 +34,20 @@ const ApplicantProfileModal = ({ isOpen, onClose, loggedInUser, onUpdateSuccess 
 					formatApiDetail(error) || '정보 수정에 실패했습니다.' // 기존 alert 대체
 			}
 		).then((res) => {
-			// 성공 시 세션 업데이트 및 후속 처리
-			sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
-			onUpdateSuccess(res.data);
+			// 성공 시: 쿠키 세션(/me) 기준으로 최신 프로필을 다시 가져와 저장
+			recruitmentApi.getApplicantMe().then((meRes) => {
+				const me = meRes?.data;
+				if (me?.isLoggedIn) {
+					sessionStorage.setItem('applicant_user', JSON.stringify(me));
+					onUpdateSuccess(me);
+				} else {
+					sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
+					onUpdateSuccess(res.data);
+				}
+			}).catch(() => {
+				sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
+				onUpdateSuccess(res.data);
+			});
 			window.dispatchEvent(new Event('applicantProfileUpdated'));
 			onClose(); // 모달 닫기
 		}).catch((err) => {

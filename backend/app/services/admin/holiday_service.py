@@ -5,7 +5,6 @@ from datetime import datetime
 from models.holiday_models import Holiday
 from schemas.admin import holiday_schemas
 from core.config import settings
-from core.constants import HOLIDAY_API_URL
 
 def get_all_holidays(db: Session, year: int = None):
 	"""DB에서 공휴일 목록 조회"""
@@ -38,7 +37,7 @@ def remove_holiday(db: Session, holiday: Holiday):
 
 def sync_public_holidays(db: Session, year: int):
 	"""공공데이터 API 호출 및 데이터 가공/저장 로직"""
-	url = HOLIDAY_API_URL
+	url = settings.HOLIDAY_API_URL
 	params = {
 		"ServiceKey": settings.PUBLIC_DATA_API_KEY,
 		"solYear": str(year),

@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import { PATHS, pathCareersJobApply } from 'constants/paths';
+import { recruitmentApi } from 'api/recruitmentApi';
 const JobDetailPage = () => {
 	const { state } = useLocation();
 	const navigate = useNavigate();
@@ -16,14 +17,20 @@ const JobDetailPage = () => {
 		return null;
 	}
 
-	const handleApplyClick = () => {
-		const user = sessionStorage.getItem('applicant_user');
-		if (!user) {
-			Notify.toastInfo("입사 지원은 로그인이 필요합니다.");
-			navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
-		} else {
-			navigate(pathCareersJobApply(job.id), { state: { job } });
+	const handleApplyClick = async () => {
+		try {
+			const meRes = await recruitmentApi.getApplicantMe();
+			if (meRes?.data?.isLoggedIn) {
+				sessionStorage.setItem('applicant_user', JSON.stringify(meRes.data));
+				navigate(pathCareersJobApply(job.id), { state: { job } });
+				return;
+			}
+		} catch {
+			// ignore
 		}
+		sessionStorage.removeItem('applicant_user');
+		Notify.toastInfo("입사 지원은 로그인이 필요합니다.");
+		navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
 	};
 
 	const parseContent = (htmlString) => {

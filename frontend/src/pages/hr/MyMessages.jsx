@@ -7,7 +7,8 @@ import PaginationBar from 'components/common/PaginationBar';
 import { formatDate } from 'utils/commonUtils';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 
-const PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 const MyMessages = () => {
     const { showLoading, hideLoading } = useLoading();

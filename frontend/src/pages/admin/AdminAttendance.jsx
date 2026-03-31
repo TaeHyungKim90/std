@@ -9,8 +9,9 @@ import UserAttendanceDrawer from 'components/admin/UserAttendanceDrawer';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { useSearchParams } from 'react-router-dom';
 import { getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
-const PAGE_SIZE = 20;
-const SUMMARY_PAGE_SIZE = 100; // backend limit <= 100
+import { DEFAULT_ADMIN_PAGE_SIZE, DEFAULT_ADMIN_MAX_PAGE_SIZE } from 'constants/apiConfig';
+const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
+const SUMMARY_PAGE_SIZE = DEFAULT_ADMIN_MAX_PAGE_SIZE; // backend limit <= 100
 
 const isVacation = (record) => {
 	const st = normalizeStatus(record?.status);

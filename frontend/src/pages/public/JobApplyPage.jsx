@@ -23,17 +23,40 @@ const JobApplyPage = () => {
             navigate(PATHS.CAREERS, { replace: true });
             return;
         }
-        const userStr = sessionStorage.getItem('applicant_user');
-        if (!userStr) {
-            Notify.toastWarn("로그인이 필요한 서비스입니다.");
-            navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
-            return;
-        }
-        
-        const user = JSON.parse(userStr);
-        setLoggedInUser(user);
+
+        const resolveApplicantSession = async () => {
+            const userStr = sessionStorage.getItem('applicant_user');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    if (isMounted) setLoggedInUser(user);
+                } catch {
+                    sessionStorage.removeItem('applicant_user');
+                }
+            }
+
+            try {
+                const meRes = await recruitmentApi.getApplicantMe();
+                if (meRes?.data?.isLoggedIn) {
+                    sessionStorage.setItem('applicant_user', JSON.stringify(meRes.data));
+                    if (isMounted) setLoggedInUser(meRes.data);
+                    return true;
+                }
+            } catch {
+                // ignore
+            }
+
+            sessionStorage.removeItem('applicant_user');
+            if (isMounted) {
+                Notify.toastWarn("로그인이 필요한 서비스입니다.");
+                navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
+            }
+            return false;
+        };
 
         const checkDuplicate = async () => {
+            const ok = await resolveApplicantSession();
+            if (!ok) return;
             Notify.toastPromise(recruitmentApi.getMyApplications(), {
                 loading: '기존 지원 내역을 확인하는 중입니다...',
                 success: '지원 내역 확인이 완료되었습니다.',
@@ -80,10 +103,6 @@ const JobApplyPage = () => {
 
             // STEP 2: 지원서 제출
             const applicationData = {
-                email_id: loggedInUser.email_id,
-                password: "DUMMY_PW", 
-                name: loggedInUser.name,
-                phone: loggedInUser.phone,
                 job_id: job.id,
                 resume_file_url: resumeFileUrl, 
             };

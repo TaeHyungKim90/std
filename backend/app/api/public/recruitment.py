@@ -6,7 +6,7 @@ from schemas.public import recruitment_schemas
 from services.public import recruitment_service as service
 from services.public.applicant_auth import get_current_applicant
 from core.config import settings
-from core.security import create_access_token
+from core.security import create_access_token, decode_auth_token
 
 router = APIRouter()
 IS_PROD = settings.ENVIRONMENT == "production"
@@ -34,12 +34,53 @@ def get_public_jobs(
 
 # 2. [공개] 입사 지원서 제출
 @router.post("/apply")
-def submit_application(data: recruitment_schemas.ApplicationCreate, db: Session = Depends(get_db)):
+def submit_application(
+	request: Request,
+	data: recruitment_schemas.ApplicationCreate,
+	db: Session = Depends(get_db),
+):
 	"""채용 공고에 지원서를 제출합니다. (중복 지원 체크 포함)"""
 	try:
+		# 운영(또는 설정)에서는 레거시 /apply 를 완전히 비활성화 권장
+		if settings.ENVIRONMENT == "production" or not settings.ALLOW_LEGACY_PUBLIC_APPLY:
+			raise HTTPException(
+				status_code=410,
+				detail="레거시 지원서 제출 엔드포인트(/apply)는 비활성화되었습니다. /apply/me를 사용해 주세요.",
+			)
+
+		# 지원자 쿠키 세션이 존재하면 신규 엔드포인트(/apply/me)만 사용하도록 강제
+		token = request.cookies.get("applicantToken")
+		if token:
+			payload = decode_auth_token(token)
+			if payload and payload.get("applicantId"):
+				raise HTTPException(
+					status_code=400,
+					detail="로그인된 지원자는 /apply/me 엔드포인트를 사용해 주세요.",
+				)
 		return service.submit_application(db, data)
 	except ValueError as ve:
 		# 서비스에서 발생한 '이미 지원함' 등의 비즈니스 예외 처리
+		db.rollback()
+		raise HTTPException(status_code=400, detail=str(ve))
+	except Exception as e:
+		db.rollback()
+		raise HTTPException(status_code=500, detail=f"지원서 제출 실패: {str(e)}")
+
+
+# 2-1. [지원자] (쿠키 세션) 입사 지원서 제출
+@router.post("/apply/me")
+def submit_application_me(
+	data: recruitment_schemas.ApplicationCreateAuthenticated,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
+	try:
+		return service.submit_application_authenticated(
+			db,
+			applicant_id=int(current_applicant.get("applicantId")),
+			data=data,
+		)
+	except ValueError as ve:
 		db.rollback()
 		raise HTTPException(status_code=400, detail=str(ve))
 	except Exception as e:

@@ -4,6 +4,7 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
 import { useLoading } from 'context/LoadingContext';
 import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
+import { DEFAULT_ADMIN_MAX_PAGE_SIZE } from 'constants/apiConfig';
 const STATUS_OPTIONS = [
 	{ id: 'all', title: '전체 보기', color: '#111' },
 	{ id: 'applied', title: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
@@ -29,7 +30,7 @@ const ApplicantStatus = () => {
 			showLoading("채용 공고와 전형 상태를 불러오는 중입니다... ⏳");
 			try {
 				// API는 limit 최대 100(le=100). 공고가 많으면 페이지를 이어 붙입니다.
-				const pageSize = 100;
+				const pageSize = DEFAULT_ADMIN_MAX_PAGE_SIZE;
 				const all = [];
 				let skip = 0;
 				for (;;) {

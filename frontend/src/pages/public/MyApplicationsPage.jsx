@@ -22,17 +22,45 @@ const MyApplicationsPage = () => {
 	const [loggedInUser, setLoggedInUser] = useState(null);
 
 	useEffect(() => {
-		const userStr = sessionStorage.getItem('applicant_user');
-		if (!userStr) {
-			Notify.toastWarn("로그인이 필요한 서비스입니다.");
-			navigate(PATHS.CAREERS_LOGIN, { replace: true });
-			return;
-		}
+		let isMounted = true;
 
-		const user = JSON.parse(userStr);
-		setLoggedInUser(user);
+		const resolveApplicantSession = async () => {
+			// 1) sessionStorage 우선 사용(UX)
+			const userStr = sessionStorage.getItem('applicant_user');
+			if (userStr) {
+				try {
+					const user = JSON.parse(userStr);
+					if (isMounted) setLoggedInUser(user);
+				} catch {
+					sessionStorage.removeItem('applicant_user');
+				}
+			}
+
+			// 2) 쿠키 기반 세션 확인/복구(보안/정합성)
+			try {
+				const meRes = await recruitmentApi.getApplicantMe();
+				if (meRes?.data?.isLoggedIn) {
+					sessionStorage.setItem('applicant_user', JSON.stringify(meRes.data));
+					if (isMounted) setLoggedInUser(meRes.data);
+					return true;
+				}
+			} catch {
+				// ignore
+			}
+
+			// 3) 쿠키 세션이 없으면 로컬도 정리 후 로그인 이동
+			sessionStorage.removeItem('applicant_user');
+			if (isMounted) {
+				Notify.toastWarn("로그인이 필요한 서비스입니다.");
+				navigate(PATHS.CAREERS_LOGIN, { replace: true });
+			}
+			return false;
+		};
 
 		const fetchMyApps = async () => {
+			const ok = await resolveApplicantSession();
+			if (!ok) return;
+
 			showLoading("지원 내역을 불러오는 중입니다... ⏳");
 			try {
 				const res = await recruitmentApi.getMyApplications();
@@ -47,6 +75,9 @@ const MyApplicationsPage = () => {
 		};
 
 		fetchMyApps();
+		return () => {
+			isMounted = false;
+		};
 	}, [navigate, showLoading, hideLoading]);
 
 	const handleCancelApplication = async (applicationId) => {

@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import { DEFAULT_PUBLIC_JOBS_PAGE_SIZE } from 'constants/apiConfig';
 import { pathCareersJob } from 'constants/paths';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = DEFAULT_PUBLIC_JOBS_PAGE_SIZE;
 
 const JobListPage = () => {
 	const { showLoading, hideLoading } = useLoading();

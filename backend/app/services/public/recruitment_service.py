@@ -53,6 +53,37 @@ def submit_application(db: Session, data: recruitment_schemas.ApplicationCreate)
 	
 	return {"message": "입사 지원이 완료되었습니다.", "application_id": new_application.id}
 
+
+def submit_application_authenticated(
+	db: Session,
+	*,
+	applicant_id: int,
+	data: recruitment_schemas.ApplicationCreateAuthenticated,
+):
+	"""로그인된 지원자(쿠키 세션) 기준으로 지원 내역을 접수합니다."""
+	applicant = db.query(recruitment_models.Applicant).filter(recruitment_models.Applicant.id == applicant_id).first()
+	if not applicant:
+		raise ValueError("지원자 계정을 찾을 수 없습니다.")
+
+	existing_application = db.query(recruitment_models.Application).filter(
+		recruitment_models.Application.applicant_id == applicant.id,
+		recruitment_models.Application.job_id == data.job_id
+	).first()
+	if existing_application:
+		raise ValueError("이미 지원이 완료된 공고입니다.")
+
+	new_application = recruitment_models.Application(
+		job_id=data.job_id,
+		applicant_id=applicant.id,
+		resume_file_url=data.resume_file_url,
+		portfolio_file_url=data.portfolio_file_url,
+		status="applied",
+	)
+	db.add(new_application)
+	db.commit()
+	db.refresh(new_application)
+	return {"message": "입사 지원이 완료되었습니다.", "application_id": new_application.id}
+
 # 🌟 1. 회원가입 비즈니스 로직
 def signup_applicant(db: Session, data: recruitment_schemas.ApplicantSignup):
 	# 중복 이메일 체크

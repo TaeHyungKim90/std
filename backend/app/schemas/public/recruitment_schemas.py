@@ -27,6 +27,13 @@ class ApplicationCreate(BaseModel):
 	resume_file_url: str
 	portfolio_file_url: Optional[str] = None
 
+
+# 2-1. 지원자 로그인(쿠키 세션) 기반 지원서 제출 포맷
+class ApplicationCreateAuthenticated(BaseModel):
+	job_id: int
+	resume_file_url: str
+	portfolio_file_url: Optional[str] = None
+
 # 🌟 3. 지원자 회원가입 포맷 (추가)
 class ApplicantSignup(BaseModel):
 	email_id: str

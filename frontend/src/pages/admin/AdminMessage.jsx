@@ -7,7 +7,8 @@ import { formatDate } from 'utils/commonUtils';
 import MessageReadModal from 'components/common/MessageReadModal';
 import PaginationBar from 'components/common/PaginationBar';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-const PAGE_SIZE = 10;
+import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+const PAGE_SIZE = Math.max(10, DEFAULT_ADMIN_PAGE_SIZE);
 
 const AdminMessage = () => {
     const { showLoading, hideLoading } = useLoading();

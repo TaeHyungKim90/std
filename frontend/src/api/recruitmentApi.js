@@ -32,7 +32,7 @@ export const recruitmentApi = {
 			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
 	
-	submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply`, payload),
+	submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply/me`, payload),
 	signupApplicant: (payload) => client.post(`${PUBLIC_PATH}/signup`, payload),
 	loginApplicant: (payload) =>
 		client.post(`${PUBLIC_PATH}/login`, payload, { skipGlobalErrorToast: true }),
