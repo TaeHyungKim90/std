@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,7 @@ from core.config import settings
 from core.security import create_access_token, decode_auth_token
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 IS_PROD = settings.ENVIRONMENT == "production"
 APPLICANT_COOKIE_OPTIONS = {
 	"key": "applicantToken",
@@ -154,7 +157,42 @@ def get_applicant_me(current_applicant: dict = Depends(get_current_applicant)):
 		"phone": current_applicant.get("phone"),
 	}
 # 🌟 5. [공개] 지원자 정보 수정
-@router.put("/update/{applicant_id}")
+def _ensure_same_applicant(current_applicant: dict, applicant_id: int) -> int:
+	current_id = int(current_applicant.get("applicantId"))
+	if current_id != int(applicant_id):
+		raise HTTPException(status_code=403, detail="본인 계정만 접근할 수 있습니다.")
+	return current_id
+
+
+def _update_applicant_impl(db: Session, applicant_id: int, data: recruitment_schemas.ApplicantUpdate):
+	applicant = service.update_applicant_info(db, applicant_id, data)
+	if not applicant:
+		raise HTTPException(status_code=404, detail="계정 정보를 찾을 수 없습니다.")
+	return {
+		"message": "정보가 성공적으로 수정되었습니다.",
+		"id": applicant.id,
+		"name": applicant.name,
+		"email_id": applicant.email_id,
+		"phone": applicant.phone,
+	}
+
+
+@router.put("/update/me")
+def update_applicant_me(
+	data: recruitment_schemas.ApplicantUpdate,
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
+	try:
+		return _update_applicant_impl(db, int(current_applicant.get("applicantId")), data)
+	except HTTPException:
+		raise
+	except Exception as e:
+		db.rollback()
+		raise HTTPException(status_code=500, detail=f"정보 수정 실패: {str(e)}")
+
+
+@router.put("/update/{applicant_id}", deprecated=True)
 def update_applicant(
 	applicant_id: int,
 	data: recruitment_schemas.ApplicantUpdate,
@@ -162,20 +200,9 @@ def update_applicant(
 	current_applicant: dict = Depends(get_current_applicant),
 ):
 	try:
-		if int(current_applicant.get("applicantId")) != int(applicant_id):
-			raise HTTPException(status_code=403, detail="본인 계정만 수정할 수 있습니다.")
-		applicant = service.update_applicant_info(db, applicant_id, data)
-		if not applicant:
-			raise HTTPException(status_code=404, detail="계정 정보를 찾을 수 없습니다.")
-		
-		# 수정 후 갱신된 정보를 프론트(세션)로 다시 내려줌
-		return {
-			"message": "정보가 성공적으로 수정되었습니다.", 
-			"id": applicant.id, 
-			"name": applicant.name,
-			"email_id": applicant.email_id,
-			"phone": applicant.phone
-		}
+		logger.warning("Deprecated applicant endpoint called: PUT /update/{applicant_id}")
+		_ensure_same_applicant(current_applicant, applicant_id)
+		return _update_applicant_impl(db, applicant_id, data)
 	except HTTPException:
 		raise
 	except Exception as e:
@@ -183,7 +210,7 @@ def update_applicant(
 		raise HTTPException(status_code=500, detail=f"정보 수정 실패: {str(e)}")
 
 # 🌟 6. [공개] 내 지원 내역 조회
-@router.get("/my-applications/{applicant_id}")
+@router.get("/my-applications/{applicant_id}", deprecated=True)
 def get_my_applications(
 	applicant_id: int,
 	db: Session = Depends(get_db),
@@ -191,14 +218,14 @@ def get_my_applications(
 ):
 	"""특정 지원자의 전체 지원 이력을 조회합니다."""
 	try:
-		if int(current_applicant.get("applicantId")) != int(applicant_id):
-			raise HTTPException(status_code=403, detail="본인 지원 내역만 조회할 수 있습니다.")
-		return service.get_my_applications(db, applicant_id)
+		logger.warning("Deprecated applicant endpoint called: GET /my-applications/{applicant_id}")
+		_ensure_same_applicant(current_applicant, applicant_id)
+		return service.get_my_applications(db, int(current_applicant.get("applicantId")))
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=f"지원 내역 조회 실패: {str(e)}")
 
 # 6. [공개] 지원 취소
-@router.delete("/my-applications/{applicant_id}/{application_id}")
+@router.delete("/my-applications/{applicant_id}/{application_id}", deprecated=True)
 def cancel_application(
 	applicant_id: int,
 	application_id: int,
@@ -207,9 +234,9 @@ def cancel_application(
 ):
 	"""제출한 지원서를 취소(삭제)합니다."""
 	try:
-		if int(current_applicant.get("applicantId")) != int(applicant_id):
-			raise HTTPException(status_code=403, detail="본인 지원 내역만 취소할 수 있습니다.")
-		success, msg = service.delete_application(db, applicant_id, application_id)
+		logger.warning("Deprecated applicant endpoint called: DELETE /my-applications/{applicant_id}/{application_id}")
+		_ensure_same_applicant(current_applicant, applicant_id)
+		success, msg = service.delete_application(db, int(current_applicant.get("applicantId")), application_id)
 		if not success:
 			raise HTTPException(status_code=400, detail=msg)
 		return {"message": msg}
