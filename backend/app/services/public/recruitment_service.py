@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models import recruitment_models # 🚨 경로가 맞는지 확인 (기존: models)
 from schemas.public import recruitment_schemas # 🚨 경로가 맞는지 확인 (기존: schemas.public)
+from core.security import get_password_hash, verify_password
 
 def get_public_jobs(db: Session, skip: int = 0, limit: int = 20):
 	"""현재 진행 중(open)인 채용 공고만 페이징 조회."""
@@ -22,7 +23,7 @@ def submit_application(db: Session, data: recruitment_schemas.ApplicationCreate)
 	if not applicant:
 		applicant = recruitment_models.Applicant(
 			email_id=data.email_id,
-			password=data.password, 
+			password=get_password_hash(data.password),
 			name=data.name,
 			phone=data.phone
 		)
@@ -64,7 +65,7 @@ def signup_applicant(db: Session, data: recruitment_schemas.ApplicantSignup):
 
 	new_applicant = recruitment_models.Applicant(
 		email_id=data.email_id,
-		password=data.password, # (추후 보안을 위해 해싱 적용 가능)
+		password=get_password_hash(data.password),
 		name=data.name,
 		phone=data.phone
 	)
@@ -73,13 +74,46 @@ def signup_applicant(db: Session, data: recruitment_schemas.ApplicantSignup):
 	db.refresh(new_applicant)
 	return new_applicant
 
+# passlib 해시로 보이는지(기존 평문 데이터 호환용)
+def _looks_like_password_hash(value: str | None) -> bool:
+	if not value:
+		return False
+	# bcrypt: $2a$/$2b$/$2y$
+	if value.startswith("$2a$") or value.startswith("$2b$") or value.startswith("$2y$"):
+		return True
+	# passlib sha256_crypt
+	if value.startswith("$sha256_crypt$"):
+		return True
+	return False
+
 # 🌟 2. 로그인 비즈니스 로직
 def login_applicant(db: Session, data: recruitment_schemas.ApplicantLogin):
-	applicant = db.query(recruitment_models.Applicant).filter(
-		recruitment_models.Applicant.email_id == data.email_id,
-		recruitment_models.Applicant.password == data.password
-	).first()
-	return applicant
+	applicant = (
+		db.query(recruitment_models.Applicant)
+		.filter(recruitment_models.Applicant.email_id == data.email_id)
+		.first()
+	)
+	if not applicant:
+		return None
+
+	stored = applicant.password
+	plain = data.password
+
+	# 1) 정상 케이스: 해시 저장 + 검증
+	if _looks_like_password_hash(stored):
+		try:
+			return applicant if verify_password(plain, stored) else None
+		except Exception:
+			# 해시가 깨졌거나 스킴 불일치 등
+			return None
+
+	# 2) 레거시 케이스: 평문 저장 → 일치하면 즉시 해시로 업그레이드
+	if stored == plain:
+		applicant.password = get_password_hash(plain)
+		db.commit()
+		db.refresh(applicant)
+		return applicant
+	return None
 
 # 🌟 3. 지원자 정보 수정 비즈니스 로직
 def update_applicant_info(db: Session, applicant_id: int, data: recruitment_schemas.ApplicantUpdate):
@@ -96,7 +130,7 @@ def update_applicant_info(db: Session, applicant_id: int, data: recruitment_sche
 	
 	# 비밀번호는 입력값이 있을 때만 변경
 	if data.password and data.password.strip():
-		applicant.password = data.password
+		applicant.password = get_password_hash(data.password)
 		
 	db.commit()
 	db.refresh(applicant)

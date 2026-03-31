@@ -45,3 +45,22 @@ def update_application_status(application_id: int, data: recruitment_schemas.App
 @router.post("/applications/{application_id}/interviews", response_model=recruitment_schemas.InterviewResponse)
 def create_interview(application_id: int, data: recruitment_schemas.InterviewCreate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
 	return recruitment_service.create_interview(db, application_id, data, current_admin["userId"])
+
+
+# 6. [관리자] 지원자 비밀번호 저장 형태 감사(audit)
+@router.get("/applicants/password-audit")
+def applicant_password_audit(
+	sample_size: int = Query(10, ge=0, le=50),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return recruitment_service.audit_applicant_password_storage(db, sample_size=sample_size)
+
+
+# 7. [관리자] 지원자 비밀번호 일괄 해시 마이그레이션
+@router.post("/applicants/password-migrate")
+def migrate_applicant_passwords(
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return recruitment_service.migrate_applicant_passwords_to_hash(db)

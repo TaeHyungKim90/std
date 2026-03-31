@@ -4,6 +4,17 @@ from datetime import datetime
 from models import recruitment_models, auth_models
 from schemas.admin import recruitment_schemas
 from services import auth_service 
+from core.security import get_password_hash
+
+# --- 내부 헬퍼: passlib 해시로 보이는지(레거시 평문 식별용) ---
+def _looks_like_password_hash(value: str | None) -> bool:
+	if not value:
+		return False
+	if value.startswith("$2a$") or value.startswith("$2b$") or value.startswith("$2y$"):
+		return True
+	if value.startswith("$sha256_crypt$"):
+		return True
+	return False
 
 # --- 1. 채용 공고 관리 ---
 def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):
@@ -62,9 +73,18 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 		# 이미 등록된 유저인지 체크
 		existing_user = db.query(auth_models.User).filter(auth_models.User.user_login_id == applicant.email_id).first()
 		if not existing_user:
+			# 지원자 레거시 데이터(평문 비밀번호) 대비: 직원 계정에는 항상 해시 저장
+			applicant_pw = applicant.password or ""
+			if not (
+				applicant_pw.startswith("$2a$")
+				or applicant_pw.startswith("$2b$")
+				or applicant_pw.startswith("$2y$")
+				or applicant_pw.startswith("$sha256_crypt$")
+			):
+				applicant_pw = get_password_hash(applicant_pw)
 			new_employee = auth_models.User(
 				user_login_id=applicant.email_id,
-				user_password=applicant.password, # 지원 시 사용한 비밀번호 계승
+				user_password=applicant_pw, # 지원 시 사용한 비밀번호(해시) 계승
 				user_name=applicant.name,
 				user_nickname=f"{applicant.name} 사원",
 				role="user",
@@ -75,6 +95,69 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 	db.commit()
 	db.refresh(application)
 	return application
+
+
+def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict:
+	"""
+	지원자(applicants) 비밀번호 저장 형태 점검.
+	- 해시로 보이지 않는 값은 레거시 평문일 가능성이 높음.
+	- 샘플에는 비밀번호 본문을 포함하지 않음.
+	"""
+	applicants = db.query(recruitment_models.Applicant).all()
+	total = len(applicants)
+	plaintext_like = [a for a in applicants if not _looks_like_password_hash(a.password)]
+	plaintext_like_count = len(plaintext_like)
+
+	sample = [
+		{
+			"id": a.id,
+			"email_id": a.email_id,
+			"created_at": a.created_at,
+		}
+		for a in plaintext_like[: max(0, int(sample_size))]
+	]
+
+	return {
+		"total_applicants": total,
+		"hashed_like_count": total - plaintext_like_count,
+		"plaintext_like_count": plaintext_like_count,
+		"plaintext_like_sample": sample,
+	}
+
+
+def migrate_applicant_passwords_to_hash(db: Session) -> dict:
+	"""
+	레거시 지원자 비밀번호(평문 추정)를 passlib 해시로 일괄 변환합니다.
+	- 이미 해시로 보이는 값은 건드리지 않음(재해싱 방지).
+	- 비어 있는 비밀번호는 스킵.
+	"""
+	applicants = db.query(recruitment_models.Applicant).all()
+
+	total = len(applicants)
+	migrated = 0
+	skipped_hashed = 0
+	skipped_empty = 0
+
+	for a in applicants:
+		pw = a.password or ""
+		if not pw.strip():
+			skipped_empty += 1
+			continue
+		if _looks_like_password_hash(pw):
+			skipped_hashed += 1
+			continue
+		a.password = get_password_hash(pw)
+		migrated += 1
+
+	if migrated > 0:
+		db.commit()
+
+	return {
+		"total_applicants": total,
+		"migrated_count": migrated,
+		"skipped_hashed_count": skipped_hashed,
+		"skipped_empty_count": skipped_empty,
+	}
 
 # --- 3. 면접 평가 기록 ---
 def create_interview(db: Session, application_id: int, data: recruitment_schemas.InterviewCreate, interviewer_id: str):
