@@ -60,7 +60,15 @@ def applicant_password_audit(
 # 7. [관리자] 지원자 비밀번호 일괄 해시 마이그레이션
 @router.post("/applicants/password-migrate")
 def migrate_applicant_passwords(
+	dry_run: bool = Query(False),
+	max_rows: int | None = Query(None, ge=1, le=200000),
+	batch_size: int = Query(1000, ge=1, le=10000),
 	db: Session = Depends(get_db),
 	current_admin: dict = Depends(get_current_admin),
 ):
-	return recruitment_service.migrate_applicant_passwords_to_hash(db)
+	return recruitment_service.migrate_applicant_passwords_to_hash(
+		db,
+		dry_run=dry_run,
+		max_rows=max_rows,
+		batch_size=batch_size,
+	)

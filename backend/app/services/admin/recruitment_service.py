@@ -4,17 +4,7 @@ from datetime import datetime
 from models import recruitment_models, auth_models
 from schemas.admin import recruitment_schemas
 from services import auth_service 
-from core.security import get_password_hash
-
-# --- 내부 헬퍼: passlib 해시로 보이는지(레거시 평문 식별용) ---
-def _looks_like_password_hash(value: str | None) -> bool:
-	if not value:
-		return False
-	if value.startswith("$2a$") or value.startswith("$2b$") or value.startswith("$2y$"):
-		return True
-	if value.startswith("$sha256_crypt$"):
-		return True
-	return False
+from core.security import get_password_hash, looks_like_password_hash
 
 # --- 1. 채용 공고 관리 ---
 def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):
@@ -74,13 +64,10 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 		existing_user = db.query(auth_models.User).filter(auth_models.User.user_login_id == applicant.email_id).first()
 		if not existing_user:
 			# 지원자 레거시 데이터(평문 비밀번호) 대비: 직원 계정에는 항상 해시 저장
-			applicant_pw = applicant.password or ""
-			if not (
-				applicant_pw.startswith("$2a$")
-				or applicant_pw.startswith("$2b$")
-				or applicant_pw.startswith("$2y$")
-				or applicant_pw.startswith("$sha256_crypt$")
-			):
+			applicant_pw = (applicant.password or "").strip()
+			if not applicant_pw:
+				raise HTTPException(status_code=400, detail="지원자 비밀번호가 비어 있어 직원 계정을 생성할 수 없습니다.")
+			if not looks_like_password_hash(applicant_pw):
 				applicant_pw = get_password_hash(applicant_pw)
 			new_employee = auth_models.User(
 				user_login_id=applicant.email_id,
@@ -103,19 +90,35 @@ def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict
 	- 해시로 보이지 않는 값은 레거시 평문일 가능성이 높음.
 	- 샘플에는 비밀번호 본문을 포함하지 않음.
 	"""
-	applicants = db.query(recruitment_models.Applicant).all()
-	total = len(applicants)
-	plaintext_like = [a for a in applicants if not _looks_like_password_hash(a.password)]
-	plaintext_like_count = len(plaintext_like)
+	total = db.query(recruitment_models.Applicant.id).count()
+	plaintext_like_count = 0
+	sample = []
+	need_sample = max(0, int(sample_size))
 
-	sample = [
-		{
-			"id": a.id,
-			"email_id": a.email_id,
-			"created_at": a.created_at,
-		}
-		for a in plaintext_like[: max(0, int(sample_size))]
-	]
+	# 대용량 고려: 필요한 컬럼만 스트리밍(yield_per)으로 순회
+	q = (
+		db.query(
+			recruitment_models.Applicant.id,
+			recruitment_models.Applicant.email_id,
+			recruitment_models.Applicant.created_at,
+			recruitment_models.Applicant.password,
+		)
+		.order_by(recruitment_models.Applicant.id.asc())
+		.yield_per(1000)
+	)
+	for row in q:
+		pw = (row.password or "").strip()
+		if pw and looks_like_password_hash(pw):
+			continue
+		plaintext_like_count += 1
+		if need_sample and len(sample) < need_sample:
+			sample.append(
+				{
+					"id": row.id,
+					"email_id": row.email_id,
+					"created_at": row.created_at,
+				}
+			)
 
 	return {
 		"total_applicants": total,
@@ -125,38 +128,64 @@ def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict
 	}
 
 
-def migrate_applicant_passwords_to_hash(db: Session) -> dict:
+def migrate_applicant_passwords_to_hash(
+	db: Session,
+	*,
+	dry_run: bool = False,
+	max_rows: int | None = None,
+	batch_size: int = 1000,
+) -> dict:
 	"""
 	레거시 지원자 비밀번호(평문 추정)를 passlib 해시로 일괄 변환합니다.
 	- 이미 해시로 보이는 값은 건드리지 않음(재해싱 방지).
 	- 비어 있는 비밀번호는 스킵.
 	"""
-	applicants = db.query(recruitment_models.Applicant).all()
+	if batch_size < 1:
+		batch_size = 1000
 
-	total = len(applicants)
+	total = db.query(recruitment_models.Applicant.id).count()
 	migrated = 0
 	skipped_hashed = 0
 	skipped_empty = 0
+	processed = 0
+	pending_commit = 0
 
-	for a in applicants:
-		pw = a.password or ""
-		if not pw.strip():
+	q = (
+		db.query(recruitment_models.Applicant)
+		.order_by(recruitment_models.Applicant.id.asc())
+		.yield_per(batch_size)
+	)
+	for a in q:
+		if max_rows is not None and processed >= max_rows:
+			break
+		processed += 1
+
+		pw = (a.password or "").strip()
+		if not pw:
 			skipped_empty += 1
 			continue
-		if _looks_like_password_hash(pw):
+		if looks_like_password_hash(pw):
 			skipped_hashed += 1
 			continue
-		a.password = get_password_hash(pw)
-		migrated += 1
 
-	if migrated > 0:
+		migrated += 1
+		if not dry_run:
+			a.password = get_password_hash(pw)
+			pending_commit += 1
+			if pending_commit >= batch_size:
+				db.commit()
+				pending_commit = 0
+
+	if not dry_run and pending_commit > 0:
 		db.commit()
 
 	return {
 		"total_applicants": total,
+		"processed_count": processed,
 		"migrated_count": migrated,
 		"skipped_hashed_count": skipped_hashed,
 		"skipped_empty_count": skipped_empty,
+		"dry_run": dry_run,
 	}
 
 # --- 3. 면접 평가 기록 ---
