@@ -1,18 +1,20 @@
+import { PATHS } from 'constants/paths';
+
 export const MENU_ITEMS = [
-	{ id: 'calendar', label: '캘린더', path: '/my/todos', adminOnly: false },
-	{ id: 'commute', label: '출퇴근', path: '/my/attendance', adminOnly: false },
-	{ id: 'messages', label: '내 수신함', path: '/my/messages', adminOnly: false },
-	{ id: 'admin', label: '관리모드', path: '/admin/dashboard', adminOnly: true }
+	{ id: 'calendar', label: '캘린더', path: PATHS.MY_TODOS, adminOnly: false },
+	{ id: 'commute', label: '출퇴근', path: PATHS.MY_ATTENDANCE, adminOnly: false },
+	{ id: 'messages', label: '내 수신함', path: PATHS.MY_MESSAGES, adminOnly: false },
+	{ id: 'admin', label: '관리모드', path: PATHS.ADMIN_DASHBOARD, adminOnly: true }
   ];
   
   export const ADMIN_SUB_MENU = {
 	  HR: {
 		  title: '인사관리',
 		  items: [
-			  { id: 'admin-users', label: '사용자 관리', path: '/admin/users' },
-			  { id: 'admin-attendance', label: '출퇴근 기록', path: '/admin/attendance' },
-			  { id: 'admin-todos', label: '일정 로그', path: '/admin/todos' },
-			  { id: 'admin-messages', label: '메시지 관리', path: '/admin/messages' }, 
+			  { id: 'admin-users', label: '사용자 관리', path: PATHS.ADMIN_USERS },
+			  { id: 'admin-attendance', label: '출퇴근 기록', path: PATHS.ADMIN_ATTENDANCE },
+			  { id: 'admin-todos', label: '일정 로그', path: PATHS.ADMIN_TODOS },
+			  { id: 'admin-messages', label: '메시지 관리', path: PATHS.ADMIN_MESSAGES }, 
 		  ]
 	  },
 	  RECRUITMENT: {
@@ -26,8 +28,8 @@ export const MENU_ITEMS = [
 	  MGMT: {
 		  title: '시스템관리',
 		  items: [		   
-			  { id: 'admin-categories', label: '카테고리 관리', path: '/admin/categories' },
-			  { id: 'admin-holidays', label: '공휴일 관리', path: '/admin/holidays' },
+			  { id: 'admin-categories', label: '카테고리 관리', path: PATHS.ADMIN_CATEGORIES },
+			  { id: 'admin-holidays', label: '공휴일 관리', path: PATHS.ADMIN_HOLIDAYS },
 			  // 뒷부분 생략된 기존 메뉴들 (holidays 등) 그대로 유지하시면 됩니다!
 		  ]
 	  }

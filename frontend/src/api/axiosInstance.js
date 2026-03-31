@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { formatApiDetail } from 'utils/formatApiError';
+import { PATHS, PATH_PREFIX } from 'constants/paths';
 
 /**
  * Axios 인스턴스 (토큰 인터셉터 + 공통 에러 처리)
@@ -64,12 +65,12 @@ client.interceptors.response.use(
 				return Promise.reject(new Error(msg));
 			}
 			console.warn('세션이 만료되어 로그인이 필요합니다.');
-			if (window.location.pathname.startsWith('/careers')) {
-				if (window.location.pathname !== '/careers/login') {
-					window.location.href = '/careers/login';
+			if (window.location.pathname.startsWith(PATH_PREFIX.CAREERS)) {
+				if (window.location.pathname !== PATHS.CAREERS_LOGIN) {
+					window.location.href = PATHS.CAREERS_LOGIN;
 				}
-			} else if (window.location.pathname !== '/login') {
-				window.location.href = '/login';
+			} else if (window.location.pathname !== PATHS.LOGIN) {
+				window.location.href = PATHS.LOGIN;
 			}
 			return Promise.reject(new Error('세션이 만료되어 로그인이 필요합니다.'));
 		}

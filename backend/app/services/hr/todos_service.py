@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
+from core.constants import VACATION_CATEGORIES, VACATION_HALF_DAY_CATEGORIES
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
 from models.auth_models import UserVacation
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
@@ -18,7 +19,7 @@ def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 
 	# 날짜가 명확하지 않을 때의 기본값
 	if not start_date or not end_date:
-		return 0.5 if category_key in ("vacation_am", "vacation_pm") else 1.0
+		return 0.5 if category_key in VACATION_HALF_DAY_CATEGORIES else 1.0
 
 	# 문자열로 들어올 경우를 대비한 방어 코드 (ISO 포맷 파싱)
 	if isinstance(start_date, str):
@@ -31,7 +32,7 @@ def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 	if days < 1: 
 		days = 1
 
-	if category_key == "vacation_full":
+	if category_key == VACATION_CATEGORIES["FULL"]:
 		return float(days)
 	else:
 		# 반차는 기간이 늘어나도 0.5일 고정 (프론트에서도 막지만 백엔드 이중 방어)

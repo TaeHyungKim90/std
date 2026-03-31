@@ -1,13 +1,14 @@
 import * as Notify from 'utils/toastUtils';
 import { client } from 'api/axiosInstance';
+import { BASE_URL } from 'constants/apiConfig';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
 export function getApiOrigin() {
 	const base = process.env.REACT_APP_API_BASE_URL || '';
 	if (typeof base === 'string' && base.trim()) {
-		return base.replace(/\/?api\/?$/i, '').replace(/\/$/, '') || 'http://localhost:8000';
+		return base.replace(/\/?api\/?$/i, '').replace(/\/$/, '') || BASE_URL;
 	}
-	return 'http://localhost:8000';
+	return BASE_URL;
 }
 
 /**

@@ -3,6 +3,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { AuthContext } from 'context/AuthContext';
 import { MENU_ITEMS } from 'constants/menu';
+import { PATHS, PATH_PREFIX } from 'constants/paths';
 import logo from 'assets/icon/favicon.png';
 
 const Header = () => {
@@ -15,7 +16,7 @@ const Header = () => {
 	if (!isLoggedIn) return null;
 
 	const currentPath = location.pathname;
-	const isAdminMode = currentPath.startsWith('/admin');
+	const isAdminMode = currentPath.startsWith(PATH_PREFIX.ADMIN);
 
 	const handleLogout = async () => {
 		if (isLoggingOut) return;
@@ -24,7 +25,7 @@ const Header = () => {
 		setIsLoggingOut(true);
 		logout()
 			.then(() => {
-				navigate('/login');
+				navigate(PATHS.LOGIN);
 			})
 			.catch((err) => {
 				console.error("로그아웃 실패:", err);
@@ -38,7 +39,7 @@ const Header = () => {
 		<header className="modern-header-wrapper">
 			<div className="modern-gnb">
 				<div className="gnb-left">
-					<div onClick={() => navigate('/')} className="bq-logo">
+					<div onClick={() => navigate(PATHS.HOME)} className="bq-logo">
 						<img src={logo} alt="가치플레이 로고" className="bq-logo-img" />
 						<div className="bq-logo-text-group">
 							<span className="bq-logo-main">가치플레이 </span>

@@ -1,5 +1,6 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
+import { PATH_PREFIX, ROUTE_SEGMENTS } from 'constants/paths';
 
 const AdminDashboard = lazy(() => import('pages/admin/AdminDashboard'));
 const AdminTodoView = lazy(() => import('pages/admin/AdminTodo'));
@@ -12,16 +13,16 @@ const ApplicantStatusView = lazy(() => import('pages/admin/ApplicantStatus'));
 const AdminMessage = lazy(() => import('pages/admin/AdminMessage'));
 
 const adminRoutes = (
-	<Route path="/admin">
-		<Route path="dashboard" element={<AdminDashboard />} />
-		<Route path="todos" element={<AdminTodoView />} />
-		<Route path="categories" element={<CategoryMgmtView />} />
-		<Route path="holidays" element={<HolidayMgmtView />} />
-		<Route path="attendance" element={<AdminAttendanceView />} />
-		<Route path="users" element={<AdminUserView />} />
-		<Route path="recruitment" element={<RecruitmentAdminView />} />
-		<Route path="applicants" element={<ApplicantStatusView />} />
-		<Route path="messages" element={<AdminMessage />} />
+	<Route path={PATH_PREFIX.ADMIN}>
+		<Route path={ROUTE_SEGMENTS.ADMIN.DASHBOARD} element={<AdminDashboard />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.TODOS} element={<AdminTodoView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.CATEGORIES} element={<CategoryMgmtView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.HOLIDAYS} element={<HolidayMgmtView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.ATTENDANCE} element={<AdminAttendanceView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.USERS} element={<AdminUserView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.RECRUITMENT} element={<RecruitmentAdminView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.APPLICANTS} element={<ApplicantStatusView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.MESSAGES} element={<AdminMessage />} />
 	</Route>
 );
 

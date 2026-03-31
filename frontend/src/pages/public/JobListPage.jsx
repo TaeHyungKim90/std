@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import { pathCareersJob } from 'constants/paths';
 
 const PAGE_SIZE = 12;
 
@@ -54,11 +55,11 @@ const JobListPage = () => {
 									key={job.id}
 									className="job-card stagger-item"
 									style={{ animationDelay: `${index * 0.04}s` }}
-									onClick={() => navigate(`/careers/${job.id}`, { state: { job } })}
+									onClick={() => navigate(pathCareersJob(job.id), { state: { job } })}
 									onKeyDown={(e) => {
 										if (e.key === 'Enter' || e.key === ' ') {
 											e.preventDefault();
-											navigate(`/careers/${job.id}`, { state: { job } });
+											navigate(pathCareersJob(job.id), { state: { job } });
 										}
 									}}
 									role="button"

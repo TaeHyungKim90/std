@@ -1,5 +1,6 @@
 import { client } from './axiosInstance.js'; // api.js에서 만든 공통 client 임포트
 import { API_ENDPOINTS } from 'constants/constants';
+import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
 const PATH = API_ENDPOINTS.ADMIN;
 export const adminApi = {
   /**
@@ -8,7 +9,7 @@ export const adminApi = {
    */
   getAllTodos: (params = {}) =>
 	client.get(`${PATH}/todos`, {
-		params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+		params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 	}),
 
   /**

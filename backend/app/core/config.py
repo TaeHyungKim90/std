@@ -6,6 +6,17 @@ from pydantic_settings import BaseSettings
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
+# ---------------------------------------------------------------------------
+# OAuth2 리다이렉트 URI
+# - pydantic-settings: 환경 변수 `KAKAO_REDIRECT_URI`, `NAVER_REDIRECT_URI` 가 있으면
+#   아래 개발용 기본값보다 우선합니다 (.env 또는 실행 환경에 주입).
+# - 배포(스테이징/운영) 시: 반드시 실제 공개 API 도메인 + 콜백 경로로 .env 를 설정할 것.
+#   예) https://api.example.com/api/auth/kakao/callback
+#   미설정 채로 운영 배포하면 카카오/네이버 개발자 콘솔의 Redirect URI 와 불일치하여 로그인 실패합니다.
+# ---------------------------------------------------------------------------
+_DEV_KAKAO_REDIRECT_URI = "http://localhost:8000/api/auth/kakao/callback"
+_DEV_NAVER_REDIRECT_URI = "http://localhost:8000/api/auth/naver/callback"
+
 
 class Settings(BaseSettings):
 	SECRET_KEY: str
@@ -14,10 +25,10 @@ class Settings(BaseSettings):
 	ACCESS_TOKEN_EXPIRE_DAYS: int = 1
 	KAKAO_CLIENT_ID: str
 	KAKAO_CLIENT_SECRET: str
-	KAKAO_REDIRECT_URI: str = "http://localhost:8000/api/auth/kakao/callback"
+	KAKAO_REDIRECT_URI: str = _DEV_KAKAO_REDIRECT_URI
 	NAVER_CLIENT_ID: str
 	NAVER_CLIENT_SECRET: str
-	NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
+	NAVER_REDIRECT_URI: str = _DEV_NAVER_REDIRECT_URI
 	PUBLIC_DATA_API_KEY: str
 	ENVIRONMENT: str = "development"
 	CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"

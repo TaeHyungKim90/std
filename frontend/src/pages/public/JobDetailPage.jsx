@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import parse from 'html-react-parser';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import { PATHS, pathCareersJobApply } from 'constants/paths';
 const JobDetailPage = () => {
 	const { state } = useLocation();
 	const navigate = useNavigate();
@@ -11,7 +12,7 @@ const JobDetailPage = () => {
 	const job = state?.job;
 	if (!job) {
 		Notify.toastWarn(" 공고 상세페이지 - 잘못된 접근입니다.");
-		navigate('/careers', { replace: true });
+		navigate(PATHS.CAREERS, { replace: true });
 		return null;
 	}
 
@@ -19,9 +20,9 @@ const JobDetailPage = () => {
 		const user = sessionStorage.getItem('applicant_user');
 		if (!user) {
 			Notify.toastInfo("입사 지원은 로그인이 필요합니다.");
-			navigate('/careers/login', { state: { returnUrl: `/careers/${job.id}/apply`, job } });
+			navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
 		} else {
-			navigate(`/careers/${job.id}/apply`, { state: { job } });
+			navigate(pathCareersJobApply(job.id), { state: { job } });
 		}
 	};
 

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { recruitmentApi } from 'api/recruitmentApi'; 
+import { recruitmentApi } from 'api/recruitmentApi';
+import { PATHS } from 'constants/paths';
 
 const ApplicantLoginPage = () => {
 	const navigate = useNavigate();
@@ -26,7 +27,7 @@ const ApplicantLoginPage = () => {
 			// 성공 시 실행할 후속 작업 (세션 저장 및 페이지 이동)
 			if (res && res.data) {
 				sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
-				const returnUrl = location.state?.returnUrl || '/careers';
+				const returnUrl = location.state?.returnUrl || PATHS.CAREERS;
 				navigate(returnUrl, { replace: true, state: location.state });
 			}
 		}).catch((error) => {
@@ -65,7 +66,7 @@ const ApplicantLoginPage = () => {
 				
 				<div className="applicant-login__footer">
 					아직 계정이 없으신가요? &nbsp;
-					<Link to="/careers/signup" className="applicant-login__footer-link">회원가입</Link>
+					<Link to={PATHS.CAREERS_SIGNUP} className="applicant-login__footer-link">회원가입</Link>
 				</div>
 			</div>
 		</div>

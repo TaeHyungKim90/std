@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate, Link } from 'react-router-dom';
-import { recruitmentApi } from 'api/recruitmentApi'; 
+import { recruitmentApi } from 'api/recruitmentApi';
+import { PATHS } from 'constants/paths';
 
 const ApplicantSignupPage = () => {
 	const navigate = useNavigate();
@@ -30,7 +31,7 @@ const ApplicantSignupPage = () => {
 			}
 		).then(() => {
 			// 성공했을 때만 로그인 페이지로 이동!
-			navigate('/careers/login');		  
+			navigate(PATHS.CAREERS_LOGIN);		  
 		}).catch((error) => {
 			// API 통신 실패 시 콘솔에 로그만 조용히 남김 (에러 토스트는 이미 떴음)
 			console.error("회원가입 에러:", error);
@@ -62,7 +63,7 @@ const ApplicantSignupPage = () => {
 					</button>
 				</form>
 				<div className="applicant-signup__footer">
-					이미 계정이 있으신가요? <Link to="/careers/login" className="applicant-signup__login-link">로그인하기</Link>
+					이미 계정이 있으신가요? <Link to={PATHS.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
 				</div>
 			</div>
 		</div>

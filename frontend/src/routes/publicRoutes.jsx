@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PublicLayout from 'components/public/PublicLayout';
+import { PATHS, ROUTE_SEGMENTS } from 'constants/paths';
 
 const JobListPage = lazy(() => import('pages/public/JobListPage'));
 const JobDetailPage = lazy(() => import('pages/public/JobDetailPage'));
@@ -10,15 +11,15 @@ const ApplicantSignupPage = lazy(() => import('pages/public/ApplicantSignupPage'
 const MyApplicationsPage = lazy(() => import('pages/public/MyApplicationsPage'));
 
 const publicRoutes = (
-	<Route path="/careers" element={<PublicLayout />}>
+	<Route path={PATHS.CAREERS} element={<PublicLayout />}>
 		<Route index element={<JobListPage />} />
-		<Route path="login" element={<ApplicantLoginPage />} />
-		<Route path="signup" element={<ApplicantSignupPage />} />
+		<Route path={ROUTE_SEGMENTS.CAREERS.LOGIN} element={<ApplicantLoginPage />} />
+		<Route path={ROUTE_SEGMENTS.CAREERS.SIGNUP} element={<ApplicantSignupPage />} />
 
-		<Route path=":jobId" element={<JobDetailPage />} />
-		<Route path=":jobId/apply" element={<JobApplyPage />} />
+		<Route path={ROUTE_SEGMENTS.CAREERS.JOB_ID} element={<JobDetailPage />} />
+		<Route path={ROUTE_SEGMENTS.CAREERS.JOB_APPLY} element={<JobApplyPage />} />
 
-		<Route path="my-applications" element={<MyApplicationsPage />} />
+		<Route path={ROUTE_SEGMENTS.CAREERS.MY_APPLICATIONS} element={<MyApplicationsPage />} />
 	</Route>
 );
 export default publicRoutes;

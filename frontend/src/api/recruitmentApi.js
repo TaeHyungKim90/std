@@ -1,5 +1,6 @@
 import { client } from './axiosInstance.js'; // api.js에서 만든 공통 client 임포트
 import { API_ENDPOINTS } from 'constants/constants';
+import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
 
 const ADMIN_PATH = API_ENDPOINTS.ADMIN_RECRUITMENT;
 const PUBLIC_PATH = API_ENDPOINTS.PUBLIC_RECRUITMENT;
@@ -8,7 +9,7 @@ export const recruitmentApi = {
 	// 1. 채용 공고 관리
 	getJobPostings: (params = {}) =>
 		client.get(`${ADMIN_PATH}/jobs`, {
-			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
 	createJobPosting: (payload) => client.post(`${ADMIN_PATH}/jobs`, payload),
 	updateJobPosting: (jobId, payload) => client.put(`${ADMIN_PATH}/jobs/${jobId}`, payload),
@@ -28,7 +29,7 @@ export const recruitmentApi = {
 // ==========================================
 	getPublicJobs: (params = {}) =>
 		client.get(`${PUBLIC_PATH}/jobs`, {
-			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
 	
 	submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply`, payload),

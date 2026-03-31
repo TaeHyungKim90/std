@@ -4,7 +4,8 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import { commonApi } from 'api/commonApi';
 import { formatPhoneNumber } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError'; 
+import { formatApiDetail } from 'utils/formatApiError';
+import { PATHS, pathCareersJobApply } from 'constants/paths';
 
 const JobApplyPage = () => {
     const { state } = useLocation();
@@ -19,13 +20,13 @@ const JobApplyPage = () => {
         let isMounted = true; 
         if (!job) {
             Notify.toastError("🚨 잘못된 접근입니다.");
-            navigate('/careers', { replace: true });
+            navigate(PATHS.CAREERS, { replace: true });
             return;
         }
         const userStr = sessionStorage.getItem('applicant_user');
         if (!userStr) {
             Notify.toastWarn("로그인이 필요한 서비스입니다.");
-            navigate('/careers/login', { state: { returnUrl: `/careers/${job.id}/apply`, job } });
+            navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
             return;
         }
         
@@ -42,7 +43,7 @@ const JobApplyPage = () => {
                 if (applications.some(app => app.job_id === job.id)) {
                     if (isMounted) {
                         Notify.toastWarn("이미 지원이 완료된 공고입니다.\n[내 지원 내역] 페이지에서 확인해 주세요.");
-                        navigate('/careers/my-applications', { replace: true }); 
+                        navigate(PATHS.CAREERS_MY_APPLICATIONS, { replace: true }); 
                     }
                 }
             }).catch((error) => {
@@ -105,7 +106,7 @@ const JobApplyPage = () => {
             }
         ).then(() => {
             // 전부 다 성공했을 때의 처리
-            navigate('/careers/my-applications', { replace: true });
+            navigate(PATHS.CAREERS_MY_APPLICATIONS, { replace: true });
         }).catch((error) => {
             // 에러 로그
             console.error("지원서 제출 에러:", error);

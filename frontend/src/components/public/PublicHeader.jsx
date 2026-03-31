@@ -3,6 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ApplicantProfileModal from './ApplicantProfileModal';
 import 'assets/css/publicHeader.css';
+import { PATHS } from 'constants/paths';
 
 const PublicHeader = () => {
 	const navigate = useNavigate();
@@ -22,7 +23,7 @@ const PublicHeader = () => {
 		sessionStorage.removeItem('applicant_user');
 		setLoggedInUser(null);
 		Notify.toastSuccess("로그아웃 되었습니다.");
-		navigate('/careers');
+		navigate(PATHS.CAREERS);
 	};
 
 	return (
@@ -30,16 +31,16 @@ const PublicHeader = () => {
 			<header className="public-header">
 				<div className="public-header__brand-nav">
 					{/* 1. 로고 */}
-					<Link to="/careers" className="public-header__logo-link">
+					<Link to={PATHS.CAREERS} className="public-header__logo-link">
 						가치플레이 채용
 					</Link>
 
 					{/* 2. 공통/권한별 메뉴 */}
 					<nav className="public-header__nav">
-						<Link to="/careers" className="public-header__nav-link">채용 공고</Link>
+						<Link to={PATHS.CAREERS} className="public-header__nav-link">채용 공고</Link>
 						{loggedInUser && (
 							<>
-								<Link to="/careers/my-applications" className="public-header__nav-link">내 지원 내역</Link>
+								<Link to={PATHS.CAREERS_MY_APPLICATIONS} className="public-header__nav-link">내 지원 내역</Link>
 								{/* <Link to="/careers/resume" className="public-header__nav-link">지원서 관리</Link> */}
 							</>
 						)}
@@ -63,7 +64,7 @@ const PublicHeader = () => {
 							<button type="button" onClick={handleLogout} className="public-header__btn-logout">로그아웃</button>
 						</div>
 					) : (
-						<button type="button" onClick={() => navigate('/careers/login')} className="public-header__btn-login">
+						<button type="button" onClick={() => navigate(PATHS.CAREERS_LOGIN)} className="public-header__btn-login">
 							지원자 로그인
 						</button>
 					)}

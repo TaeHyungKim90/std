@@ -8,6 +8,7 @@ import authRoutes from './authRoutes';
 import hrRoutes from './hrRoutes';
 import adminRoutes from './adminRoutes';
 import publicRoutes from './publicRoutes';
+import { PATHS } from 'constants/paths';
 
 const NotFoundPage = lazy(() => import('pages/public/NotFoundPage'));
 
@@ -18,7 +19,7 @@ const AppRoutes = () => {
 			{publicRoutes}
 			<Route element={<PrivateRoute />}>
 				<Route element={<Layout />}>
-					<Route path="/" element={<Navigate to="/my/todos" replace />} />
+					<Route path={PATHS.HOME} element={<Navigate to={PATHS.MY_TODOS} replace />} />
 					{hrRoutes}
 					<Route element={<AdminRoute />}>{adminRoutes}</Route>
 				</Route>

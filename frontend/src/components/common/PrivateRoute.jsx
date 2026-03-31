@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from 'context/AuthContext';
 import LoadingBar from './LoadingBar';
 import 'assets/css/privateRoute.css';
+import { PATHS } from 'constants/paths';
 const PrivateRoute = () => {
   const { isLoggedIn, loading } = useContext(AuthContext);
 
@@ -17,6 +18,6 @@ const PrivateRoute = () => {
   }
 
   // 2. 로그인 상태면 해당 컴포넌트를 보여주고, 아니면 로그인 페이지(/)로 튕겨냄
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" replace />;
+  return isLoggedIn ? <Outlet /> : <Navigate to={PATHS.LOGIN} replace />;
 };
 export default PrivateRoute;

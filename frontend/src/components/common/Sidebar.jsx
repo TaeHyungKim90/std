@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ADMIN_SUB_MENU } from 'constants/menu';
+import { PATH_PREFIX } from 'constants/paths';
 import 'assets/css/sidebar.css'; // 새로운 사이드바 CSS 연결
 
 const Sidebar = () => {
@@ -9,7 +10,7 @@ const Sidebar = () => {
 	const currentPath = location.pathname;
 
 	// 관리자 경로(/admin)가 아닐 때는 사이드바를 숨김 (화면 넓게 쓰기)
-	if (!currentPath.startsWith('/admin')) return null;
+	if (!currentPath.startsWith(PATH_PREFIX.ADMIN)) return null;
 
 	// 메뉴 렌더링을 위한 헬퍼 함수
 	const renderMenuGroup = (group) => (

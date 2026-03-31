@@ -1,6 +1,7 @@
 // src/api/messageApi.js
 import { client } from './axiosInstance.js'; 
 import { API_ENDPOINTS } from 'constants/constants';
+import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
 
 const PATH = API_ENDPOINTS.MESSAGES;
 
@@ -12,13 +13,13 @@ export const messageApi = {
 	// 내 수신함 조회 (페이징: skip, limit)
 	getInbox: (params = {}) =>
 		client.get(`${PATH}/inbox`, {
-			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
 
 	// 내 발신함 조회 (페이징)
 	getOutbox: (params = {}) =>
 		client.get(`${PATH}/outbox`, {
-			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? 20 },
+			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
 
 	// 메시지 읽음 처리

@@ -9,6 +9,7 @@ import { authApi } from 'api/authApi';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
+import { PATHS } from 'constants/paths';
 
 const LoginForm = () => {
 	const [id, setId] = useState('');
@@ -23,7 +24,7 @@ const LoginForm = () => {
 	useEffect(() => {
 		// 로딩이 끝났고(false), 로그인 상태(true)라면 '/my/todos' 로 이동 (이미 로그인된 채 로그인 페이지 진입)
 		if (!loading && isLoggedIn) {
-			navigate('/my/todos');
+			navigate(PATHS.MY_TODOS);
 		}
 
 		// 컴포넌트가 사라질 때(unmount) 실행 중인 타이머가 있다면 제거
@@ -68,7 +69,7 @@ const LoginForm = () => {
 			if (res?.data?.success) {
 				// 쿠키(Set-Cookie) 반영 후 /check로 입사일 등 전역 상태 동기화
 				await checkAuth();
-				navigate('/my/todos');
+				navigate(PATHS.MY_TODOS);
 			}
 		} catch (err) {
 			console.error("로그인 실패:", err);
@@ -117,7 +118,7 @@ const LoginForm = () => {
 				<SocialButtons />
 				<div className="signup-prompt">
 					계정이 없으신가요?
-					<button type="button" onClick={() => navigate('/signup')} className="signup-link-btn">
+					<button type="button" onClick={() => navigate(PATHS.SIGNUP)} className="signup-link-btn">
 						회원가입
 					</button>
 				</div>

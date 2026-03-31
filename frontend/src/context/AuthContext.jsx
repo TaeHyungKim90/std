@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback, use
 import * as Notify from 'utils/toastUtils';
 import { authApi } from 'api/authApi';
 import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
+import { PATHS, PATH_PREFIX } from 'constants/paths';
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
 import { useLoading } from './LoadingContext';
 
@@ -96,11 +97,11 @@ export const AuthProvider = ({ children }) => {
 			resetAuthState();
 			Notify.toastInfo('다른 탭에서 로그아웃되어 세션이 종료되었습니다.');
 			const path = window.location.pathname;
-			if (path.startsWith('/careers')) {
+			if (path.startsWith(PATH_PREFIX.CAREERS)) {
 				window.location.reload();
 				return;
 			}
-			window.location.replace('/login');
+			window.location.replace(PATHS.LOGIN);
 		});
 	}, [resetAuthState]);
 

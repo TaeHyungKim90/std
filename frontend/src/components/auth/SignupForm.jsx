@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from 'api/authApi';
 import { useLoading } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
+import { PATHS } from 'constants/paths';
 
 const SignupForm = () => {
 	const navigate = useNavigate();
@@ -85,7 +86,7 @@ const SignupForm = () => {
 				return errMsg;
 			}
 		}).then(() => {
-			navigate('/login');
+			navigate(PATHS.LOGIN);
 		}).catch((err) => {
 			console.error("회원가입 실패:", err);
 		}).finally(() => {
@@ -133,7 +134,7 @@ const SignupForm = () => {
 
 				<div className="signup-prompt">
 					이미 계정이 있으신가요?
-					<button type="button" onClick={() => navigate('/login')} className="signup-link-btn">로그인하기</button>
+					<button type="button" onClick={() => navigate(PATHS.LOGIN)} className="signup-link-btn">로그인하기</button>
 				</div>
 			</form>
 		</div>

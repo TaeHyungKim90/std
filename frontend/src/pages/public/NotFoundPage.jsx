@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PATHS } from 'constants/paths';
 import { Home, ArrowLeft } from 'lucide-react'; // lucide-react 아이콘 활용
 import 'assets/css/notFound.css';
 
@@ -21,7 +22,7 @@ const NotFoundPage = () => {
 						<ArrowLeft size={18} strokeWidth={2} aria-hidden />
 						이전으로
 					</button>
-					<button type="button" className="btn-home" onClick={() => navigate('/')}>
+					<button type="button" className="btn-home" onClick={() => navigate(PATHS.HOME)}>
 						<Home size={18} strokeWidth={2} aria-hidden />
 						홈으로 이동
 					</button>
