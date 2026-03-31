@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 	NAVER_REDIRECT_URI: str = "http://localhost:8000/api/auth/naver/callback"
 	PUBLIC_DATA_API_KEY: str
 	ENVIRONMENT: str = "development"
-	CORS_ORIGINS: str = "http://localhost:3000,http://10.44.100.52:3000,http://127.0.0.1:3000"
+	CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 	FRONTEND_URL: str = "http://localhost:3000"
 	# 비어 있으면 SQLite 기본 경로(db/session.py). 예: postgresql+psycopg2://user:pass@localhost/todo
 	DATABASE_URL: Optional[str] = None

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import date
+from constants.vacation_categories import VACATION_STATS_CATEGORIES
 from models.hr_models import Todo, TodoCategoryType
 from models.auth_models import User, UserVacation
 
@@ -30,7 +31,7 @@ def get_admin_stats(db: Session):
 	 .filter(
 		 func.date(Todo.start_date) < last_day,
 		 func.date(Todo.end_date) >= first_day,
-		 Todo.category.in_(['vacation_full', 'vacation_am', 'vacation_pm', 'vacation_special', 'vacation_sick'])
+		 Todo.category.in_(VACATION_STATS_CATEGORIES)
 	 ).order_by(Todo.start_date.asc()).all()
 
 	today_vacations = [

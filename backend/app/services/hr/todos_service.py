@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
+from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
 from models.auth_models import UserVacation
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
@@ -12,12 +13,12 @@ _WEEKLY_CATEGORY_KEY = "weekly"
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
 def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 	"""카테고리 키와 날짜 기간에 따라 차감할 연차 일수를 정확히 계산합니다."""
-	if category_key not in ["vacation_full", "vacation_am", "vacation_pm"]:
+	if category_key not in VACATION_DEDUCTIBLE_CATEGORIES:
 		return 0.0
 
 	# 날짜가 명확하지 않을 때의 기본값
 	if not start_date or not end_date:
-		return 0.5 if category_key in ["vacation_am", "vacation_pm"] else 1.0
+		return 0.5 if category_key in ("vacation_am", "vacation_pm") else 1.0
 
 	# 문자열로 들어올 경우를 대비한 방어 코드 (ISO 포맷 파싱)
 	if isinstance(start_date, str):

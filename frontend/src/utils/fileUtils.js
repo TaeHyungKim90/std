@@ -4,10 +4,10 @@ import { client } from 'api/axiosInstance';
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
 export function getApiOrigin() {
 	const base = process.env.REACT_APP_API_BASE_URL || '';
-	if (typeof base === 'string' && /\/api\/?$/i.test(base)) {
+	if (typeof base === 'string' && base.trim()) {
 		return base.replace(/\/?api\/?$/i, '').replace(/\/$/, '') || 'http://localhost:8000';
 	}
-	return (process.env.REACT_APP_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+	return 'http://localhost:8000';
 }
 
 /**

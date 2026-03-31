@@ -4,17 +4,9 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
+from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.hr_models import Attendance, Todo
 from models.auth_models import User
-
-_VACATION_TODO_CATEGORIES = [
-	"vacation_full",
-	"vacation_am",
-	"vacation_pm",
-	"vacation_special",
-	"vacation_sick",
-	"official_leave",
-]
 
 
 def is_vacation_status(status_str: str | None) -> bool:
@@ -38,7 +30,7 @@ def _is_user_on_vacation_by_todos(db: Session, user_id: str, target_date: date) 
 	q = (
 		db.query(Todo.id)
 		.filter(Todo.user_id == user_id)
-		.filter(Todo.category.in_(_VACATION_TODO_CATEGORIES))
+		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date == None, Todo.end_date >= day_start))  # noqa: E711
 	)
