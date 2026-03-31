@@ -17,7 +17,7 @@ const MyApplicationsPage = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const [applications, setApplications] = useState([]);
-	const [isLoading, setPageLoading] = useState(true);
+	const [isLoading, setIsLoading] = useState(true);
 	const [loggedInUser, setLoggedInUser] = useState(null);
 
 	useEffect(() => {
@@ -41,7 +41,7 @@ const MyApplicationsPage = () => {
 				Notify.toastError("지원 내역을 불러오지 못했습니다.");
 			} finally {
 				hideLoading();
-				setPageLoading(false);
+				setIsLoading(false);
 			}
 		};
 

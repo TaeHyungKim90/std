@@ -1,12 +1,12 @@
 // src/components/auth/LoginForm.jsx (수정된 소스)
 // 웹 브릿지(WebView ↔ 네이티브) 연결 테스트: 상위 페이지 `pages/auth/LoginPage.jsx`의
 // 「앱 브릿지 연결 테스트」 버튼에서 `window.ReactNativeWebView.postMessage` 호출로 검증합니다.
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from 'api/authApi'
-import { AuthContext } from 'context/AuthContext';
+import { authApi } from 'api/authApi';
+import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
 import SocialButtons from './SocialButtons';
 
@@ -15,14 +15,15 @@ const LoginForm = () => {
 	const [pw, setPw] = useState('');
 	const [error, setError] = useState('');
 	const [showKoreanWarning, setShowKoreanWarning] = useState(false);
-	const { isLoggedIn, loading, setIsLoggedIn, setUserRole, setUserName, setUserNickname } = useContext(AuthContext);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const { isLoggedIn, loading, checkAuth } = useAuth();
 	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const timerRef = useRef(null);
 	useEffect(() => {
-		// 로딩이 끝났고(false), 로그인 상태(true)라면 '/' (또는 '/my/todos') 로 강제 이동
+		// 로딩이 끝났고(false), 로그인 상태(true)라면 '/my/todos' 로 이동 (이미 로그인된 채 로그인 페이지 진입)
 		if (!loading && isLoggedIn) {
-			navigate('/');
+			navigate('/my/todos');
 		}
 
 		// 컴포넌트가 사라질 때(unmount) 실행 중인 타이머가 있다면 제거
@@ -49,33 +50,32 @@ const LoginForm = () => {
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
+		if (isSubmitting) return;
+		setIsSubmitting(true);
 		setError('');
 		showLoading("로그인 정보를 검증 중입니다... ⏳");
-		Notify.toastPromise(authApi.login(id, pw), {
-			loading: '로그인 중입니다...',
-			success: '로그인되었습니다.',
-			error: (err) => {
-				const errMsg =
-					formatApiDetail(err) || '로그인 중 오류가 발생했습니다.';
-				setError(errMsg);
-				return errMsg;
-			}
-		}).then((res) => {
-			const { success, userNickname, role, userName } = res.data;
-			if (success) {
-				// JWT는 서버가 Set-Cookie(httpOnly)로만 설정합니다.
-
-				setIsLoggedIn(true);
-				setUserNickname(userNickname);
-				setUserRole(role);
-				setUserName(userName);
+		try {
+			const res = await Notify.toastPromise(authApi.login(id, pw), {
+				loading: '로그인 중입니다...',
+				success: '로그인되었습니다.',
+				error: (err) => {
+					const errMsg =
+						formatApiDetail(err) || '로그인 중 오류가 발생했습니다.';
+					setError(errMsg);
+					return errMsg;
+				}
+			});
+			if (res?.data?.success) {
+				// 쿠키(Set-Cookie) 반영 후 /check로 입사일 등 전역 상태 동기화
+				await checkAuth();
 				navigate('/my/todos');
 			}
-		}).catch((err) => {
+		} catch (err) {
 			console.error("로그인 실패:", err);
-		}).finally(() => {
+		} finally {
 			hideLoading();
-		});
+			setIsSubmitting(false);
+		}
 	};
 
 	return (
@@ -118,7 +118,9 @@ const LoginForm = () => {
 					required
 					autoComplete="current-password"
 				/>
-				<button type="submit" className="login-button">로그인</button>
+				<button type="submit" className="login-button" disabled={isSubmitting}>
+					{isSubmitting ? '로그인 중...' : '로그인'}
+				</button>
 				<SocialButtons />
 				<div className="signup-prompt">
 					계정이 없으신가요?

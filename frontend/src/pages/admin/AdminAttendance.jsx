@@ -4,26 +4,12 @@ import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import { holidayApi } from 'api/holidayApi';
 import PaginationBar from 'components/common/PaginationBar';
+import UserAttendanceDrawer from 'components/admin/UserAttendanceDrawer';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { useSearchParams } from 'react-router-dom';
+import { getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
 const PAGE_SIZE = 20;
 const SUMMARY_PAGE_SIZE = 100; // backend limit <= 100
-
-const getTodayYmd = () => {
-	// local time 기준 YYYY-MM-DD
-	const d = new Date();
-	const yyyy = d.getFullYear();
-	const mm = String(d.getMonth() + 1).padStart(2, '0');
-	const dd = String(d.getDate()).padStart(2, '0');
-	return `${yyyy}-${mm}-${dd}`;
-};
-
-const parseYmdParam = (val) => {
-	if (typeof val !== 'string') return null;
-	return /^\d{4}-\d{2}-\d{2}$/.test(val) ? val : null;
-};
-
-const normalizeStatus = (status) => (status ?? '').toString().trim().toUpperCase();
 
 const isVacation = (record) => {
 	const st = normalizeStatus(record?.status);
@@ -61,6 +47,8 @@ const AdminAttendance = () => {
 		vacationCount: 0,
 		absentCount: 0,
 	});
+
+	const [drawerUser, setDrawerUser] = useState(null);
 
 	const fetchAttendanceData = useCallback(async () => {
 		showLoading('출퇴근 기록을 불러오는 중입니다... ⏳');
@@ -233,6 +221,15 @@ const AdminAttendance = () => {
 		return `${h}시간 ${m}분`;
 	};
 
+	const openDrawerForRecord = (record) => {
+		const uid = record.user_id || record.user_login_id;
+		if (!uid) return;
+		setDrawerUser({
+			userId: uid,
+			userName: record.user_name || '',
+		});
+	};
+
 	return (
 		<div className="bq-admin-view">
 			<div className="admin-header">
@@ -374,10 +371,40 @@ const AdminAttendance = () => {
 									attendanceList.map((record, index) => (
 										<tr key={record.user_id || record.id || index}>
 											<td>
-												<div style={{ fontWeight: '600' }}>{record.user_name}</div>
-												<div style={{ fontSize: '0.8rem', color: '#888' }}>
-													({record.user_id || '아이디 미상'})
-												</div>
+												<button
+													type="button"
+													onClick={() => openDrawerForRecord(record)}
+													style={{
+														display: 'block',
+														width: '100%',
+														textAlign: 'left',
+														background: 'none',
+														border: 'none',
+														padding: 0,
+														cursor: 'pointer',
+														font: 'inherit',
+													}}
+												>
+													<div
+														style={{
+															fontWeight: '600',
+															color: '#1565c0',
+															textDecoration: 'underline',
+															textUnderlineOffset: 3,
+														}}
+													>
+														{record.user_name}
+													</div>
+													<div
+														style={{
+															fontSize: '0.8rem',
+															color: '#0d47a1',
+															marginTop: 2,
+														}}
+													>
+														({record.user_id || '아이디 미상'})
+													</div>
+												</button>
 											</td>
 											<td>{record.work_date ? record.work_date : selectedDate}</td>
 											<td>
@@ -446,6 +473,13 @@ const AdminAttendance = () => {
 					<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 				</>
 			)}
+			{drawerUser ? (
+				<UserAttendanceDrawer
+					userId={drawerUser.userId}
+					userName={drawerUser.userName}
+					onClose={() => setDrawerUser(null)}
+				/>
+			) : null}
 		</div>
 	);
 };

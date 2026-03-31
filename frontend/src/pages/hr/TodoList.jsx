@@ -10,6 +10,7 @@ import { todoService } from 'api/todoApi';
 import { holidayApi } from 'api/holidayApi';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
+import { toLocalIsoNoMs, toLocalYmd } from 'utils/dateUtils';
 
 import TodoSidebar from 'components/hr/TodoSidebar';
 import TodoEditModal from 'components/hr/TodoEditModal';
@@ -93,13 +94,12 @@ const TodoListView = () => {
 
 		const startStr = event.startStr || "";
 		const startDate = startStr.includes('T') ? startStr.split('T')[0] + "T00:00:00" : startStr + "T00:00:00";
-		const toLocalISO = (date) => new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('.')[0];
 		
 		let endDate;
 		if (event.end) {
 			const tempEnd = new Date(event.end);
 			tempEnd.setSeconds(tempEnd.getSeconds() - 1);
-			endDate = toLocalISO(tempEnd);
+			endDate = toLocalIsoNoMs(tempEnd);
 		} else { endDate = event.startStr.split('T')[0] + "T23:59:59"; }
 
 		// 🌟 toastPromise 로 드래그 앤 드롭 수정 처리!
@@ -199,7 +199,7 @@ const TodoListView = () => {
 					editable={true}
 					droppable={true}
 					dayCellContent={(arg) => {
-						const dateStr = new Date(arg.date.getTime() - (arg.date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+						const dateStr = toLocalYmd(arg.date);
 						const holiday = holidaysRef.current.find(h => h.holiday_date === dateStr);
 						const isHoliday = !!holiday;
 						let dateColor = '';

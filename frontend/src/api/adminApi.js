@@ -53,6 +53,22 @@ export const adminApi = {
    */
   getAllAttendance: (params = {}) =>
 	client.get(`${PATH}/attendance/all`, { params }),
+
+  /**
+   * ⏰ 특정 직원 기간별 근태 조회 (관리자)
+   * GET /api/admin/attendance/user/{userId}/range?start_date=&end_date=
+   */
+  getUserAttendanceRange: (userId, startDate, endDate) =>
+	client.get(`${PATH}/attendance/user/${encodeURIComponent(userId)}/range`, {
+		params: { start_date: startDate, end_date: endDate },
+	}),
+
+  /**
+   * ⏰ 근태 단건 수정 (관리자)
+   * PATCH /api/admin/attendance/records/{recordId}
+   */
+  updateAttendance: (recordId, payload) =>
+	client.patch(`${PATH}/attendance/records/${recordId}`, payload),
   /**
    * 👥 유저 관리 기능 추가
    */

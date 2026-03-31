@@ -67,8 +67,8 @@ export const AuthProvider = ({ children }) => {
 				setUserNickname(res.data.userNickname);
 				setUserId(res.data.userId);
 				setUserRole(res.data.role || 'user');
-				setJoinDate(res.data.join_date ?? null);
-				setResignationDate(res.data.resignation_date ?? null);
+				setJoinDate(res.data.join_date || null);
+				setResignationDate(res.data.resignation_date || null);
 				return true;
 			} else {
 				resetAuthState();
@@ -105,11 +105,11 @@ export const AuthProvider = ({ children }) => {
 	}, [resetAuthState]);
 
 	return (
-		<AuthContext value={{ 
+		<AuthContext.Provider value={{
 			isLoggedIn, setIsLoggedIn,
 			userName, setUserName,
 			userNickname, setUserNickname,
-			userRole, setUserRole, 
+			userRole, setUserRole,
 			userId, setUserId,
 			joinDate, setJoinDate,
 			resignationDate, setResignationDate,
@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
 			checkAuth
 		}}>
 			{children}
-		</AuthContext>
+		</AuthContext.Provider>
 	);
 };
 

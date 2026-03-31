@@ -16,6 +16,8 @@ class LoginResponse(BaseModel):
 	role: str
 	access_token: Optional[str] = None
 	userId: Optional[str] = None
+	join_date: Optional[date] = None
+	resignation_date: Optional[date] = None
 
 # 3. 인증 상태 확인 응답 (checkAuth용)
 class AuthCheckResponse(BaseModel):

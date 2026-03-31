@@ -117,10 +117,16 @@ def update_clock_out(db: Session, record: Attendance, current_time: datetime, st
 
 	# ⏱️ 총 근무 시간(분) 계산
 	# 퇴근 시간 - 출근 시간 후 초 단위 차이를 60으로 나누어 '분' 단위 정수로 저장
-	time_diff = current_time - record.clock_in_time
-	total_minutes = int(time_diff.total_seconds() / 60)
-	
-	record.work_minutes = total_minutes
+	if not record.clock_in_time:
+		# 안전 방어: 출근 시간이 없으면 계산 불가
+		record.work_minutes = 0
+	else:
+		time_diff = current_time - record.clock_in_time
+		total_minutes = max(0, int(time_diff.total_seconds() / 60))
+		# 점심시간(휴게시간) 1시간 자동 공제: 8시간(480분) 이상 체류 시
+		if total_minutes >= 480:
+			total_minutes = max(0, total_minutes - 60)
+		record.work_minutes = total_minutes
 	record.status = status # 필요 시 상태 업데이트 (현재는 "NORMAL" 유지)
 
 	db.commit()

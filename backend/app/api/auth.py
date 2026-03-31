@@ -1,4 +1,5 @@
 import uuid
+from datetime import date, datetime
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
 from fastapi.responses import RedirectResponse
@@ -8,6 +9,7 @@ from core.config import settings
 from core.security import create_access_token, decode_auth_token
 from core.limiter import limiter
 from db.session import get_db
+from models.auth_models import User
 from schemas import auth_schemas
 from services import auth_service as service
 
@@ -73,6 +75,8 @@ async def login(request: Request, data: auth_schemas.LoginRequest, response: Res
 		"userNickname": user.user_nickname,
 		"userId": user.user_login_id,
 		"role": user.role,
+		"join_date": user.join_date,
+		"resignation_date": user.resignation_date,
 	}
 
 @router.post("/logout")
@@ -82,9 +86,23 @@ async def logout(response: Response):
 	response.delete_cookie(**delete_options)
 	
 	return {"success": True, "message": "로그아웃 되었습니다."}
+def _optional_date_from_payload(value):
+	"""JWT 등에서 온 날짜 문자열을 date로 변환 (없으면 None)."""
+	if value is None:
+		return None
+	if isinstance(value, date):
+		return value
+	if isinstance(value, str):
+		try:
+			return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+		except ValueError:
+			return None
+	return None
+
+
 @router.get("/check", response_model=auth_schemas.AuthCheckResponse)
-async def check_auth(request: Request):
-	"""인증 상태 확인: 헤더 또는 쿠키의 토큰 검증"""
+async def check_auth(request: Request, db: Session = Depends(get_db)):
+	"""인증 상태 확인: 헤더 또는 쿠키의 토큰 검증. 입사일/퇴사일은 DB 최신값 우선."""
 	token = None
 	auth_header = request.headers.get("Authorization")
 	
@@ -105,14 +123,27 @@ async def check_auth(request: Request):
 	if not payload or not payload.get("userName"):
 		return {"isLoggedIn": False, "access_token": None}
 
+	join_date = None
+	resignation_date = None
+	user_pk = payload.get("id")
+	if user_pk is not None:
+		user = db.query(User).filter(User.id == user_pk).first()
+		if user:
+			join_date = user.join_date
+			resignation_date = user.resignation_date
+	if join_date is None:
+		join_date = _optional_date_from_payload(payload.get("join_date"))
+	if resignation_date is None:
+		resignation_date = _optional_date_from_payload(payload.get("resignation_date"))
+
 	return {
 		"isLoggedIn": True,
 		"userName": payload.get("userName"),
 		"userNickname": payload.get("userNickname"),
 		"role": payload.get("role"),
 		"userId": payload.get("userId"),
-		"join_date": payload.get("join_date"),
-		"resignation_date": payload.get("resignation_date"),
+		"join_date": join_date,
+		"resignation_date": resignation_date,
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)

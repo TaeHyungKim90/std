@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { attendanceApi } from 'api/attendanceApi';
 import { useAuth } from 'context/AuthContext';
+import { formatTimeHms } from 'utils/dateUtils';
 
 const AttendanceView = () => {
 	const { joinDate, loading: authLoading } = useAuth();
@@ -113,12 +114,6 @@ const AttendanceView = () => {
 		});
 	};
 
-	// 근무 시간 포맷팅 (HH:mm:ss)
-	const formatTime = (dateStr) => {
-		if (!dateStr) return '-';
-		return new Date(dateStr).toLocaleTimeString('ko-KR', { hour12: false });
-	};
-
 	// 현재 출퇴근 상태 판별
 	const isClockedIn = !!todayRecord?.clock_in_time;
 	const isClockedOut = !!todayRecord?.clock_out_time;
@@ -183,7 +178,7 @@ const AttendanceView = () => {
 							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing || isVacationToday}
 							title={disabledReason || ''}
 						>
-							{loading && isClockedOut ? '확인 중..' : isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}
+							{loading && isClockedIn && !isClockedOut ? '확인 중..' : isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}
 						</button>
 					</div>
 
@@ -209,11 +204,11 @@ const AttendanceView = () => {
 				<div className="attendance-footer">
 					<div className="status-item">
 						<span className="label">출근 시간</span>
-						<span className="value">{formatTime(todayRecord?.clock_in_time)} {todayRecord?.clock_in_location && <small>({todayRecord.clock_in_location})</small>}</span>
+						<span className="value">{formatTimeHms(todayRecord?.clock_in_time)} {todayRecord?.clock_in_location && <small>({todayRecord.clock_in_location})</small>}</span>
 					</div>
 					<div className="status-item">
 						<span className="label">퇴근 시간</span>
-						<span className="value">{formatTime(todayRecord?.clock_out_time)} {todayRecord?.clock_out_location && <small>({todayRecord.clock_out_location})</small>}</span>
+						<span className="value">{formatTimeHms(todayRecord?.clock_out_time)} {todayRecord?.clock_out_location && <small>({todayRecord.clock_out_location})</small>}</span>
 					</div>
 					<div className="status-item total-work">
 						<span className="label">총 근무 시간</span>
