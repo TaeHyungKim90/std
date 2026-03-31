@@ -46,6 +46,9 @@ class Settings(BaseSettings):
 	# 레거시 공개 지원서 제출(/api/public/recruitment/apply) 허용 여부.
 	# 운영에서는 False 권장(지원자 쿠키 세션 기반 /apply/me만 사용).
 	ALLOW_LEGACY_PUBLIC_APPLY: bool = True
+	# 레거시 지원자 API(/update/{applicant_id}, /my-applications/{applicant_id} 등) 허용 여부.
+	# 운영에서는 False 권장(지원자 /me 기반 API만 사용).
+	ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS: bool = True
 
 	class Config:
 		env_file = ENV_PATH

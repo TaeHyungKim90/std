@@ -200,6 +200,8 @@ def update_applicant(
 	current_applicant: dict = Depends(get_current_applicant),
 ):
 	try:
+		if settings.ENVIRONMENT == "production" or not settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS:
+			raise HTTPException(status_code=410, detail="레거시 지원자 엔드포인트는 비활성화되었습니다. /update/me 를 사용해 주세요.")
 		logger.warning("Deprecated applicant endpoint called: PUT /update/{applicant_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
 		return _update_applicant_impl(db, applicant_id, data)
@@ -218,6 +220,8 @@ def get_my_applications(
 ):
 	"""특정 지원자의 전체 지원 이력을 조회합니다."""
 	try:
+		if settings.ENVIRONMENT == "production" or not settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS:
+			raise HTTPException(status_code=410, detail="레거시 지원자 엔드포인트는 비활성화되었습니다. /my-applications 를 사용해 주세요.")
 		logger.warning("Deprecated applicant endpoint called: GET /my-applications/{applicant_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
 		return service.get_my_applications(db, int(current_applicant.get("applicantId")))
@@ -234,6 +238,8 @@ def cancel_application(
 ):
 	"""제출한 지원서를 취소(삭제)합니다."""
 	try:
+		if settings.ENVIRONMENT == "production" or not settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS:
+			raise HTTPException(status_code=410, detail="레거시 지원자 엔드포인트는 비활성화되었습니다. /my-applications/{application_id} 를 사용해 주세요.")
 		logger.warning("Deprecated applicant endpoint called: DELETE /my-applications/{applicant_id}/{application_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
 		success, msg = service.delete_application(db, int(current_applicant.get("applicantId")), application_id)

@@ -59,7 +59,7 @@ const JobApplyPage = () => {
             if (!ok) return;
             Notify.toastPromise(recruitmentApi.getMyApplications(), {
                 loading: '기존 지원 내역을 확인하는 중입니다...',
-                success: '지원 내역 확인이 완료되었습니다.',
+                success: '',
                 error: '중복 지원 확인에 실패했습니다.'
             }).then((res) => {
                 const applications = res.data || res;
