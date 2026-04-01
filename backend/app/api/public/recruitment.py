@@ -32,8 +32,9 @@ def get_public_jobs(
 	"""현재 게시 중인 채용 공고를 페이징으로 가져옵니다."""
 	try:
 		return service.get_public_jobs(db, skip=skip, limit=limit)
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"공고 조회 실패: {str(e)}")
+	except Exception:
+		logger.exception("Failed to get public jobs")
+		raise HTTPException(status_code=500, detail="공고 조회 중 서버 오류가 발생했습니다.")
 
 # 2. [공개] 입사 지원서 제출
 @router.post("/apply")
@@ -65,9 +66,12 @@ def submit_application(
 		# 서비스에서 발생한 '이미 지원함' 등의 비즈니스 예외 처리
 		db.rollback()
 		raise HTTPException(status_code=400, detail=str(ve))
-	except Exception as e:
+	except HTTPException:
+		raise
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"지원서 제출 실패: {str(e)}")
+		logger.exception("Failed to submit application (legacy)")
+		raise HTTPException(status_code=500, detail="지원서 제출 중 서버 오류가 발생했습니다.")
 
 
 # 2-1. [지원자] (쿠키 세션) 입사 지원서 제출
@@ -86,9 +90,12 @@ def submit_application_me(
 	except ValueError as ve:
 		db.rollback()
 		raise HTTPException(status_code=400, detail=str(ve))
-	except Exception as e:
+	except HTTPException:
+		raise
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"지원서 제출 실패: {str(e)}")
+		logger.exception("Failed to submit application (/apply/me)")
+		raise HTTPException(status_code=500, detail="지원서 제출 중 서버 오류가 발생했습니다.")
 
 # 🌟 3. [공개] 지원자 전용 회원가입
 @router.post("/signup")
@@ -101,9 +108,10 @@ def signup_applicant(data: recruitment_schemas.ApplicantSignup, db: Session = De
 		return {"message": "회원가입이 완료되었습니다.", "applicant_id": applicant.id}
 	except HTTPException:
 		raise
-	except Exception as e:
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"회원가입 실패: {str(e)}")
+		logger.exception("Failed to signup applicant")
+		raise HTTPException(status_code=500, detail="회원가입 중 서버 오류가 발생했습니다.")
 
 # 🌟 4. [공개] 지원자 전용 로그인
 @router.post("/login")
@@ -134,8 +142,9 @@ def login_applicant(data: recruitment_schemas.ApplicantLogin, response: Response
 		}
 	except HTTPException:
 		raise
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
+	except Exception:
+		logger.exception("Failed to login applicant")
+		raise HTTPException(status_code=500, detail="로그인 중 서버 오류가 발생했습니다.")
 
 
 @router.post("/logout")
@@ -187,9 +196,10 @@ def update_applicant_me(
 		return _update_applicant_impl(db, int(current_applicant.get("applicantId")), data)
 	except HTTPException:
 		raise
-	except Exception as e:
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"정보 수정 실패: {str(e)}")
+		logger.exception("Failed to update applicant (/update/me)")
+		raise HTTPException(status_code=500, detail="정보 수정 중 서버 오류가 발생했습니다.")
 
 
 @router.put("/update/{applicant_id}", deprecated=True)
@@ -207,9 +217,10 @@ def update_applicant(
 		return _update_applicant_impl(db, applicant_id, data)
 	except HTTPException:
 		raise
-	except Exception as e:
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"정보 수정 실패: {str(e)}")
+		logger.exception("Failed to update applicant (legacy id path)")
+		raise HTTPException(status_code=500, detail="정보 수정 중 서버 오류가 발생했습니다.")
 
 # 🌟 6. [공개] 내 지원 내역 조회
 @router.get("/my-applications/{applicant_id}", deprecated=True)
@@ -225,8 +236,11 @@ def get_my_applications(
 		logger.warning("Deprecated applicant endpoint called: GET /my-applications/{applicant_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
 		return service.get_my_applications(db, int(current_applicant.get("applicantId")))
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"지원 내역 조회 실패: {str(e)}")
+	except HTTPException:
+		raise
+	except Exception:
+		logger.exception("Failed to get applicant applications (legacy id path)")
+		raise HTTPException(status_code=500, detail="지원 내역 조회 중 서버 오류가 발생했습니다.")
 
 # 6. [공개] 지원 취소
 @router.delete("/my-applications/{applicant_id}/{application_id}", deprecated=True)
@@ -248,9 +262,10 @@ def cancel_application(
 		return {"message": msg}
 	except HTTPException:
 		raise
-	except Exception as e:
+	except Exception:
 		db.rollback()
-		raise HTTPException(status_code=500, detail=f"지원 취소 실패: {str(e)}")
+		logger.exception("Failed to cancel application (legacy id path)")
+		raise HTTPException(status_code=500, detail="지원 취소 중 서버 오류가 발생했습니다.")
 
 
 # 신규 권장 API(지원자 ID 노출/의존 제거)

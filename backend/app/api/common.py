@@ -1,3 +1,4 @@
+import logging
 import os
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
@@ -12,6 +13,7 @@ from schemas.common_schemas import FileUploadResponse
 
 # 라우터 설정
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 파일 업로드 정책 설정
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"}
@@ -83,7 +85,11 @@ async def download_file(
 
 
 @router.post("/upload", response_model=List[FileUploadResponse])
-async def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+async def upload_files(
+	files: List[UploadFile] = File(...),
+	db: Session = Depends(get_db),
+	_current_user: dict = Depends(get_current_user),
+):
 	"""
 	공통 파일 업로드 API
 	- 확장자 검증 및 용량(50MB) 제한 적용
@@ -117,10 +123,11 @@ async def upload_files(files: List[UploadFile] = File(...), db: Session = Depend
 	except HTTPException:
 		# 우리가 위에서 직접 발생시킨 에러는 그대로 통과
 		raise 
-	except Exception as e:
+	except Exception:
 		# 예상치 못한 에러가 나면 DB 롤백 후 500 에러 반환
 		db.rollback()
+		logger.exception("Failed to upload files")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-			detail=f"파일 업로드 중 오류가 발생했습니다: {str(e)}"
+			detail="파일 업로드 중 서버 오류가 발생했습니다."
 		)

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,6 +9,7 @@ from services.admin import holiday_service as service
 from schemas.admin.holiday_schemas import HolidayCreate, HolidayOut
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.get("/", response_model=List[HolidayOut])
 def list_holidays(year: int = None, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -36,9 +39,9 @@ def sync_public_holidays(year: int, db: Session = Depends(get_db), current_admin
 			"message": f"{year}년 공휴일 총 {added_count}건이 동기화되었습니다.",
 			"added_count": added_count
 		}
-	except Exception as e:
-		# 서비스에서 발생한 에러를 500 에러로 변환하여 클라이언트에 전달
+	except Exception:
+		logger.exception("Failed to sync public holidays")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"API 연동 중 오류 발생: {str(e)}"
+			detail="공휴일 동기화 중 서버 오류가 발생했습니다."
 		)

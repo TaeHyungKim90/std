@@ -163,19 +163,39 @@ async def signup(data: auth_schemas.UserCreate, db: Session = Depends(get_db)):
 # ==========================================
 
 @router.get("/kakao/login")
-async def kakao_login():
+async def kakao_login(response: Response):
 	"""사용자를 카카오 로그인 페이지로 보내는 URL 생성"""
+	state = str(uuid.uuid4())
+	response.set_cookie(
+		key="kakao_oauth_state",
+		value=state,
+		httponly=True,
+		secure=IS_PROD,
+		samesite="lax",
+		max_age=300,
+		path="/",
+	)
 	kakao_auth_url = (
 		f"https://kauth.kakao.com/oauth/authorize?"
 		f"client_id={KAKAO_CLIENT_ID}&"
 		f"redirect_uri={KAKAO_REDIRECT_URI}&"
-		f"response_type=code"
+		f"response_type=code&"
+		f"state={state}"
 	)
 	return {"url": kakao_auth_url}
 
 @router.get("/kakao/callback")
-async def kakao_callback_handler(code: str, db: Session = Depends(get_db)):
+async def kakao_callback_handler(
+	code: str,
+	state: str,
+	request: Request,
+	db: Session = Depends(get_db),
+):
 	"""카카오 인증 완료 후 돌아오는 지점"""
+	cookie_state = request.cookies.get("kakao_oauth_state")
+	if not cookie_state or cookie_state != state:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+
 	async with httpx.AsyncClient() as client:
 		token_res = await client.post("https://kauth.kakao.com/oauth/token", data={
 			"grant_type": "authorization_code", "client_id": KAKAO_CLIENT_ID,
@@ -193,12 +213,24 @@ async def kakao_callback_handler(code: str, db: Session = Depends(get_db)):
 	
 	# DB 조회 및 자동가입 로직은 Service에 맡깁니다.
 	user = service.process_social_login(db, "kakao", kakao_id, nickname, nickname, phone)
-	return _create_social_login_response(user)
+	response = _create_social_login_response(user)
+	response.delete_cookie(key="kakao_oauth_state", path="/")
+	return response
 
 @router.get("/naver/login")
-async def naver_login():
+async def naver_login(response: Response):
 	"""네이버 로그인 창으로 보내는 URL 생성"""
 	state = str(uuid.uuid4())
+	# OAuth CSRF 방어: 콜백에서 검증할 state를 httpOnly 쿠키로 보관
+	response.set_cookie(
+		key="naver_oauth_state",
+		value=state,
+		httponly=True,
+		secure=IS_PROD,
+		samesite="lax",
+		max_age=300,
+		path="/",
+	)
 	naver_auth_url = (
 		f"https://nid.naver.com/oauth2.0/authorize?response_type=code"
 		f"&client_id={NAVER_CLIENT_ID}"
@@ -208,8 +240,17 @@ async def naver_login():
 	return {"url": naver_auth_url}
 
 @router.get("/naver/callback")
-async def naver_callback_handler(code: str, state: str, db: Session = Depends(get_db)):
+async def naver_callback_handler(
+	code: str,
+	state: str,
+	request: Request,
+	db: Session = Depends(get_db),
+):
 	"""네이버 인증 완료 후 돌아오는 지점"""
+	cookie_state = request.cookies.get("naver_oauth_state")
+	if not cookie_state or cookie_state != state:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+
 	async with httpx.AsyncClient() as client:
 		token_res = await client.get("https://nid.naver.com/oauth2.0/token", params={
 			"grant_type": "authorization_code", "client_id": NAVER_CLIENT_ID,
@@ -227,4 +268,6 @@ async def naver_callback_handler(code: str, state: str, db: Session = Depends(ge
 
 	# DB 조회 및 자동가입
 	user = service.process_social_login(db, "naver", naver_id, name, nickname, phone)
-	return _create_social_login_response(user)
+	response = _create_social_login_response(user)
+	response.delete_cookie(key="naver_oauth_state", path="/")
+	return response
