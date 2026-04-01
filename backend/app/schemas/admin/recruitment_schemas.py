@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import date, datetime
 
@@ -21,8 +21,7 @@ class JobPostingUpdate(BaseModel):
 class JobPostingResponse(JobPostingBase):
 	id: int
 	created_at: datetime
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 
 class JobPostingListPage(BaseModel):
@@ -36,8 +35,7 @@ class ApplicantResponse(BaseModel):
 	name: str
 	phone: Optional[str]
 	created_at: datetime
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 # --- 3. 지원서 내역 (Application) ---
 class ApplicationStatusUpdate(BaseModel):
@@ -55,8 +53,7 @@ class ApplicationResponse(BaseModel):
 	# 칸반 보드에서 이름을 보여주기 위해 관계 데이터 포함
 	applicant: Optional[ApplicantResponse] = None 
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 # --- 4. 면접 평가 (Interview) ---
 class InterviewCreate(BaseModel):
@@ -68,5 +65,4 @@ class InterviewResponse(InterviewCreate):
 	id: int
 	application_id: int
 	interviewer_id: str
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)

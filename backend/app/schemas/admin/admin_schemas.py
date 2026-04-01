@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import date
 
@@ -14,8 +14,7 @@ class TodayVacation(BaseModel):
 	start_date: date
 	end_date: date
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 # 2. 대시보드 전체 응답 모델
 class DashboardResponse(BaseModel):

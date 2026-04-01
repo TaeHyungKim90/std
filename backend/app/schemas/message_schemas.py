@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from models.message_models import MessageType
@@ -9,23 +9,20 @@ class UploadedFileResponse(BaseModel):
 	file_path: str
 	original_name: str
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 class AttachmentResponse(BaseModel):
 	id: int
 	file_id: int
 	file_info: Optional[UploadedFileResponse] = None
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 class MessageUserResponse(BaseModel):
 	id: int
 	user_name: str
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 # --- 메인 메시지 DTO ---
 class MessageCreate(BaseModel):
@@ -50,8 +47,7 @@ class MessageResponse(BaseModel):
 	is_read: bool
 	attachments: List[AttachmentResponse] = []	# 첨부파일 목록
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 
 class MessageListPage(BaseModel):

@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
@@ -50,8 +50,7 @@ class Settings(BaseSettings):
 	# 운영에서는 False 권장(지원자 /me 기반 API만 사용).
 	ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS: bool = True
 
-	class Config:
-		env_file = ENV_PATH
+	model_config = SettingsConfigDict(env_file=ENV_PATH)
 
 
 settings = Settings()

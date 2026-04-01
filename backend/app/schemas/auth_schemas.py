@@ -1,4 +1,4 @@
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
 import re
@@ -89,8 +89,7 @@ class UserVacationResponse(BaseModel):
 	used_days: float
 	remaining_days: float
 	
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
 
 # 8. 최종 통합 사용자 정보 응답 (✅ 중복 제거 및 필드 통합)
 class UserResponse(BaseModel):
@@ -107,5 +106,4 @@ class UserResponse(BaseModel):
 	# 연차 정보 포함
 	vacation: Optional[UserVacationResponse] = None 
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)
