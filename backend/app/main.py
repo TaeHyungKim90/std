@@ -96,5 +96,5 @@ if __name__ == "__main__":
 		react_thread = threading.Thread(target=run_react, daemon=True)
 		react_thread.start()
 
-	# FastAPI 실행
-	uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+	# FastAPI 실행 (.env의 APP_PORT 사용)
+	uvicorn.run("main:app", host="0.0.0.0", port=settings.APP_PORT, reload=True)

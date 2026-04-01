@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 	# 공공데이터포털(공휴일) API 엔드포인트. 필요 시 버전/도메인 변경을 .env로 대응.
 	HOLIDAY_API_URL: str = "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
 	ENVIRONMENT: str = "development"
+	APP_PORT: int = 8000
 	CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 	FRONTEND_URL: str = "http://localhost:3000"
 	# 비어 있으면 SQLite 기본 경로(db/session.py). 예: postgresql+psycopg2://user:pass@localhost/todo
