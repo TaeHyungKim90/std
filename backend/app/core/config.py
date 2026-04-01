@@ -41,15 +41,15 @@ class Settings(BaseSettings):
 	# True일 때만 admin/1234 기본 계정 자동 생성. 운영(ENVIRONMENT=production)에서는 반드시 False 권장.
 	BOOTSTRAP_DEFAULT_ADMIN: bool = False
 	# True일 때만 /uploads 를 정적 파일로 직접 노출. 운영에서는 False + /api/common/files/{id} 사용 권장.
-	SERVE_UPLOADS_STATIC: bool = True
+	SERVE_UPLOADS_STATIC: bool = False
 	# True일 때만 `python main.py` 실행 시 프론트 npm start를 함께 띄움. 운영·CI에서는 False.
 	DEV_AUTO_START_REACT: bool = False
 	# 레거시 공개 지원서 제출(/api/public/recruitment/apply) 허용 여부.
 	# 운영에서는 False 권장(지원자 쿠키 세션 기반 /apply/me만 사용).
-	ALLOW_LEGACY_PUBLIC_APPLY: bool = True
+	ALLOW_LEGACY_PUBLIC_APPLY: bool = False
 	# 레거시 지원자 API(/update/{applicant_id}, /my-applications/{applicant_id} 등) 허용 여부.
 	# 운영에서는 False 권장(지원자 /me 기반 API만 사용).
-	ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS: bool = True
+	ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS: bool = False
 
 	model_config = SettingsConfigDict(env_file=ENV_PATH)
 

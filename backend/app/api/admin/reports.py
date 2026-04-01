@@ -1,4 +1,5 @@
 from datetime import date
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
@@ -12,6 +13,7 @@ from services.auth_service import get_current_admin
 from utils.date_validators import validate_report_date_range
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.get("/daily-status", response_model=list[reports_schemas.AdminDailyStatusRow])
 def report_daily_status(
@@ -69,9 +71,9 @@ def user_report_bundle(
 				endpoint=str(request.url.path) if request else "/api/admin/reports/users/{user_login_id}/bundle",
 				ip_address=ip,
 			)
-	except Exception as e:
+	except Exception:
 		# 메인 응답 흐름 보장
-		print(f"[audit] failed to enqueue/write audit log: {e}")
+		logger.exception("[audit] failed to enqueue/write audit log")
 
 	return reports_schemas.AdminReportBundleOut(
 		dailies=data["dailies"],
