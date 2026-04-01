@@ -221,6 +221,23 @@ const AdminDailyReport = () => {
 			{monitorTab === 'daily' && (
 				<div className="rep-admin-toolbar-stack">
 					<div className="rep-toolbar rep-toolbar--admin-daily">
+						<div className="rep-admin-filter-bar rep-admin-filter-bar--inline">
+							<label className="rep-admin-filter-label">
+								<span className="rep-label">상태 필터</span>
+								<select
+									className="rep-admin-filter-select"
+									value={statusFilter}
+									disabled={pageBusy}
+									onChange={(e) => setStatusFilter(e.target.value)}
+								>
+									{filterOptions.map((o) => (
+										<option key={o.value} value={o.value}>
+											{o.label}
+										</option>
+									))}
+								</select>
+							</label>
+						</div>
 						<label className="rep-admin-date-label">
 							<span className="rep-label">기준일</span>
 							<input
@@ -230,10 +247,10 @@ const AdminDailyReport = () => {
 								disabled={pageBusy}
 								onChange={(e) => setDailyWorkYmd(e.target.value || getTodayYmd())}
 							/>
+							<span className="rep-admin-date-hint">
+								{formatYmdToWeekKo(dailyWorkYmd)} · 선택한 날짜 기준으로 상태를 표시합니다.
+							</span>
 						</label>
-						<span className="rep-admin-date-hint">
-							{formatYmdToWeekKo(dailyWorkYmd)} · 선택한 날짜 기준으로 상태를 표시합니다.
-						</span>
 					</div>
 				</div>
 			)}
@@ -252,23 +269,25 @@ const AdminDailyReport = () => {
 				</div>
 			)}
 
-			<div className="rep-admin-filter-bar">
-				<label className="rep-admin-filter-label">
-					<span className="rep-label">상태 필터</span>
-					<select
-						className="rep-admin-filter-select"
-						value={statusFilter}
-						disabled={pageBusy}
-						onChange={(e) => setStatusFilter(e.target.value)}
-					>
-						{filterOptions.map((o) => (
-							<option key={o.value} value={o.value}>
-								{o.label}
-							</option>
-						))}
-					</select>
-				</label>
-			</div>
+			{monitorTab !== 'daily' && (
+				<div className="rep-admin-filter-bar">
+					<label className="rep-admin-filter-label">
+						<span className="rep-label">상태 필터</span>
+						<select
+							className="rep-admin-filter-select"
+							value={statusFilter}
+							disabled={pageBusy}
+							onChange={(e) => setStatusFilter(e.target.value)}
+						>
+							{filterOptions.map((o) => (
+								<option key={o.value} value={o.value}>
+									{o.label}
+								</option>
+							))}
+						</select>
+					</label>
+				</div>
+			)}
 
 			<div className="rep-admin-table-wrap">
 				<table className="rep-admin-table">

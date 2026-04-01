@@ -567,12 +567,18 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1 1 auto;
 }
 
 .admin-user__search-input {
     width: 250px;
     margin: 0;
     padding: 10px;
+    flex: 1 1 260px;
+    min-width: 220px;
+    max-width: 340px;
 }
 
 .btn-primary--sync-blue {
@@ -625,11 +631,38 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1 1 auto;
 }
 
 .holiday-mgmt__year-select {
     width: 120px;
     margin: 0;
+    flex: 0 0 120px;
+}
+
+.admin-user__header-toolbar .btn-primary,
+.holiday-mgmt__toolbar .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding-inline: 16px;
+}
+
+.admin-user__header-toolbar .admin-user__search-input,
+.holiday-mgmt__toolbar .holiday-mgmt__year-select {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+    .admin-user__header-toolbar,
+    .holiday-mgmt__toolbar {
+        justify-content: flex-start;
+    }
 }
 
 .holiday-mgmt__form-outer {
