@@ -5,8 +5,8 @@ from models.hr_models import Todo
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
-from services.hr.todos_service import get_deduct_days
-from datetime import date
+from datetime import date, timedelta
+from models.holiday_models import Holiday
 
 # 1. 전체 사용자 목록 조회
 def get_all_users(db: Session):
@@ -73,6 +73,37 @@ def sync_all_users_vacation(db: Session):
 	).all()
 	
 	today = date.today()
+	user_login_ids = [u.user_login_id for u in users]
+
+	# 성능 최적화: 사용자별 Todo를 한 번에 조회해서 메모리에서 그룹핑
+	vacation_todos = (
+		db.query(Todo)
+		.filter(Todo.user_id.in_(user_login_ids))
+		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
+		.all()
+	)
+	todos_by_user: dict[str, list[Todo]] = {}
+	global_start: date | None = None
+	global_end: date | None = None
+	for todo in vacation_todos:
+		todos_by_user.setdefault(todo.user_id, []).append(todo)
+		start_day = todo.start_date.date()
+		end_day = (todo.end_date or todo.start_date).date()
+		if global_start is None or start_day < global_start:
+			global_start = start_day
+		if global_end is None or end_day > global_end:
+			global_end = end_day
+
+	# 성능 최적화: 필요한 구간의 공휴일을 한 번만 조회
+	holiday_dates: set[date] = set()
+	if global_start is not None and global_end is not None:
+		holiday_dates = {
+			row[0]
+			for row in db.query(Holiday.holiday_date).filter(
+				Holiday.holiday_date >= global_start,
+				Holiday.holiday_date <= global_end,
+			).all()
+		}
 	updated_count = 0
 	
 	for user in users:
@@ -82,9 +113,9 @@ def sync_all_users_vacation(db: Session):
 		months_diff = (today.year - join_date.year) * 12 + today.month - join_date.month
 		if today.day < join_date.day:
 			months_diff -= 1
+		months_diff = max(months_diff, 0)
 			
 		years_worked = months_diff // 12
-		months_worked = months_diff % 12
 		
 		# 2. 총 연차 계산 (근로기준법)
 		total_vacation = 0
@@ -106,15 +137,22 @@ def sync_all_users_vacation(db: Session):
 		# 4. 사용 연차 재집계
 		# - 연차(종일): 주말/공휴일 제외
 		# - 반차: 0.5 고정
-		vacation_todos = (
-			db.query(Todo)
-			.filter(Todo.user_id == user.user_login_id)
-			.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
-			.all()
-		)
 		recalculated_used_days = 0.0
-		for todo in vacation_todos:
-			recalculated_used_days += get_deduct_days(db, todo.category, todo.start_date, todo.end_date)
+		for todo in todos_by_user.get(user.user_login_id, []):
+			if todo.category not in VACATION_DEDUCTIBLE_CATEGORIES:
+				continue
+			if todo.category == "vacation_full":
+				start_day = todo.start_date.date()
+				end_day = (todo.end_date or todo.start_date).date()
+				if end_day < start_day:
+					start_day, end_day = end_day, start_day
+				current = start_day
+				while current <= end_day:
+					if current.weekday() < 5 and current not in holiday_dates:
+						recalculated_used_days += 1.0
+					current += timedelta(days=1)
+			else:
+				recalculated_used_days += 0.5
 			
 		vacation_record.total_days = total_vacation
 		vacation_record.used_days = recalculated_used_days
