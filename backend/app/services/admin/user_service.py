@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from models.auth_models import User, UserVacation
+from models.hr_models import Todo
+from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
+from services.hr.todos_service import get_deduct_days
 from datetime import date
 
 # 1. 전체 사용자 목록 조회
@@ -99,10 +102,24 @@ def sync_all_users_vacation(db: Session):
 		if not vacation_record:
 			vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
 			db.add(vacation_record)
+
+		# 4. 사용 연차 재집계
+		# - 연차(종일): 주말/공휴일 제외
+		# - 반차: 0.5 고정
+		vacation_todos = (
+			db.query(Todo)
+			.filter(Todo.user_id == user.user_login_id)
+			.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
+			.all()
+		)
+		recalculated_used_days = 0.0
+		for todo in vacation_todos:
+			recalculated_used_days += get_deduct_days(db, todo.category, todo.start_date, todo.end_date)
 			
 		vacation_record.total_days = total_vacation
-		# 잔여 연차 = 총 연차 - 사용 연차
-		vacation_record.remaining_days = total_vacation - vacation_record.used_days
+		vacation_record.used_days = recalculated_used_days
+		# 잔여 연차 = 총 연차 - 재집계 사용 연차
+		vacation_record.remaining_days = max(total_vacation - recalculated_used_days, 0.0)
 		
 		updated_count += 1
 		

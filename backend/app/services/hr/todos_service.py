@@ -1,15 +1,16 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from core.constants import VACATION_CATEGORIES, VACATION_HALF_DAY_CATEGORIES
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
 from models.auth_models import UserVacation
+from models.holiday_models import Holiday
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
 
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
-def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
+def get_deduct_days(db: Session, category_key: str, start_date=None, end_date=None) -> float:
 	"""카테고리 키와 날짜 기간에 따라 차감할 연차 일수를 정확히 계산합니다."""
 	if category_key not in VACATION_DEDUCTIBLE_CATEGORIES:
 		return 0.0
@@ -30,7 +31,27 @@ def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 		days = 1
 
 	if category_key == VACATION_CATEGORIES["FULL"]:
-		return float(days)
+		start_day = start_date.date()
+		end_day = end_date.date()
+
+		holiday_dates = {
+			row[0]
+			for row in db.query(Holiday.holiday_date).filter(
+				Holiday.holiday_date >= start_day,
+				Holiday.holiday_date <= end_day,
+			).all()
+		}
+
+		deductible_days = 0
+		current = start_day
+		while current <= end_day:
+			is_weekend = current.weekday() >= 5
+			is_holiday = current in holiday_dates
+			if (not is_weekend) and (not is_holiday):
+				deductible_days += 1
+			current += timedelta(days=1)
+
+		return float(max(deductible_days, 0))
 	else:
 		# 반차는 기간이 늘어나도 0.5일 고정 (프론트에서도 막지만 백엔드 이중 방어)
 		return 0.5
@@ -44,7 +65,7 @@ def get_todos(db: Session, skip: int = 0, limit: int = 100):
 
 def create_todo(db: Session, todo: TodoCreate, user_id: str):
 	# 🌟 수정됨: 기간을 계산하여 연차 차감
-	deduct_days = get_deduct_days(todo.category, todo.start_date, todo.end_date)
+	deduct_days = get_deduct_days(db, todo.category, todo.start_date, todo.end_date)
 	
 	if deduct_days > 0:
 		vacation = db.query(UserVacation).filter(UserVacation.user_id == user_id).first()
@@ -78,12 +99,12 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	new_category = todo_update.category if todo_update.category is not None else old_category
 
 	# 🌟 핵심 수정: 기존 차감일수와 변경될 차감일수를 각각 계산
-	old_deduct = get_deduct_days(old_category, db_todo.start_date, db_todo.end_date)
+	old_deduct = get_deduct_days(db, old_category, db_todo.start_date, db_todo.end_date)
 	
 	# 수정 요청에 날짜가 없으면 기존 날짜 사용
 	new_start = todo_update.start_date if todo_update.start_date is not None else db_todo.start_date
 	new_end = todo_update.end_date if todo_update.end_date is not None else db_todo.end_date
-	new_deduct = get_deduct_days(new_category, new_start, new_end)
+	new_deduct = get_deduct_days(db, new_category, new_start, new_end)
 
 	# 카테고리가 바뀌었거나, '일수' 자체가 달라졌을 때 재정산 실행!
 	if old_category != new_category or old_deduct != new_deduct:
@@ -129,7 +150,7 @@ def delete_todo(db: Session, todo_id: int, user_id: str):
 		return None
 
 	# 🌟 수정됨: 삭제 시에도 정확한 기간을 계산하여 전액 환불
-	refund_days = get_deduct_days(db_todo.category, db_todo.start_date, db_todo.end_date)
+	refund_days = get_deduct_days(db, db_todo.category, db_todo.start_date, db_todo.end_date)
 	
 	if refund_days > 0:
 		vacation = db.query(UserVacation).filter(UserVacation.user_id == user_id).first()
