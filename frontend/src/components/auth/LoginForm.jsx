@@ -96,7 +96,7 @@ const LoginForm = () => {
 					inputmode="url"			// 모바일 영문 키보드 강제 유도
 					spellcheck="false"		// 빨간 밑줄 방지
 					autoCapitalize="none"	// 첫 글자 대문자 자동 전환 방지
-					placeholder="아이디 (Admin ID)"
+					placeholder="아이디 (ID)"
 					value={id}
 					onChange={handleInputChange(setId)} // ✅ 한글 차단 적용
 					className="login-input"

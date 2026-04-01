@@ -88,7 +88,7 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate):
 		user_nickname=user_data.user_nickname,
 		user_phone_number=user_data.user_phone_number,
 		role=user_data.role or "user",
-		join_date=user_data.join_date,
+		join_date=user_data.joined_at,
 		resignation_date=user_data.resignation_date
 	)
 	

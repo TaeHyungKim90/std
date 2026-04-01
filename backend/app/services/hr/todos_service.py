@@ -8,9 +8,6 @@ from models.auth_models import UserVacation
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
 
-# todo_category_type.category_key 및 Todo.category와 동일 (주간보고 = 비공개, 타인 열람 제한)
-_WEEKLY_CATEGORY_KEY = "weekly"
-
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
 def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 	"""카테고리 키와 날짜 기간에 따라 차감할 연차 일수를 정확히 계산합니다."""
@@ -40,17 +37,10 @@ def get_deduct_days(category_key: str, start_date=None, end_date=None) -> float:
 
 # 모든 목록 조회 (캘린더)
 # - 관리자: 전체 일정
-# - 일반: 본인 일정 전체 + 타인의 weekly(주간보고) 제외 일정
-def get_todos(db: Session, user_id: str, skip: int = 0, limit: int = 100, is_admin: bool = False):
+# - 일반: 본인 일정 전체 
+def get_todos(db: Session, skip: int = 0, limit: int = 100):
 	q = db.query(Todo).options(joinedload(Todo.author))
-	if is_admin:
-		return q.offset(skip).limit(limit).all()
-	return q.filter(
-		or_(
-			Todo.user_id == user_id,
-			or_(Todo.category.is_(None), Todo.category != _WEEKLY_CATEGORY_KEY),
-		)
-	).offset(skip).limit(limit).all()
+	return q.offset(skip).limit(limit).all()
 
 def create_todo(db: Session, todo: TodoCreate, user_id: str):
 	# 🌟 수정됨: 기간을 계산하여 연차 차감
@@ -86,7 +76,7 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 		
 	old_category = db_todo.category
 	new_category = todo_update.category if todo_update.category is not None else old_category
-	
+
 	# 🌟 핵심 수정: 기존 차감일수와 변경될 차감일수를 각각 계산
 	old_deduct = get_deduct_days(old_category, db_todo.start_date, db_todo.end_date)
 	
@@ -176,4 +166,3 @@ def upsert_todo_config(db: Session, user_id: str, config_in: TodoConfigBase):
 
 	db.commit()
 	db.refresh(db_config)
-	return db_config

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from .attendance import router as attendance_router
 from .todos import router as todo_router
+from .reports import router as reports_router
 
 router = APIRouter()
 
@@ -12,3 +13,5 @@ router.include_router(attendance_router, prefix="/attendance", tags=["HR-Attenda
 
 # 결과: /api/hr/todos/...
 router.include_router(todo_router, prefix="/todos", tags=["HR-Todos"])
+
+router.include_router(reports_router, prefix="/reports", tags=["HR-Reports"])

@@ -4,7 +4,7 @@ from typing import Any
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean, func
+from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean, func, UniqueConstraint
 from sqlalchemy.orm import relationship
 from db.session import Base # 상위 폴더의 database.py를 참조하도록 설정
 #일정
@@ -72,3 +72,29 @@ class Attendance(Base):
 	status = Column[str](String, default="NORMAL")
 	work_minutes = Column[int](Integer, default=0)
 	note = Column[str](String, nullable=True)
+
+
+class DailyReport(Base):
+	"""직원 일일 업무 보고 (캘린더 To-Do와 분리)."""
+	__tablename__ = "daily_reports"
+	__table_args__ = (UniqueConstraint("user_id", "report_date", name="uq_daily_reports_user_date"),)
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
+	report_date = Column[date](Date, nullable=False, index=True)
+	content = Column[str](Text, nullable=False)
+	created_at = Column[datetime](DateTime, server_default=func.now())
+	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class WeeklyReport(Base):
+	"""주간 요약 보고."""
+	__tablename__ = "weekly_reports"
+	__table_args__ = (UniqueConstraint("user_id", "week_start_date", name="uq_weekly_reports_user_week"),)
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
+	week_start_date = Column[date](Date, nullable=False, index=True)
+	summary = Column[str](Text, nullable=False)
+	created_at = Column[datetime](DateTime, server_default=func.now())
+	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())

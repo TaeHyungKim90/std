@@ -11,6 +11,13 @@ export const attendanceApi = {
 	getTodayAttendance: () => client.get(`${PATH}/today`),
 
 	/**
+	 * 특정 근무일의 본인 출퇴근 기록 (없으면 data null)
+	 * GET /hr/attendance/day?work_date=YYYY-MM-DD
+	 */
+	getAttendanceForDay: (workDate) =>
+		client.get(`${PATH}/day`, { params: { work_date: workDate } }),
+
+	/**
 	 * 출근하기
 	 * POST /hr/attendance/clock-in
 	 */

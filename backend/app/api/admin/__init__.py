@@ -6,6 +6,7 @@ from .attendance import router as attendance_router
 from .users import router as users_router
 from .holidays import router as holiday_router
 from .recruitment import router as recruitment_router
+from .reports import router as reports_router
 
 router = APIRouter()
 
@@ -17,3 +18,4 @@ router.include_router(attendance_router, prefix="/attendance", tags=["Admin Atte
 router.include_router(users_router, prefix="/users", tags=["Admin Users"])
 router.include_router(holiday_router, prefix="/holidays", tags=["Admin Holidays"])
 router.include_router(recruitment_router, prefix="/recruitment", tags=["Admin Recruitment"])
+router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])

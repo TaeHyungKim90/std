@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from constants.vacation_categories import VACATION_TODO_CATEGORIES
+from constants.vacation_categories import VACATION_STATUS_KEYWORDS, VACATION_TODO_CATEGORIES
 from models.hr_models import Attendance, Todo
 from models.auth_models import User
 
@@ -15,13 +15,13 @@ def is_vacation_status(status_str: str | None) -> bool:
 		return False
 	s = str(status_str)
 	s_upper = s.upper()
-	return (
-		"VACATION" in s_upper
-		or "VAC" in s_upper
-		or "휴가" in s
-		or "연차" in s
-		or "병가" in s
-	)
+	for keyword in VACATION_STATUS_KEYWORDS:
+		if keyword.isascii():
+			if keyword in s_upper:
+				return True
+		elif keyword in s:
+			return True
+	return False
 
 
 def _is_user_on_vacation_by_todos(db: Session, user_id: str, target_date: date) -> bool:

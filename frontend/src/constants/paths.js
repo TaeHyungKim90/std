@@ -15,6 +15,7 @@ export const PATHS = {
 	MY_TODOS: `${MY}/todos`,
 	MY_ATTENDANCE: `${MY}/attendance`,
 	MY_MESSAGES: `${MY}/messages`,
+	MY_REPORTS: `${MY}/reports`,
 	CAREERS,
 	CAREERS_LOGIN: `${CAREERS}/login`,
 	CAREERS_SIGNUP: `${CAREERS}/signup`,
@@ -28,6 +29,7 @@ export const PATHS = {
 	ADMIN_RECRUITMENT: `${ADMIN}/recruitment`,
 	ADMIN_APPLICANTS: `${ADMIN}/applicants`,
 	ADMIN_MESSAGES: `${ADMIN}/messages`,
+	ADMIN_REPORTS: `${ADMIN}/reports`,
 };
 
 /** `startsWith` / 경로 prefix 검사용 */
@@ -75,10 +77,12 @@ export const ROUTE_SEGMENTS = {
 		RECRUITMENT: PATHS.ADMIN_RECRUITMENT.slice(ADMIN.length + 1),
 		APPLICANTS: PATHS.ADMIN_APPLICANTS.slice(ADMIN.length + 1),
 		MESSAGES: PATHS.ADMIN_MESSAGES.slice(ADMIN.length + 1),
+		REPORTS: PATHS.ADMIN_REPORTS.slice(ADMIN.length + 1),
 	},
 	MY: {
 		TODOS: PATHS.MY_TODOS.slice(MY.length + 1),
 		ATTENDANCE: PATHS.MY_ATTENDANCE.slice(MY.length + 1),
 		MESSAGES: PATHS.MY_MESSAGES.slice(MY.length + 1),
+		REPORTS: PATHS.MY_REPORTS.slice(MY.length + 1),
 	},
 };

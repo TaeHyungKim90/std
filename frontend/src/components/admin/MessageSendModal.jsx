@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { messageApi } from 'api/messageApi'; // 경로 확인
@@ -23,15 +23,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 
 	const [selectedFile, setSelectedFile] = useState(null);
 
-	useEffect(() => {
-		if (isOpen) {
-			fetchUsers();
-			setFormData({ title: '', content: '', message_type: 'individual', is_global: false, receiver_id: '' });
-			setSelectedFile(null);
-		}
-	}, [isOpen]);
-
-	const fetchUsers = async () => {
+	const fetchUsers = useCallback(async () => {
 		showLoading("직원 목록을 불러오는 중입니다... ⏳");
 		try {
 			const response = await adminApi.getUsers();
@@ -42,7 +34,15 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 		} finally {
 			hideLoading();
 		}
-	};
+	}, [showLoading, hideLoading]);
+
+	useEffect(() => {
+		if (isOpen) {
+			fetchUsers();
+			setFormData({ title: '', content: '', message_type: 'individual', is_global: false, receiver_id: '' });
+			setSelectedFile(null);
+		}
+	}, [isOpen, fetchUsers]);
 
 	const handleInputChange = (e) => {
 		const { name, value, type, checked } = e.target;

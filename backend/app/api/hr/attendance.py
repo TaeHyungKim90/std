@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from datetime import date as date_type
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+from typing import Optional
 
 from db.session import get_db
 from services.auth_service import get_current_user
@@ -15,6 +18,17 @@ def read_today_attendance(db: Session = Depends(get_db), current_user: dict = De
 	user_id = current_user.get("userId")
 	now = datetime.now()
 	return service.get_today_attendance(db, user_id, now.date())
+
+
+@router.get("/day", response_model=Optional[attendance_schemas.AttendanceResponse])
+def read_attendance_for_day(
+	work_date: date_type = Query(..., alias="work_date"),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 특정 근무일(YYYY-MM-DD)의 본인 출퇴근 기록을 조회합니다. 없으면 null."""
+	user_id = current_user.get("userId")
+	return service.get_today_attendance(db, user_id, work_date)
 
 @router.post("/clock-in", response_model=attendance_schemas.AttendanceResponse)
 def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):

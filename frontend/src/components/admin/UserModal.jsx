@@ -5,7 +5,7 @@ import { adminApi } from 'api/adminApi';
 import { formatDate } from 'utils/commonUtils';
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 	const [formData, setFormData] = useState({
-		user_login_id: '', user_password: '', user_name: '', user_nickname: '', user_phone_number: '', role: 'user', join_date: '', resignation_date: ''
+		user_login_id: '', user_password: '', user_name: '', user_nickname: '', user_phone_number: '', role: 'user', joinDate: '', resignation_date: ''
 	});
 	// 수정 모드일 경우 기존 데이터 세팅
 	useEffect(() => {
@@ -14,7 +14,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				...editingUser,
 				user_password: '',
 				user_phone_number: editingUser.user_phone_number || '',
-				join_date: formatDate(editingUser.join_date),
+				joinDate: formatDate(editingUser.join_date),
 				resignation_date: formatDate(editingUser.resignation_date)
 			});
 		} else {
@@ -23,7 +23,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_password: '',
 				user_name: '',
 				user_nickname: '',
-				role: 'user', join_date: '', resignation_date: ''
+				role: 'user', joinDate: '', resignation_date: ''
 			});
 		}
 	}, [editingUser, isOpen]);
@@ -32,11 +32,12 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		e.preventDefault();
 		const submissionData = {
 			...formData,
-			join_date: formData.join_date || null,
+			joined_at: formData.joinDate || null, // DB의 join_date 필드와 매핑됨
 			resignation_date: formData.resignation_date || null,
 			// 비밀번호가 빈 값인 경우(수정 모드) 아예 필드에서 제외하거나 처리
 			...(editingUser && !formData.user_password ? { user_password: undefined } : {})
 		};
+		delete submissionData.join_date;
 		const saveTask = async () => {
 			if (editingUser) {
 				// 수정 시 아이디는 변경 불가하므로 제외하고 전송
@@ -101,8 +102,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 					<div className="form-row modal-form-row">
 						<div className="form-group">
 							<label>입사일</label>
-							<input type="date" value={formData.join_date || ''}
-								onChange={e => setFormData({ ...formData, join_date: e.target.value })} />
+							<input type="date" value={formData.joinDate || ''}
+								onChange={e => setFormData({ ...formData, joinDate: e.target.value })} />
 						</div>
 						<div className="form-group">
 							<label>퇴사일</label>

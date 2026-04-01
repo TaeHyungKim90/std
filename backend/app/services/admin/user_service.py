@@ -22,7 +22,7 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 		user_name=payload.user_name,
 		user_nickname=payload.user_nickname,
 		role=payload.role,
-		join_date=payload.join_date,
+		join_date=payload.joined_at,
 		resignation_date=payload.resignation_date
 	)
 	db.add(new_user)
@@ -38,6 +38,8 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 
 	update_data = payload.model_dump(exclude_unset=True)
 	update_data.pop("user_login_id", None)
+	if "joined_at" in update_data:
+		update_data["join_date"] = update_data.pop("joined_at")
 	for key, value in update_data.items():
 		if key == "user_password":
 			if value:

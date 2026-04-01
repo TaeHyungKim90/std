@@ -1,4 +1,13 @@
-"""Shared vacation-related todo category constants."""
+"""Shared vacation-related constants."""
+
+from enum import Enum
+
+
+class VacationType(str, Enum):
+	ANNUAL_LEAVE = "연차"
+	HALF_LEAVE = "반차"
+	SICK_LEAVE = "병가"
+	VACATION = "휴가"
 
 VACATION_TODO_CATEGORIES = (
 	"vacation_full",
@@ -23,4 +32,14 @@ VACATION_STATS_CATEGORIES = (
 	"vacation_pm",
 	"vacation_special",
 	"vacation_sick",
+)
+
+VACATION_STATUS_KEYWORDS = (
+	"VACATION",
+	"VAC",
+	"HALF",
+	VacationType.VACATION.value,
+	VacationType.ANNUAL_LEAVE.value,
+	VacationType.HALF_LEAVE.value,
+	VacationType.SICK_LEAVE.value,
 )

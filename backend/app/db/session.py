@@ -54,7 +54,7 @@ def init_db():
 			print("--- ℹ️ BOOTSTRAP_DEFAULT_ADMIN=false — 기본 관리자 자동 생성을 건너뜁니다. ---")
 		category_count = db.query(TodoCategoryType).count()
 		if category_count == 0:
-			print("--- 🏷️ 기본 카테고리(휴가, 주간보고) 생성 중 ---")
+			print("--- 🏷️ 기본 카테고리(휴가·근태 등) 생성 중 ---")
 			default_categories = [
 				# 🛑 [연차 차감 O 카테고리]
 				TodoCategoryType(category_key="vacation_full", category_name="연차", icon="🌴"),
@@ -64,9 +64,6 @@ def init_db():
 				TodoCategoryType(category_key="vacation_special", category_name="경조휴가", icon="💌"),
 				TodoCategoryType(category_key="vacation_sick", category_name="병가", icon="🤒"),
 				TodoCategoryType(category_key="official_leave", category_name="공가", icon="🪖"),
-				
-				# 📝 [일반 업무용]
-				TodoCategoryType(category_key="weekly", category_name="주간보고", icon="📝")
 			]
 			db.add_all(default_categories)
 			print("--- ✅ 기본 카테고리 설정 완료 ---")

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import 'assets/css/attendance.css';
 import * as Notify from 'utils/toastUtils';
 import { adminApi } from 'api/adminApi';
+import SideDrawer from 'components/common/SideDrawer';
 import {
 	addDays,
 	addMonths,
@@ -211,10 +212,12 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 	if (!userId) return null;
 
 	return (
-		<>
-			<button type="button" aria-label="닫기" onClick={onClose} className="uta-drawer-overlay" />
-
-			<aside role="dialog" aria-modal="true" className="uta-drawer-panel dynamic-enter">
+		<SideDrawer
+			open
+			onClose={onClose}
+			overlayClassName="uta-drawer-overlay"
+			panelClassName="uta-drawer-panel dynamic-enter"
+		>
 				<div className="uta-header-top">
 					<div className="uta-title-block">
 						<div className="uta-title-row">
@@ -385,8 +388,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 						</table>
 					)}
 				</div>
-			</aside>
-		</>
+		</SideDrawer>
 	);
 };
 

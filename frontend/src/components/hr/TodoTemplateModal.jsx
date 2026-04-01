@@ -2,6 +2,7 @@ import React from 'react';
 import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
 import { todoService } from 'api/todoApi';
+import AppModal from 'components/common/AppModal';
 import 'assets/css/todoTemplateModal.css';
 
 const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCategoriesAndConfigs }) => {
@@ -26,8 +27,7 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 	};
 
 	return (
-		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal-content dynamic-enter todo-template-modal__content" onClick={e => e.stopPropagation()}>
+		<AppModal isOpen={isOpen} onClose={onClose} contentClassName="todo-template-modal__content">
 				<h2 className="todo-template-modal__title">
 					{colorModal.targetCat?.icon} {colorModal.targetCat?.category_name} 템플릿 설정
 				</h2>
@@ -74,8 +74,7 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 					<button type="button" className="btn-cancel" onClick={onClose}>취소</button>
 					<button type="button" className="btn-save" onClick={handleSaveColor}>저장</button>
 				</div>
-			</div>
-		</div>
+		</AppModal>
 	);
 };
 

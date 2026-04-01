@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
 			userNickname, setUserNickname,
 			userRole, setUserRole,
 			userId, setUserId,
-			joinDate, setJoinDate,
+			joinDate, setJoinDate, // DB의 join_date 필드와 매핑됨
 			resignationDate, setResignationDate,
 			loading, logout,
 			checkAuth

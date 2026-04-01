@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
 import re
@@ -38,7 +38,10 @@ class UserCreate(BaseModel):
 	user_nickname: Optional[str] = None
 	user_phone_number: Optional[str] = None
 	role: str = Field("user", description="권한 (admin/user)")
-	join_date: Optional[date] = None 
+	joined_at: Optional[date] = Field(
+		default=None,
+		validation_alias=AliasChoices("joined_at", "join_date", "joinDate"),
+	)
 	resignation_date: Optional[date] = None
 
 	# 전화번호 숫자 10~11자리 검증
@@ -58,7 +61,10 @@ class UserUpdate(BaseModel):
 	user_phone_number: Optional[str] = None
 	role: Optional[str] = None
 	user_password: Optional[str] = None 
-	join_date: Optional[date] = None 
+	joined_at: Optional[date] = Field(
+		default=None,
+		validation_alias=AliasChoices("joined_at", "join_date", "joinDate"),
+	)
 	resignation_date: Optional[date] = None
 
 	@field_validator('user_phone_number')
