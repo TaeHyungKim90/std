@@ -31,22 +31,30 @@ const TodoListView = () => {
 	const [selectedDate, setSelectedDate] = useState(null);
 	const [selectedEvent, setSelectedEvent] = useState(null);
 	const [modalMode, setModalMode] = useState('create');
+	const defaultCategoryKey = categories[0]?.category_key || null;
 
 	const fetchCategoriesAndConfigs = useCallback(async () => {
 		const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
 		const masterCategories = catRes.data;
 		const userConfigs = configRes.data;
-		const mergedCategories = masterCategories.map(cat => {
-			const userConf = userConfigs.find(c => c.category_key === cat.category_key);
-			return { ...cat, hasCustomConfig: !!userConf, color: userConf?.color || '#3DAF7A', default_description: userConf?.default_description || '' };
-		});
+		const mergedCategories = masterCategories
+			.map((cat) => {
+				const userConf = userConfigs.find((c) => c.category_key === cat.category_key);
+				return {
+					...cat,
+					hasCustomConfig: !!userConf,
+					color: userConf?.color || '#3DAF7A',
+					default_description: userConf?.default_description || '',
+				};
+			});
 		setCategories(mergedCategories);
 	}, []);
 
 	const fetchTodos = useCallback(async () => {
 		const currentYear = new Date().getFullYear().toString();
 		const [todoRes, holidayRes] = await Promise.all([todoService.getTodos(), holidayApi.getHolidays(currentYear)]);
-		const formattedTodos = todoRes.data.map(todo => {
+		const formattedTodos = todoRes.data
+			.map((todo) => {
 			const isOwner = todo.user_id === userId;
 			const endDate = new Date(todo.end_date);
 			endDate.setSeconds(endDate.getSeconds() + 1);
@@ -84,13 +92,20 @@ const TodoListView = () => {
 		const event = info.event.toPlainObject(); 
 		const props = event.extendedProps; 
 		if (props.isHoliday) return; 
-		setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || 'weekly', color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); 
+		const fallbackCat = defaultCategoryKey;
+		setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || fallbackCat, color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); 
 		setIsDetailOpen(true); 
 	};
 	
 	const handleEventUpdate = async (info) => {
 		const { event } = info;
 		if (event.extendedProps.isHoliday) { info.revert(); return; }
+		const categoryKey = event.extendedProps.category || defaultCategoryKey;
+		if (!categoryKey) {
+			info.revert();
+			Notify.toastError("기본 카테고리 정보가 없어 일정을 수정할 수 없습니다.");
+			return;
+		}
 
 		const startStr = event.startStr || "";
 		const startDate = startStr.includes('T') ? startStr.split('T')[0] + "T00:00:00" : startStr + "T00:00:00";
@@ -106,7 +121,7 @@ const TodoListView = () => {
 		Notify.toastPromise(
 			todoService.updateTodo(event.id, {
 				title: event.extendedProps.title, start_date: startDate, end_date: endDate,
-				category: event.extendedProps.category || 'weekly', color: event.backgroundColor
+				category: categoryKey, color: event.backgroundColor
 			}),
 			{
 				loading: '일정을 수정하고 있습니다...',
@@ -128,12 +143,18 @@ const TodoListView = () => {
 
 	const handleEventReceive = async (info) => {
 		const { event } = info;
+		const fallbackCat = defaultCategoryKey;
+		if (!fallbackCat) {
+			info.revert();
+			Notify.toastError("기본 카테고리 정보가 없어 일정을 등록할 수 없습니다.");
+			return;
+		}
 		const newTodo = {
 			title: event.title,
 			start_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T00:00:00`,
 			end_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T23:59:59`,
 			color: event.backgroundColor, 
-			category: event.extendedProps?.category || 'weekly', 
+			category: event.extendedProps?.category || fallbackCat, 
 			description: event.extendedProps?.description || '',
 			status: "CREATED"
 		};
