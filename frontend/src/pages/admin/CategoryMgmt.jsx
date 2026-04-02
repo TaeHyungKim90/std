@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
-import EmojiPicker from 'emoji-picker-react';
-import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
+import { useLoading } from 'context/LoadingContext';
+import EmojiPicker from 'emoji-picker-react';
+import React, { useEffect,useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 const CategoryMgmt = () => {
 	const [categories, setCategories] = useState([]);
 	const { showLoading, hideLoading } = useLoading();
@@ -25,8 +25,7 @@ const CategoryMgmt = () => {
 		try {
 			await loadCategoryList();
 		} catch (err) {
-			console.error("카테고리 로드 실패", err);
-			Notify.toastError("카테고리를 불러오지 못했습니다.");
+			Notify.toastApiFailure(err, "카테고리를 불러오지 못했습니다.");
 		} finally {
 			if (withOverlay) hideLoading();
 		}
@@ -63,7 +62,7 @@ const CategoryMgmt = () => {
 	// 3. 수정 저장
 	const handleUpdate = async (id) => {
 		const updateTask = async () => {
-			const { category_key, ...updateData } = editForm;
+			const { category_key: _, ...updateData } = editForm;
 			return adminApi.updateCategoryType(id, updateData);
 		};
 		Notify.toastPromise(updateTask(), {

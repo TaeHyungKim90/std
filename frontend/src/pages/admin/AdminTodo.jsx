@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
-import PaginationBar from 'components/common/PaginationBar';
-import IdCopyChip from 'components/common/IdCopyChip';
 import { adminApi } from 'api/adminApi.js';
+import IdCopyChip from 'components/common/IdCopyChip';
+import PaginationBar from 'components/common/PaginationBar';
+import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
+import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+import React, { useCallback,useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 
 const AdminTodo = () => {
@@ -36,8 +36,7 @@ const AdminTodo = () => {
 			setAllTodos(Array.isArray(body?.items) ? body.items : []);
 			setTotal(typeof body?.total === 'number' ? body.total : 0);
 		} catch (err) {
-			console.error('데이터 로드 실패', err);
-			Notify.toastError(err.message || '데이터를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '데이터를 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 		}

@@ -41,7 +41,8 @@
      npm start
      ```
 
-     기본: **http://localhost:3000**
+     기본: **http://localhost:3000**  
+     코드 스타일: `npm run lint` / 자동 수정 `npm run lint:fix` (`eslint-plugin-simple-import-sort`, `eslint-plugin-unused-imports`, react-hooks 규칙은 `react-app` 기본 유지)
 
 6. 브라우저에서 프론트에 접속합니다. API 요청은 `REACT_APP_API_BASE_URL`(예: `http://localhost:8000/api`)로 나가며, **쿠키 세션**을 쓰므로 CORS에 프론트 오리진이 포함되어 있어야 합니다 (`CORS_ORIGINS`).
 

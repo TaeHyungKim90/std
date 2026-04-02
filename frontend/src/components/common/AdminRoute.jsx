@@ -1,10 +1,12 @@
-import { useContext } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { Navigate, Outlet } from 'react-router-dom';
-import { AuthContext } from 'context/AuthContext';
-import LoadingBar from './LoadingBar';
 import 'assets/css/admin.css';
+
 import { PATHS } from 'constants/paths';
+import { AuthContext } from 'context/AuthContext';
+import { useContext } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import * as Notify from 'utils/toastUtils';
+
+import LoadingBar from './LoadingBar';
 
 const AdminRoute = () => {
 	const { isLoggedIn, userRole, loading } = useContext(AuthContext);

@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useCallback,useState } from 'react';
 import toast from 'react-hot-toast';
-import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
-import { isSessionExpiredApiError } from 'constants/authEvents';
+import * as Notify from 'utils/toastUtils';
 
 /**
  * axios `client` 호출을 감싸 로딩/토스트/상태를 묶습니다.
@@ -26,13 +25,10 @@ export const useApiRequest = (apiCall) => {
 				return response.data;
 			} catch (err) {
 				toast.dismiss(loadingId);
-				console.error('API Error:', err);
 				const errMsg =
 					formatApiDetail(err) || '서버 통신 중 오류가 발생했습니다.';
 				setError(errMsg);
-				if (!isSessionExpiredApiError(err)) {
-					Notify.toastError(errMsg);
-				}
+				Notify.toastApiFailure(err, errMsg);
 				throw err;
 			} finally {
 				setLoading(false);

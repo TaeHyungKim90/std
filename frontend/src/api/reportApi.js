@@ -1,5 +1,6 @@
-import { client } from './axiosInstance.js';
 import { API_ENDPOINTS } from 'constants/constants';
+
+import { client } from './axiosInstance.js';
 
 const HR = API_ENDPOINTS.HR_REPORTS;
 const ADMIN = API_ENDPOINTS.ADMIN;

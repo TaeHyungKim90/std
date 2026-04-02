@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
 import { recruitmentApi } from 'api/recruitmentApi';
-import JobPostingModal from 'components/admin/JobPostingModal';
 import ApplicantListModal from 'components/admin/ApplicantListModal';
+import JobPostingModal from 'components/admin/JobPostingModal';
 import PaginationBar from 'components/common/PaginationBar';
-import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+import { useLoading } from 'context/LoadingContext';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import React, { useCallback,useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 
 const RecruitmentAdmin = () => {
@@ -30,16 +30,14 @@ const RecruitmentAdmin = () => {
 
 	const refreshJobs = () =>
 		loadJobs().catch((err) => {
-			console.error("공고 목록 로드 실패", err);
-			Notify.toastError("공고 목록을 불러오지 못했습니다.");
+			Notify.toastApiFailure(err, "공고 목록을 불러오지 못했습니다.");
 		});
 
 	useEffect(() => {
 		showLoading("채용 공고를 불러오는 중입니다... ⏳");
 		loadJobs()
 			.catch((err) => {
-				console.error("공고 목록 로드 실패", err);
-				Notify.toastError(err.message || "공고 목록을 불러오지 못했습니다.");
+				Notify.toastApiFailure(err, "공고 목록을 불러오지 못했습니다.");
 			})
 			.finally(() => hideLoading());
 	}, [loadJobs, showLoading, hideLoading]);

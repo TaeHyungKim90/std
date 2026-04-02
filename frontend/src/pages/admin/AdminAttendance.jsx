@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import 'assets/css/attendance.css';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
+
 import { adminApi } from 'api/adminApi';
 import { holidayApi } from 'api/holidayApi';
-import PaginationBar from 'components/common/PaginationBar';
 import UserAttendanceDrawer from 'components/admin/UserAttendanceDrawer';
 import IdCopyChip from 'components/common/IdCopyChip';
+import PaginationBar from 'components/common/PaginationBar';
+import { DEFAULT_ADMIN_MAX_PAGE_SIZE,DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import React, { useCallback, useEffect, useMemo,useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
-import { DEFAULT_ADMIN_PAGE_SIZE, DEFAULT_ADMIN_MAX_PAGE_SIZE } from 'constants/apiConfig';
+import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 const SUMMARY_PAGE_SIZE = DEFAULT_ADMIN_MAX_PAGE_SIZE; // backend limit <= 100
 
@@ -68,8 +69,7 @@ const AdminAttendance = () => {
 			setAttendanceList(Array.isArray(body?.items) ? body.items : []);
 			setTotal(typeof body?.total === 'number' ? body.total : 0);
 		} catch (err) {
-			console.error('데이터 로드 실패:', err);
-			Notify.toastError(err.message || '출퇴근 기록을 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '출퇴근 기록을 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 			setLoading(false);
@@ -180,8 +180,7 @@ const AdminAttendance = () => {
 				absentCount,
 			});
 		} catch (err) {
-			console.error('대시보드 요약 로드 실패:', err);
-			Notify.toastError(err.message || '요약 정보를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '요약 정보를 불러오지 못했습니다.');
 		} finally {
 			setSummaryLoading(false);
 		}

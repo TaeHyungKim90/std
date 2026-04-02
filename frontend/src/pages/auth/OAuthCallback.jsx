@@ -1,9 +1,9 @@
 // frontend/src/pages/auth/OAuthCallback.jsx
-import React, { useEffect, useRef } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from 'context/AuthContext';
 import { PATHS } from 'constants/paths';
+import { useAuth } from 'context/AuthContext';
+import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import * as Notify from 'utils/toastUtils';
 
 const OAuthCallback = () => {
 	const navigate = useNavigate();

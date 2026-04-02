@@ -1,5 +1,6 @@
-import { client } from './axiosInstance.js'; // api.js에서 만든 공통 client 임포트
 import { API_ENDPOINTS } from 'constants/constants';
+
+import { client } from './axiosInstance.js'; // api.js에서 만든 공통 client 임포트
 const PATH = API_ENDPOINTS.AUTH;
 export const authApi = {
 	/**

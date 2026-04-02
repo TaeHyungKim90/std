@@ -1,9 +1,10 @@
-import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
-import * as Notify from 'utils/toastUtils';
 import { authApi } from 'api/authApi';
-import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
-import { PATHS, PATH_PREFIX } from 'constants/paths';
 import { AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
+import { PATH_PREFIX,PATHS } from 'constants/paths';
+import React, { createContext, useCallback, useContext, useEffect, useRef,useState } from 'react';
+import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
+import * as Notify from 'utils/toastUtils';
+
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
 import { useLoading } from './LoadingContext';
 
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }) => {
 			resetAuthState();
 			broadcastLogoutSignal();
 		}).catch((error) => {
-			console.error("로그아웃 API 호출 실패:", error);
+			Notify.toastApiFailure(error, "로그아웃 API 호출 실패");
 		});
 	}, [resetAuthState]);
 

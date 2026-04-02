@@ -1,9 +1,10 @@
-import React, { useActionState, useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import { todoService } from 'api/todoApi';
-import SunEditor from 'suneditor-react';
 import 'assets/css/todoEditModal.css';
+
+import { todoService } from 'api/todoApi';
+import React, { useActionState, useEffect,useState } from 'react';
+import SunEditor from 'suneditor-react';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');

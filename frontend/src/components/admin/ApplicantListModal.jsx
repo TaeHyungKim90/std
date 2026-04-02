@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import 'assets/css/applicantListModal.css';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
+
 import { recruitmentApi } from 'api/recruitmentApi';
 import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
+import { useLoading } from 'context/LoadingContext';
+import React, { useEffect,useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 
 const STATUS_MAP = {
     'applied': { text: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
@@ -28,9 +29,8 @@ const ApplicantListModal = ({ isOpen, onClose, jobId, jobTitle }) => {
                     const res = await recruitmentApi.getApplicationsByJob(jobId);
                     setApplicants(res.data || res);
                 } catch (error) {
-                    console.error("지원자 목록 로드 실패", error);
                     setApplicants([]);
-                    Notify.toastError("지원자 목록을 불러오지 못했습니다.");
+					Notify.toastApiFailure(error, "지원자 목록을 불러오지 못했습니다.");
                 } finally {
                     hideLoading();
                     setModalLoading(false);

@@ -1,10 +1,11 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import ApplicantLoginPage from './ApplicantLoginPage';
 import { recruitmentApi } from 'api/recruitmentApi';
+import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
+
+import ApplicantLoginPage from './ApplicantLoginPage';
 
 const mockNavigate = jest.fn();
 const mockReturnState = { returnUrl: '/careers/apply/42', job: { id: 42 } };
@@ -59,7 +60,11 @@ describe('ApplicantLoginPage', () => {
 
 		await waitFor(() => {
 			expect(recruitmentApi.loginApplicant).toHaveBeenCalled();
+		});
+		await waitFor(() => {
 			expect(syncApplicantSessionFromServer).toHaveBeenCalled();
+		});
+		await waitFor(() => {
 			expect(mockNavigate).toHaveBeenCalledWith(mockReturnState.returnUrl, {
 				replace: true,
 				state: mockReturnState,

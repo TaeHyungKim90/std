@@ -33,12 +33,46 @@
 		"build": "react-scripts build",
 		"test": "react-scripts test",
 		"test:ci": "react-scripts test --watchAll=false",
+		"lint": "eslint \"src/**/*.{js,jsx}\" --max-warnings 0",
+		"lint:fix": "eslint \"src/**/*.{js,jsx}\" --fix --max-warnings 0",
 		"eject": "react-scripts eject"
 	},
 	"eslintConfig": {
 		"extends": [
 			"react-app",
 			"react-app/jest"
+		],
+		"plugins": [
+			"simple-import-sort",
+			"unused-imports"
+		],
+		"rules": {
+			"simple-import-sort/imports": "warn",
+			"simple-import-sort/exports": "warn",
+			"unused-imports/no-unused-imports": "warn",
+			"no-unused-vars": "off",
+			"unused-imports/no-unused-vars": [
+				"warn",
+				{
+					"vars": "all",
+					"varsIgnorePattern": "^_",
+					"args": "after-used",
+					"argsIgnorePattern": "^_"
+				}
+			],
+			"react-hooks/rules-of-hooks": "error",
+			"react-hooks/exhaustive-deps": "warn"
+		},
+		"overrides": [
+			{
+				"files": [
+					"**/*.test.js",
+					"**/*.test.jsx"
+				],
+				"rules": {
+					"unused-imports/no-unused-vars": "off"
+				}
+			}
 		]
 	},
 	"jest": {
@@ -62,6 +96,8 @@
 	},
 	"devDependencies": {
 		"autoprefixer": "^10.4.27",
+		"eslint-plugin-simple-import-sort": "^12.1.1",
+		"eslint-plugin-unused-imports": "^4.4.1",
 		"postcss": "^8.5.8",
 		"tailwindcss": "^3.4.19"
 	}

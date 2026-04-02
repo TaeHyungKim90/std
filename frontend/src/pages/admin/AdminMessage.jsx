@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
 import { messageApi } from 'api/messageApi';
 import MessageSendModal from 'components/admin/MessageSendModal';
-import { formatDate } from 'utils/commonUtils';
 import MessageReadModal from 'components/common/MessageReadModal';
 import PaginationBar from 'components/common/PaginationBar';
-import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
+import { useLoading } from 'context/LoadingContext';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import React, { useCallback,useEffect, useState } from 'react';
+import { formatDate } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = Math.max(10, DEFAULT_ADMIN_PAGE_SIZE);
 
 const AdminMessage = () => {
@@ -30,16 +30,14 @@ const AdminMessage = () => {
 
     const refreshOutbox = () =>
         fetchOutbox().catch((error) => {
-            console.error("발신함 불러오기 실패:", error);
-            Notify.toastError("발신함을 불러오지 못했습니다.");
+            Notify.toastApiFailure(error, "발신함을 불러오지 못했습니다.");
         });
 
     useEffect(() => {
         showLoading("발신함을 불러오는 중입니다... ⏳");
         fetchOutbox()
             .catch((error) => {
-                console.error("발신함 불러오기 실패:", error);
-                Notify.toastError(error.message || "발신함을 불러오지 못했습니다.");
+                Notify.toastApiFailure(error, "발신함을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
     }, [fetchOutbox, showLoading, hideLoading]);

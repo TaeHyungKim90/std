@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback,useEffect, useState } from 'react';
 import {
 	APPLICANT_SESSION_UPDATED_EVENT,
-	getCachedApplicantUser,
-	syncApplicantSessionFromServer,
 	clearCachedApplicantUser,
+	getCachedApplicantUser,
 	isApplicantSessionPayloadLoggedIn,
+	syncApplicantSessionFromServer,
 } from 'utils/applicantSession';
 
 /**

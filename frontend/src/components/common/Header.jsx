@@ -1,10 +1,10 @@
 // src/components/layout/Header.js
-import React, { useContext, useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { AuthContext } from 'context/AuthContext';
-import { MENU_ITEMS } from 'constants/menu';
-import { PATHS, PATH_PREFIX } from 'constants/paths';
 import logo from 'assets/icon/favicon.png';
+import { MENU_ITEMS } from 'constants/menu';
+import { PATH_PREFIX,PATHS } from 'constants/paths';
+import { AuthContext } from 'context/AuthContext';
+import React, { useContext, useState } from 'react';
+import { Link,useLocation, useNavigate } from 'react-router-dom';
 
 const Header = () => {
 	const { isLoggedIn, logout, userNickname, userRole, userName } = useContext(AuthContext);
@@ -28,7 +28,7 @@ const Header = () => {
 				navigate(PATHS.LOGIN);
 			})
 			.catch((err) => {
-				console.error("로그아웃 실패:", err);
+				Notify.toastApiFailure(err, "로그아웃 실패");
 			})
 			.finally(() => {
 				setIsLoggingOut(false);

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
 import { holidayApi } from 'api/holidayApi';
+import { useLoading } from 'context/LoadingContext';
+import React, { useCallback, useEffect, useMemo,useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 /** 현재 연도 기준 −1 ~ +3 (총 5개 연도) */
 const getYearSelectOptions = () => {
 	const y = new Date().getFullYear();
@@ -42,8 +42,7 @@ const HolidayMgmt = () => {
 
 	const refreshHolidaysList = useCallback(() => {
 		return loadHolidaysList().catch((err) => {
-			console.error("공휴일 로드 실패:", err);
-			Notify.toastError("공휴일 목록을 새로고침하지 못했습니다.");
+			Notify.toastApiFailure(err, "공휴일 목록을 새로고침하지 못했습니다.");
 		});
 	}, [loadHolidaysList]);
 
@@ -56,8 +55,7 @@ const HolidayMgmt = () => {
 				if (!cancelled) setHolidays(data);
 			} catch (err) {
 				if (!cancelled) {
-					console.error("공휴일 로드 실패:", err);
-					Notify.toastError("공휴일 목록 로드에 실패했습니다.");
+					Notify.toastApiFailure(err, "공휴일 목록 로드에 실패했습니다.");
 				}
 			} finally {
 				if (!cancelled) hideLoading();

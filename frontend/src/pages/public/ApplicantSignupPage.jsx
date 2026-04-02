@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import { useNavigate, Link } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { PATHS } from 'constants/paths';
+import React, { useState } from 'react';
+import { Link,useNavigate } from 'react-router-dom';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 
 const ApplicantSignupPage = () => {
 	const navigate = useNavigate();

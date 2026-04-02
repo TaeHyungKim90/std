@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
-import { getContrastColor } from 'utils/colorUtils';
-import { todoService } from 'api/todoApi';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import { holidayApi } from 'api/holidayApi';
+import { todoService } from 'api/todoApi';
+import TodoDetailModal from 'components/common/TodoDetailModal';
+import TodoEditModal from 'components/hr/TodoEditModal';
+import TodoSidebar from 'components/hr/TodoSidebar';
+import TodoTemplateModal from 'components/hr/TodoTemplateModal';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
+import React, { useCallback,useEffect, useRef, useState } from 'react';
+import { getContrastColor } from 'utils/colorUtils';
 import { toLocalIsoNoMs, toLocalYmd } from 'utils/dateUtils';
-
-import TodoSidebar from 'components/hr/TodoSidebar';
-import TodoEditModal from 'components/hr/TodoEditModal';
-import TodoDetailModal from 'components/common/TodoDetailModal';
-import TodoTemplateModal from 'components/hr/TodoTemplateModal';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
@@ -74,15 +73,13 @@ const TodoListView = () => {
 
 	const refreshTodosAfterMutation = useCallback(() => {
 		return fetchTodos().catch((err) => {
-			console.error("일정 목록 새로고침 실패", err);
-			Notify.toastError("일정 목록을 새로고침하지 못했습니다.");
+			Notify.toastApiFailure(err, "일정 목록을 새로고침하지 못했습니다.");
 		});
 	}, [fetchTodos]);
 
 	const refreshCategoriesAfterSave = useCallback(() => {
 		return fetchCategoriesAndConfigs().catch((err) => {
-			console.error("카테고리 설정 새로고침 실패", err);
-			Notify.toastError("카테고리 정보를 불러오지 못했습니다.");
+			Notify.toastApiFailure(err, "카테고리 정보를 불러오지 못했습니다.");
 		});
 	}, [fetchCategoriesAndConfigs]);
 
@@ -186,8 +183,7 @@ const TodoListView = () => {
 			try {
 				await Promise.all([fetchCategoriesAndConfigs(), fetchTodos()]);
 			} catch (err) {
-				console.error("초기 데이터 로드 실패", err);
-				Notify.toastError("초기 데이터를 불러오지 못했습니다.");
+				Notify.toastApiFailure(err, "초기 데이터를 불러오지 못했습니다.");
 			} finally {
 				if (!cancelled) hideLoading();
 			}

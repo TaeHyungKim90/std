@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
+import 'assets/css/my-profile.css';
+
 import { authApi } from 'api/authApi';
 import { useAuth } from 'context/AuthContext';
-import 'assets/css/my-profile.css';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 
 function formatYmd(value) {
 	if (value == null || value === '') return '—';
@@ -42,8 +42,7 @@ const MyProfile = () => {
 			setCurrentPassword('');
 			setNewPassword('');
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '내 정보를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '내 정보를 불러오지 못했습니다.');
 			setProfile(null);
 		} finally {
 			setLoading(false);
@@ -104,8 +103,7 @@ const MyProfile = () => {
 			await checkAuth();
 			Notify.toastSuccess('저장되었습니다.');
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(err.message || formatApiDetail(err) || '저장에 실패했습니다.');
+			Notify.toastApiFailure(err, '저장에 실패했습니다.');
 		} finally {
 			setSaving(false);
 		}

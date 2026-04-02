@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { formatApiDetail } from 'utils/formatApiError';
-import { PATHS, PATH_PREFIX } from 'constants/paths';
-import { AUTH_SESSION_EXPIRED_EVENT, API_SESSION_EXPIRED_CODE } from 'constants/authEvents';
 import {
-	APPLICANT_USER_STORAGE_KEY,
 	APPLICANT_SESSION_UPDATED_EVENT,
+	APPLICANT_USER_STORAGE_KEY,
 } from 'constants/applicantCache';
+import { API_SESSION_EXPIRED_CODE,AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
+import { PATH_PREFIX,PATHS } from 'constants/paths';
+import { formatApiDetail } from 'utils/formatApiError';
 import { showSessionExpiredToast } from 'utils/showSessionExpiredToast';
 
 /**

@@ -1,7 +1,8 @@
 // src/api/messageApi.js
-import { client } from './axiosInstance.js'; 
-import { API_ENDPOINTS } from 'constants/constants';
 import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
+import { API_ENDPOINTS } from 'constants/constants';
+
+import { client } from './axiosInstance.js'; 
 
 const PATH = API_ENDPOINTS.MESSAGES;
 

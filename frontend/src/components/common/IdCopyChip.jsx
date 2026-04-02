@@ -1,8 +1,9 @@
+import 'assets/css/id-copy-chip.css';
+
 import React from 'react';
-import * as Notify from 'utils/toastUtils';
 import { copyTextToClipboard } from 'utils/copyToClipboard';
 import { formatIdSnippet, shouldAbbreviateId } from 'utils/formatId';
-import 'assets/css/id-copy-chip.css';
+import * as Notify from 'utils/toastUtils';
 
 /**
  * 긴 ID·로그인명: 축약 표시 + 전체 복사. 짧은 값은 그대로 표시하고 복사는 선택.

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
 import { attendanceApi } from 'api/attendanceApi';
 import { useAuth } from 'context/AuthContext';
+import React, { useEffect,useState } from 'react';
 import { formatTimeHms } from 'utils/dateUtils';
+import * as Notify from 'utils/toastUtils';
 
 const AttendanceView = () => {
 	const { joinDate, loading: authLoading } = useAuth();

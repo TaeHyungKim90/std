@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
+import { useLoading } from 'context/LoadingContext';
+import React, { useEffect, useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils';
 
 const AdminDashboard = () => {
     const { showLoading, hideLoading } = useLoading();
@@ -33,8 +33,7 @@ const AdminDashboard = () => {
                 });
                 setEmployeeBalances(res.data.employee_balances || []);
             } catch (err) {
-                console.error("관리자 대시보드 데이터 로드 실패", err);
-                Notify.toastError("대시보드 데이터 로드에 실패했습니다.");
+				Notify.toastApiFailure(err, "대시보드 데이터 로드에 실패했습니다.");
             } finally {
                 hideLoading();
                 setLoading(false);

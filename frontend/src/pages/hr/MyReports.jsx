@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { reportApi } from 'api/reportApi';
+import 'assets/css/report.css';
+
 import { attendanceApi } from 'api/attendanceApi';
-import { useApiRequest } from 'hooks/useApiRequest';
-import { useAuth } from 'context/AuthContext';
-import SideDrawer from 'components/common/SideDrawer';
+import { reportApi } from 'api/reportApi';
 import AppModal from 'components/common/AppModal';
+import SideDrawer from 'components/common/SideDrawer';
+import { useAuth } from 'context/AuthContext';
+import { useApiRequest } from 'hooks/useApiRequest';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	addMonths,
@@ -23,7 +24,7 @@ import {
 	isYmdStrictlyBeforeJoinDate,
 	shouldConfirmNoAttendanceRecord,
 } from 'utils/reportDateUtils';
-import 'assets/css/report.css';
+import * as Notify from 'utils/toastUtils';
 
 const NO_HIRE_DATE_MESSAGE =
 	'입사일 정보가 등록되지 않아 보고서를 작성할 수 없습니다. 인사팀에 문의해 주세요.';
@@ -105,7 +106,6 @@ const MyReports = () => {
 			const res = await reportApi.getDailyRange(dateFrom, dateTo);
 			setDailyRows(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error(err);
 			Notify.toastApiFailure(err, '일일 보고를 불러오지 못했습니다.');
 			setDailyRows([]);
 		} finally {
@@ -126,7 +126,6 @@ const MyReports = () => {
 			const w = wRes.data;
 			setWeekSummaryDraft(w?.summary ? String(w.summary) : '');
 		} catch (err) {
-			console.error(err);
 			Notify.toastApiFailure(err, '주간 데이터를 불러오지 못했습니다.');
 			setWeekDailies([]);
 			setWeekSummaryDraft('');
@@ -225,7 +224,6 @@ const MyReports = () => {
 
 				applyDailyDrawerOpen(ymd, rec);
 			} catch (err) {
-				console.error(err);
 				Notify.toastApiFailure(err, '출퇴근 정보를 확인하지 못했습니다.');
 			} finally {
 				setDailyDrawerPreflight(false);

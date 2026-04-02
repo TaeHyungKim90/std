@@ -1,6 +1,6 @@
 // src/pages/auth/LoginView.jsx (수정된 소스)
-import React from 'react';
 import LoginForm from 'components/auth/LoginForm';
+import React from 'react';
 
 /**
  * 로그인 화면

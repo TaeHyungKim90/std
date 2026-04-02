@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
-import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
-import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { PATHS } from 'constants/paths';
+import { useLoading } from 'context/LoadingContext';
+import React, { useEffect,useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { formatDate } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils';
 
 const STATUS_MAP = {
 	'applied': { text: '📄 서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
@@ -47,8 +47,7 @@ const MyApplicationsPage = () => {
 				const res = await recruitmentApi.getMyApplications();
 				setApplications(res.data || res);
 			} catch (error) {
-				console.error("지원 내역 로드 실패", error);
-				Notify.toastError("지원 내역을 불러오지 못했습니다.");
+				Notify.toastApiFailure(error, "지원 내역을 불러오지 못했습니다.");
 			} finally {
 				hideLoading();
 				setIsLoading(false);

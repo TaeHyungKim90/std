@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import { useNavigate } from 'react-router-dom';
 import { authApi } from 'api/authApi';
-import { useLoading } from 'context/LoadingContext';
-import SocialButtons from './SocialButtons';
 import { PATHS } from 'constants/paths';
+import { useLoading } from 'context/LoadingContext';
+import React, { useCallback,useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
+
+import SocialButtons from './SocialButtons';
 
 const SignupForm = () => {
 	const navigate = useNavigate();
@@ -56,7 +57,7 @@ const SignupForm = () => {
 		}).then((res) => {
 			setIdStatus(res.data.available ? 'available' : 'duplicate');
 		}).catch((err) => {
-			console.error("중복 확인 실패:", err);
+			Notify.toastApiFailure(err, "중복 확인 실패");
 		}).finally(() => {
 			hideLoading();
 		});
@@ -72,7 +73,7 @@ const SignupForm = () => {
 
 		showLoading("회원가입 정보를 등록 중입니다... ⏳");
 		const signupTask = async () => {
-			const { password_confirm, ...submitData } = formData;
+			const { password_confirm: _, ...submitData } = formData;
 			return authApi.signup(submitData);
 		};
 		Notify.toastPromise(signupTask(), {
@@ -88,7 +89,7 @@ const SignupForm = () => {
 		}).then(() => {
 			navigate(PATHS.LOGIN);
 		}).catch((err) => {
-			console.error("회원가입 실패:", err);
+			Notify.toastApiFailure(err, "회원가입 실패");
 		}).finally(() => {
 			hideLoading();
 		});

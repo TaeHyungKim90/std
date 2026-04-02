@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
-import { messageApi } from 'api/messageApi'; // 경로 확인
-import { commonApi } from 'api/commonApi';	 // 경로 확인
-import { adminApi } from 'api/adminApi';	 // 경로 확인
+import 'assets/css/admin.css';
 
+import { adminApi } from 'api/adminApi';	 // 경로 확인
+import { commonApi } from 'api/commonApi';	 // 경로 확인
+import { messageApi } from 'api/messageApi'; // 경로 확인
+import { useLoading } from 'context/LoadingContext';
+import React, { useCallback,useEffect, useState } from 'react';
 // 🌟 SunEditor 임포트 (CSS 포함 필수)
 import SunEditor from 'suneditor-react';
-import 'assets/css/admin.css';
+import * as Notify from 'utils/toastUtils';
 const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);
@@ -29,8 +29,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 			const response = await adminApi.getUsers();
 			setUsers(response.data || []);
 		} catch (error) {
-			console.error("직원 목록 로드 실패:", error);
-			Notify.toastError("직원 목록을 불러오지 못했습니다.");
+			Notify.toastApiFailure(error, "직원 목록을 불러오지 못했습니다.");
 		} finally {
 			hideLoading();
 		}

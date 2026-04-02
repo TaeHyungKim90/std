@@ -1,12 +1,12 @@
-import React from 'react';
-import * as Notify from 'utils/toastUtils';
-import { todoService } from 'api/todoApi';
-import { adminApi } from 'api/adminApi';
-import { useAuth } from 'context/AuthContext';
-
-import parse from 'html-react-parser';
-import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import 'assets/css/todoDetailModal.css';
+
+import { adminApi } from 'api/adminApi';
+import { todoService } from 'api/todoApi';
+import { useAuth } from 'context/AuthContext';
+import parse from 'html-react-parser';
+import React from 'react';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import * as Notify from 'utils/toastUtils';
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {
 	const { userId: currentUserId } = useAuth();
 
@@ -73,7 +73,7 @@ const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode
 							}
 						});
 					}
-					const { style, ...otherAttribs } = domNode.attribs;
+					const { style: _style, ...otherAttribs } = domNode.attribs;
 					return (
 						<img 
 							{...otherAttribs} 

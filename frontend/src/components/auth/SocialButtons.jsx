@@ -1,6 +1,6 @@
+import { authApi } from 'api/authApi';
 import React from 'react';
 import * as Notify from 'utils/toastUtils';
-import { authApi } from 'api/authApi';
 
 const SocialButtons = () => {
 	/**

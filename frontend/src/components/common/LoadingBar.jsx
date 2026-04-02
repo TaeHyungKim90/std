@@ -1,5 +1,6 @@
-import React from 'react';
 import 'assets/css/loadingBar.css'; // 분리한 CSS 임포트
+
+import React from 'react';
 
 const LoadingBar = ({ text = "처리 중입니다..." }) => {
 	return (

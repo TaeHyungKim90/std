@@ -1,5 +1,6 @@
-import React from 'react';
 import 'assets/css/layout.css';
+
+import React from 'react';
 
 /**
  * 페이지네이션 UI (1-based).

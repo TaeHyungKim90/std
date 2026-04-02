@@ -1,6 +1,6 @@
+import { PATH_PREFIX, ROUTE_SEGMENTS } from 'constants/paths';
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
-import { PATH_PREFIX, ROUTE_SEGMENTS } from 'constants/paths';
 
 const AdminDashboard = lazy(() => import('pages/admin/AdminDashboard'));
 const AdminTodoView = lazy(() => import('pages/admin/AdminTodo'));

@@ -1,9 +1,10 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import PublicHeader from './PublicHeader';
-import { useApplicantSession } from 'hooks/useApplicantSession';
 import { PATHS } from 'constants/paths';
+import { useApplicantSession } from 'hooks/useApplicantSession';
+import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+
+import PublicHeader from './PublicHeader';
 
 jest.mock('hooks/useApplicantSession', () => ({
 	useApplicantSession: jest.fn(),

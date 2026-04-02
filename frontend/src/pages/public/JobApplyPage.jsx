@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { recruitmentApi } from 'api/recruitmentApi'; 
 import { commonApi } from 'api/commonApi';
-import { formatPhoneNumber } from 'utils/commonUtils';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import { PATHS, pathCareersJobApply } from 'constants/paths';
+import { recruitmentApi } from 'api/recruitmentApi'; 
+import { pathCareersJobApply,PATHS } from 'constants/paths';
+import React, { useEffect,useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
+import { formatPhoneNumber } from 'utils/commonUtils';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 
 const JobApplyPage = () => {
     const { state } = useLocation();

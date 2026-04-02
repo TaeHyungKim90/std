@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import 'assets/css/layout.css';
-import * as Notify from 'utils/toastUtils';
+
 import { adminApi } from 'api/adminApi';
+import React, { useEffect,useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils';
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 	const [formData, setFormData] = useState({
 		user_login_id: '', user_password: '', user_name: '', user_nickname: '', user_phone_number: '', role: 'user', joinDate: '', resignation_date: ''
@@ -41,7 +42,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		const saveTask = async () => {
 			if (editingUser) {
 				// 수정 시 아이디는 변경 불가하므로 제외하고 전송
-				const { user_login_id, ...updateData } = submissionData;
+				const { user_login_id: _, ...updateData } = submissionData;
 				return adminApi.updateUser(editingUser.id, updateData);
 			} else {
 				return adminApi.createUser(submissionData);
@@ -55,7 +56,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 			onRefresh();
 			onClose();   // 모달 닫기
 		}).catch((err) => {
-			console.error("사용자 저장 실패:", err);
+			Notify.toastApiFailure(err, "사용자 저장 실패");
 		});
 	};
 

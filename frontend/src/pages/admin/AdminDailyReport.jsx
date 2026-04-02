@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
+import 'assets/css/report.css';
+import 'assets/css/attendance.css';
+
 import { reportApi } from 'api/reportApi';
+import IdCopyChip from 'components/common/IdCopyChip';
 import SideDrawer from 'components/common/SideDrawer';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	formatYmdToWeekKo,
@@ -12,9 +14,7 @@ import {
 	startOfWeekMonday,
 	toYmd,
 } from 'utils/dateUtils';
-import 'assets/css/report.css';
-import 'assets/css/attendance.css';
-import IdCopyChip from 'components/common/IdCopyChip';
+import * as Notify from 'utils/toastUtils';
 
 const MONITOR_TABS = [
 	{ id: 'daily', label: '일일보고 작성 현황' },
@@ -93,8 +93,7 @@ const AdminDailyReport = () => {
 			const res = await reportApi.getAdminDailyStatus(dailyWorkYmd);
 			setDailyRows(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '일일 현황을 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '일일 현황을 불러오지 못했습니다.');
 			setDailyRows([]);
 		} finally {
 			setDailyLoading(false);
@@ -107,8 +106,7 @@ const AdminDailyReport = () => {
 			const res = await reportApi.getAdminWeekStatus(mondayYmd);
 			setWeeklyRows(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '주간 현황을 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '주간 현황을 불러오지 못했습니다.');
 			setWeeklyRows([]);
 		} finally {
 			setWeeklyLoading(false);
@@ -177,8 +175,7 @@ const AdminDailyReport = () => {
 			setBundleDailies(Array.isArray(res.data?.dailies) ? res.data.dailies : []);
 			setBundleWeekly(res.data?.weekly ?? null);
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '상세를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '상세를 불러오지 못했습니다.');
 		} finally {
 			setBundleLoading(false);
 		}

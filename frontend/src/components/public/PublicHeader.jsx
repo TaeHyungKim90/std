@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import ApplicantProfileModal from './ApplicantProfileModal';
 import 'assets/css/publicHeader.css';
-import { PATHS } from 'constants/paths';
+
 import { recruitmentApi } from 'api/recruitmentApi';
+import { PATHS } from 'constants/paths';
 import { useApplicantSession } from 'hooks/useApplicantSession';
+import React, { useState } from 'react';
+import { Link, useLocation,useNavigate } from 'react-router-dom';
+import * as Notify from 'utils/toastUtils';
+
+import ApplicantProfileModal from './ApplicantProfileModal';
 
 const PublicHeader = () => {
 	const navigate = useNavigate();

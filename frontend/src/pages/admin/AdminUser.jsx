@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
 import IdCopyChip from 'components/common/IdCopyChip';
+import { useLoading } from 'context/LoadingContext';
+import React, { useEffect, useState } from 'react';
+import * as Notify from 'utils/toastUtils';
 const AdminUser = () => {
     const { showLoading, hideLoading } = useLoading();
     const [users, setUsers] = useState([]);
@@ -18,16 +18,14 @@ const AdminUser = () => {
 
     const refreshUsers = () =>
         loadUsers().catch((err) => {
-            console.error("유저 로드 실패", err);
-            Notify.toastError("사용자 목록을 불러오지 못했습니다.");
+            Notify.toastApiFailure(err, "사용자 목록을 불러오지 못했습니다.");
         });
 
     useEffect(() => {
         showLoading("사용자 목록을 불러오는 중입니다... ⏳");
         loadUsers()
             .catch((err) => {
-                console.error("유저 로드 실패", err);
-                Notify.toastError("사용자 목록을 불러오지 못했습니다.");
+                Notify.toastApiFailure(err, "사용자 목록을 불러오지 못했습니다.");
             })
             .finally(() => hideLoading());
     }, [showLoading, hideLoading]);

@@ -1,14 +1,14 @@
-import React, { lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-
-import PrivateRoute from 'components/common/PrivateRoute';
 import AdminRoute from 'components/common/AdminRoute';
 import Layout from 'components/common/Layout';
+import PrivateRoute from 'components/common/PrivateRoute';
+import { PATHS } from 'constants/paths';
+import React, { lazy } from 'react';
+import { Navigate,Route, Routes } from 'react-router-dom';
+
+import adminRoutes from './adminRoutes';
 import authRoutes from './authRoutes';
 import hrRoutes from './hrRoutes';
-import adminRoutes from './adminRoutes';
 import publicRoutes from './publicRoutes';
-import { PATHS } from 'constants/paths';
 
 const NotFoundPage = lazy(() => import('pages/public/NotFoundPage'));
 

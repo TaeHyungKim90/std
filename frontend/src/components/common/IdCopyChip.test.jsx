@@ -1,8 +1,9 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import IdCopyChip from './IdCopyChip';
+import React from 'react';
 import * as Notify from 'utils/toastUtils';
+
+import IdCopyChip from './IdCopyChip';
 
 jest.mock('utils/toastUtils', () => ({
 	toastSuccess: jest.fn(),
@@ -28,6 +29,8 @@ describe('IdCopyChip', () => {
 
 		await waitFor(() => {
 			expect(navigator.clipboard.writeText).toHaveBeenCalledWith(longId);
+		});
+		await waitFor(() => {
 			expect(Notify.toastSuccess).toHaveBeenCalledWith('클립보드에 복사했습니다.');
 		});
 	});
@@ -79,6 +82,8 @@ describe('IdCopyChip', () => {
 
 			await waitFor(() => {
 				expect(Notify.toastSuccess).toHaveBeenCalledWith('클립보드에 복사했습니다.');
+			});
+			await waitFor(() => {
 				expect(Notify.toastWarn).not.toHaveBeenCalled();
 			});
 			expect(execCmd).toHaveBeenCalledWith('copy');
@@ -101,6 +106,8 @@ describe('IdCopyChip', () => {
 					expect.stringContaining('HTTPS'),
 					expect.objectContaining({ duration: 7000 }),
 				);
+			});
+			await waitFor(() => {
 				expect(Notify.toastSuccess).not.toHaveBeenCalled();
 			});
 		} finally {

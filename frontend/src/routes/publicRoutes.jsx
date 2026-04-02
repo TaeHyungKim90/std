@@ -1,7 +1,7 @@
-import React, { lazy } from 'react';
-import { Route } from 'react-router-dom';
 import PublicLayout from 'components/public/PublicLayout';
 import { PATHS, ROUTE_SEGMENTS } from 'constants/paths';
+import React, { lazy } from 'react';
+import { Route } from 'react-router-dom';
 
 const JobListPage = lazy(() => import('pages/public/JobListPage'));
 const JobDetailPage = lazy(() => import('pages/public/JobDetailPage'));

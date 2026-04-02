@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
 import { recruitmentApi } from 'api/recruitmentApi';
 import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
-import { useLoading } from 'context/LoadingContext';
-import { formatPhoneNumber, formatDate } from 'utils/commonUtils';
 import { DEFAULT_ADMIN_MAX_PAGE_SIZE } from 'constants/apiConfig';
+import { useLoading } from 'context/LoadingContext';
+import React, { useEffect,useState } from 'react';
+import { formatDate,formatPhoneNumber } from 'utils/commonUtils';
+import * as Notify from 'utils/toastUtils';
 const STATUS_OPTIONS = [
 	{ id: 'all', title: '전체 보기', color: '#111' },
 	{ id: 'applied', title: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
@@ -44,8 +44,7 @@ const ApplicantStatus = () => {
 				setJobs(all);
 				if (all.length > 0) setSelectedJobId(all[0].id);
 			} catch (err) {
-				console.error("공고 로드 실패", err);
-				Notify.toastError("공고 로드에 실패했습니다.");
+				Notify.toastApiFailure(err, "공고 로드에 실패했습니다.");
 			} finally {
 				hideLoading();
 			}
@@ -68,9 +67,8 @@ const ApplicantStatus = () => {
 				setSearchTerm('');
 				setFilterStatus('all');
 			} catch (err) {
-				console.error("지원자 로드 실패:", err);
 				setApplications([]);
-				Notify.toastError("지원자 로드에 실패했습니다.");
+				Notify.toastApiFailure(err, "지원자 로드에 실패했습니다.");
 			} finally {
 				hideLoading();
 			}

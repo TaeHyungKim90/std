@@ -1,6 +1,6 @@
-import * as Notify from 'utils/toastUtils';
 import { client } from 'api/axiosInstance';
 import { BASE_URL } from 'constants/apiConfig';
+import * as Notify from 'utils/toastUtils';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
 export function getApiOrigin() {
@@ -43,7 +43,7 @@ export function getFilePreviewUrl(fileUrl) {
  * @param {number} fileId - uploaded_files.id
  * @param {string} [fallbackName] - 표시·다운로드용 파일명 힌트
  */
-export async function openAuthenticatedDownloadByFileId(fileId, fallbackName) {
+export async function openAuthenticatedDownloadByFileId(fileId, _fallbackName) {
 	try {
 		const res = await client.get(`/common/download/${fileId}`, {
 			responseType: 'blob',
@@ -57,7 +57,7 @@ export async function openAuthenticatedDownloadByFileId(fileId, fallbackName) {
 		window.open(url, '_blank', 'noopener,noreferrer');
 		setTimeout(() => URL.revokeObjectURL(url), 120_000);
 	} catch (err) {
-		Notify.toastError(err.message || '파일을 열 수 없습니다.');
+		Notify.toastApiFailure(err, '파일을 열 수 없습니다.');
 	}
 }
 

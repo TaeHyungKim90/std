@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
-import { syncApplicantSessionFromServer, clearCachedApplicantUser } from 'utils/applicantSession';
 import { PATHS } from 'constants/paths';
+import React, { useState } from 'react';
+import { Link, useLocation,useNavigate } from 'react-router-dom';
+import { clearCachedApplicantUser,syncApplicantSessionFromServer } from 'utils/applicantSession';
+import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 
 const ApplicantLoginPage = () => {
 	const navigate = useNavigate();

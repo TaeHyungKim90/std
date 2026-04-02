@@ -1,9 +1,10 @@
-import React from 'react';
 import 'assets/css/messageReadModal.css';
-import { formatDate } from 'utils/commonUtils';
+
 import parse from 'html-react-parser';
-import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import React from 'react';
+import { formatDate } from 'utils/commonUtils';
 import { openAuthenticatedDownloadByFileId } from 'utils/fileUtils';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 const MessageReadModal = ({ isOpen, onClose, message }) => {
     if (!isOpen || !message) return null;
 
@@ -26,7 +27,7 @@ const MessageReadModal = ({ isOpen, onClose, message }) => {
                             }
                         });
                     }
-                    const { style, ...otherAttribs } = domNode.attribs;
+                    const { style: _style, ...otherAttribs } = domNode.attribs;
                     return (
                         <img 
                             {...otherAttribs} 

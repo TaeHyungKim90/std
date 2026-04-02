@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { recruitmentApi } from 'api/recruitmentApi';
-import SunEditor from 'suneditor-react';
 import 'assets/css/admin.css';
+
+import { recruitmentApi } from 'api/recruitmentApi';
+import React, { useEffect,useState } from 'react';
+import SunEditor from 'suneditor-react';
+import * as Notify from 'utils/toastUtils';
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 	const [formData, setFormData] = useState({
 		title: '',

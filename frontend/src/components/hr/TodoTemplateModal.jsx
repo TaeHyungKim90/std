@@ -1,9 +1,10 @@
+import 'assets/css/todoTemplateModal.css';
+
+import { todoService } from 'api/todoApi';
+import AppModal from 'components/common/AppModal';
 import React from 'react';
 import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
-import { todoService } from 'api/todoApi';
-import AppModal from 'components/common/AppModal';
-import 'assets/css/todoTemplateModal.css';
 
 const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCategoriesAndConfigs }) => {
 	if (!isOpen) return null;

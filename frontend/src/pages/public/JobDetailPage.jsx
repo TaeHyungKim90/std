@@ -1,11 +1,10 @@
-import React from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLocation, useNavigate } from 'react-router-dom';
-
+import { pathCareersJobApply,PATHS } from 'constants/paths';
 import parse from 'html-react-parser';
-import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
-import { PATHS, pathCareersJobApply } from 'constants/paths';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
+import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
+import * as Notify from 'utils/toastUtils';
 
 const JobDetailPage = () => {
 	const { state } = useLocation();
@@ -52,7 +51,7 @@ const JobDetailPage = () => {
 						});
 					}
 
-					const { style, ...otherAttribs } = domNode.attribs;
+					const { style: _style, ...otherAttribs } = domNode.attribs;
 
 					return (
 						<img 

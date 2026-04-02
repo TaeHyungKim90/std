@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import * as Notify from 'utils/toastUtils';
-import { useLoading } from 'context/LoadingContext';
-import { useNavigate } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
-import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { DEFAULT_PUBLIC_JOBS_PAGE_SIZE } from 'constants/apiConfig';
 import { pathCareersJob } from 'constants/paths';
+import { useLoading } from 'context/LoadingContext';
+import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
+import React, { useCallback,useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import * as Notify from 'utils/toastUtils';
 
 const PAGE_SIZE = DEFAULT_PUBLIC_JOBS_PAGE_SIZE;
 
@@ -26,8 +26,7 @@ const JobListPage = () => {
 			setJobs(Array.isArray(d?.items) ? d.items : []);
 			setTotal(typeof d?.total === 'number' ? d.total : 0);
 		} catch (error) {
-			console.error('공고 로드 실패', error);
-			Notify.toastError(error.message || '공고를 불러오지 못했습니다.');
+			Notify.toastApiFailure(error, '공고를 불러오지 못했습니다.');
 		} finally {
 			hideLoading();
 		}

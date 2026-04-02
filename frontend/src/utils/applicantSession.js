@@ -9,11 +9,11 @@
  */
 import { recruitmentApi } from 'api/recruitmentApi';
 import {
-	APPLICANT_USER_STORAGE_KEY,
 	APPLICANT_SESSION_UPDATED_EVENT,
+	APPLICANT_USER_STORAGE_KEY,
 } from 'constants/applicantCache';
 
-export { APPLICANT_USER_STORAGE_KEY, APPLICANT_SESSION_UPDATED_EVENT };
+export { APPLICANT_SESSION_UPDATED_EVENT,APPLICANT_USER_STORAGE_KEY };
 
 function dispatchApplicantSessionUpdated(user) {
 	window.dispatchEvent(

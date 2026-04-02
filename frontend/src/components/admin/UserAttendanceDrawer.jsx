@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import 'assets/css/attendance.css';
-import * as Notify from 'utils/toastUtils';
+
 import { adminApi } from 'api/adminApi';
 import SideDrawer from 'components/common/SideDrawer';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	addMonths,
@@ -19,6 +19,7 @@ import {
 	toTimeInputValue,
 	toYmd,
 } from 'utils/dateUtils';
+import * as Notify from 'utils/toastUtils';
 
 const STATUS_OPTIONS = [
 	{ value: 'NORMAL', label: '정상출근' },
@@ -157,8 +158,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 			const list = Array.isArray(res.data?.items) ? res.data.items : [];
 			setItems(list);
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(err.message || '근태 목록을 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '근태 목록을 불러오지 못했습니다.');
 			setItems([]);
 		} finally {
 			setLoading(false);
@@ -194,8 +194,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 			setEditingId(null);
 			await loadRange();
 		} catch (err) {
-			console.error(err);
-			Notify.toastError(err.message || '저장에 실패했습니다.');
+			Notify.toastApiFailure(err, '저장에 실패했습니다.');
 		} finally {
 			setSavingId(null);
 		}
