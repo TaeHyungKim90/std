@@ -1,0 +1,10 @@
+{
+	"executionEnvironments": [
+		{
+			"root": "backend",
+			"pythonVersion": "3.11",
+			"extraPaths": ["backend/app", "backend/tests"]
+		}
+	],
+	"exclude": ["frontend/node_modules", "**/node_modules"]
+}
