@@ -1,15 +1,28 @@
 /* PublicHeader.jsx */
 
 .public-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 40px;
+    width: 100%;
     border-bottom: 1px solid #eaeaea;
     background: #fff;
     position: sticky;
     top: 0;
     z-index: 100;
+}
+
+/* 본문(.public-page-shell)과 달리 헤더는 max-width 없이 전체 폭 + 가장자리만 여백 (HR GNB와 동일 패턴) */
+.public-header__inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 15px clamp(1rem, 2.5vw, 2rem);
+}
+
+.public-header__actions-wrap {
+    flex-shrink: 0;
 }
 
 .public-header__brand-nav {
@@ -33,7 +46,7 @@
 
 .public-header__nav-link {
     text-decoration: none;
-    color: #333;
+    color: var(--font-color, #141414);
 }
 
 .public-header__actions {

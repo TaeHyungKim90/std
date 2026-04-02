@@ -14,7 +14,16 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 50px 20px;
+    /* 가로 여백은 .public-page-shell(careers-main-shell)에 맡김 */
+    padding: 50px 0;
+}
+
+.careers-main-shell {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    width: 100%;
+    min-width: 0;
 }
 
 /* 배경 블러 오버레이 */
@@ -28,12 +37,12 @@
     z-index: 0;
 }
 
-/* 2. 컨텐츠 래퍼 (배경 위로 띄우기) */
+/* 2. 컨텐츠 래퍼 (배경 위로 띄우기) — .public-page-shell(90rem) 안에서 더 넓게 쓰기 */
 .careers-content-wrapper {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -53,7 +62,7 @@
 ========================================= */
 .careers-header { text-align: center; margin-bottom: 50px; }
 .careers-header h1 { font-size: 2.5rem; font-weight: 800; color: #111; margin-bottom: 15px; }
-.careers-header p { font-size: 1.1rem; color: #333; font-weight: 600; }
+.careers-header p { font-size: 1.1rem; color: var(--font-color, #141414); font-weight: 600; }
 
 .job-cards { display: flex; flex-direction: column; gap: 16px; }
 .job-card {
@@ -66,7 +75,7 @@
 }
 .job-card:hover {
     background: rgba(255, 255, 255, 0.95);
-    border-color: #3FAF7A;
+    border-color: var(--primary-color, #3faf7a);
     box-shadow: 0 10px 20px rgba(63, 175, 122, 0.15);
     transform: translateY(-2px);
 }
@@ -75,7 +84,7 @@
 
 /* 공통 뒤로가기 버튼 */
 .btn-back {
-    background: rgba(255,255,255,0.7); border: 1px solid #ddd; color: #333; font-size: 0.95rem;
+    background: rgba(255,255,255,0.7); border: 1px solid var(--border-color, #e2dfd8); color: var(--font-color, #141414); font-size: 0.95rem;
     font-weight: 600; cursor: pointer; padding: 8px 16px; display: inline-flex;
     align-items: center; transition: all 0.2s; border-radius: 8px; margin-bottom: 20px;
     backdrop-filter: blur(5px);
@@ -85,26 +94,26 @@
 /* =========================================
    공고 상세 & 입사 지원 (TUI Editor 적용)
 ========================================= */
-.job-detail-container { max-width: 800px; }
+.job-detail-container { max-width: 960px; }
 .job-detail-box h1 { margin-top: 10px; font-size: 2.2rem; color: #111; }
-.job-deadline { color: #666; margin-bottom: 30px; font-weight: 500; }
+.job-deadline { color: var(--bq-text-dim, #8a8a8a); margin-bottom: 30px; font-weight: 500; }
 
 .job-viewer-wrapper {
     min-height: 300px;
     padding: 20px 0;
     border: none;
     background: transparent;
-    color: #222;
+    color: var(--font-color, #141414);
 }
 
 .job-apply-section { text-align: center; margin-top: 50px; }
 
 .btn-apply-large {
-    padding: 15px 40px; font-size: 1.2rem; font-weight: bold; background-color: #3FAF7A;
+    padding: 15px 40px; font-size: 1.2rem; font-weight: bold; background-color: var(--primary-color, #3faf7a);
     color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease-in-out;
 }
 .btn-apply-large:hover { 
-    background-color: #328C62 !important; 
+    background-color: var(--primary-hover-color, #359a6a) !important; 
     transform: translateY(-2px); 
     box-shadow: 0 6px 15px rgba(63, 175, 122, 0.3); 
 }
@@ -133,13 +142,13 @@
 }
 
 .auth-glass-box button[type="submit"]:hover:not(:disabled) { 
-    background-color: #328C62 !important; 
+    background-color: var(--primary-hover-color, #359a6a) !important; 
     transform: translateY(-2px); 
 }
 
 /* MyApplicationsPage.jsx */
 .careers-content-wrapper--narrow {
-    max-width: 850px;
+    max-width: 1040px;
 }
 
 .my-applications__loading {
@@ -175,7 +184,7 @@
 }
 
 .my-applications__empty-title {
-    color: #333;
+    color: var(--font-color, #141414);
     margin-bottom: 10px;
 }
 
@@ -373,7 +382,7 @@
 .job-apply__applicant-title {
     margin: 0 0 15px 0;
     font-size: 1.1rem;
-    color: #333;
+    color: var(--font-color, #141414);
 }
 
 .job-apply__applicant-grid {
@@ -404,7 +413,7 @@
 }
 
 .job-apply__submit--ready {
-    background: #3daf7a;
+    background: var(--primary-color, #3faf7a);
     color: #fff;
     cursor: pointer;
 }

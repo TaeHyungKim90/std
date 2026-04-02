@@ -1,4 +1,4 @@
-/* 마이페이지: 기본은 웹(넓은 레이아웃), 좁은 화면에서만 모바일용 스타일 */
+/* 마이페이지: 기본은 웹(넓은 레이아웃), 좁은 화면에서만 모바일용 스타일 — HR 팔레트 */
 
 .my-profile-page {
 	box-sizing: border-box;
@@ -9,13 +9,13 @@
 .my-profile-page__title {
 	font-size: 1.5rem;
 	font-weight: 800;
-	color: #111827;
+	color: var(--font-color, #141414);
 	margin: 0 0 8px;
 	letter-spacing: -0.02em;
 }
 
 .my-profile-page__lead {
-	color: #6b7280;
+	color: var(--bq-text-dim, #8a8a8a);
 	font-size: 0.95rem;
 	margin: 0 0 28px;
 	line-height: 1.5;
@@ -23,12 +23,12 @@
 }
 
 .my-profile-card {
-	background: #fff;
-	border: 1px solid #e5e7eb;
+	background: var(--white-color, #fff);
+	border: 1px solid var(--border-color, #e2dfd8);
 	border-radius: 12px;
 	padding: 22px 24px;
 	margin-bottom: 20px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 2px rgba(20, 20, 20, 0.05);
 	width: 100%;
 	box-sizing: border-box;
 }
@@ -36,10 +36,10 @@
 .my-profile-card__title {
 	font-size: 1.05rem;
 	font-weight: 700;
-	color: #1f2937;
+	color: var(--font-color, #141414);
 	margin: 0 0 16px;
 	padding-bottom: 10px;
-	border-bottom: 1px solid #f3f4f6;
+	border-bottom: 1px solid var(--border-color, #e2dfd8);
 }
 
 /* 데스크톱: 라벨 열 + 입력이 남은 폭을 쓰도록 */
@@ -52,12 +52,12 @@
 
 .my-profile-grid label {
 	font-size: 0.875rem;
-	color: #6b7280;
+	color: var(--bq-text-dim, #8a8a8a);
 }
 
 .my-profile-grid .my-profile-value {
 	font-size: 0.95rem;
-	color: #111827;
+	color: var(--font-color, #141414);
 }
 
 .my-profile-grid input[type='text'],
@@ -67,25 +67,25 @@
 	width: 100%;
 	max-width: 100%;
 	padding: 8px 12px;
-	border: 1px solid #d1d5db;
+	border: 1px solid var(--border-color, #e2dfd8);
 	border-radius: 8px;
 	font-size: 0.95rem;
 }
 
 .my-profile-grid input:focus {
 	outline: none;
-	border-color: #6366f1;
-	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+	border-color: var(--primary-color, #3faf7a);
+	box-shadow: 0 0 0 3px rgba(63, 175, 122, 0.15);
 }
 
 .my-profile-readonly {
-	background: #f9fafb;
-	color: #4b5563;
+	background: #f4f3ef;
+	color: var(--bq-text-dim, #8a8a8a);
 }
 
 .my-profile-hint {
 	font-size: 0.8rem;
-	color: #9ca3af;
+	color: var(--bq-text-dim, #8a8a8a);
 	margin-top: 4px;
 }
 
@@ -107,12 +107,12 @@
 }
 
 .my-profile-btn--primary {
-	background: #4f46e5;
+	background: var(--primary-color, #3faf7a);
 	color: #fff;
 }
 
 .my-profile-btn--primary:hover:not(:disabled) {
-	background: #4338ca;
+	background: var(--primary-hover-color, #359a6a);
 }
 
 .my-profile-btn:disabled {
@@ -122,19 +122,19 @@
 
 .vacation-summary-text {
 	font-size: 1rem;
-	color: #374151;
+	color: var(--font-color, #141414);
 	margin: 0 0 14px;
 	line-height: 1.6;
 }
 
 .vacation-summary-text strong {
-	color: #111827;
+	color: var(--font-color, #141414);
 	font-weight: 700;
 }
 
 .vacation-progress {
 	height: 12px;
-	background: #e5e7eb;
+	background: var(--border-color, #e2dfd8);
 	border-radius: 999px;
 	overflow: hidden;
 	margin-bottom: 8px;
@@ -144,7 +144,7 @@
 .vacation-progress__fill {
 	height: 100%;
 	border-radius: 999px;
-	background: linear-gradient(90deg, #6366f1, #8b5cf6);
+	background: linear-gradient(90deg, var(--primary-color, #3faf7a), #5ccc94);
 	transition: width 0.35s ease;
 }
 
@@ -152,11 +152,11 @@
 	display: flex;
 	justify-content: space-between;
 	font-size: 0.8rem;
-	color: #6b7280;
+	color: var(--bq-text-dim, #8a8a8a);
 }
 
 .my-profile-empty {
-	color: #9ca3af;
+	color: var(--bq-text-dim, #8a8a8a);
 	font-size: 0.95rem;
 	margin: 0;
 }
@@ -179,7 +179,7 @@
 
 	.my-profile-grid label {
 		font-weight: 600;
-		color: #374151;
+		color: var(--font-color, #141414);
 		margin-top: 4px;
 	}
 
