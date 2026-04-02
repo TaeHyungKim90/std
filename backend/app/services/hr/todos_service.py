@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+from typing import Any
+
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
@@ -10,14 +12,17 @@ from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
 
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
-def get_deduct_days(db: Session, category_key: str, start_date=None, end_date=None) -> float:
+def get_deduct_days(db: Session, category_key: Any, start_date=None, end_date=None) -> float:
 	"""카테고리 키와 날짜 기간에 따라 차감할 연차 일수를 정확히 계산합니다."""
-	if category_key not in VACATION_DEDUCTIBLE_CATEGORIES:
+	if category_key is None:
+		return 0.0
+	key = str(category_key).strip()
+	if key not in VACATION_DEDUCTIBLE_CATEGORIES:
 		return 0.0
 
 	# 날짜가 명확하지 않을 때의 기본값
 	if not start_date or not end_date:
-		return 0.5 if category_key in VACATION_HALF_DAY_CATEGORIES else 1.0
+		return 0.5 if key in VACATION_HALF_DAY_CATEGORIES else 1.0
 
 	# 문자열로 들어올 경우를 대비한 방어 코드 (ISO 포맷 파싱)
 	if isinstance(start_date, str):
@@ -30,7 +35,7 @@ def get_deduct_days(db: Session, category_key: str, start_date=None, end_date=No
 	if days < 1: 
 		days = 1
 
-	if category_key == VACATION_CATEGORIES["FULL"]:
+	if key == VACATION_CATEGORIES["FULL"]:
 		start_day = start_date.date()
 		end_day = end_date.date()
 

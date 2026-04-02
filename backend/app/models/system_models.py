@@ -9,7 +9,7 @@ class Department(Base):
 
 	id = Column[int](Integer, primary_key=True, index=True)
 	department_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column[DateTime](DateTime, server_default=func.now())
+	created_at = Column(DateTime, server_default=func.now())
 
 
 class Position(Base):
@@ -17,5 +17,5 @@ class Position(Base):
 
 	id = Column[int](Integer, primary_key=True, index=True)
 	position_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column[DateTime](DateTime, server_default=func.now())
+	created_at = Column(DateTime, server_default=func.now())
 

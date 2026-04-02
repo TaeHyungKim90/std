@@ -1,6 +1,9 @@
+from typing import cast
+
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
-from models.auth_models import User, UserVacation
+from models.auth_models import User, UserAvatarSetting, UserVacation
+from models.system_models import Department, Position
 from models.hr_models import Todo
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
@@ -10,7 +13,34 @@ from models.holiday_models import Holiday
 
 # 1. 전체 사용자 목록 조회
 def get_all_users(db: Session):
-	return db.query(User).options(joinedload(User.vacation)).order_by(User.id.desc()).all()
+	return (
+		db.query(User)
+		.options(
+			joinedload(User.vacation),
+			joinedload(User.avatar_setting),
+			joinedload(User.department),
+			joinedload(User.position),
+		)
+		.order_by(User.id.desc())
+		.all()
+	)
+
+
+def _resolve_department_position(db: Session, payload) -> tuple[int | None, int | None]:
+	department_id = getattr(payload, "department_id", None)
+	position_id = getattr(payload, "position_id", None)
+
+	if department_id is not None:
+		department = db.query(Department).filter(Department.id == department_id).first()
+		if not department:
+			raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
+
+	if position_id is not None:
+		position = db.query(Position).filter(Position.id == position_id).first()
+		if not position:
+			raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
+
+	return department_id, position_id
 
 # 2. 신규 사용자 등록 (관리자용)
 def create_user_by_admin(db: Session, payload: UserCreate):
@@ -19,14 +49,15 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 		raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
 	hashed_pw = get_password_hash(payload.user_password)
+	department_id, position_id = _resolve_department_position(db, payload)
 	new_user = User(
 		user_login_id=payload.user_login_id,
 		user_password=hashed_pw,
 		user_name=payload.user_name,
 		user_nickname=payload.user_nickname,
 		user_profile_image_url=payload.user_profile_image_url,
-		user_department=payload.user_department,
-		user_position=payload.user_position,
+		department_id=department_id,
+		position_id=position_id,
 		salary_bank_name=payload.salary_bank_name,
 		salary_account_number=payload.salary_account_number,
 		role=payload.role,
@@ -36,6 +67,16 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 	db.add(new_user)
 	db.commit()
 	db.refresh(new_user)
+	if payload.avatar_zoom is not None or payload.avatar_offset_x is not None or payload.avatar_offset_y is not None:
+		setting = UserAvatarSetting(
+			user_id=new_user.id,
+			zoom=payload.avatar_zoom if payload.avatar_zoom is not None else 1.0,
+			offset_x=payload.avatar_offset_x if payload.avatar_offset_x is not None else 0.0,
+			offset_y=payload.avatar_offset_y if payload.avatar_offset_y is not None else 0.0,
+		)
+		db.add(setting)
+		db.commit()
+		db.refresh(new_user)
 	return new_user
 
 # 3. 사용자 정보 수정
@@ -46,6 +87,11 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 
 	update_data = payload.model_dump(exclude_unset=True)
 	update_data.pop("user_login_id", None)
+	avatar_zoom = update_data.pop("avatar_zoom", None)
+	avatar_offset_x = update_data.pop("avatar_offset_x", None)
+	avatar_offset_y = update_data.pop("avatar_offset_y", None)
+	department_id = update_data.pop("department_id", None)
+	position_id = update_data.pop("position_id", None)
 	if "joined_at" in update_data:
 		update_data["join_date"] = update_data.pop("joined_at")
 	for key, value in update_data.items():
@@ -54,6 +100,36 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 				setattr(user, key, get_password_hash(value))
 		else:
 			setattr(user, key, value)
+
+	if "department_id" in payload.model_fields_set:
+		if department_id is None:
+			user.department_id = None
+		else:
+			department = db.query(Department).filter(Department.id == department_id).first()
+			if not department:
+				raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
+			user.department_id = department_id
+
+	if "position_id" in payload.model_fields_set:
+		if position_id is None:
+			user.position_id = None
+		else:
+			position = db.query(Position).filter(Position.id == position_id).first()
+			if not position:
+				raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
+			user.position_id = position_id
+
+	if avatar_zoom is not None or avatar_offset_x is not None or avatar_offset_y is not None:
+		setting = db.query(UserAvatarSetting).filter(UserAvatarSetting.user_id == user.id).first()
+		if not setting:
+			setting = UserAvatarSetting(user_id=user.id)
+			db.add(setting)
+		if avatar_zoom is not None:
+			setting.zoom = avatar_zoom
+		if avatar_offset_x is not None:
+			setting.offset_x = avatar_offset_x
+		if avatar_offset_y is not None:
+			setting.offset_y = avatar_offset_y
 
 	db.commit()
 	db.refresh(user)
@@ -91,7 +167,7 @@ def sync_all_users_vacation(db: Session):
 	global_start: date | None = None
 	global_end: date | None = None
 	for todo in vacation_todos:
-		todos_by_user.setdefault(todo.user_id, []).append(todo)
+		todos_by_user.setdefault(cast(str, todo.user_id), []).append(todo)
 		start_day = todo.start_date.date()
 		end_day = (todo.end_date or todo.start_date).date()
 		if global_start is None or start_day < global_start:
@@ -143,7 +219,7 @@ def sync_all_users_vacation(db: Session):
 		# - 연차(종일): 주말/공휴일 제외
 		# - 반차: 0.5 고정
 		recalculated_used_days = 0.0
-		for todo in todos_by_user.get(user.user_login_id, []):
+		for todo in todos_by_user.get(cast(str, user.user_login_id), []):
 			if todo.category not in VACATION_DEDUCTIBLE_CATEGORIES:
 				continue
 			if todo.category == "vacation_full":

@@ -39,8 +39,8 @@ class UserCreate(BaseModel):
 	user_phone_number: Optional[str] = None
 	# 사용자 프로필 확장
 	user_profile_image_url: Optional[str] = None
-	user_department: Optional[str] = None
-	user_position: Optional[str] = None
+	department_id: Optional[int] = None
+	position_id: Optional[int] = None
 	salary_bank_name: Optional[str] = None
 	salary_account_number: Optional[str] = None
 	role: str = Field("user", description="권한 (admin/user)")
@@ -49,6 +49,9 @@ class UserCreate(BaseModel):
 		validation_alias=AliasChoices("joined_at", "join_date", "joinDate"),
 	)
 	resignation_date: Optional[date] = None
+	avatar_zoom: Optional[float] = None
+	avatar_offset_x: Optional[float] = None
+	avatar_offset_y: Optional[float] = None
 
 	# 전화번호 숫자 10~11자리 검증
 	@field_validator('user_phone_number')
@@ -66,8 +69,8 @@ class UserUpdate(BaseModel):
 	user_nickname: Optional[str] = None
 	user_phone_number: Optional[str] = None
 	user_profile_image_url: Optional[str] = None
-	user_department: Optional[str] = None
-	user_position: Optional[str] = None
+	department_id: Optional[int] = None
+	position_id: Optional[int] = None
 	salary_bank_name: Optional[str] = None
 	salary_account_number: Optional[str] = None
 	role: Optional[str] = None
@@ -77,6 +80,9 @@ class UserUpdate(BaseModel):
 		validation_alias=AliasChoices("joined_at", "join_date", "joinDate"),
 	)
 	resignation_date: Optional[date] = None
+	avatar_zoom: Optional[float] = None
+	avatar_offset_x: Optional[float] = None
+	avatar_offset_y: Optional[float] = None
 
 	@field_validator('user_phone_number')
 	@classmethod
@@ -109,12 +115,15 @@ class MeProfilePatch(BaseModel):
 	user_nickname: Optional[str] = Field(None, max_length=50)
 	user_phone_number: Optional[str] = None
 	user_profile_image_url: Optional[str] = None
-	user_department: Optional[str] = None
-	user_position: Optional[str] = None
+	department_id: Optional[int] = None
+	position_id: Optional[int] = None
 	salary_bank_name: Optional[str] = None
 	salary_account_number: Optional[str] = None
 	current_password: Optional[str] = Field(None, description="비밀번호 변경 시 필수")
 	new_password: Optional[str] = Field(None, min_length=6, max_length=128, description="새 비밀번호")
+	avatar_zoom: Optional[float] = None
+	avatar_offset_x: Optional[float] = None
+	avatar_offset_y: Optional[float] = None
 
 	@field_validator("user_phone_number")
 	@classmethod
@@ -138,14 +147,19 @@ class UserResponse(BaseModel):
 	user_nickname: Optional[str]
 	user_phone_number: Optional[str] = None
 	user_profile_image_url: Optional[str] = None
-	user_department: Optional[str] = None
-	user_position: Optional[str] = None
+	department_id: Optional[int] = None
+	position_id: Optional[int] = None
+	department_name: Optional[str] = None
+	position_name: Optional[str] = None
 	salary_bank_name: Optional[str] = None
 	salary_account_number: Optional[str] = None
 	role: str
 	created_at: datetime
 	join_date: Optional[date] = None 
 	resignation_date: Optional[date] = None
+	avatar_zoom: float = 1.0
+	avatar_offset_x: float = 0.0
+	avatar_offset_y: float = 0.0
 	
 	# 연차 정보 포함
 	vacation: Optional[UserVacationResponse] = None 

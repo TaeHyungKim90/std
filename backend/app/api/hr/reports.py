@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from db.session import get_db
 from schemas.hr import reports_schemas
-from services.auth_service import get_current_user
+from services.auth_service import get_current_user, require_user_login_id
 from services.hr import reports_service as service
 from utils.date_validators import validate_report_date_range
 
@@ -24,7 +24,7 @@ def read_daily_range(
 		validate_report_date_range(date_to, "date_to")
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-	user_id = current_user.get("userId")
+	user_id = require_user_login_id(current_user)
 	return service.list_daily_range(db, user_id, date_from, date_to)
 
 
@@ -34,7 +34,7 @@ def upsert_daily(
 	db: Session = Depends(get_db),
 	current_user: dict = Depends(get_current_user),
 ):
-	user_id = current_user.get("userId")
+	user_id = require_user_login_id(current_user)
 	return service.upsert_daily(db, user_id, payload.report_date, payload.content)
 
 
@@ -48,7 +48,7 @@ def read_weekly(
 		validate_report_date_range(week_start, "week_start")
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-	user_id = current_user.get("userId")
+	user_id = require_user_login_id(current_user)
 	ws = service.monday_of(week_start)
 	return service.get_weekly(db, user_id, ws)
 
@@ -63,6 +63,6 @@ def upsert_weekly(
 		validate_report_date_range(payload.week_start_date, "week_start_date")
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-	user_id = current_user.get("userId")
+	user_id = require_user_login_id(current_user)
 	ws = service.monday_of(payload.week_start_date)
 	return service.upsert_weekly(db, user_id, ws, payload.summary)

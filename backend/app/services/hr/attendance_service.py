@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -9,8 +10,11 @@ from models.hr_models import Attendance, Todo
 from models.auth_models import User
 
 
-def is_vacation_status(status_str: str | None) -> bool:
-	"""Attendance.status 문자열 기반 휴가 키워드 판별."""
+def is_vacation_status(status_str: Any) -> bool:
+	"""Attendance.status 문자열 기반 휴가 키워드 판별.
+
+	SQLAlchemy 인스턴스의 status는 정적 분석상 Column[str]로 잡힐 수 있어 Any로 받음.
+	"""
 	if status_str is None:
 		return False
 	s = str(status_str)
@@ -76,7 +80,16 @@ def get_today_attendance(db: Session, user_id: str, today_date: date):
 	).first()
 
 # 2. 출근 데이터 생성 (Create)
-def create_clock_in(db: Session, user_id: str, current_time: datetime, status: str, location: str, lat: float, lng: float, note: str = None):
+def create_clock_in(
+	db: Session,
+	user_id: str,
+	current_time: datetime,
+	status: str,
+	location: str,
+	lat: float,
+	lng: float,
+	note: str | None = None,
+):
 	"""새로운 출퇴근 레코드를 생성하고 출근 정보를 기록합니다."""
 	# 최상단 방어 로직: 입사일 미등록자/휴가자 차단
 	assert_user_can_clock_in(db, user_id, current_time)
@@ -97,30 +110,41 @@ def create_clock_in(db: Session, user_id: str, current_time: datetime, status: s
 	return new_record
 
 # 3. 퇴근 데이터 업데이트 (Update)
-def update_clock_out(db: Session, record: Attendance, current_time: datetime, status: str, location: str, lat: float, lng: float, note: str = None):
+def update_clock_out(
+	db: Session,
+	record: Attendance,
+	current_time: datetime,
+	status: str,
+	location: str,
+	lat: float,
+	lng: float,
+	note: str | None = None,
+):
 	"""기존 레코드에 퇴근 정보를 업데이트하고 총 근무 시간을 계산합니다."""
-	record.clock_out_time = current_time
-	record.clock_out_location = location # 선택한 퇴근 장소 (본사, 출장 등)
-	record.clock_out_lat = lat			 # 퇴근 시 위도
-	record.clock_out_lng = lng			 # 퇴근 시 경도
-	
+	# Column[...] 인스턴스 필드 대입·조건 오탐 방지 (이 함수 범위만 Any)
+	rec: Any = record
+	rec.clock_out_time = current_time
+	rec.clock_out_location = location # 선택한 퇴근 장소 (본사, 출장 등)
+	rec.clock_out_lat = lat			 # 퇴근 시 위도
+	rec.clock_out_lng = lng			 # 퇴근 시 경도
+
 	if note:
-		record.note = note # 메모가 새로 들어오면 갱신
+		rec.note = note # 메모가 새로 들어오면 갱신
 
 	# ⏱️ 총 근무 시간(분) 계산
 	# 퇴근 시간 - 출근 시간 후 초 단위 차이를 60으로 나누어 '분' 단위 정수로 저장
-	if not record.clock_in_time:
+	if rec.clock_in_time is None:
 		# 안전 방어: 출근 시간이 없으면 계산 불가
-		record.work_minutes = 0
+		rec.work_minutes = 0
 	else:
-		time_diff = current_time - record.clock_in_time
+		time_diff = current_time - rec.clock_in_time
 		total_minutes = max(0, int(time_diff.total_seconds() / 60))
 		# 점심시간(휴게시간) 1시간 자동 공제: 8시간(480분) 이상 체류 시
 		if total_minutes >= 480:
 			total_minutes = max(0, total_minutes - 60)
-		record.work_minutes = total_minutes
-	record.status = status # 필요 시 상태 업데이트 (현재는 "NORMAL" 유지)
+		rec.work_minutes = total_minutes
+	rec.status = status # 필요 시 상태 업데이트 (현재는 "NORMAL" 유지)
 
 	db.commit()
-	db.refresh(record)
-	return record
+	db.refresh(rec)
+	return rec

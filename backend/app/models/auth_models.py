@@ -19,8 +19,8 @@ class User(Base):
 	user_nickname = Column[str](String(50))							 		# 닉네임
 	# 사용자 프로필 확장 필드(사진/부서/직급/급여계좌)
 	user_profile_image_url = Column[str](String(500), nullable=True)		# 파일 저장 경로(/uploads/...)
-	user_department = Column[str](String(100), nullable=True)				# 부서
-	user_position = Column[str](String(100), nullable=True)					# 직급
+	department_id = Column[int](Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, index=True)
+	position_id = Column[int](Integer, ForeignKey("positions.id", ondelete="SET NULL"), nullable=True, index=True)
 	salary_bank_name = Column[str](String(100), nullable=True)				# 급여 은행명
 	salary_account_number = Column[str](String(50), nullable=True)			# 급여 계좌번호
 	role = Column[str](String(20), default="user")					 		# 권한
@@ -29,6 +29,29 @@ class User(Base):
 	join_date = Column[date](Date, nullable=True) 
 	resignation_date = Column[date](Date, nullable=True)
 	vacation = relationship("UserVacation", back_populates="user", uselist=False, cascade="all, delete")
+	avatar_setting = relationship("UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan")
+	department = relationship("Department", foreign_keys=[department_id])
+	position = relationship("Position", foreign_keys=[position_id])
+
+	@property
+	def avatar_zoom(self) -> float:
+		return float(self.avatar_setting.zoom) if self.avatar_setting and self.avatar_setting.zoom is not None else 1.0
+
+	@property
+	def avatar_offset_x(self) -> float:
+		return float(self.avatar_setting.offset_x) if self.avatar_setting and self.avatar_setting.offset_x is not None else 0.0
+
+	@property
+	def avatar_offset_y(self) -> float:
+		return float(self.avatar_setting.offset_y) if self.avatar_setting and self.avatar_setting.offset_y is not None else 0.0
+
+	@property
+	def department_name(self) -> str | None:
+		return self.department.department_name if self.department else None
+
+	@property
+	def position_name(self) -> str | None:
+		return self.position.position_name if self.position else None
 
 class UserVacation(Base):
 	__tablename__ = "user_vacations"
@@ -42,3 +65,17 @@ class UserVacation(Base):
 	
 	# User 테이블과의 연결 고리
 	user = relationship("User", back_populates="vacation")
+
+
+class UserAvatarSetting(Base):
+	__tablename__ = "user_avatar_settings"
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	user_id = Column[int](Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+	zoom = Column[Any](Float, nullable=False, default=1.0)
+	offset_x = Column[Any](Float, nullable=False, default=0.0)
+	offset_y = Column[Any](Float, nullable=False, default=0.0)
+	created_at = Column[datetime](DateTime, server_default=func.now())
+	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())
+
+	user = relationship("User", back_populates="avatar_setting")

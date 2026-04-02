@@ -1,6 +1,7 @@
 import uuid
 import re
 from datetime import date, datetime
+from typing import Any
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
 from fastapi.responses import RedirectResponse
@@ -10,7 +11,8 @@ from core.config import settings
 from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
-from models.auth_models import User
+from models.auth_models import User, UserAvatarSetting
+from models.system_models import Department, Position
 from schemas import auth_schemas
 from services import auth_service as service
 
@@ -171,7 +173,7 @@ def get_my_profile(
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 정보가 올바르지 않습니다.")
 	user = (
 		db.query(User)
-		.options(joinedload(User.vacation))
+		.options(joinedload(User.vacation), joinedload(User.avatar_setting), joinedload(User.department), joinedload(User.position))
 		.filter(User.id == user_pk)
 		.first()
 	)
@@ -192,15 +194,17 @@ def patch_my_profile(
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 정보가 올바르지 않습니다.")
 	user = (
 		db.query(User)
-		.options(joinedload(User.vacation))
+		.options(joinedload(User.vacation), joinedload(User.avatar_setting), joinedload(User.department), joinedload(User.position))
 		.filter(User.id == user_pk)
 		.first()
 	)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
+	# Column[...] 제네릭으로 인스턴스 필드 대입이 오탐 나는 것을 피하기 위해 이 함수 안에서만 Any로 둡니다.
+	u: Any = user
 	data = body.model_dump(exclude_unset=True)
-	login_id = user.user_login_id or ""
+	login_id = str(u.user_login_id or "")
 	is_social = login_id.startswith(("kakao_", "naver_"))
 
 	if is_social and (data.get("current_password") or data.get("new_password")):
@@ -215,50 +219,75 @@ def patch_my_profile(
 				status_code=status.HTTP_400_BAD_REQUEST,
 				detail="비밀번호 변경 시 현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.",
 			)
-		if not verify_password(data["current_password"], user.user_password):
+		if not verify_password(data["current_password"], str(u.user_password)):
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="현재 비밀번호가 일치하지 않습니다.")
-		user.user_password = get_password_hash(data["new_password"])
+		u.user_password = get_password_hash(data["new_password"])
 
 	if "user_nickname" in data:
 		raw = data["user_nickname"]
 		if raw is None:
-			user.user_nickname = None
+			u.user_nickname = None
 		else:
 			s = str(raw).strip()
-			user.user_nickname = s if s else None
+			u.user_nickname = s if s else None
 
 	if "user_phone_number" in data:
-		user.user_phone_number = data["user_phone_number"]
+		u.user_phone_number = data["user_phone_number"]
+
+	avatar_zoom = data.pop("avatar_zoom", None)
+	avatar_offset_x = data.pop("avatar_offset_x", None)
+	avatar_offset_y = data.pop("avatar_offset_y", None)
+	if avatar_zoom is not None or avatar_offset_x is not None or avatar_offset_y is not None:
+		setting = db.query(UserAvatarSetting).filter(UserAvatarSetting.user_id == u.id).first()
+		if not setting:
+			setting = UserAvatarSetting(user_id=u.id)
+			db.add(setting)
+		if avatar_zoom is not None:
+			setting.zoom = avatar_zoom
+		if avatar_offset_x is not None:
+			setting.offset_x = avatar_offset_x
+		if avatar_offset_y is not None:
+			setting.offset_y = avatar_offset_y
 
 	# 사용자 프로필 확장 필드(부서/직급/급여계좌/사진 URL)
 	if "user_profile_image_url" in data:
-		user.user_profile_image_url = data["user_profile_image_url"] or None
+		u.user_profile_image_url = data["user_profile_image_url"] or None
 
-	if "user_department" in data:
-		raw = data["user_department"]
-		user.user_department = str(raw).strip() if raw else None
+	if "department_id" in data:
+		if data["department_id"] is None:
+			u.department_id = None
+		else:
+			dept = db.query(Department).filter(Department.id == data["department_id"]).first()
+			if not dept:
+				raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 부서입니다.")
+			u.department_id = dept.id
 
-	if "user_position" in data:
-		raw = data["user_position"]
-		user.user_position = str(raw).strip() if raw else None
+	if "position_id" in data:
+		if data["position_id"] is None:
+			u.position_id = None
+		else:
+			pos = db.query(Position).filter(Position.id == data["position_id"]).first()
+			if not pos:
+				raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 직급입니다.")
+			u.position_id = pos.id
 
 	if "salary_bank_name" in data:
 		raw = data["salary_bank_name"]
-		user.salary_bank_name = str(raw).strip() if raw else None
+		u.salary_bank_name = str(raw).strip() if raw else None
 
 	if "salary_account_number" in data:
 		raw = data["salary_account_number"]
 		if raw is None:
-			user.salary_account_number = None
+			u.salary_account_number = None
 		else:
 			# 숫자만 저장(입력값에 하이픈/공백이 섞여도 방어)
 			s = re.sub(r"\D+", "", str(raw)).strip()
-			user.salary_account_number = s if s else None
+			u.salary_account_number = s if s else None
 
 	db.commit()
-	db.refresh(user)
+	db.refresh(u)
 	# joinedload(vacation)은 refresh 후에도 세션에 남아 있음
-	return auth_schemas.UserResponse.model_validate(user)
+	return auth_schemas.UserResponse.model_validate(u)
 
 
 # ==========================================

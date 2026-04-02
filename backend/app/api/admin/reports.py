@@ -1,5 +1,6 @@
 from datetime import date
 import logging
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
@@ -65,8 +66,8 @@ def user_report_bundle(
 			ip = xff.split(",")[0].strip() if xff else (request.client.host if request.client else None)
 			audit_service.create_audit_log(
 				db,
-				admin_id=admin_user.id,
-				target_user_id=target_user.id,
+				admin_id=int(cast(int, admin_user.id)),
+				target_user_id=int(cast(int, target_user.id)),
 				action="READ_REPORT_BUNDLE",
 				endpoint=str(request.url.path),
 				ip_address=ip,

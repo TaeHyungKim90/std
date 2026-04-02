@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, cast
 
 from db.session import get_db
 from models.common_models import UploadedFile
@@ -16,18 +16,20 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # 파일 업로드 정책 설정
-ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"}
+ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".gif", ".doc", ".docx"}
 MAX_FILE_SIZE = 50 * 1024 * 1024 # 50MB
 
 
 def _file_response_for_row(row: UploadedFile):
-	full_path = os.path.join(service.UPLOAD_DIR, row.saved_name)
+	saved_name = str(row.saved_name)
+	full_path = os.path.join(service.UPLOAD_DIR, saved_name)
 	if not os.path.isfile(full_path):
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="저장소에 파일이 없습니다.")
-	media = row.content_type or "application/octet-stream"
+	raw_ct = cast(Optional[str], row.content_type)
+	media = raw_ct or "application/octet-stream"
 	return FileResponse(
 		full_path,
-		filename=row.original_name,
+		filename=str(row.original_name),
 		media_type=media,
 		content_disposition_type="inline",
 	)
@@ -97,7 +99,7 @@ async def upload_files(
 	"""
 	try:
 		for file in files:
-			ext = os.path.splitext(file.filename)[1].lower()
+			ext = os.path.splitext(file.filename or "")[1].lower()
 			
 			# 1. 파일 확장자 검증
 			if ext not in ALLOWED_EXTENSIONS:

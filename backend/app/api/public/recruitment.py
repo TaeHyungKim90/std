@@ -12,6 +12,18 @@ from core.security import create_access_token, decode_auth_token
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _applicant_id_from_session(current_applicant: dict) -> int:
+	raw = current_applicant.get("applicantId")
+	if raw is None:
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 지원자 세션입니다.")
+	try:
+		return int(raw)
+	except (TypeError, ValueError):
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 지원자 세션입니다.")
+
+
 IS_PROD = settings.ENVIRONMENT == "production"
 APPLICANT_COOKIE_OPTIONS = {
 	"key": "applicantToken",
@@ -84,7 +96,7 @@ def submit_application_me(
 	try:
 		return service.submit_application_authenticated(
 			db,
-			applicant_id=int(current_applicant.get("applicantId")),
+			applicant_id=_applicant_id_from_session(current_applicant),
 			data=data,
 		)
 	except ValueError as ve:
@@ -167,7 +179,7 @@ def get_applicant_me(current_applicant: dict = Depends(get_current_applicant)):
 	}
 # 🌟 5. [공개] 지원자 정보 수정
 def _ensure_same_applicant(current_applicant: dict, applicant_id: int) -> int:
-	current_id = int(current_applicant.get("applicantId"))
+	current_id = _applicant_id_from_session(current_applicant)
 	if current_id != int(applicant_id):
 		raise HTTPException(status_code=403, detail="본인 계정만 접근할 수 있습니다.")
 	return current_id
@@ -193,7 +205,7 @@ def update_applicant_me(
 	current_applicant: dict = Depends(get_current_applicant),
 ):
 	try:
-		return _update_applicant_impl(db, int(current_applicant.get("applicantId")), data)
+		return _update_applicant_impl(db, _applicant_id_from_session(current_applicant), data)
 	except HTTPException:
 		raise
 	except Exception:
@@ -235,7 +247,7 @@ def get_my_applications(
 			raise HTTPException(status_code=410, detail="레거시 지원자 엔드포인트는 비활성화되었습니다. /my-applications 를 사용해 주세요.")
 		logger.warning("Deprecated applicant endpoint called: GET /my-applications/{applicant_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
-		return service.get_my_applications(db, int(current_applicant.get("applicantId")))
+		return service.get_my_applications(db, _applicant_id_from_session(current_applicant))
 	except HTTPException:
 		raise
 	except Exception:
@@ -256,7 +268,7 @@ def cancel_application(
 			raise HTTPException(status_code=410, detail="레거시 지원자 엔드포인트는 비활성화되었습니다. /my-applications/{application_id} 를 사용해 주세요.")
 		logger.warning("Deprecated applicant endpoint called: DELETE /my-applications/{applicant_id}/{application_id}")
 		_ensure_same_applicant(current_applicant, applicant_id)
-		success, msg = service.delete_application(db, int(current_applicant.get("applicantId")), application_id)
+		success, msg = service.delete_application(db, _applicant_id_from_session(current_applicant), application_id)
 		if not success:
 			raise HTTPException(status_code=400, detail=msg)
 		return {"message": msg}
@@ -274,7 +286,7 @@ def get_my_applications_me(
 	db: Session = Depends(get_db),
 	current_applicant: dict = Depends(get_current_applicant),
 ):
-	return service.get_my_applications(db, int(current_applicant.get("applicantId")))
+	return service.get_my_applications(db, _applicant_id_from_session(current_applicant))
 
 
 @router.delete("/my-applications/{application_id}")
@@ -283,7 +295,7 @@ def cancel_my_application_me(
 	db: Session = Depends(get_db),
 	current_applicant: dict = Depends(get_current_applicant),
 ):
-	success, msg = service.delete_application(db, int(current_applicant.get("applicantId")), application_id)
+	success, msg = service.delete_application(db, _applicant_id_from_session(current_applicant), application_id)
 	if not success:
 		raise HTTPException(status_code=400, detail=msg)
 	return {"message": msg}

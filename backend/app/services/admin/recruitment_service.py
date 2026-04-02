@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime
@@ -55,11 +57,12 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 	if not application:
 		raise HTTPException(status_code=404, detail="지원 내역을 찾을 수 없습니다.")
 
-	application.status = status_str
+	app_row: Any = application
+	app_row.status = status_str
 
 	# 🔥 최종 합격(final_passed) 시 임직원으로 자동 등록
 	if status_str == "final_passed":
-		applicant = application.applicant
+		applicant = app_row.applicant
 		# 이미 등록된 유저인지 체크
 		existing_user = db.query(auth_models.User).filter(auth_models.User.user_login_id == applicant.email_id).first()
 		if not existing_user:
@@ -80,8 +83,8 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 			db.add(new_employee)
 
 	db.commit()
-	db.refresh(application)
-	return application
+	db.refresh(app_row)
+	return app_row
 
 
 def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict:
@@ -155,7 +158,8 @@ def migrate_applicant_passwords_to_hash(
 		.order_by(recruitment_models.Applicant.id.asc())
 		.yield_per(batch_size)
 	)
-	for a in q:
+	for a_raw in q:
+		a: Any = a_raw
 		if max_rows is not None and processed >= max_rows:
 			break
 		processed += 1

@@ -54,7 +54,8 @@ class Settings(BaseSettings):
 	model_config = SettingsConfigDict(env_file=ENV_PATH)
 
 
-settings = Settings()
+# BaseSettings는 .env·환경 변수로 필수 필드를 채움. Pyright/BasedPyright는 생성자 시그니처만 보고 오탐함.
+settings = Settings()  # pyright: ignore[reportCallIssue]
 
 # 배포 로그에 .env 절대 경로가 남지 않도록, 개발 환경에서만 경로 힌트 출력
 if settings.ENVIRONMENT == "development":

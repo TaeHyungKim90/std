@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import cast
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,21 +16,23 @@ def list_daily_range(db: Session, user_id: str, date_from: date, date_to: date) 
 	if date_from > date_to:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="date_from은 date_to보다 늦을 수 없습니다.")
 	user = db.query(User).filter(User.user_login_id == user_id).first()
-	if user and user.resignation_date and date_from > user.resignation_date:
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and date_from > resign_d:
 		return []
 	query = db.query(DailyReport).filter(
 		DailyReport.user_id == user_id,
 		DailyReport.report_date >= date_from,
 		DailyReport.report_date <= date_to,
 	)
-	if user and user.resignation_date:
-		query = query.filter(DailyReport.report_date <= user.resignation_date)
+	if resign_d is not None:
+		query = query.filter(DailyReport.report_date <= resign_d)
 	return query.order_by(DailyReport.report_date.asc()).all()
 
 
 def upsert_daily(db: Session, user_id: str, report_date: date, content: str) -> DailyReport:
 	user = db.query(User).filter(User.user_login_id == user_id).first()
-	if user and user.resignation_date and report_date > user.resignation_date:
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and report_date > resign_d:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="퇴사일 이후 날짜에는 보고서를 작성할 수 없습니다.",
@@ -55,7 +58,8 @@ def upsert_daily(db: Session, user_id: str, report_date: date, content: str) -> 
 def get_weekly(db: Session, user_id: str, week_start: date) -> WeeklyReport | None:
 	user = db.query(User).filter(User.user_login_id == user_id).first()
 	week_end = week_start + timedelta(days=6)
-	if user and user.resignation_date and week_end > user.resignation_date:
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and week_end > resign_d:
 		return None
 	return (
 		db.query(WeeklyReport)
@@ -67,7 +71,8 @@ def get_weekly(db: Session, user_id: str, week_start: date) -> WeeklyReport | No
 def upsert_weekly(db: Session, user_id: str, week_start: date, summary: str) -> WeeklyReport:
 	user = db.query(User).filter(User.user_login_id == user_id).first()
 	week_end = week_start + timedelta(days=6)
-	if user and user.resignation_date and week_end > user.resignation_date:
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and week_end > resign_d:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="퇴사일 이후 주차에는 주간 보고를 작성할 수 없습니다.",

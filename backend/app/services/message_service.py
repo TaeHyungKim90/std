@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from fastapi import HTTPException
@@ -59,10 +61,11 @@ def get_my_inbox(db: Session, user_id: int, skip: int = 0, limit: int = 20):
 
 	out: list[MessageResponse] = []
 	for m in messages:
-		if m.is_global:
-			effective = m.id in receipt_ids
+		mm: Any = m
+		if mm.is_global:
+			effective = mm.id in receipt_ids
 		else:
-			effective = m.is_read
+			effective = bool(mm.is_read)
 		out.append(_message_to_response(m, effective))
 	return {"items": out, "total": total}
 

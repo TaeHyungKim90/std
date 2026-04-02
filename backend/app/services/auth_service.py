@@ -16,7 +16,17 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 # ==========================================
 # 🛡️ 2. API 인증 의존성 (Middleware / Guards)
 # ==========================================
-async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)):
+def require_user_login_id(current_user: dict) -> str:
+	uid = current_user.get("userId")
+	if not isinstance(uid, str) or not uid.strip():
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="인증 정보가 올바르지 않습니다.",
+		)
+	return uid
+
+
+async def get_current_user(request: Request, token: str | None = Depends(oauth2_scheme)):
 	"""
 	모든 API 요청 시 사용자 신분을 확인하는 핵심 문지기
 	(토큰 우선 검사, 없으면 편의상 쿠키 검사)
@@ -101,7 +111,14 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate):
 		db.rollback()
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="데이터베이스 오류로 가입에 실패했습니다.")
 
-def process_social_login(db: Session, provider: str, provider_id: str, name: str, nickname: str, phone: str = None):
+def process_social_login(
+	db: Session,
+	provider: str,
+	provider_id: str,
+	name: str,
+	nickname: str,
+	phone: str | None = None,
+):
 	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통)"""
 	user_login_id = f"{provider}_{provider_id}"
 	user = db.query(User).filter(User.user_login_id == user_login_id).first()

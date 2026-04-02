@@ -1,4 +1,5 @@
 from datetime import datetime, date as date_type, time as time_type, timedelta
+from typing import Any, cast
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -13,8 +14,8 @@ from services.hr.attendance_service import is_vacation_status
 
 def get_all_attendance(
 	db: Session,
-	user_name: str = None,
-	work_date: str = None,
+	user_name: str | None = None,
+	work_date: str | None = None,
 	skip: int = 0,
 	limit: int = 20,
 ):
@@ -135,10 +136,12 @@ def get_user_attendance_range(
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
 	# 입사/퇴사일 기준으로 조회 구간을 재정렬
-	if user.join_date and start_d < user.join_date:
-		start_d = user.join_date
-	if user.resignation_date and end_d > user.resignation_date:
-		end_d = user.resignation_date
+	join_date = cast(date_type | None, user.join_date)
+	resignation_date = cast(date_type | None, user.resignation_date)
+	if join_date is not None and start_d < join_date:
+		start_d = join_date
+	if resignation_date is not None and end_d > resignation_date:
+		end_d = resignation_date
 	if end_d > today:
 		end_d = today
 	if start_d > end_d:
@@ -279,26 +282,28 @@ def update_attendance_record(
 	if not record:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="근태 기록을 찾을 수 없습니다.")
 
-	work_day = record.work_date
+	# Column[...] 인스턴스 필드 대입·인자 전달 오탐 방지 (이 함수 범위만 Any)
+	rec: Any = record
+	work_day = cast(date_type, rec.work_date)
 
 	if "clock_in_time" in updates:
 		raw_in = updates["clock_in_time"]
 		if raw_in is None or (isinstance(raw_in, str) and not str(raw_in).strip()):
-			record.clock_in_time = None
+			rec.clock_in_time = None
 		else:
-			record.clock_in_time = _parse_clock_value(str(raw_in), work_day)
+			rec.clock_in_time = _parse_clock_value(str(raw_in), work_day)
 	if "clock_out_time" in updates:
 		raw_out = updates["clock_out_time"]
 		if raw_out is None or (isinstance(raw_out, str) and not str(raw_out).strip()):
-			record.clock_out_time = None
+			rec.clock_out_time = None
 		else:
-			record.clock_out_time = _parse_clock_value(str(raw_out), work_day)
+			rec.clock_out_time = _parse_clock_value(str(raw_out), work_day)
 	if "status" in updates and updates["status"] is not None:
-		record.status = str(updates["status"]).strip() or record.status
+		rec.status = str(updates["status"]).strip() or rec.status
 
-	record.work_minutes = _recompute_work_minutes(record.clock_in_time, record.clock_out_time)
+	rec.work_minutes = _recompute_work_minutes(rec.clock_in_time, rec.clock_out_time)
 
-	db.add(record)
+	db.add(rec)
 	db.commit()
-	db.refresh(record)
-	return record
+	db.refresh(rec)
+	return rec

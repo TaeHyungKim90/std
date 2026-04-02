@@ -1,6 +1,6 @@
 from db.session import Base
 
-from models.auth_models import User, UserVacation
+from models.auth_models import User, UserVacation, UserAvatarSetting
 from models.common_models import UploadedFile, AuditLog
 from models.holiday_models import Holiday
 from models.hr_models import Todo, TodoCategoryType, TodoConfig, OfficeLocation, Attendance, DailyReport, WeeklyReport

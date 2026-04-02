@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from typing import cast
 
 from fastapi import HTTPException, status
 from sqlalchemy import or_
@@ -94,7 +95,7 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 		.all()
 	)
 	weekly_rows = {
-		w.user_id: w
+		cast(str, w.user_id): w
 		for w in db.query(WeeklyReport).filter(WeeklyReport.week_start_date == week_start).all()
 	}
 	attendance_rows = (
@@ -103,11 +104,11 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 		.all()
 	)
 	vac_attendance_map = {
-		(a.user_id, a.work_date): is_vacation_status(a.status)
+		(cast(str, a.user_id), cast(date, a.work_date)): is_vacation_status(a.status)
 		for a in attendance_rows
 	}
 	holiday_map = {
-		h.holiday_date: True
+		cast(date, h.holiday_date): True
 		for h in db.query(Holiday).filter(Holiday.holiday_date >= week_start, Holiday.holiday_date <= week_end).all()
 	}
 	day_start = datetime.combine(week_start, time.min)
@@ -124,7 +125,8 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 		vac_todo_map.setdefault(uid, []).append((start_dt, end_dt))
 	out = []
 	for u in users:
-		wr = weekly_rows.get(u.user_login_id)
+		uid = cast(str, u.user_login_id)
+		wr = weekly_rows.get(uid)
 		week_days = [week_start + timedelta(days=i) for i in range(7)]
 		all_holiday = True
 		only_vacation_or_holiday = True
@@ -134,12 +136,12 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 				all_holiday = False
 			if is_holiday:
 				continue
-			if vac_attendance_map.get((u.user_login_id, day), False):
+			if vac_attendance_map.get((uid, day), False):
 				continue
 			day_start_dt = datetime.combine(day, time.min)
 			day_end_dt = datetime.combine(day, time.max)
 			has_vac_todo = False
-			for start_dt, end_dt in vac_todo_map.get(u.user_login_id, []):
+			for start_dt, end_dt in vac_todo_map.get(uid, []):
 				if start_dt <= day_end_dt and (end_dt is None or end_dt >= day_start_dt):
 					has_vac_todo = True
 					break
@@ -153,13 +155,13 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 		else:
 			weekly_status = "SUBMITTED" if wr is not None else "MISSING"
 		preview = ""
-		if wr is not None and wr.summary:
-			s = (wr.summary or "").strip()
+		if wr is not None and (wr.summary is not None) and str(wr.summary).strip():
+			s = str(wr.summary).strip()
 			if s:
 				preview = s[:200] + ("…" if len(s) > 200 else "")
 		out.append(
 			{
-				"user_login_id": u.user_login_id,
+				"user_login_id": uid,
 				"user_name": u.user_name,
 				"weekly_status": weekly_status,
 				"weekly_submitted": wr is not None,

@@ -15,4 +15,5 @@ def test_login_burst_triggers_rate_limit_429():
 	last = None
 	for i in range(6):
 		last = client.post("/api/auth/login", json=payload)
+	assert last is not None
 	assert last.status_code == status.HTTP_429_TOO_MANY_REQUESTS

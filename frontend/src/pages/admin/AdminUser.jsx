@@ -143,7 +143,7 @@ const AdminUser = () => {
 													{isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
 												</div>
 												<div className="admin-user__deptpos">
-													{u.user_department || '-'} · {u.user_position || '-'}
+													{u.department_name || '-'} · {u.position_name || '-'}
 												</div>
 											</div>
 										</div>

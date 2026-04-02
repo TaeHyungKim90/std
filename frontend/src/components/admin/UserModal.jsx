@@ -24,8 +24,6 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		user_nickname: '',
 		user_phone_number: '',
 		user_profile_image_url: '',
-		user_department: '',
-		user_position: '',
 		department_id: '',
 		position_id: '',
 		salary_bank_name: '',
@@ -77,8 +75,6 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_password: '',
 				user_phone_number: editingUser.user_phone_number || '',
 				user_profile_image_url: editingUser.user_profile_image_url || '',
-				user_department: editingUser.user_department || '',
-				user_position: editingUser.user_position || '',
 				department_id: editingUser.department_id ?? '',
 				position_id: editingUser.position_id ?? '',
 				salary_bank_name: editingUser.salary_bank_name || '',
@@ -104,12 +100,14 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		if (!editingUser) return;
 		setFormData((prev) => {
 			const next = { ...prev };
-			if ((prev.department_id === '' || prev.department_id == null) && prev.user_department && departments.length > 0) {
-				const found = departments.find((d) => d.department_name === prev.user_department);
+			const fallbackDeptName = editingUser.department_name || null;
+			const fallbackPosName = editingUser.position_name || null;
+			if ((prev.department_id === '' || prev.department_id == null) && fallbackDeptName && departments.length > 0) {
+				const found = departments.find((d) => d.department_name === fallbackDeptName);
 				if (found) next.department_id = found.id;
 			}
-			if ((prev.position_id === '' || prev.position_id == null) && prev.user_position && positions.length > 0) {
-				const found = positions.find((p) => p.position_name === prev.user_position);
+			if ((prev.position_id === '' || prev.position_id == null) && fallbackPosName && positions.length > 0) {
+				const found = positions.find((p) => p.position_name === fallbackPosName);
 				if (found) next.position_id = found.id;
 			}
 			return next;
@@ -134,9 +132,6 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 			}
 
 			const salaryDigits = (formData.salary_account_number || '').replace(/\D/g, '');
-			const selectedDepartment = departments.find((d) => String(d.id) === String(formData.department_id));
-			const selectedPosition = positions.find((p) => String(p.id) === String(formData.position_id));
-
 			// 2) 백엔드 스키마 키에 맞춘 payload 구성
 			const basePayload = {
 				user_login_id: formData.user_login_id,
@@ -147,9 +142,6 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_profile_image_url: nextProfileImageUrl,
 				department_id: formData.department_id === '' ? null : Number(formData.department_id),
 				position_id: formData.position_id === '' ? null : Number(formData.position_id),
-				// 백엔드 재시작 전/구버전 스키마 호환용
-				user_department: selectedDepartment?.department_name ?? null,
-				user_position: selectedPosition?.position_name ?? null,
 				salary_bank_name: formData.salary_bank_name || null,
 				salary_account_number: salaryDigits || null,
 				role: formData.role,

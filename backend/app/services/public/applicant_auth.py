@@ -7,7 +7,7 @@ from core.security import decode_auth_token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="public/recruitment/login", auto_error=False)
 
 
-async def get_current_applicant(request: Request, token: str = Depends(oauth2_scheme)) -> dict:
+async def get_current_applicant(request: Request, token: str | None = Depends(oauth2_scheme)) -> dict:
 	"""
 	지원자 인증 의존성.
 	- 1순위: Authorization: Bearer <token>

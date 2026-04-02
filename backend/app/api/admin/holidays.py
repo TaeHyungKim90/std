@@ -12,7 +12,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/", response_model=List[HolidayOut])
-def list_holidays(year: int = None, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_holidays(year: int | None = None, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
 	return service.get_all_holidays(db, year)
 
 @router.post("/", response_model=HolidayOut)

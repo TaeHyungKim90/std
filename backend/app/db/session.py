@@ -43,14 +43,52 @@ def init_db():
 				existing_cols = {row["name"] for row in conn.execute(text("PRAGMA table_info(users)")).mappings()}
 				add_cols = {
 					"user_profile_image_url": "TEXT",
-					"user_department": "TEXT",
-					"user_position": "TEXT",
+					"department_id": "INTEGER",
+					"position_id": "INTEGER",
 					"salary_bank_name": "TEXT",
 					"salary_account_number": "TEXT",
 				}
 				for col, col_type in add_cols.items():
 					if col not in existing_cols:
 						conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+
+				# 레거시 컬럼(user_department/user_position)이 남아있다면 FK로 1회 백필
+				if "user_department" in existing_cols or "user_position" in existing_cols:
+					rows = conn.execute(text(
+						"""
+						SELECT id, user_department, user_position
+						FROM users
+						WHERE (department_id IS NULL AND user_department IS NOT NULL AND TRIM(user_department) != '')
+						   OR (position_id IS NULL AND user_position IS NOT NULL AND TRIM(user_position) != '')
+						"""
+					)).mappings().all()
+					for row in rows:
+						dept_id = None
+						pos_id = None
+						dept_name = (row.get("user_department") or "").strip()
+						pos_name = (row.get("user_position") or "").strip()
+
+						if dept_name:
+							dept_row = conn.execute(
+								text("SELECT id FROM departments WHERE department_name = :name LIMIT 1"),
+								{"name": dept_name},
+							).mappings().first()
+							if dept_row:
+								dept_id = dept_row["id"]
+
+						if pos_name:
+							pos_row = conn.execute(
+								text("SELECT id FROM positions WHERE position_name = :name LIMIT 1"),
+								{"name": pos_name},
+							).mappings().first()
+							if pos_row:
+								pos_id = pos_row["id"]
+
+						conn.execute(
+							text("UPDATE users SET department_id = :dept_id, position_id = :pos_id WHERE id = :user_id"),
+							{"dept_id": dept_id, "pos_id": pos_id, "user_id": row["id"]},
+						)
+				conn.commit()
 			finally:
 				conn.close()
 	except Exception as e:

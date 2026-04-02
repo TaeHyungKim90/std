@@ -35,8 +35,6 @@ const MyProfile = () => {
 
 	const [nickname, setNickname] = useState('');
 	const [phone, setPhone] = useState('');
-	const [department, setDepartment] = useState('');
-	const [position, setPosition] = useState('');
 	const [salaryBankName, setSalaryBankName] = useState('');
 	const [salaryAccountNumber, setSalaryAccountNumber] = useState('');
 
@@ -57,8 +55,6 @@ const MyProfile = () => {
 			setProfile(data);
 			setNickname(data.user_nickname ?? '');
 			setPhone(data.user_phone_number ?? '');
-			setDepartment(data.user_department ?? '');
-			setPosition(data.user_position ?? '');
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
 			setPhotoPreviewUrl(data.user_profile_image_url ?? null);
@@ -130,15 +126,6 @@ const MyProfile = () => {
 			const prevPhone = (profile.user_phone_number || '').replace(/\D/g, '');
 			if (phoneDigits !== prevPhone) payload.user_phone_number = phoneDigits || null;
 
-			// 부서/직급
-			const deptTrim = (department || '').trim();
-			const prevDept = (profile.user_department || '').trim();
-			if (deptTrim !== prevDept) payload.user_department = deptTrim || null;
-
-			const posTrim = (position || '').trim();
-			const prevPos = (profile.user_position || '').trim();
-			if (posTrim !== prevPos) payload.user_position = posTrim || null;
-
 			// 급여 계좌
 			const bankTrim = (salaryBankName || '').trim();
 			const prevBank = (profile.salary_bank_name || '').trim();
@@ -170,8 +157,6 @@ const MyProfile = () => {
 			setProfile(res.data);
 			setNickname(res.data.user_nickname ?? '');
 			setPhone(res.data.user_phone_number ?? '');
-			setDepartment(res.data.user_department ?? '');
-			setPosition(res.data.user_position ?? '');
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
 			setPhotoPreviewUrl(res.data.user_profile_image_url ?? null);
@@ -323,7 +308,7 @@ const MyProfile = () => {
 						</button>
 						<div className="my-profile-photo-name">{profile.user_name || ''}</div>
 						<div className="my-profile-photo-sub">
-							{(department || profile.user_department || '부서 없음').trim()} · {(position || profile.user_position || '직급 없음').trim()}
+							{(profile.department_name || '부서 없음').trim()} · {(profile.position_name || '직급 없음').trim()}
 						</div>
 						<div className="my-profile-photo-meta">
 							<div className="my-profile-photo-meta-item">

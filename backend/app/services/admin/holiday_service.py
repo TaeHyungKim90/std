@@ -6,7 +6,7 @@ from models.holiday_models import Holiday
 from schemas.admin import holiday_schemas
 from core.config import settings
 
-def get_all_holidays(db: Session, year: int = None):
+def get_all_holidays(db: Session, year: int | None = None):
 	"""DB에서 공휴일 목록 조회"""
 	query = db.query(Holiday)
 	if year:
