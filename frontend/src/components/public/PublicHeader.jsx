@@ -52,7 +52,8 @@ const PublicHeader = () => {
 	return (
 		<>
 			<header className="public-header">
-				<div className="public-header__brand-nav">
+				<div className="public-header__inner">
+					<div className="public-header__brand-nav">
 					{/* 1. 로고 */}
 					<Link to={PATHS.CAREERS} className="public-header__logo-link">
 						가치플레이 채용
@@ -71,26 +72,30 @@ const PublicHeader = () => {
 				</div>
 
 				{/* 3. 로그인 / 로그아웃 버튼 */}
-				<div>
-					{loggedInUser ? (
-						<div className="public-header__actions">
-							{/* 🌟 톱니바퀴 버튼 (클릭 시 모달 상태 true) */}
-							<button 
-								type="button"
-								onClick={() => setIsProfileModalOpen(true)} 
-								className="public-header__profile-btn"
-							>
-								<span className="public-header__user-name">{loggedInUser.name}님</span>
-								<span className="public-header__gear" aria-hidden>⚙️</span>
+					<div className="public-header__actions-wrap">
+						{loggedInUser ? (
+							<div className="public-header__actions">
+								<button
+									type="button"
+									onClick={() => setIsProfileModalOpen(true)}
+									className="public-header__profile-btn"
+								>
+									<span className="public-header__user-name">{loggedInUser.name}님</span>
+									<span className="public-header__gear" aria-hidden>
+										⚙️
+									</span>
+								</button>
+
+								<button type="button" onClick={handleLogout} className="public-header__btn-logout">
+									로그아웃
+								</button>
+							</div>
+						) : (
+							<button type="button" onClick={() => navigate(PATHS.CAREERS_LOGIN)} className="public-header__btn-login">
+								지원자 로그인
 							</button>
-							
-							<button type="button" onClick={handleLogout} className="public-header__btn-logout">로그아웃</button>
-						</div>
-					) : (
-						<button type="button" onClick={() => navigate(PATHS.CAREERS_LOGIN)} className="public-header__btn-login">
-							지원자 로그인
-						</button>
-					)}
+						)}
+					</div>
 				</div>
 			</header>
 			{/* 🌟 분리된 모달 컴포넌트를 부착 (Props로 상태와 함수를 넘겨줌) */}

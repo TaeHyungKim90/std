@@ -8,9 +8,10 @@ const PublicLayout = () => {
 		<div className="public-layout">
 			<PublicHeader />
 			
-			{/* 🌟 전역 배경 클래스 적용 (헤더 아래 모든 화면이 이 배경을 공유함) */}
 			<main className="careers-global-bg">
-				<Outlet />
+				<div className="public-page-shell careers-main-shell">
+					<Outlet />
+				</div>
 			</main>
 		</div>
 	);
