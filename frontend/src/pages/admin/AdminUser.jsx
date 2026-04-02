@@ -3,6 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { useLoading } from 'context/LoadingContext';
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
+import IdCopyChip from 'components/common/IdCopyChip';
 const AdminUser = () => {
     const { showLoading, hideLoading } = useLoading();
     const [users, setUsers] = useState([]);
@@ -119,7 +120,9 @@ const AdminUser = () => {
                                     className={`stagger-item admin-user__row${isResigned ? ' admin-user__row--resigned' : ''}`}
                                     style={{ animationDelay: `${index * 0.04}s` }}
                                 >
-                                    <td>{u.user_login_id}</td>
+                                    <td className="admin-table__cell-login">
+										<IdCopyChip value={u.user_login_id} compact />
+									</td>
                                     <td className="admin-user__name-cell">
                                         {u.user_name} 
                                         {isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
@@ -145,7 +148,7 @@ const AdminUser = () => {
                                 </tr>
                             );
                         }) : (
-                            <tr><td colSpan="8" className="admin-table__empty">검색 결과가 없습니다.</td></tr>
+                            <tr><td colSpan={9} className="admin-table__empty">검색 결과가 없습니다.</td></tr>
                         )}
                     </tbody>
                 </table>

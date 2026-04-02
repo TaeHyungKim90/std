@@ -6,6 +6,7 @@ import { adminApi } from 'api/adminApi';
 import { holidayApi } from 'api/holidayApi';
 import PaginationBar from 'components/common/PaginationBar';
 import UserAttendanceDrawer from 'components/admin/UserAttendanceDrawer';
+import IdCopyChip from 'components/common/IdCopyChip';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import { useSearchParams } from 'react-router-dom';
 import { getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
@@ -328,7 +329,11 @@ const AdminAttendance = () => {
 														{record.user_name}
 													</div>
 													<div className="adm-attendance__user-id">
-														({record.user_id || '아이디 미상'})
+														{record.user_id ? (
+															<IdCopyChip value={record.user_id} compact muted />
+														) : (
+															<span>아이디 미상</span>
+														)}
 													</div>
 												</button>
 											</td>

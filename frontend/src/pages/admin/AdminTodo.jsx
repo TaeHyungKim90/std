@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import * as Notify from 'utils/toastUtils';
 import TodoDetailModal from 'components/common/TodoDetailModal.jsx';
 import PaginationBar from 'components/common/PaginationBar';
+import IdCopyChip from 'components/common/IdCopyChip';
 import { adminApi } from 'api/adminApi.js';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
@@ -104,7 +105,10 @@ const AdminTodo = () => {
 							<React.Fragment key={todo.id}>
 								<tr className="admin-row stagger-item" style={{ animationDelay: `${index * 0.04}s` }}>
 									<td>
-										{todo.author?.user_nickname}({todo.user_id})
+										<span className="admin-todo__author-line">
+											{todo.author?.user_nickname ?? '—'}{' '}
+											<IdCopyChip value={todo.user_id} compact muted />
+										</span>
 									</td>
 									<td>
 										<span
