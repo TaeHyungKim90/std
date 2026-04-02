@@ -3,6 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * rem 기준: 1rem = html의 계산된 font-size.
+ * 고정하지 않고 100% 두면 브라우저/접근성 설정을 따르며, 대부분 기본은 16px → .bq-page-shell max-width 90rem ≈ 1440px.
+ */
+html {
+    font-size: 100%;
+}
+
 @keyframes scaleBlurIn {
     from {
         opacity: 0;
@@ -59,15 +67,16 @@ aside.uta-drawer-panel.dynamic-enter {
 }
 
 :root {
-    /* 🎨 2026 가치플레이 HR 브랜드 컬러 팔레트 적용 */
-    --primary-color: #3DAF7A;     /* Primary (Trustworthy Green) */
-    --background-color: #F0EEE9;  /* Background (Warm Off-white) */
-    --font-color: #141414;        /* Text (Modern Dark) */
-    --danger-color: #FF6A3D;      /* Signal Orange (경고/삭제 포인트) */
-    
-    --white-color: #ffffff;       /* 카드나 모달의 배경용 흰색 */
-    --border-color: #E2DFD8;      /* 배경에 어울리는 부드러운 웜톤 테두리 */
-    --success-color: #3DAF7A;     /* 성공 상태도 Primary와 톤앤매너 통일 */
+    /* 🎨 2026 HR 소프트웨어 권장 팔레트 (배경·프라이머리·시그널 오렌지·텍스트) */
+    --primary-color: #3FAF7A;     /* Primary — 세이지 그린 */
+    --background-color: #F0EEE9; /* Background — 웜 오프화이트 */
+    --font-color: #141414;        /* Text — 차콜 */
+    --danger-color: #FF6A3D;      /* Signal Orange — 강조·경고·삭제 포인트 */
+    --primary-hover-color: #359a6a; /* Primary 버튼 호버 */
+
+    --white-color: #ffffff;
+    --border-color: #E2DFD8;
+    --success-color: #3FAF7A;
     --completed-color: #adb5bd;
 
     /* ✅ BQ(valueplay) 전용 변수 업데이트 */
@@ -102,7 +111,7 @@ body {
     overflow: hidden;
 }
 .toastui-editor-toolbar {
-    background-color: #F8F9FA !important;
+    background-color: #f4f3ef !important; /* 웜 배경 + 화이트 중간톤 */
 }
 .toastui-editor-defaultUI .ProseMirror {
     font-family: 'Noto Sans KR', sans-serif !important;
