@@ -3,6 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { authApi } from 'api/authApi';
 import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
 import { PATHS, PATH_PREFIX } from 'constants/paths';
+import { AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
 import { useLoading } from './LoadingContext';
 
@@ -89,6 +90,15 @@ export const AuthProvider = ({ children }) => {
 	useEffect(() => {
 		checkAuth();
 	}, [checkAuth]);
+
+	// API 401(비로그인 요청 아님) — axios가 토스트만 띄우고, 여기서 직원 UI 상태만 즉시 동기화
+	useEffect(() => {
+		const onSessionExpired = () => {
+			resetAuthState();
+		};
+		window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+		return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+	}, [resetAuthState]);
 
 	// 다른 탭에서 로그아웃 → 직원 세션이 있던 탭만 상태 초기화 + 안내 (지원자 전용 탭은 무시)
 	useEffect(() => {

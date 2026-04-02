@@ -1,12 +1,21 @@
 import axios from 'axios';
 import { formatApiDetail } from 'utils/formatApiError';
 import { PATHS, PATH_PREFIX } from 'constants/paths';
+import { AUTH_SESSION_EXPIRED_EVENT, API_SESSION_EXPIRED_CODE } from 'constants/authEvents';
+import {
+	APPLICANT_USER_STORAGE_KEY,
+	APPLICANT_SESSION_UPDATED_EVENT,
+} from 'constants/applicantCache';
+import { showSessionExpiredToast } from 'utils/showSessionExpiredToast';
 
 /**
  * Axios 인스턴스 (토큰 인터셉터 + 공통 에러 처리)
  * 에러 시 `Promise.reject(new Error(가공된메시지))` — 컴포넌트에서는
- * `catch (err) { Notify.toastError(err.message); }` 로 통일할 수 있습니다.
+ * `catch (err) { Notify.toastApiFailure(err, '…'); }` 권장 — 세션 만료 시 중복 토스트 방지.
  * React 훅은 `hooks/useApiRequest.js` 참고.
+ *
+ * 401(로그인 요청 제외): 즉시 location 이동하지 않고 토스트(닫기 / 로그인으로)만 띄움.
+ * `AUTH_SESSION_EXPIRED_EVENT`로 AuthContext가 직원 상태를 비웁니다.
  */
 const baseURL = process.env.REACT_APP_API_BASE_URL ?? '';
 
@@ -64,15 +73,32 @@ client.interceptors.response.use(
 				const msg = formatApiDetail(error) || '아이디 또는 비밀번호를 확인해 주세요.';
 				return Promise.reject(new Error(msg));
 			}
-			console.warn('세션이 만료되어 로그인이 필요합니다.');
-			if (window.location.pathname.startsWith(PATH_PREFIX.CAREERS)) {
-				if (window.location.pathname !== PATHS.CAREERS_LOGIN) {
-					window.location.href = PATHS.CAREERS_LOGIN;
-				}
-			} else if (window.location.pathname !== PATHS.LOGIN) {
-				window.location.href = PATHS.LOGIN;
+
+			const path = window.location.pathname;
+			const onCareers = path.startsWith(PATH_PREFIX.CAREERS);
+			const loginHref = onCareers ? PATHS.CAREERS_LOGIN : PATHS.LOGIN;
+			const alreadyOnLogin = path === PATHS.LOGIN || path === PATHS.CAREERS_LOGIN;
+
+			if (alreadyOnLogin) {
+				return Promise.reject(new Error('세션이 만료되어 로그인이 필요합니다.'));
 			}
-			return Promise.reject(new Error('세션이 만료되어 로그인이 필요합니다.'));
+
+			console.warn('세션이 만료되어 로그인이 필요합니다.');
+
+			window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT));
+
+			if (onCareers) {
+				sessionStorage.removeItem(APPLICANT_USER_STORAGE_KEY);
+				window.dispatchEvent(
+					new CustomEvent(APPLICANT_SESSION_UPDATED_EVENT, { detail: { user: null } })
+				);
+			}
+
+			showSessionExpiredToast(loginHref);
+
+			const expiredErr = new Error('세션이 만료되어 로그인이 필요합니다.');
+			expiredErr.code = API_SESSION_EXPIRED_CODE;
+			return Promise.reject(expiredErr);
 		}
 
 		const msg =

@@ -8,11 +8,12 @@
  * UI 동기화: APPLICANT_SESSION_UPDATED_EVENT 수신 또는 useApplicantSession 훅 사용.
  */
 import { recruitmentApi } from 'api/recruitmentApi';
+import {
+	APPLICANT_USER_STORAGE_KEY,
+	APPLICANT_SESSION_UPDATED_EVENT,
+} from 'constants/applicantCache';
 
-export const APPLICANT_USER_STORAGE_KEY = 'applicant_user';
-
-/** CustomEvent 이름 — detail: { user: object | null } */
-export const APPLICANT_SESSION_UPDATED_EVENT = 'applicantSessionUpdated';
+export { APPLICANT_USER_STORAGE_KEY, APPLICANT_SESSION_UPDATED_EVENT };
 
 function dispatchApplicantSessionUpdated(user) {
 	window.dispatchEvent(

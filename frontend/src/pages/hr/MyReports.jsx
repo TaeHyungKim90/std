@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
-import { formatApiDetail } from 'utils/formatApiError';
 import { reportApi } from 'api/reportApi';
 import { attendanceApi } from 'api/attendanceApi';
 import { useApiRequest } from 'hooks/useApiRequest';
@@ -107,7 +106,7 @@ const MyReports = () => {
 			setDailyRows(Array.isArray(res.data) ? res.data : []);
 		} catch (err) {
 			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '일일 보고를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '일일 보고를 불러오지 못했습니다.');
 			setDailyRows([]);
 		} finally {
 			setDailyLoading(false);
@@ -128,7 +127,7 @@ const MyReports = () => {
 			setWeekSummaryDraft(w?.summary ? String(w.summary) : '');
 		} catch (err) {
 			console.error(err);
-			Notify.toastError(formatApiDetail(err) || '주간 데이터를 불러오지 못했습니다.');
+			Notify.toastApiFailure(err, '주간 데이터를 불러오지 못했습니다.');
 			setWeekDailies([]);
 			setWeekSummaryDraft('');
 		} finally {
@@ -227,7 +226,7 @@ const MyReports = () => {
 				applyDailyDrawerOpen(ymd, rec);
 			} catch (err) {
 				console.error(err);
-				Notify.toastError(formatApiDetail(err) || '출퇴근 정보를 확인하지 못했습니다.');
+				Notify.toastApiFailure(err, '출퇴근 정보를 확인하지 못했습니다.');
 			} finally {
 				setDailyDrawerPreflight(false);
 			}
