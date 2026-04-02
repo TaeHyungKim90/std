@@ -1,14 +1,7 @@
-import os
-import sys
 from types import SimpleNamespace
 
 from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
-
-# 테스트 실행 위치에 상관없이 app 모듈 임포트 가능하게 보정
-APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "app"))
-if APP_DIR not in sys.path:
-    sys.path.insert(0, APP_DIR)
 
 import main as app_main  # noqa: E402
 from core.config import settings  # noqa: E402

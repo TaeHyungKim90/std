@@ -1,5 +1,3 @@
-import os
-import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from types import SimpleNamespace
@@ -7,11 +5,6 @@ from typing import Any
 
 import pytest
 from fastapi import HTTPException
-
-# 테스트 실행 위치에 상관없이 app 모듈 임포트 가능하게 보정
-APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..", "app"))
-if APP_DIR not in sys.path:
-    sys.path.insert(0, APP_DIR)
 
 from services.admin import reports_service  # noqa: E402
 from api.admin import reports as admin_reports_api  # noqa: E402

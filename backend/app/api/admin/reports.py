@@ -43,11 +43,11 @@ def report_week_status(
 
 @router.get("/users/{user_login_id}/bundle", response_model=reports_schemas.AdminReportBundleOut)
 def user_report_bundle(
+	request: Request,
 	user_login_id: str,
 	week_start: date = Query(..., alias="week_start"),
 	db: Session = Depends(get_db),
 	current_admin: dict = Depends(get_current_admin),
-	request: Request = None,
 ):
 	try:
 		validate_report_date_range(week_start, "week_start")
@@ -61,14 +61,14 @@ def user_report_bundle(
 		admin_user = db.query(User).filter(User.user_login_id == admin_login_id).first()
 		target_user = db.query(User).filter(User.user_login_id == user_login_id).first()
 		if admin_user and target_user:
-			xff = (request.headers.get("x-forwarded-for") if request else None) or ""
-			ip = xff.split(",")[0].strip() if xff else ((request.client.host if request and request.client else None))
+			xff = request.headers.get("x-forwarded-for") or ""
+			ip = xff.split(",")[0].strip() if xff else (request.client.host if request.client else None)
 			audit_service.create_audit_log(
 				db,
 				admin_id=admin_user.id,
 				target_user_id=target_user.id,
 				action="READ_REPORT_BUNDLE",
-				endpoint=str(request.url.path) if request else "/api/admin/reports/users/{user_login_id}/bundle",
+				endpoint=str(request.url.path),
 				ip_address=ip,
 			)
 	except Exception:

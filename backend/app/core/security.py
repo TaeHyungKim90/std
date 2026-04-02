@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from core.config import settings
@@ -40,7 +40,7 @@ def looks_like_password_hash(value: str | None) -> bool:
 def create_access_token(data: dict) -> str:
 	"""JWT 토큰 생성"""
 	to_encode = data.copy()
-	expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+	expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
 	to_encode.update({"exp": expire})
 	return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
