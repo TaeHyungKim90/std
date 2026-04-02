@@ -10,7 +10,7 @@ const STATUS_OPTIONS = [
 	{ id: 'applied', title: '서류 접수', color: '#4A90E2', bg: '#EFF6FF' },
 	{ id: 'document_passed', title: '서류 합격', color: '#F39C12', bg: '#FEF9C3' },
 	{ id: 'interviewing', title: '면접 진행', color: '#9B59B6', bg: '#F3E8FF' },
-	{ id: 'final_passed', title: '최종 합격', color: '#3DAF7A', bg: '#DCFCE7' },
+	{ id: 'final_passed', title: '최종 합격', color: '#3FAF7A', bg: 'rgba(63, 175, 122, 0.16)' },
 	{ id: 'rejected', title: '불합격', color: '#FF6A3D', bg: '#FEE2E2' }
 ];
 

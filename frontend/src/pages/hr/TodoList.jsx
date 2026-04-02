@@ -21,7 +21,7 @@ const TodoListView = () => {
 	const [events, setEvents] = useState([]);
 	const holidaysRef = useRef([]);
 	const [categories, setCategories] = useState([]);
-	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3DAF7A', selectedDescription: ''});
+	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3FAF7A', selectedDescription: ''});
 	const { userId } = useAuth();
 	const { showLoading, hideLoading } = useLoading();
 	const calendarRef = useRef(null);
@@ -43,7 +43,7 @@ const TodoListView = () => {
 				return {
 					...cat,
 					hasCustomConfig: !!userConf,
-					color: userConf?.color || '#3DAF7A',
+					color: userConf?.color || '#3FAF7A',
 					default_description: userConf?.default_description || '',
 				};
 			});

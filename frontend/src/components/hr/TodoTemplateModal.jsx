@@ -33,7 +33,7 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 				</h2>
 				
 				<div className="color-palette-container">
-					{['#3DAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'].map(color => (
+					{['#3FAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'].map(color => (
 						<div 
 							key={color} 
 							className={`color-circle-btn ${colorModal.selectedColor === color ? 'selected' : ''}`}

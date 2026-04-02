@@ -51,7 +51,7 @@ const AdminDashboard = () => {
         
         if (e < today) return { label: '종료됨', className: 'status-tag status-past', bg: '#f1f3f5', color: '#999' };
         if (s <= today && e >= today) return { label: '휴가 중', className: 'status-tag status-now', bg: '#fff0eb', color: '#FF6A3D' };
-        return { label: '예정됨', className: 'status-tag status-future', bg: '#e8f5e9', color: '#3DAF7A' };
+        return { label: '예정됨', className: 'status-tag status-future', bg: 'rgba(63, 175, 122, 0.12)', color: '#3FAF7A' };
     };
 
     const getInitials = (name) => (name ? name.charAt(0) : '👤');
