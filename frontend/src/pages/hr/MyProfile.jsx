@@ -4,9 +4,11 @@ import 'assets/css/my-profile-extra.css';
 import { authApi } from 'api/authApi';
 import { commonApi } from 'api/commonApi';
 import AppModal from 'components/common/AppModal';
+import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
 import PasswordChangeModal from 'components/hr/PasswordChangeModal';
 import { useAuth } from 'context/AuthContext';
+import { Camera } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
@@ -40,8 +42,12 @@ const MyProfile = () => {
 
 	const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null); // blob URL or /uploads/...
 	const [photoFile, setPhotoFile] = useState(null); // File (선택된 즉시 업로드용)
+	const [avatarAdjust, setAvatarAdjust] = useState({ zoom: 1, offsetX: 0, offsetY: 0 });
+	const [cropModalOpen, setCropModalOpen] = useState(false);
 	const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
 	const [vacationDetailOpen, setVacationDetailOpen] = useState(false);
+	/** 동일 /uploads 경로일 때 브라우저가 옛 이미지를 캐시하는 문제 방지 */
+	const [avatarImgCacheKey, setAvatarImgCacheKey] = useState(0);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -56,6 +62,12 @@ const MyProfile = () => {
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
 			setPhotoPreviewUrl(data.user_profile_image_url ?? null);
+			setAvatarAdjust({
+				zoom: Number(data.avatar_zoom ?? 1),
+				offsetX: Number(data.avatar_offset_x ?? 0),
+				offsetY: Number(data.avatar_offset_y ?? 0),
+			});
+			setAvatarImgCacheKey((k) => k + 1);
 		} catch (err) {
 			Notify.toastApiFailure(err, '내 정보를 불러오지 못했습니다.');
 			setProfile(null);
@@ -145,6 +157,9 @@ const MyProfile = () => {
 				const prevPhoto = profile.user_profile_image_url ?? null;
 				if (nextFilePath !== prevPhoto) payload.user_profile_image_url = nextFilePath;
 			}
+			if (Number(profile.avatar_zoom ?? 1) !== Number(avatarAdjust.zoom ?? 1)) payload.avatar_zoom = Number(avatarAdjust.zoom ?? 1);
+			if (Number(profile.avatar_offset_x ?? 0) !== Number(avatarAdjust.offsetX ?? 0)) payload.avatar_offset_x = Number(avatarAdjust.offsetX ?? 0);
+			if (Number(profile.avatar_offset_y ?? 0) !== Number(avatarAdjust.offsetY ?? 0)) payload.avatar_offset_y = Number(avatarAdjust.offsetY ?? 0);
 
 			if (Object.keys(payload).length === 0) {
 				Notify.toastInfo('변경된 내용이 없습니다.');
@@ -160,7 +175,13 @@ const MyProfile = () => {
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
 			setPhotoPreviewUrl(res.data.user_profile_image_url ?? null);
+			setAvatarAdjust({
+				zoom: Number(res.data.avatar_zoom ?? 1),
+				offsetX: Number(res.data.avatar_offset_x ?? 0),
+				offsetY: Number(res.data.avatar_offset_y ?? 0),
+			});
 			setPhotoFile(null);
+			setAvatarImgCacheKey((k) => k + 1);
 			// 비밀번호 변경은 별도 모달에서만 처리합니다.
 			await checkAuth();
 			Notify.toastSuccess('저장되었습니다.');
@@ -182,14 +203,55 @@ const MyProfile = () => {
 		'수협은행',
 	];
 
-	const handlePhotoChange = (e) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		// 이전 blob URL 정리
-		if (photoPreviewUrl?.startsWith('blob:')) URL.revokeObjectURL(photoPreviewUrl);
-		const nextUrl = URL.createObjectURL(file);
-		setPhotoFile(file);
-		setPhotoPreviewUrl(nextUrl);
+	const handlePhotoChange = () => {
+		setCropModalOpen(true);
+	};
+
+	const handleCropConfirm = async (nextFile, nextUrl, nextAdjust) => {
+		if (!profile) return;
+		const nextAvatarAdjust = {
+			zoom: Number(nextAdjust?.zoom ?? 1),
+			offsetX: Number(nextAdjust?.offsetX ?? 0),
+			offsetY: Number(nextAdjust?.offsetY ?? 0),
+		};
+
+		const savePhotoTask = async () => {
+			let nextFilePath = profile.user_profile_image_url ?? null;
+			if (nextFile) {
+				const formData = new FormData();
+				formData.append('files', nextFile);
+				const uploadRes = await commonApi.uploadFiles(formData);
+				nextFilePath = uploadRes.data?.[0]?.file_path ?? null;
+			}
+			return authApi.patchMe({
+				user_profile_image_url: nextFilePath,
+				avatar_zoom: nextAvatarAdjust.zoom,
+				avatar_offset_x: nextAvatarAdjust.offsetX,
+				avatar_offset_y: nextAvatarAdjust.offsetY,
+			});
+		};
+
+		try {
+			const res = await Notify.toastPromise(savePhotoTask(), {
+				loading: '프로필 사진을 저장하는 중입니다...',
+				success: '프로필 사진이 저장되었습니다.',
+				error: '프로필 사진 저장에 실패했습니다.',
+			});
+
+			if (photoPreviewUrl?.startsWith('blob:')) URL.revokeObjectURL(photoPreviewUrl);
+			setPhotoFile(null);
+			setPhotoPreviewUrl(res.data?.user_profile_image_url ?? nextUrl ?? null);
+			setAvatarAdjust({
+				zoom: Number(res.data?.avatar_zoom ?? nextAvatarAdjust.zoom),
+				offsetX: Number(res.data?.avatar_offset_x ?? nextAvatarAdjust.offsetX),
+				offsetY: Number(res.data?.avatar_offset_y ?? nextAvatarAdjust.offsetY),
+			});
+			setProfile((prev) => (prev ? { ...prev, ...res.data } : res.data));
+			setAvatarImgCacheKey((k) => k + 1);
+			setCropModalOpen(false);
+		} catch (err) {
+			Notify.toastApiFailure(err, '프로필 사진 저장 실패');
+		}
 	};
 
 	const handleConfirmPasswordChange = async ({ currentPassword, newPassword }) => {
@@ -246,7 +308,19 @@ const MyProfile = () => {
 				<h2 className="my-profile-card__title">내 정보 관리</h2>
 				<div className="my-profile-edit-top">
 					<div className="my-profile-photo-panel">
-						<UserAvatar imageUrl={photoPreviewUrl} nickname={nickname} name={profile.user_name} size={92} />
+						<button type="button" className="my-profile-photo-preview-trigger" onClick={handlePhotoChange}>
+							<UserAvatar
+								imageUrl={photoPreviewUrl}
+								nickname={nickname}
+								name={profile.user_name}
+								size={92}
+								avatarAdjust={avatarAdjust}
+								imageCacheBust={avatarImgCacheKey}
+							/>
+							<span className="my-profile-photo-preview-trigger__badge" aria-hidden="true">
+								<Camera size={14} />
+							</span>
+						</button>
 						<div className="my-profile-photo-name">{profile.user_name || ''}</div>
 						<div className="my-profile-photo-sub">
 							{(department || profile.user_department || '부서 없음').trim()} · {(position || profile.user_position || '직급 없음').trim()}
@@ -262,10 +336,6 @@ const MyProfile = () => {
 								<div className="my-profile-photo-meta-value">{tenureDays ?? '—'}일차</div>
 							</div>
 						</div>
-						<label className="my-profile-photo-upload">
-							<input type="file" accept="image/*" onChange={handlePhotoChange} />
-							사진 변경
-						</label>
 
 						<section className="my-profile-vacation-mini-card" aria-label="잔여 연차 현황">
 							<div className="my-profile-vacation-mini-card__header">
@@ -443,6 +513,16 @@ const MyProfile = () => {
 				social={social}
 				passwordSaving={passwordSaving}
 				onConfirm={handleConfirmPasswordChange}
+			/>
+			<AvatarImageCropModal
+				isOpen={cropModalOpen}
+				file={null}
+				initialImageUrl={photoPreviewUrl || profile?.user_profile_image_url || null}
+				initialAdjust={avatarAdjust}
+				onClose={() => {
+					setCropModalOpen(false);
+				}}
+				onConfirm={handleCropConfirm}
 			/>
 		</div>
 	);

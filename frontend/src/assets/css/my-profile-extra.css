@@ -94,6 +94,39 @@
 	display: none;
 }
 
+.my-profile-photo-preview-trigger {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+}
+
+.my-profile-photo-preview-trigger__badge {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	width: 28px;
+	height: 28px;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid var(--border-color, #e2dfd8);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.88rem;
+}
+
+.my-profile-photo-upload-text {
+	margin-top: 10px;
+	font-size: 0.84rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+}
+
 .my-profile-vacation-mini-card {
 	width: 100%;
 	margin-top: 16px;

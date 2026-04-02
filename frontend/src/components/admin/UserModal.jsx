@@ -3,7 +3,9 @@ import 'assets/css/admin-user-profile-extra.css';
 
 import { adminApi } from 'api/adminApi';
 import { commonApi } from 'api/commonApi';
+import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
+import { Camera } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
@@ -24,6 +26,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		user_profile_image_url: '',
 		user_department: '',
 		user_position: '',
+		department_id: '',
+		position_id: '',
 		salary_bank_name: '',
 		salary_account_number: '',
 		role: 'user',
@@ -33,16 +37,41 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 
 	const [photoFile, setPhotoFile] = useState(null);
 	const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null);
+	const [avatarAdjust, setAvatarAdjust] = useState({ zoom: 1, offsetX: 0, offsetY: 0 });
+	const [cropModalOpen, setCropModalOpen] = useState(false);
+	const [departments, setDepartments] = useState([]);
+	const [positions, setPositions] = useState([]);
 
 	const BANK_OPTIONS = useMemo(
 		() => ['KB국민은행', '신한은행', '우리은행', '하나은행', 'IBK기업은행', 'NH농협은행', '카카오뱅크', '수협은행'],
 		[],
 	);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		const fetchMasterData = async () => {
+			try {
+				const [deptRes, posRes] = await Promise.all([adminApi.getDepartments(), adminApi.getPositions()]);
+				setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
+				setPositions(Array.isArray(posRes.data) ? posRes.data : []);
+			} catch (err) {
+				Notify.toastApiFailure(err, '부서/직급 목록을 불러오지 못했습니다.');
+				setDepartments([]);
+				setPositions([]);
+			}
+		};
+		fetchMasterData();
+	}, [isOpen]);
 	// 수정 모드일 경우 기존 데이터 세팅
 	useEffect(() => {
 		if (editingUser) {
 			setPhotoFile(null);
 			setPhotoPreviewUrl(editingUser.user_profile_image_url || null);
+			setAvatarAdjust({
+				zoom: Number(editingUser.avatar_zoom ?? 1),
+				offsetX: Number(editingUser.avatar_offset_x ?? 0),
+				offsetY: Number(editingUser.avatar_offset_y ?? 0),
+			});
 			setFormData({
 				...editingUser,
 				user_password: '',
@@ -50,6 +79,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_profile_image_url: editingUser.user_profile_image_url || '',
 				user_department: editingUser.user_department || '',
 				user_position: editingUser.user_position || '',
+				department_id: editingUser.department_id ?? '',
+				position_id: editingUser.position_id ?? '',
 				salary_bank_name: editingUser.salary_bank_name || '',
 				salary_account_number: editingUser.salary_account_number || '',
 				joinDate: toDateValue(editingUser.join_date),
@@ -58,15 +89,32 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		} else {
 			setPhotoFile(null);
 			setPhotoPreviewUrl(null);
+			setAvatarAdjust({ zoom: 1, offsetX: 0, offsetY: 0 });
 			setFormData({
 				user_login_id: '',
 				user_password: '',
 				user_name: '',
 				user_nickname: '',
-				role: 'user', joinDate: '', resignation_date: ''
+				role: 'user', joinDate: '', resignation_date: '', department_id: '', position_id: ''
 			});
 		}
 	}, [editingUser, isOpen]);
+
+	useEffect(() => {
+		if (!editingUser) return;
+		setFormData((prev) => {
+			const next = { ...prev };
+			if ((prev.department_id === '' || prev.department_id == null) && prev.user_department && departments.length > 0) {
+				const found = departments.find((d) => d.department_name === prev.user_department);
+				if (found) next.department_id = found.id;
+			}
+			if ((prev.position_id === '' || prev.position_id == null) && prev.user_position && positions.length > 0) {
+				const found = positions.find((p) => p.position_name === prev.user_position);
+				if (found) next.position_id = found.id;
+			}
+			return next;
+		});
+	}, [editingUser, departments, positions]);
 
 	const handleSave = async (e) => {
 		e.preventDefault();
@@ -86,6 +134,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 			}
 
 			const salaryDigits = (formData.salary_account_number || '').replace(/\D/g, '');
+			const selectedDepartment = departments.find((d) => String(d.id) === String(formData.department_id));
+			const selectedPosition = positions.find((p) => String(p.id) === String(formData.position_id));
 
 			// 2) 백엔드 스키마 키에 맞춘 payload 구성
 			const basePayload = {
@@ -95,14 +145,20 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_nickname: formData.user_nickname || null,
 				user_phone_number: formData.user_phone_number || null,
 				user_profile_image_url: nextProfileImageUrl,
-				user_department: formData.user_department || null,
-				user_position: formData.user_position || null,
+				department_id: formData.department_id === '' ? null : Number(formData.department_id),
+				position_id: formData.position_id === '' ? null : Number(formData.position_id),
+				// 백엔드 재시작 전/구버전 스키마 호환용
+				user_department: selectedDepartment?.department_name ?? null,
+				user_position: selectedPosition?.position_name ?? null,
 				salary_bank_name: formData.salary_bank_name || null,
 				salary_account_number: salaryDigits || null,
 				role: formData.role,
 				joined_at: formData.joinDate && formData.joinDate !== '-' ? formData.joinDate : null,
 				resignation_date:
 					formData.resignation_date && formData.resignation_date !== '-' ? formData.resignation_date : null,
+				avatar_zoom: Number(avatarAdjust.zoom ?? 1),
+				avatar_offset_x: Number(avatarAdjust.offsetX ?? 0),
+				avatar_offset_y: Number(avatarAdjust.offsetY ?? 0),
 			};
 
 			if (editingUser) {
@@ -136,27 +192,19 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				<form onSubmit={handleSave}>
 					<div className="user-modal-scroll">
 						<div className="user-modal-photo-row">
-							<UserAvatar
-								imageUrl={photoPreviewUrl || formData.user_profile_image_url || null}
-								nickname={formData.user_nickname || null}
-								name={formData.user_name || null}
-								size={64}
-							/>
-							<label className="user-modal-photo-upload">
-								<input
-									type="file"
-									accept="image/*"
-									onChange={(e) => {
-										const file = e.target.files?.[0];
-										if (!file) return;
-										if (photoPreviewUrl?.startsWith('blob:')) URL.revokeObjectURL(photoPreviewUrl);
-										const url = URL.createObjectURL(file);
-										setPhotoFile(file);
-										setPhotoPreviewUrl(url);
-									}}
+							<button type="button" className="user-modal-photo-preview-trigger" onClick={() => setCropModalOpen(true)}>
+								<UserAvatar
+									imageUrl={photoPreviewUrl || formData.user_profile_image_url || null}
+									nickname={formData.user_nickname || null}
+									name={formData.user_name || null}
+									size={64}
+									avatarAdjust={avatarAdjust}
 								/>
-								사진 업로드
-							</label>
+								<span className="user-modal-photo-preview-trigger__badge" aria-hidden="true">
+									<Camera size={13} />
+								</span>
+							</button>
+							<div className="user-modal-photo-upload-text">프로필 사진 변경</div>
 						</div>
 
 						{/* 기존 필드들 */}
@@ -207,17 +255,31 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 						<div className="form-row modal-form-row">
 							<div className="form-group">
 								<label>부서</label>
-								<input
-									value={formData.user_department || ''}
-									onChange={(e) => setFormData({ ...formData, user_department: e.target.value })}
-								/>
+								<select
+									value={formData.department_id === '' ? '' : String(formData.department_id)}
+									onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+								>
+									<option value="">부서 선택</option>
+									{departments.map((d) => (
+										<option key={d.id} value={d.id}>
+											{d.department_name}
+										</option>
+									))}
+								</select>
 							</div>
 							<div className="form-group">
 								<label>직급</label>
-								<input
-									value={formData.user_position || ''}
-									onChange={(e) => setFormData({ ...formData, user_position: e.target.value })}
-								/>
+								<select
+									value={formData.position_id === '' ? '' : String(formData.position_id)}
+									onChange={(e) => setFormData({ ...formData, position_id: e.target.value })}
+								>
+									<option value="">직급 선택</option>
+									{positions.map((p) => (
+										<option key={p.id} value={p.id}>
+											{p.position_name}
+										</option>
+									))}
+								</select>
 							</div>
 						</div>
 
@@ -282,6 +344,26 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 					</div>
 				</form>
 			</div>
+			<AvatarImageCropModal
+				isOpen={cropModalOpen}
+				file={null}
+				initialImageUrl={photoPreviewUrl || formData.user_profile_image_url || null}
+				initialAdjust={avatarAdjust}
+				onClose={() => {
+					setCropModalOpen(false);
+				}}
+				onConfirm={(nextFile, nextUrl, nextAdjust) => {
+					if (photoPreviewUrl?.startsWith('blob:')) URL.revokeObjectURL(photoPreviewUrl);
+					setPhotoFile(nextFile);
+					setPhotoPreviewUrl(nextUrl);
+					setAvatarAdjust({
+						zoom: Number(nextAdjust?.zoom ?? 1),
+						offsetX: Number(nextAdjust?.offsetX ?? 0),
+						offsetY: Number(nextAdjust?.offsetY ?? 0),
+					});
+					setCropModalOpen(false);
+				}}
+			/>
 		</div>
 	);
 };

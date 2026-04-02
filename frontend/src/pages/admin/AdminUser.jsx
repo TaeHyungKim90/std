@@ -131,6 +131,11 @@ const AdminUser = () => {
 												nickname={u.user_nickname || null}
 												name={u.user_name || null}
 												size={34}
+												avatarAdjust={{
+													zoom: Number(u.avatar_zoom ?? 1),
+													offsetX: Number(u.avatar_offset_x ?? 0),
+													offsetY: Number(u.avatar_offset_y ?? 0),
+												}}
 											/>
 											<div>
 												<div>

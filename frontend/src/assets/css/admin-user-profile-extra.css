@@ -42,6 +42,38 @@
 	display: none;
 }
 
+.user-modal-photo-preview-trigger {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+}
+
+.user-modal-photo-preview-trigger__badge {
+	position: absolute;
+	right: -4px;
+	bottom: -4px;
+	width: 26px;
+	height: 26px;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid var(--border-color, #e2dfd8);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.82rem;
+}
+
+.user-modal-photo-upload-text {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+}
+
 .user-modal-salary-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
