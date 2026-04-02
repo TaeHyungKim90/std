@@ -22,6 +22,18 @@ export const authApi = {
 	client.get(`${PATH}/check`),
 
   /**
+   * 3b. 마이페이지: 본인 정보 + 연차
+   * GET /api/auth/me
+   */
+  getMe: () => client.get(`${PATH}/me`),
+
+  /**
+   * 3c. 마이페이지: 본인 정보 수정
+   * PATCH /api/auth/me
+   */
+  patchMe: (payload) => client.patch(`${PATH}/me`, payload),
+
+  /**
    * 4. 일반 회원가입
    * POST /api/auth/signup
    */

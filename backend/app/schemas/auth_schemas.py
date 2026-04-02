@@ -91,7 +91,30 @@ class UserVacationResponse(BaseModel):
 	
 	model_config = ConfigDict(from_attributes=True)
 
-# 8. 최종 통합 사용자 정보 응답 (✅ 중복 제거 및 필드 통합)
+# 8. 마이페이지 본인 정보 수정 (PATCH /auth/me)
+class MeProfilePatch(BaseModel):
+	"""로그인 사용자 본인만 수정. 빈 문자열은 미전송과 동일하게 취급하지 않고 명시적 null/빈값 처리는 라우터에서 수행."""
+
+	user_nickname: Optional[str] = Field(None, max_length=50)
+	user_phone_number: Optional[str] = None
+	current_password: Optional[str] = Field(None, description="비밀번호 변경 시 필수")
+	new_password: Optional[str] = Field(None, min_length=6, max_length=128, description="새 비밀번호")
+
+	@field_validator("user_phone_number")
+	@classmethod
+	def validate_phone_number(cls, v):
+		if v is None:
+			return None
+		s = str(v).strip()
+		if not s:
+			return None
+		pattern = r"^\d{10,11}$"
+		if not re.match(pattern, s):
+			raise ValueError("전화번호는 하이픈(-) 없이 숫자만 10~11자리 입력해 주세요.")
+		return s
+
+
+# 9. 최종 통합 사용자 정보 응답 (✅ 중복 제거 및 필드 통합)
 class UserResponse(BaseModel):
 	id: int
 	user_login_id: str

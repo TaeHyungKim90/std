@@ -3,10 +3,10 @@ from datetime import date, datetime
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from core.config import settings
-from core.security import create_access_token, decode_auth_token
+from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
 from models.auth_models import User
@@ -157,6 +157,83 @@ async def signup(data: auth_schemas.UserCreate, db: Session = Depends(get_db)):
 	"""회원 가입"""
 	service.create_new_user(db, data)
 	return {"success": True, "message": "회원가입이 완료되었습니다."}
+
+
+@router.get("/me", response_model=auth_schemas.UserResponse)
+def get_my_profile(
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(service.get_current_user),
+):
+	"""로그인 사용자 본인 정보 + 연차(UserVacation) 조회."""
+	user_pk = current_user.get("id")
+	if user_pk is None:
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 정보가 올바르지 않습니다.")
+	user = (
+		db.query(User)
+		.options(joinedload(User.vacation))
+		.filter(User.id == user_pk)
+		.first()
+	)
+	if not user:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	return auth_schemas.UserResponse.model_validate(user)
+
+
+@router.patch("/me", response_model=auth_schemas.UserResponse)
+def patch_my_profile(
+	body: auth_schemas.MeProfilePatch,
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(service.get_current_user),
+):
+	"""로그인 사용자 본인 연락처·닉네임·비밀번호 수정 (비밀번호는 해시 저장)."""
+	user_pk = current_user.get("id")
+	if user_pk is None:
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 정보가 올바르지 않습니다.")
+	user = (
+		db.query(User)
+		.options(joinedload(User.vacation))
+		.filter(User.id == user_pk)
+		.first()
+	)
+	if not user:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+
+	data = body.model_dump(exclude_unset=True)
+	login_id = user.user_login_id or ""
+	is_social = login_id.startswith(("kakao_", "naver_"))
+
+	if is_social and (data.get("current_password") or data.get("new_password")):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.",
+		)
+
+	if data.get("new_password") or data.get("current_password"):
+		if not data.get("new_password") or not data.get("current_password"):
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="비밀번호 변경 시 현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.",
+			)
+		if not verify_password(data["current_password"], user.user_password):
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="현재 비밀번호가 일치하지 않습니다.")
+		user.user_password = get_password_hash(data["new_password"])
+
+	if "user_nickname" in data:
+		raw = data["user_nickname"]
+		if raw is None:
+			user.user_nickname = None
+		else:
+			s = str(raw).strip()
+			user.user_nickname = s if s else None
+
+	if "user_phone_number" in data:
+		user.user_phone_number = data["user_phone_number"]
+
+	db.commit()
+	db.refresh(user)
+	# joinedload(vacation)은 refresh 후에도 세션에 남아 있음
+	return auth_schemas.UserResponse.model_validate(user)
+
 
 # ==========================================
 # 📱 소셜 로그인 연동 로직
