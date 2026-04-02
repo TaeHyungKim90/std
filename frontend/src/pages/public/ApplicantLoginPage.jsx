@@ -3,6 +3,7 @@ import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { recruitmentApi } from 'api/recruitmentApi';
+import { syncApplicantSessionFromServer, clearCachedApplicantUser } from 'utils/applicantSession';
 import { PATHS } from 'constants/paths';
 
 const ApplicantLoginPage = () => {
@@ -23,20 +24,18 @@ const ApplicantLoginPage = () => {
 					formatApiDetail(error) ||
 					'이메일 또는 비밀번호가 일치하지 않습니다.'
 			}
-		).then((res) => {
-			// 성공 시: 쿠키(applicantToken) 발급이 되었는지 /me로 재확인 후 세션 저장
-			recruitmentApi.getApplicantMe().then((meRes) => {
-				const me = meRes?.data;
+		).then(() =>
+			syncApplicantSessionFromServer().then((me) => {
 				if (!me?.isLoggedIn) throw new Error('지원자 세션 확인에 실패했습니다.');
-				sessionStorage.setItem('applicant_user', JSON.stringify(me));
 				const returnUrl = location.state?.returnUrl || PATHS.CAREERS;
 				navigate(returnUrl, { replace: true, state: location.state });
-			}).catch(() => {
-				// 쿠키 발급이 막혔거나(브라우저 설정) CORS/credentials 이슈 등
-				sessionStorage.removeItem('applicant_user');
+			})
+		).catch((error) => {
+			if (error?.message === '지원자 세션 확인에 실패했습니다.') {
+				clearCachedApplicantUser();
 				Notify.toastError('로그인 세션을 생성하지 못했습니다. (쿠키 설정을 확인해 주세요)');
-			});
-		}).catch((error) => {
+				return;
+			}
 			// 실패 시 조용히 콘솔 로그만
 			console.error("로그인 에러:", error);
 		});

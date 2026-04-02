@@ -6,6 +6,7 @@ import { formatPhoneNumber } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { PATHS, pathCareersJobApply } from 'constants/paths';
+import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 
 const JobApplyPage = () => {
     const { state } = useLocation();
@@ -25,28 +26,11 @@ const JobApplyPage = () => {
         }
 
         const resolveApplicantSession = async () => {
-            const userStr = sessionStorage.getItem('applicant_user');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    if (isMounted) setLoggedInUser(user);
-                } catch {
-                    sessionStorage.removeItem('applicant_user');
-                }
+            const user = await syncApplicantSessionFromServer();
+            if (user?.isLoggedIn) {
+                if (isMounted) setLoggedInUser(user);
+                return true;
             }
-
-            try {
-                const meRes = await recruitmentApi.getApplicantMe();
-                if (meRes?.data?.isLoggedIn) {
-                    sessionStorage.setItem('applicant_user', JSON.stringify(meRes.data));
-                    if (isMounted) setLoggedInUser(meRes.data);
-                    return true;
-                }
-            } catch {
-                // ignore
-            }
-
-            sessionStorage.removeItem('applicant_user');
             if (isMounted) {
                 Notify.toastWarn("로그인이 필요한 서비스입니다.");
                 navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });

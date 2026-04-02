@@ -1,38 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ApplicantProfileModal from './ApplicantProfileModal';
 import 'assets/css/publicHeader.css';
 import { PATHS } from 'constants/paths';
 import { recruitmentApi } from 'api/recruitmentApi';
+import { useApplicantSession } from 'hooks/useApplicantSession';
 
 const PublicHeader = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
-	const [loggedInUser, setLoggedInUser] = useState(null);
+	const { user: loggedInUser, setUser, clearSession } = useApplicantSession(location.pathname);
 
-	// 모달 열림/닫힘 상태만 관리
 	const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-
-	useEffect(() => {
-		const user = sessionStorage.getItem('applicant_user');
-		if (user) {
-			setLoggedInUser(JSON.parse(user));
-			return;
-		}
-
-		// 쿠키 세션이 남아있는데 sessionStorage가 비어있는 경우 복구
-		recruitmentApi.getApplicantMe().then((res) => {
-			if (res?.data?.isLoggedIn) {
-				sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
-				setLoggedInUser(res.data);
-			} else {
-				setLoggedInUser(null);
-			}
-		}).catch(() => {
-			setLoggedInUser(null);
-		});
-	}, [location.pathname]);
 
 	const handleLogout = () => {
 		Notify.toastPromise(
@@ -43,8 +23,7 @@ const PublicHeader = () => {
 				error: '로그아웃에 실패했습니다.',
 			}
 		).finally(() => {
-			sessionStorage.removeItem('applicant_user');
-			setLoggedInUser(null);
+			clearSession();
 			navigate(PATHS.CAREERS);
 		});
 	};
@@ -54,24 +33,20 @@ const PublicHeader = () => {
 			<header className="public-header">
 				<div className="public-header__inner">
 					<div className="public-header__brand-nav">
-					{/* 1. 로고 */}
 					<Link to={PATHS.CAREERS} className="public-header__logo-link">
 						가치플레이 채용
 					</Link>
 
-					{/* 2. 공통/권한별 메뉴 */}
 					<nav className="public-header__nav">
 						<Link to={PATHS.CAREERS} className="public-header__nav-link">채용 공고</Link>
 						{loggedInUser && (
 							<>
 								<Link to={PATHS.CAREERS_MY_APPLICATIONS} className="public-header__nav-link">내 지원 내역</Link>
-								{/* <Link to="/careers/resume" className="public-header__nav-link">지원서 관리</Link> */}
 							</>
 						)}
 					</nav>
 				</div>
 
-				{/* 3. 로그인 / 로그아웃 버튼 */}
 					<div className="public-header__actions-wrap">
 						{loggedInUser ? (
 							<div className="public-header__actions">
@@ -98,12 +73,11 @@ const PublicHeader = () => {
 					</div>
 				</div>
 			</header>
-			{/* 🌟 분리된 모달 컴포넌트를 부착 (Props로 상태와 함수를 넘겨줌) */}
-			<ApplicantProfileModal 
-				isOpen={isProfileModalOpen} 
-				onClose={() => setIsProfileModalOpen(false)} 
+			<ApplicantProfileModal
+				isOpen={isProfileModalOpen}
+				onClose={() => setIsProfileModalOpen(false)}
 				loggedInUser={loggedInUser}
-				onUpdateSuccess={setLoggedInUser} // 모달에서 수정 성공 시 헤더의 이름도 즉시 바뀌게 됨
+				onUpdateSuccess={setUser}
 			/>
 		</>
 	);

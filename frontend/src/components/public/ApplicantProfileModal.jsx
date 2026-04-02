@@ -3,6 +3,11 @@ import 'assets/css/careers.css';
 import * as Notify from 'utils/toastUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import { recruitmentApi } from 'api/recruitmentApi';
+import {
+	syncApplicantSessionFromServer,
+	setCachedApplicantUser,
+	isApplicantSessionPayloadLoggedIn,
+} from 'utils/applicantSession';
 
 const ApplicantProfileModal = ({ isOpen, onClose, loggedInUser, onUpdateSuccess }) => {
 	// 내부 폼 상태
@@ -33,23 +38,16 @@ const ApplicantProfileModal = ({ isOpen, onClose, loggedInUser, onUpdateSuccess 
 				error: (error) =>
 					formatApiDetail(error) || '정보 수정에 실패했습니다.' // 기존 alert 대체
 			}
-		).then((res) => {
-			// 성공 시: 쿠키 세션(/me) 기준으로 최신 프로필을 다시 가져와 저장
-			recruitmentApi.getApplicantMe().then((meRes) => {
-				const me = meRes?.data;
-				if (me?.isLoggedIn) {
-					sessionStorage.setItem('applicant_user', JSON.stringify(me));
-					onUpdateSuccess(me);
-				} else {
-					sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
-					onUpdateSuccess(res.data);
-				}
-			}).catch(() => {
-				sessionStorage.setItem('applicant_user', JSON.stringify(res.data));
-				onUpdateSuccess(res.data);
-			});
-			window.dispatchEvent(new Event('applicantProfileUpdated'));
-			onClose(); // 모달 닫기
+		).then(async (res) => {
+			const me = await syncApplicantSessionFromServer();
+			if (isApplicantSessionPayloadLoggedIn(me)) {
+				onUpdateSuccess(me);
+			} else if (res?.data) {
+				const merged = { ...res.data, isLoggedIn: true };
+				setCachedApplicantUser(merged);
+				onUpdateSuccess(merged);
+			}
+			onClose();
 		}).catch((err) => {
 			console.error("정보 수정 에러:", err);
 		});
