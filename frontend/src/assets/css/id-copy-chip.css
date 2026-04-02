@@ -45,7 +45,11 @@
 
 .id-copy-chip__btn:focus-visible {
 	outline: 2px solid var(--primary, #3faf7a);
-	outline-offset: 1px;
+	outline-offset: 2px;
+}
+
+.id-copy-chip--muted .id-copy-chip__btn:focus-visible {
+	outline-color: #4b5563;
 }
 
 .id-copy-chip--muted .id-copy-chip__btn {
