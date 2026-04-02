@@ -1,4 +1,4 @@
-/* 목록·상세의 긴 ID: 축약 표시 + 복사 */
+/* 목록·상세의 긴 ID: 축약 표시 + 복사 — 색은 global.css :root 토큰만 사용 */
 
 .id-copy-chip {
 	display: inline-flex;
@@ -30,34 +30,34 @@
 	font-size: 0.7rem;
 	font-weight: 600;
 	line-height: 1.2;
-	color: var(--primary, #3faf7a);
-	background: rgba(61, 175, 122, 0.1);
-	border: 1px solid rgba(61, 175, 122, 0.35);
+	color: var(--primary);
+	background: rgb(var(--primary-rgb) / 0.1);
+	border: 1px solid rgb(var(--primary-rgb) / 0.35);
 	border-radius: 4px;
 	cursor: pointer;
 	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .id-copy-chip__btn:hover {
-	background: rgba(61, 175, 122, 0.18);
-	border-color: var(--primary, #3faf7a);
+	background: rgb(var(--primary-rgb) / 0.18);
+	border-color: var(--primary);
 }
 
 .id-copy-chip__btn:focus-visible {
-	outline: 2px solid var(--primary, #3faf7a);
+	outline: 2px solid var(--primary);
 	outline-offset: 2px;
 }
 
 .id-copy-chip--muted .id-copy-chip__btn:focus-visible {
-	outline-color: #4b5563;
+	outline-color: var(--bq-ring-muted);
 }
 
 .id-copy-chip--muted .id-copy-chip__btn {
-	color: #6b7280;
-	background: #f3f4f6;
-	border-color: #e5e7eb;
+	color: var(--bq-text-muted);
+	background: var(--bq-surface-muted);
+	border-color: var(--bq-border-muted);
 }
 
 .id-copy-chip--muted .id-copy-chip__btn:hover {
-	background: #e5e7eb;
+	background: var(--bq-border-muted);
 }

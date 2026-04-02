@@ -22,7 +22,7 @@
 .notfound-code {
     font-size: clamp(4rem, 18vw, 8rem);
     font-weight: 800;
-    color: var(--primary-color, #3faf7a);
+    color: var(--primary-color);
     margin: 0;
     line-height: 1;
     letter-spacing: -0.02em;
@@ -86,7 +86,7 @@
 }
 
 .notfound-actions .btn-home {
-    background-color: var(--primary-color, #3faf7a);
+    background-color: var(--primary-color);
     border: 1px solid transparent;
     color: #fff;
 }

@@ -71,15 +71,15 @@ body {
 }
 
 .login-input:focus {
-    border-color: var(--primary-color, #3faf7a); /* 🎨 포커스 시 Primary 컬러 테두리 */
+    border-color: var(--primary-color); /* 🎨 포커스 시 Primary 컬러 테두리 */
     background-color: #ffffff; /* 입력 중에는 깔끔하게 흰색으로 변경 */
-    box-shadow: 0 0 0 3px rgba(63, 175, 122, 0.18);
+    box-shadow: 0 0 0 3px rgb(var(--primary-rgb) / 0.18);
 }
 
 /* 4. 로그인 버튼 */
 .login-button {
     padding: 15px;
-    background-color: var(--primary-color, #3faf7a); /* 🎨 팔레트의 Primary 컬러 적용 */
+    background-color: var(--primary-color); /* 🎨 팔레트의 Primary 컬러 적용 */
     color: #ffffff;
     border: none;
     cursor: pointer;
@@ -109,7 +109,7 @@ body {
 .signup-link-btn {
     background: none;
     border: none;
-    color: var(--primary-color, #3faf7a); /* 🎨 Primary 컬러로 포인트 */
+    color: var(--primary-color); /* 🎨 Primary 컬러로 포인트 */
     font-weight: 800;
     cursor: pointer;
     padding: 0 5px;
@@ -207,8 +207,8 @@ body {
 .btn-check-id {
     width: 90px;
     background-color: #ffffff;
-    border: 1px solid var(--primary-color, #3faf7a); /* 🎨 Primary 컬러 */
-    color: var(--primary-color, #3faf7a);
+    border: 1px solid var(--primary-color); /* 🎨 Primary 컬러 */
+    color: var(--primary-color);
     border-radius: 8px;
     font-weight: 700;
     font-size: 0.85rem;
@@ -217,7 +217,7 @@ body {
 }
 
 .btn-check-id:hover {
-    background-color: var(--primary-color, #3faf7a);
+    background-color: var(--primary-color);
     color: #ffffff;
 }
 
@@ -288,7 +288,7 @@ body {
 }
 
 .status-message--success {
-    color: var(--primary-color, #3faf7a);
+    color: var(--primary-color);
 }
 
 .status-message--error {

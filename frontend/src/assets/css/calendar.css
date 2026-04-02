@@ -86,8 +86,8 @@
 }
 
 .fc .fc-button-primary {
-    background-color: var(--primary-color, #3faf7a);
-    border-color: var(--primary-color, #3faf7a);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 .fc .fc-button-primary:hover {

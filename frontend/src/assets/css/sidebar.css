@@ -42,14 +42,14 @@
 }
 
 .sidebar-item:hover {
-    background-color: rgba(63, 175, 122, 0.08);
+    background-color: rgb(var(--primary-rgb) / 0.08);
     color: var(--font-color, #141414);
     opacity: 1;
 }
 
 .sidebar-item.active {
-    background-color: rgba(63, 175, 122, 0.14);
-    color: var(--primary-color, #3faf7a);
+    background-color: rgb(var(--primary-rgb) / 0.14);
+    color: var(--primary-color);
     font-weight: 600;
     opacity: 1;
 }

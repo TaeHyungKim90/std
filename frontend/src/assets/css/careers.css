@@ -75,8 +75,8 @@
 }
 .job-card:hover {
     background: rgba(255, 255, 255, 0.95);
-    border-color: var(--primary-color, #3faf7a);
-    box-shadow: 0 10px 20px rgba(63, 175, 122, 0.15);
+    border-color: var(--primary-color);
+    box-shadow: 0 10px 20px rgb(var(--primary-rgb) / 0.15);
     transform: translateY(-2px);
 }
 .job-card h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #111; }
@@ -109,13 +109,13 @@
 .job-apply-section { text-align: center; margin-top: 50px; }
 
 .btn-apply-large {
-    padding: 15px 40px; font-size: 1.2rem; font-weight: bold; background-color: var(--primary-color, #3faf7a);
+    padding: 15px 40px; font-size: 1.2rem; font-weight: bold; background-color: var(--primary-color);
     color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease-in-out;
 }
 .btn-apply-large:hover { 
     background-color: var(--primary-hover-color, #359a6a) !important; 
     transform: translateY(-2px); 
-    box-shadow: 0 6px 15px rgba(63, 175, 122, 0.3); 
+    box-shadow: 0 6px 15px rgb(var(--primary-rgb) / 0.3); 
 }
 
 /* =========================================
@@ -195,7 +195,7 @@
 
 .my-applications__cta {
     padding: 12px 24px;
-    background: #3faf7a;
+    background: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -413,7 +413,7 @@
 }
 
 .job-apply__submit--ready {
-    background: var(--primary-color, #3faf7a);
+    background: var(--primary-color);
     color: #fff;
     cursor: pointer;
 }
@@ -465,7 +465,7 @@
 
 .applicant-signup__submit {
     padding: 15px;
-    background: #3faf7a;
+    background: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -484,7 +484,7 @@
 }
 
 .applicant-signup__login-link {
-    color: #3faf7a;
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: bold;
 }
@@ -506,7 +506,7 @@
 
 .applicant-login__submit {
     padding: 15px;
-    background: #3faf7a;
+    background: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -525,7 +525,7 @@
 }
 
 .applicant-login__footer-link {
-    color: #3faf7a;
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: bold;
 }

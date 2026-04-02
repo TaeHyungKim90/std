@@ -74,8 +74,8 @@
 
 .my-profile-grid input:focus {
 	outline: none;
-	border-color: var(--primary-color, #3faf7a);
-	box-shadow: 0 0 0 3px rgba(63, 175, 122, 0.15);
+	border-color: var(--primary-color);
+	box-shadow: 0 0 0 3px rgb(var(--primary-rgb) / 0.15);
 }
 
 .my-profile-readonly {
@@ -107,7 +107,7 @@
 }
 
 .my-profile-btn--primary {
-	background: var(--primary-color, #3faf7a);
+	background: var(--primary-color);
 	color: #fff;
 }
 
@@ -144,7 +144,7 @@
 .vacation-progress__fill {
 	height: 100%;
 	border-radius: 999px;
-	background: linear-gradient(90deg, var(--primary-color, #3faf7a), #5ccc94);
+	background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
 	transition: width 0.35s ease;
 }
 

@@ -67,16 +67,25 @@ aside.uta-drawer-panel.dynamic-enter {
 }
 
 :root {
-    /* 🎨 2026 HR 소프트웨어 권장 팔레트 (배경·프라이머리·시그널 오렌지·텍스트) */
+    /* 🎨 HR 팔레트: 배경·프라이머리·시그널·텍스트. 컴포넌트는 hex 대신 var(--primary-color), rgb(var(--primary-rgb) / α) 등 사용 */
     --primary-color: #3FAF7A;     /* Primary — 세이지 그린 */
     --background-color: #F0EEE9; /* Background — 웜 오프화이트 */
     --font-color: #141414;        /* Text — 차콜 */
     --danger-color: #FF6A3D;      /* Signal Orange — 강조·경고·삭제 포인트 */
     --primary-hover-color: #359a6a; /* Primary 버튼 호버 */
+    --primary-light: #5ccc94; /* 그라데이션·밝은 톤 보조색 */
+    /* Primary RGB (공백 구분) — rgb(var(--primary-rgb) / α) 로 틴트·그림자 통일 */
+    --primary-rgb: 63 175 122;
+
+    /* 보조 중립 톤 — 비강조 칩·테두리 (IdCopyChip muted 등) */
+    --bq-surface-muted: #f3f4f6;
+    --bq-border-muted: #e5e7eb;
+    --bq-text-muted: #6b7280;
+    --bq-ring-muted: #4b5563;
 
     --white-color: #ffffff;
     --border-color: #E2DFD8;
-    --success-color: #3FAF7A;
+    --success-color: var(--primary-color);
     --completed-color: #adb5bd;
 
     /* ✅ BQ(valueplay) 전용 변수 업데이트 */

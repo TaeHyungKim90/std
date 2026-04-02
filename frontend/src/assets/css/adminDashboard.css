@@ -88,7 +88,7 @@
 .status-tag { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
 .status-tag.status-past { background: #f1f3f5; color: #999; }     
 .status-tag.status-now { background: #fff0eb; color: #FF6A3D; } 
-.status-tag.status-future { background: rgba(63, 175, 122, 0.12); color: var(--primary-color, #3faf7a); } 
+.status-tag.status-future { background: rgb(var(--primary-rgb) / 0.12); color: var(--primary-color); } 
 
 /* 🚨 2. 여기가 예쁜 연차 게이지 바(Progress Bar)를 그려주는 핵심입니다! */
 .progress-container { margin-top: 8px; }
@@ -96,7 +96,7 @@
 .progress-subtext { font-size: 0.85rem; color: var(--bq-text-dim, #8a8a8a); font-weight: normal; }
 .progress-bar-bg { width: 100%; height: 6px; background-color: #F0EEE9; border-radius: 3px; overflow: hidden; }
 .progress-bar-fill { height: 100%; transition: width 0.5s ease-out; }
-.progress-bar-fill.normal { background-color: var(--primary-color, #3faf7a); }
+.progress-bar-fill.normal { background-color: var(--primary-color); }
 .progress-bar-fill.warning { background-color: #FF6A3D; }
 
 /* 모바일 대응 */
@@ -166,5 +166,5 @@
 }
 
 .admin-dashboard__balance-strong--ok {
-    color: var(--primary-color, #3faf7a);
+    color: var(--primary-color);
 }

@@ -159,12 +159,12 @@ aside.rep-drawer-panel.dynamic-enter {
 }
 
 .rep-tab:hover:not(:disabled) {
-	border-color: var(--bq-primary, #3faf7a);
+	border-color: var(--bq-primary);
 }
 
 .rep-tab--active {
-	background: var(--bq-primary, #3faf7a);
-	border-color: var(--bq-primary, #3faf7a);
+	background: var(--bq-primary);
+	border-color: var(--bq-primary);
 	color: #fff;
 }
 
@@ -213,7 +213,7 @@ aside.rep-drawer-panel.dynamic-enter {
 }
 
 .rep-tabs--segment .rep-tab:focus-visible {
-	outline: 2px solid var(--bq-primary, #3faf7a);
+	outline: 2px solid var(--bq-primary);
 	outline-offset: 2px;
 }
 
@@ -618,8 +618,8 @@ aside.rep-drawer-panel.dynamic-enter {
 }
 
 .rep-admin-table th.rep-col-emphasis {
-	color: var(--bq-primary, #3faf7a);
-	box-shadow: inset 0 -2px 0 var(--bq-primary, #3faf7a);
+	color: var(--bq-primary);
+	box-shadow: inset 0 -2px 0 var(--bq-primary);
 }
 
 .rep-admin-table tbody tr {
@@ -627,7 +627,7 @@ aside.rep-drawer-panel.dynamic-enter {
 }
 
 .rep-admin-table tbody tr:hover {
-	background: rgba(61, 175, 122, 0.06);
+	background: rgb(var(--primary-rgb) / 0.06);
 }
 
 .rep-admin-toolbar-stack {
@@ -853,7 +853,7 @@ aside.rep-drawer-panel.dynamic-enter {
 }
 
 .rep-status-badge--submitted {
-	background: rgba(63, 175, 122, 0.2);
+	background: rgb(var(--primary-rgb) / 0.2);
 	color: #1a5c3a;
 }
 
@@ -1004,7 +1004,7 @@ aside.rep-drawer-panel.dynamic-enter {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	color: var(--bq-primary, #3faf7a);
+	color: var(--bq-primary);
 }
 
 .rep-drawer-attendance-ref__hint {

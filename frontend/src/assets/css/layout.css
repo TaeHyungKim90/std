@@ -182,7 +182,7 @@
 
 .bq-input:focus, .bq-select:focus, .bq-input-title:focus, .bq-textarea:focus {
     background-color: #ffffff; /* 포커스 시 깔끔한 흰색으로 변경 */
-    border-color: var(--primary-color, #3faf7a);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(61, 175, 122, 0.15);
 }
 
@@ -232,7 +232,7 @@
 
 .btn-save, .form-actions button[type="submit"] { 
     flex: 2; 
-    background-color: var(--primary-color, #3faf7a) !important;
+    background-color: var(--primary-color) !important;
     color: #ffffff !important; 
 }
 .btn-save:hover, .form-actions button[type="submit"]:hover { 
