@@ -38,41 +38,41 @@ const Header = () => {
 	return (
 		<header className="modern-header-wrapper">
 			<div className="modern-gnb">
-				<div className="gnb-left">
-					<div onClick={() => navigate(PATHS.HOME)} className="bq-logo">
-						<img src={logo} alt="가치플레이 로고" className="bq-logo-img" />
-						<div className="bq-logo-text-group">
-							<span className="bq-logo-main">가치플레이 </span>
-							<span className="bq-logo-sub">HR</span>
+					<div className="gnb-left">
+						<div onClick={() => navigate(PATHS.HOME)} className="bq-logo">
+							<img src={logo} alt="가치플레이 로고" className="bq-logo-img" />
+							<div className="bq-logo-text-group">
+								<span className="bq-logo-main">가치플레이 </span>
+								<span className="bq-logo-sub">HR</span>
+							</div>
 						</div>
+
+						<nav className="gnb-nav">
+							{MENU_ITEMS.map((item) => {
+								if (item.adminOnly && !isAdmin) return null;
+								const isActive = item.id === 'admin' ? isAdminMode : currentPath.startsWith(item.path);
+
+								return (
+									<Link key={item.id} to={item.path} className={`gnb-item ${isActive ? 'active' : ''}`}>
+										{item.label}
+									</Link>
+								);
+							})}
+						</nav>
 					</div>
 
-					<nav className="gnb-nav">
-						{MENU_ITEMS.map((item) => {
-							if (item.adminOnly && !isAdmin) return null;
-							const isActive = item.id === 'admin' ? isAdminMode : currentPath.startsWith(item.path);
-
-							return (
-								<Link key={item.id} to={item.path} className={`gnb-item ${isActive ? 'active' : ''}`}>
-									{item.label}
-								</Link>
-							);
-						})}
-					</nav>
-				</div>
-
-				<div className="gnb-right">
-					<div className="bq-user-info">
-						<div className="bq-status-dot"></div>
-						<span className="user-name-text">
-							{userNickname || userName}
-							{userNickname && userName && userNickname !== userName ? `(${userName})` : ''} 님
-						</span>
+					<div className="gnb-right">
+						<div className="bq-user-info">
+							<div className="bq-status-dot"></div>
+							<span className="user-name-text">
+								{userNickname || userName}
+								{userNickname && userName && userNickname !== userName ? `(${userName})` : ''} 님
+							</span>
+						</div>
+						<button onClick={handleLogout} className="bq-btn-logout" disabled={isLoggingOut}>
+							{isLoggingOut ? '처리중...' : '로그아웃'}
+						</button>
 					</div>
-					<button onClick={handleLogout} className="bq-btn-logout" disabled={isLoggingOut}>
-						{isLoggingOut ? '처리중...' : '로그아웃'}
-					</button>
-				</div>
 			</div>
 		</header>
 	);
