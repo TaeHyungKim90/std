@@ -1,4 +1,7 @@
 /* src/assets/css/global.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @keyframes scaleBlurIn {
     from {
