@@ -71,7 +71,7 @@
 .applicant-list-modal__loading {
     text-align: center;
     padding: 50px 0;
-    color: #666;
+    color: var(--bq-text-dim, #8a8a8a);
 }
 
 .applicant-list-modal__table {
@@ -91,7 +91,7 @@
 .applicant-list-modal__th {
     padding: 15px 12px;
     border-bottom: 1px solid #ddd;
-    color: #333;
+    color: var(--font-color, #141414);
     font-weight: bold;
 }
 
@@ -142,7 +142,7 @@
     border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
-    color: #333;
+    color: var(--font-color, #141414);
     font-weight: 500;
 }
 
@@ -163,7 +163,7 @@
 .applicant-list-modal__footer-btn {
     padding: 10px 24px;
     background: #f3f4f6;
-    color: #333;
+    color: var(--font-color, #141414);
     border: none;
     border-radius: 6px;
     font-weight: bold;

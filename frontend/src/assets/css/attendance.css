@@ -3,7 +3,7 @@
     justify-content: center;
     align-items: flex-start;
     padding: 40px 20px;
-    background-color: #f4f7f9;
+    background-color: var(--bq-bg-main, #f0eee9);
     min-height: calc(100vh - 70px);
 }
 
@@ -21,20 +21,20 @@
 .attendance-header {
     text-align: center;
     margin-bottom: 30px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color, #e2dfd8);
     padding-bottom: 20px;
 }
 
 .today-date {
     font-size: 1.1rem;
-    color: #666;
+    color: var(--bq-text-dim, #8a8a8a);
     margin-bottom: 10px;
 }
 
 .digital-clock {
     font-size: 3.5rem;
     font-weight: 800;
-    color: var(--bq-primary, #007bff);
+    color: var(--bq-primary);
     font-family: 'Courier New', Courier, monospace;
     letter-spacing: 2px;
     transition: all 0.3s ease;
@@ -59,14 +59,14 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 10px;
-    color: #333;
+    color: var(--font-color, #141414);
     white-space: nowrap;
 }
 
 .bq-select {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #e2dfd8);
     border-radius: 8px;
     font-size: 1rem;
     outline: none;
@@ -74,7 +74,7 @@
 }
 
 .bq-select:focus {
-    border-color: var(--bq-primary, #007bff);
+    border-color: var(--bq-primary);
 }
 
 .button-group {
@@ -94,12 +94,12 @@
 }
 
 .btn-clock-in {
-    background-color: var(--bq-primary, #007bff);
+    background-color: var(--bq-primary);
     color: white;
 }
 
 .btn-clock-out {
-    background-color: #e44d26; /* Danger color */
+    background-color: var(--danger-color, #ff6a3d);
     color: white;
 }
 
@@ -138,17 +138,17 @@
 
 .status-item .value {
     font-weight: 600;
-    color: #333;
+    color: var(--font-color, #141414);
 }
 
 .total-work {
     margin-top: 15px;
     padding-top: 15px;
-    border-top: 1px dashed #ddd;
+    border-top: 1px dashed var(--border-color, #e2dfd8);
 }
 
 .total-work .value {
-    color: var(--bq-primary, #007bff);
+    color: var(--bq-primary);
     font-size: 1.1rem;
 }
 
@@ -224,9 +224,9 @@
 
 :root {
     /* Reference palette */
-    --uta-bg: #F0EEEA;
-    --uta-primary: #3FAF7A;
-    --uta-signal: #F6A43D;
+    --uta-bg: #f0eee9;
+    --uta-primary: #3faf7a;
+    --uta-signal: #ff6a3d;
     --uta-text: #141414;
 
     /* Neutrals */
@@ -272,7 +272,7 @@
 /* Header */
 .uta-header-top {
     padding: 22px 28px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color, #e2dfd8);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -383,7 +383,7 @@
 
 .uta-header-nav {
     padding: 18px 28px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color, #e2dfd8);
 }
 
 .uta-nav-row {
@@ -711,7 +711,7 @@
 
 .adm-attendance__date-label {
     font-weight: 700;
-    color: #222;
+    color: var(--font-color, #141414);
 }
 
 .adm-attendance__date-input {
@@ -731,6 +731,11 @@
     background: #fff;
     font-weight: 700;
     cursor: pointer;
+}
+
+.adm-attendance__today-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .adm-attendance__summary-grid {
@@ -771,7 +776,7 @@
 }
 
 .adm-attendance__summary-card--total .adm-attendance__summary-label {
-    color: #666;
+    color: var(--bq-text-dim, #8a8a8a);
 }
 
 .adm-attendance__summary-card--attended .adm-attendance__summary-label {
@@ -846,7 +851,7 @@
 
 .adm-attendance__location-badge {
     background-color: #f1f3f5;
-    color: #666;
+    color: var(--bq-text-dim, #8a8a8a);
 }
 
 .adm-attendance__cell-work {

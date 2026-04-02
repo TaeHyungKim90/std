@@ -86,8 +86,8 @@
 }
 
 .fc .fc-button-primary {
-    background-color: var(--primary-color, #3DAF7A);
-    border-color: var(--primary-color, #3DAF7A);
+    background-color: var(--primary-color, #3faf7a);
+    border-color: var(--primary-color, #3faf7a);
 }
 
 .fc .fc-button-primary:hover {
@@ -170,7 +170,7 @@
 }
 
 .color-circle-btn.selected {
-    border: 3px solid #333;
+    border: 3px solid var(--font-color, #141414);
     outline: 2px solid white;
 }
 /* ==========================================

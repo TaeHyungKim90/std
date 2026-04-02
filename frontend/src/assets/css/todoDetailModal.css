@@ -30,7 +30,7 @@
     background: transparent;
     border: none;
     padding: 0;
-    color: #222;
+    color: var(--font-color, #141414);
 }
 
 .todo-detail-modal__empty-text {
