@@ -1,52 +1,52 @@
 /* TodoDetailModal.jsx — event.color 테두리·뱃지는 JSX에서 인라인 유지 */
 
 .todo-detail-modal__content {
-    max-width: 600px;
+	max-width: 600px;
 }
 
 .todo-detail-modal__admin-tag {
-    font-size: 0.8rem;
-    color: red;
+	font-size: 0.8rem;
+	color: red;
 }
 
 .todo-detail-modal__description-block {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    min-height: 150px;
-    background-color: #fafafa;
-    text-align: left;
+	margin-top: 20px;
+	padding: 15px;
+	border: 1px solid #eee;
+	border-radius: 8px;
+	min-height: 150px;
+	background-color: #fafafa;
+	text-align: left;
 }
 
 .todo-detail-modal__description-label {
-    display: block;
-    margin-bottom: 10px;
-    color: #555;
-    font-weight: bold;
+	display: block;
+	margin-bottom: 10px;
+	color: #555;
+	font-weight: bold;
 }
 
 .todo-detail-modal__sun-body {
-    background: transparent;
-    border: none;
-    padding: 0;
-    color: var(--font-color, #141414);
+	background: transparent;
+	border: none;
+	padding: 0;
+	color: var(--font-color, #141414);
 }
 
 .todo-detail-modal__empty-text {
-    color: #aaa;
-    font-style: italic;
-    text-align: center;
-    margin-top: 40px;
+	color: #aaa;
+	font-style: italic;
+	text-align: center;
+	margin-top: 40px;
 }
 
 .todo-detail-modal__actions {
-    margin-top: 20px;
+	margin-top: 20px;
 }
 
 .todo-detail-modal__hint {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #aaa;
-    margin-top: 10px;
+	text-align: center;
+	font-size: 0.8rem;
+	color: #aaa;
+	margin-top: 10px;
 }

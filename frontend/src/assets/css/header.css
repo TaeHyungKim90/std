@@ -1,188 +1,188 @@
 .modern-header-wrapper {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    width: 100%;
-    background-color: var(--white-color, #fff);
-    box-shadow: 0 2px 4px -1px rgba(20, 20, 20, 0.06);
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+	width: 100%;
+	background-color: var(--white-color, #fff);
+	box-shadow: 0 2px 4px -1px rgba(20, 20, 20, 0.06);
 }
 
 /* 1층 GNB — 본문(.bq-page-shell)과 달리 헤더는 max-width 없이 전체 폭 사용(좌우 빈 여백 최소화) */
 .modern-gnb {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 clamp(1rem, 2.5vw, 2rem);
-    border-bottom: 1px solid var(--border-color, #e2dfd8);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 64px;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0 clamp(1rem, 2.5vw, 2rem);
+	border-bottom: 1px solid var(--border-color, #e2dfd8);
 }
 
 .gnb-left, .gnb-right {
-    display: flex;
-    align-items: center;
+	display: flex;
+	align-items: center;
 }
 
 /* 기존 로고 스타일 보존 */
 .bq-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    margin-right: 48px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	margin-right: 48px;
 }
 
 .bq-logo-img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
 }
 
 .bq-logo-text-group {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: -0.5px;
 }
 
 .bq-logo-main {
-    color: var(--font-color, #141414);
+	color: var(--font-color, #141414);
 }
 
 .bq-logo-sub {
-    color: var(--primary-color);
+	color: var(--primary-color);
 }
 
 /* GNB 네비게이션 */
 .gnb-nav {
-    display: flex;
-    gap: 32px;
-    height: 64px;
+	display: flex;
+	gap: 32px;
+	height: 64px;
 }
 
 .gnb-item {
-    text-decoration: none;
-    color: var(--bq-text-dim, #8a8a8a);
-    font-weight: 600;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    position: relative;
-    transition: color 0.2s;
+	text-decoration: none;
+	color: var(--bq-text-dim, #8a8a8a);
+	font-weight: 600;
+	font-size: 1.05rem;
+	display: flex;
+	align-items: center;
+	position: relative;
+	transition: color 0.2s;
 }
 
 .gnb-item:hover { color: var(--font-color, #141414); }
 .gnb-item.active { color: var(--font-color, #141414); }
 .gnb-item.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background-color: var(--primary-color);
-    border-radius: 3px 3px 0 0;
+	content: '';
+	position: absolute;
+	bottom: -1px;
+	left: 0;
+	width: 100%;
+	height: 3px;
+	background-color: var(--primary-color);
+	border-radius: 3px 3px 0 0;
 }
 
 /* 우측 유저 정보 영역 */
 .bq-user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-right: 20px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-right: 20px;
 }
 
 .bq-status-dot {
-    width: 8px;
-    height: 8px;
-    background-color: var(--primary-color);
-    border-radius: 50%;
+	width: 8px;
+	height: 8px;
+	background-color: var(--primary-color);
+	border-radius: 50%;
 }
 
 .user-name-text {
-    font-size: 0.95rem;
-    color: var(--font-color, #141414);
-    font-weight: 500;
+	font-size: 0.95rem;
+	color: var(--font-color, #141414);
+	font-weight: 500;
 }
 
 .bq-btn-logout {
-    background: transparent;
-    border: 1px solid var(--border-color, #e2dfd8);
-    color: var(--bq-text-dim, #8a8a8a);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+	background: transparent;
+	border: 1px solid var(--border-color, #e2dfd8);
+	color: var(--bq-text-dim, #8a8a8a);
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s;
 }
 
 .bq-btn-logout:hover {
-    background-color: rgb(var(--primary-rgb) / 0.08);
-    color: var(--font-color, #141414);
+	background-color: rgb(var(--primary-rgb) / 0.08);
+	color: var(--font-color, #141414);
 }
 
 .bq-btn-logout:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 /* 2층 LNB (서브 헤더) */
 .modern-lnb {
-    background-color: #f4f3ef;
-    height: 52px;
-    border-bottom: 1px solid var(--border-color, #e2dfd8);
-    display: flex;
-    align-items: center;
-    padding: 0 32px;
+	background-color: #f4f3ef;
+	height: 52px;
+	border-bottom: 1px solid var(--border-color, #e2dfd8);
+	display: flex;
+	align-items: center;
+	padding: 0 32px;
 }
 
 .lnb-container {
-    display: flex;
-    gap: 12px;
+	display: flex;
+	gap: 12px;
 }
 
 .lnb-item {
-    text-decoration: none;
-    color: var(--bq-text-dim, #8a8a8a);
-    font-size: 0.95rem;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: 20px;
-    transition: all 0.2s ease-in-out;
+	text-decoration: none;
+	color: var(--bq-text-dim, #8a8a8a);
+	font-size: 0.95rem;
+	font-weight: 500;
+	padding: 8px 16px;
+	border-radius: 20px;
+	transition: all 0.2s ease-in-out;
 }
 
 .lnb-item:hover {
-    background-color: rgb(var(--primary-rgb) / 0.1);
-    color: var(--font-color, #141414);
+	background-color: rgb(var(--primary-rgb) / 0.1);
+	color: var(--font-color, #141414);
 }
 
 .lnb-item.active {
-    background-color: var(--white-color, #fff);
-    color: var(--font-color, #141414);
-    box-shadow: 0 1px 3px rgba(20, 20, 20, 0.08);
-    font-weight: 600;
+	background-color: var(--white-color, #fff);
+	color: var(--font-color, #141414);
+	box-shadow: 0 1px 3px rgba(20, 20, 20, 0.08);
+	font-weight: 600;
 }
 .lnb-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .lnb-group-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--bq-text-dim, #8a8a8a);
-    margin-right: 8px;
-    letter-spacing: -0.5px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-right: 8px;
+	letter-spacing: -0.5px;
 }
 
 .lnb-divider {
-    width: 1px;
-    height: 16px;
-    background-color: var(--border-color, #e2dfd8);
-    margin: 0 16px;
+	width: 1px;
+	height: 16px;
+	background-color: var(--border-color, #e2dfd8);
+	margin: 0 16px;
 }

@@ -26,23 +26,23 @@
 5. **서버 실행** (터미널 2개 권장)
    - **API (FastAPI)** — 작업 디렉터리는 `backend/app` 이어야 합니다.
 
-     ```bash
-     cd backend/app
-     python main.py
-     ```
+	 ```bash
+	 cd backend/app
+	 python main.py
+	 ```
 
-     기본 포트: **8000** (`APP_PORT`로 변경 가능).  
-     선택: 루트 `.env`에 `DEV_AUTO_START_REACT=true` 이면 백엔드 기동 시 CRA(`npm start`)를 함께 띄웁니다(개발 편의용, CI·운영에서는 `false`).
+	 기본 포트: **8000** (`APP_PORT`로 변경 가능).  
+	 선택: 루트 `.env`에 `DEV_AUTO_START_REACT=true` 이면 백엔드 기동 시 CRA(`npm start`)를 함께 띄웁니다(개발 편의용, CI·운영에서는 `false`).
 
    - **프론트 (CRA)** — `DEV_AUTO_START_REACT`를 쓰지 않을 때:
 
-     ```bash
-     cd frontend
-     npm start
-     ```
+	 ```bash
+	 cd frontend
+	 npm start
+	 ```
 
-     기본: **http://localhost:3000**  
-     코드 스타일: `npm run lint` / 자동 수정 `npm run lint:fix` (`eslint-plugin-simple-import-sort`, `eslint-plugin-unused-imports`, react-hooks 규칙은 `react-app` 기본 유지)
+	 기본: **http://localhost:3000**  
+	 코드 스타일: `npm run lint` / 자동 수정 `npm run lint:fix` (`eslint-plugin-simple-import-sort`, `eslint-plugin-unused-imports`, react-hooks 규칙은 `react-app` 기본 유지)
 
 6. 브라우저에서 프론트에 접속합니다. API 요청은 `REACT_APP_API_BASE_URL`(예: `http://localhost:8000/api`)로 나가며, **쿠키 세션**을 쓰므로 CORS에 프론트 오리진이 포함되어 있어야 합니다 (`CORS_ORIGINS`).
 

@@ -11,64 +11,64 @@ from services.public.applicant_auth import get_current_applicant  # noqa: E402
 
 
 class _FakeQuery:
-    def __init__(self, row):
-        self._row = row
+	def __init__(self, row):
+		self._row = row
 
-    def filter(self, *_args, **_kwargs):
-        return self
+	def filter(self, *_args, **_kwargs):
+		return self
 
-    def first(self):
-        return self._row
+	def first(self):
+		return self._row
 
 
 class _FakeDB:
-    def __init__(self, row):
-        self._row = row
+	def __init__(self, row):
+		self._row = row
 
-    def query(self, *_args, **_kwargs):
-        return _FakeQuery(self._row)
+	def query(self, *_args, **_kwargs):
+		return _FakeQuery(self._row)
 
 
 def test_common_upload_requires_authentication():
-    client = TestClient(app_main.app)
-    res = client.post(
-        "/api/common/upload",
-        files=[("files", ("sample.pdf", b"dummy", "application/pdf"))],
-    )
-    assert res.status_code == status.HTTP_401_UNAUTHORIZED
+	client = TestClient(app_main.app)
+	res = client.post(
+		"/api/common/upload",
+		files=[("files", ("sample.pdf", b"dummy", "application/pdf"))],
+	)
+	assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_common_download_returns_403_when_authorized_user_has_no_permission(monkeypatch):
-    # 인증은 통과시키고, 파일 권한 체크에서 403 강제
-    app_main.app.dependency_overrides[get_current_user] = lambda: {"id": 101, "role": "user"}
-    app_main.app.dependency_overrides[get_db] = lambda: _FakeDB(
-        SimpleNamespace(id=1, saved_name="dummy.pdf", original_name="dummy.pdf", content_type="application/pdf")
-    )
+	# 인증은 통과시키고, 파일 권한 체크에서 403 강제
+	app_main.app.dependency_overrides[get_current_user] = lambda: {"id": 101, "role": "user"}
+	app_main.app.dependency_overrides[get_db] = lambda: _FakeDB(
+		SimpleNamespace(id=1, saved_name="dummy.pdf", original_name="dummy.pdf", content_type="application/pdf")
+	)
 
-    from services import common_service
+	from services import common_service
 
-    def _deny(*_args, **_kwargs):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
+	def _deny(*_args, **_kwargs):
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
 
-    monkeypatch.setattr(common_service, "assert_user_may_download_uploaded_file", _deny)
+	monkeypatch.setattr(common_service, "assert_user_may_download_uploaded_file", _deny)
 
-    client = TestClient(app_main.app)
-    res = client.get("/api/common/files/1")
-    assert res.status_code == status.HTTP_403_FORBIDDEN
+	client = TestClient(app_main.app)
+	res = client.get("/api/common/files/1")
+	assert res.status_code == status.HTTP_403_FORBIDDEN
 
-    app_main.app.dependency_overrides.clear()
+	app_main.app.dependency_overrides.clear()
 
 
 def test_legacy_applicant_endpoint_returns_410_when_disabled():
-    app_main.app.dependency_overrides[get_current_applicant] = lambda: {"applicantId": 1}
-    prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
-    settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
+	app_main.app.dependency_overrides[get_current_applicant] = lambda: {"applicantId": 1}
+	prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
+	settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
 
-    try:
-        client = TestClient(app_main.app)
-        res = client.get("/api/public/recruitment/my-applications/1")
-        assert res.status_code == status.HTTP_410_GONE
-    finally:
-        settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
-        app_main.app.dependency_overrides.clear()
+	try:
+		client = TestClient(app_main.app)
+		res = client.get("/api/public/recruitment/my-applications/1")
+		assert res.status_code == status.HTTP_410_GONE
+	finally:
+		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
+		app_main.app.dependency_overrides.clear()
 

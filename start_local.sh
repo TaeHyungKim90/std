@@ -14,7 +14,7 @@ source "venv/bin/activate"
 export ENVIRONMENT=development
 
 # Usage:
-#   ./start_local.sh          -> backend + react
+#   ./start_local.sh		  -> backend + react
 #   ./start_local.sh backend  -> backend only
 if [[ "${1:-}" == "backend" ]]; then
   export DEV_AUTO_START_REACT=false

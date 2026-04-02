@@ -5,85 +5,85 @@
 ========================================= */
 /* 브랜드 색은 global.css :root 의 --primary / --accent 사용 */
 :root {
-    --bg-main: #F4F6F5;
-    --text-main: #141414;
-    --text-dim: #8a8a8a;
-    --white-glass: rgba(255, 255, 255, 0.7);
-    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
-    --shadow-hover: 0 15px 35px rgb(var(--primary-rgb) / 0.15);
-    --radius-card: 20px;
-    --radius-pill: 50px;
+	--bg-main: #F4F6F5;
+	--text-main: #141414;
+	--text-dim: #8a8a8a;
+	--white-glass: rgba(255, 255, 255, 0.7);
+	--shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
+	--shadow-hover: 0 15px 35px rgb(var(--primary-rgb) / 0.15);
+	--radius-card: 20px;
+	--radius-pill: 50px;
 }
 
 /* =========================================
    1. 기본 레이아웃 및 공통 설정
 ========================================= */
 .bq-admin-view {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
 }
 
 .admin-header {
-    margin-bottom: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
+	margin-bottom: 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
 }
 .admin-header h2 { 
-    margin-top: 0;
-    font-size: 1.45rem; 
-    line-height: 1.25;
-    color: var(--text-main); 
-    margin-bottom: 4px; 
-    font-weight: 800;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-right: 12px;
+	margin-top: 0;
+	font-size: 1.45rem; 
+	line-height: 1.25;
+	color: var(--text-main); 
+	margin-bottom: 4px; 
+	font-weight: 800;
+	white-space: nowrap;
+	flex-shrink: 0;
+	margin-right: 12px;
 }
 .admin-header h2 span { color: var(--primary); }
 .admin-header p { 
-    color: var(--text-dim); 
-    font-size: 0.875rem;
-    line-height: 1.4;
-    margin: 0;
+	color: var(--text-dim); 
+	font-size: 0.875rem;
+	line-height: 1.4;
+	margin: 0;
 }
 
 /* =========================================
    2. 관리 섹션 그리드
 ========================================= */
 .admin-management-grid {
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
-    gap: 25px;
+	display: grid; 
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+	gap: 25px;
 }
 
 .mgmt-section { 
-    background: var(--white-glass); 
-    backdrop-filter: blur(15px);
-    padding: 30px; 
-    border-radius: var(--radius-card); 
-    border: 1px solid rgba(255, 255, 255, 0.8); 
-    box-shadow: var(--shadow-soft);
-    min-width: 0;
-    box-sizing: border-box;
+	background: var(--white-glass); 
+	backdrop-filter: blur(15px);
+	padding: 30px; 
+	border-radius: var(--radius-card); 
+	border: 1px solid rgba(255, 255, 255, 0.8); 
+	box-shadow: var(--shadow-soft);
+	min-width: 0;
+	box-sizing: border-box;
 }
 .bq-btn-admin-action {
-    width: 100%; 
-    padding: 14px; 
-    margin-top: 15px; 
-    background: #fff; 
-    border: 1px solid var(--primary);
-    color: var(--primary); 
-    border-radius: var(--radius-pill); 
-    cursor: pointer; 
-    font-weight: bold; 
-    transition: 0.2s;
+	width: 100%; 
+	padding: 14px; 
+	margin-top: 15px; 
+	background: #fff; 
+	border: 1px solid var(--primary);
+	color: var(--primary); 
+	border-radius: var(--radius-pill); 
+	cursor: pointer; 
+	font-weight: bold; 
+	transition: 0.2s;
 }
 .bq-btn-admin-action:hover { background: var(--primary); color: #fff; }
 
@@ -91,26 +91,26 @@
    3. 카테고리, 이모지, 기타 요소
 ========================================= */
 .category-add-box {
-    display: flex; flex-wrap: wrap; gap: 15px; 
-    background: rgba(255, 255, 255, 0.5); 
-    padding: 20px; border-radius: 16px; margin-bottom: 25px; align-items: center; 
+	display: flex; flex-wrap: wrap; gap: 15px; 
+	background: rgba(255, 255, 255, 0.5); 
+	padding: 20px; border-radius: 16px; margin-bottom: 25px; align-items: center; 
 }
 .category-add-box > input.cat-input {
-    padding: 12px 18px; border: 1px solid #ddd; border-radius: 12px; flex: 1; min-width: 150px; font-size: 14px; outline: none; transition: 0.2s;
+	padding: 12px 18px; border: 1px solid #ddd; border-radius: 12px; flex: 1; min-width: 150px; font-size: 14px; outline: none; transition: 0.2s;
 }
 .category-add-box > input.cat-input:focus { border-color: var(--primary); }
 
 .emoji-picker-container { position: relative; display: inline-block; }
 .emoji-btn {
-    width: 46px; height: 46px; font-size: 1.4rem; 
-    border: 1px solid #ddd; background: #fff; cursor: pointer; 
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; 
+	width: 46px; height: 46px; font-size: 1.4rem; 
+	border: 1px solid #ddd; background: #fff; cursor: pointer; 
+	border-radius: 50%; display: flex; align-items: center; justify-content: center;
+	transition: all 0.2s; 
 }
 .emoji-btn:hover { border-color: var(--primary); background: #f9f9f9; }
 .emoji-popover {
-    position: absolute; top: 55px; left: 0; z-index: 9999;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15); border-radius: 16px; overflow: hidden;
+	position: absolute; top: 55px; left: 0; z-index: 9999;
+	box-shadow: 0 10px 40px rgba(0,0,0,0.15); border-radius: 16px; overflow: hidden;
 }
 
 .icon-cell { font-size: 1.8rem; text-align: center; width: 80px; }
@@ -120,16 +120,16 @@
 ========================================= */
 /* 가로·세로 스크롤 + thead 고정(overflow-x:auto 단독일 때 sticky 깨짐 방지) */
 .admin-table-wrapper {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    max-height: min(75vh, calc(100vh - 200px));
-    background-color: var(--white-glass); 
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.8); 
-    border-radius: 12px;
-    box-shadow: var(--shadow-soft);
-    width: 100%;
-    max-width: 100%;
+	overflow: auto;
+	-webkit-overflow-scrolling: touch;
+	max-height: min(75vh, calc(100vh - 200px));
+	background-color: var(--white-glass); 
+	backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(255, 255, 255, 0.8); 
+	border-radius: 12px;
+	box-shadow: var(--shadow-soft);
+	width: 100%;
+	max-width: 100%;
 }
 .admin-table-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
 .admin-table-wrapper::-webkit-scrollbar-thumb { background-color: rgba(61, 175, 122, 0.3); border-radius: 10px; }
@@ -139,31 +139,31 @@
 .admin-table { width: 100%; min-width: 720px; border-collapse: collapse; }
 
 .admin-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 15;
+	position: sticky;
+	top: 0;
+	z-index: 15;
 }
 
 .admin-table th {
-    background-color: #F8F9FA;
-    color: #444; 
-    font-weight: 800;
-    padding: 10px 14px;
-    line-height: 1.3;
-    text-align: left;
-    border-bottom: 2px solid #ddd;
-    white-space: nowrap;
-    font-size: 0.8125rem;
-    box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.06);
+	background-color: #F8F9FA;
+	color: #444; 
+	font-weight: 800;
+	padding: 10px 14px;
+	line-height: 1.3;
+	text-align: left;
+	border-bottom: 2px solid #ddd;
+	white-space: nowrap;
+	font-size: 0.8125rem;
+	box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.06);
 }
 .admin-table td { 
-    padding: 8px 14px;
-    line-height: 1.35;
-    border-bottom: 1px solid #eee; 
-    border-right: none !important; /* 세로선 완벽 제거 */
-    color: var(--text-main, #141414);
-    vertical-align: middle;
-    font-size: 0.875rem;
+	padding: 8px 14px;
+	line-height: 1.35;
+	border-bottom: 1px solid #eee; 
+	border-right: none !important; /* 세로선 완벽 제거 */
+	color: var(--text-main, #141414);
+	vertical-align: middle;
+	font-size: 0.875rem;
 }
 
 /* 🌟 홀/짝 줄무늬 (Zebra) */
@@ -172,8 +172,8 @@
 
 /* 🌟 마우스 호버 효과 */
 .admin-table tbody tr:hover td { 
-    background-color: #f0fdf4 !important; 
-    transition: background-color 0.2s ease;
+	background-color: #f0fdf4 !important; 
+	transition: background-color 0.2s ease;
 }
 
 .role-badge { padding: 4px 10px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; line-height: 1.2; }
@@ -186,9 +186,9 @@
 .bq-admin-view .btn-primary,
 .bq-admin-view .btn-save,
 .bq-admin-view .btn-add {
-    background: var(--primary); color: white; border: none;
-    padding: 10px 22px; border-radius: var(--radius-pill);
-    font-weight: 700; cursor: pointer; transition: all 0.2s;
+	background: var(--primary); color: white; border: none;
+	padding: 10px 22px; border-radius: var(--radius-pill);
+	font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
 .bq-admin-view .btn-save { padding: 8px 18px; font-size: 13px; }
 .bq-admin-view .btn-primary:hover,
@@ -196,26 +196,26 @@
 .bq-admin-view .btn-add:hover { background: var(--primary-hover-color, #359a6a); transform: translateY(-1px); }
 
 .bq-admin-view .btn-edit {
-    background: #fff; color: var(--primary); border: 1px solid var(--primary);
-    padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
-    font-size: 12px; margin-right: 6px; transition: all 0.2s; font-weight: 600;
+	background: #fff; color: var(--primary); border: 1px solid var(--primary);
+	padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
+	font-size: 12px; margin-right: 6px; transition: all 0.2s; font-weight: 600;
 }
 .bq-admin-view .btn-edit:hover { background: var(--primary); color: #fff; }
 
 /* 표 안 액션만 — TodoDetailModal 등 모달 안 .btn-delete 는 layout.css 규칙 유지 */
 .bq-admin-view .admin-table .btn-delete,
 .bq-admin-view .admin-table .btn-delete-small {
-    background: #fff; color: var(--accent); border: 1px solid var(--accent);
-    padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
-    font-size: 12px; transition: all 0.2s; font-weight: 600;
+	background: #fff; color: var(--accent); border: 1px solid var(--accent);
+	padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer;
+	font-size: 12px; transition: all 0.2s; font-weight: 600;
 }
 .bq-admin-view .admin-table .btn-delete:hover,
 .bq-admin-view .admin-table .btn-delete-small:hover { background: var(--accent); color: #fff; }
 
 .bq-admin-view .admin-table .btn-cancel {
-    background: #E8EBE9; color: var(--text-main); border: none;
-    padding: 8px 18px; border-radius: var(--radius-pill); cursor: pointer;
-    font-size: 13px; transition: all 0.2s; font-weight: 600;
+	background: #E8EBE9; color: var(--text-main); border: none;
+	padding: 8px 18px; border-radius: var(--radius-pill); cursor: pointer;
+	font-size: 13px; transition: all 0.2s; font-weight: 600;
 }
 .bq-admin-view .admin-table .btn-cancel:hover { background: #dce0de; }
 
@@ -223,14 +223,14 @@
 .modal-content .btn-primary,
 .modal-content .btn-save,
 .modal-content .btn-add {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 22px;
-    border-radius: var(--radius-pill);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
+	background: var(--primary);
+	color: white;
+	border: none;
+	padding: 10px 22px;
+	border-radius: var(--radius-pill);
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s;
 }
 .modal-content .btn-save { padding: 8px 18px; font-size: 13px; }
 .modal-content .btn-primary:hover,
@@ -238,15 +238,15 @@
 .modal-content .btn-add:hover { background: var(--primary-hover-color, #359a6a); transform: translateY(-1px); }
 
 .modal-content .btn-cancel {
-    background: #E8EBE9;
-    color: var(--text-main);
-    border: none;
-    padding: 8px 18px;
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+	background: #E8EBE9;
+	color: var(--text-main);
+	border: none;
+	padding: 8px 18px;
+	border-radius: var(--radius-pill);
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	transition: all 0.2s;
 }
 .modal-content .btn-cancel:hover { background: #dce0de; }
 
@@ -254,7 +254,7 @@
 .modal-content .modal-actions .btn-save,
 .modal-content .modal-actions .btn-cancel,
 .modal-content .modal-actions .btn-primary {
-    flex: 0 0 auto;
+	flex: 0 0 auto;
 }
 
 /* =========================================
@@ -264,42 +264,42 @@
 .modal-content .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dim); font-size: 0.95rem; }
 .modal-content .form-group input,
 .modal-content .form-group select {
-    width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; outline: none; transition: 0.2s;
+	width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; outline: none; transition: 0.2s;
 }
 .modal-content .form-group input:focus,
 .modal-content .form-group select:focus { border-color: var(--primary); }
 /* .modal-content .modal-actions → layout.css 에서 공통 정의 */
 .status-badge {
-    padding: 6px 14px; 
-    border-radius: var(--radius-pill); 
-    font-size: 12px; 
-    font-weight: 700;
-    display: inline-block;
-    text-align: center;
-    min-width: 60px;
+	padding: 6px 14px; 
+	border-radius: var(--radius-pill); 
+	font-size: 12px; 
+	font-weight: 700;
+	display: inline-block;
+	text-align: center;
+	min-width: 60px;
 }
 .status-badge.open { 
-    background-color: #e8f5e9; 
-    color: var(--primary); 
-    border: 1px solid #c8e6c9;
+	background-color: #e8f5e9; 
+	color: var(--primary); 
+	border: 1px solid #c8e6c9;
 }
 .status-badge.closed { 
-    background-color: #f1f3f5; 
-    color: var(--text-dim); 
-    border: 1px solid #dee2e6;
+	background-color: #f1f3f5; 
+	color: var(--text-dim); 
+	border: 1px solid #dee2e6;
 }
 
 /* =========================================
    7. 칸반 보드 (Kanban) - 기존 로직 유지
 ========================================= */
 .kanban-board {
-    display: flex; gap: 20px; height: calc(100vh - 200px); overflow-x: auto; padding-bottom: 20px;
+	display: flex; gap: 20px; height: calc(100vh - 200px); overflow-x: auto; padding-bottom: 20px;
 }
 .kanban-column {
-    flex: 1; min-width: 250px; background-color: rgba(244, 246, 245, 0.7); border-radius: 12px; display: flex; flex-direction: column; border: 1px solid #E5E7EB;
+	flex: 1; min-width: 250px; background-color: rgba(244, 246, 245, 0.7); border-radius: 12px; display: flex; flex-direction: column; border: 1px solid #E5E7EB;
 }
 .kanban-column-header {
-    padding: 15px; border-bottom: 3px solid #ccc; display: flex; justify-content: space-between; align-items: center;
+	padding: 15px; border-bottom: 3px solid #ccc; display: flex; justify-content: space-between; align-items: center;
 }
 .kanban-column-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main, #141414); }
 .kanban-count { background-color: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
@@ -314,17 +314,17 @@
    8. 🌟 리스트 전용: 필터, 검색, 상태변경 버튼
 ========================================= */
 .admin-filter-section {
-    background: #fff;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid #eaeaea;
-    margin-bottom: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+	background: #fff;
+	padding: 10px 14px;
+	border-radius: 10px;
+	border: 1px solid #eaeaea;
+	margin-bottom: 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 .admin-search-group { display: flex; align-items: center; gap: 8px; }
 .admin-search-group span { font-weight: 700; color: var(--text-main, #141414); font-size: 0.875rem; }
@@ -341,150 +341,150 @@
 .admin-status-select:hover { border-color: var(--primary); }
 
 .admin-pagination-bar {
-    flex-shrink: 0;
+	flex-shrink: 0;
 }
 
 /* 지원 서류 미리보기 (관리자) */
 .admin-file-preview-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    box-sizing: border-box;
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+	z-index: 2000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
 }
 
 .admin-file-preview-panel {
-    background: #fff;
-    border-radius: 12px;
-    width: min(960px, 96vw);
-    height: min(88vh, 900px);
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+	background: #fff;
+	border-radius: 12px;
+	width: min(960px, 96vw);
+	height: min(88vh, 900px);
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
 }
 
 .admin-file-preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #eee;
-    flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+	border-bottom: 1px solid #eee;
+	flex-shrink: 0;
 }
 
 .admin-file-preview-title {
-    font-weight: 800;
-    font-size: 1rem;
-    color: #111;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+	font-weight: 800;
+	font-size: 1rem;
+	color: #111;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .admin-file-preview-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .admin-file-preview-tab-btn {
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color, #e2dfd8);
-    background: #fff;
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    color: var(--text-main, #141414);
+	padding: 8px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--border-color, #e2dfd8);
+	background: #fff;
+	font-weight: 600;
+	font-size: 0.875rem;
+	cursor: pointer;
+	color: var(--text-main, #141414);
 }
 
 .admin-file-preview-tab-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+	border-color: var(--primary);
+	color: var(--primary);
 }
 
 .admin-file-preview-close {
-    font-size: 1.75rem;
-    line-height: 1;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-dim, #8a8a8a);
-    padding: 0 4px;
+	font-size: 1.75rem;
+	line-height: 1;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--text-dim, #8a8a8a);
+	padding: 0 4px;
 }
 
 .admin-file-preview-close:hover {
-    color: #111;
+	color: #111;
 }
 
 .admin-file-preview-body {
-    flex: 1;
-    min-height: 0;
-    background: #f5f5f5;
-    position: relative;
+	flex: 1;
+	min-height: 0;
+	background: #f5f5f5;
+	position: relative;
 }
 
 .admin-file-preview-frame {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
-    background: #525659;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	display: block;
+	background: #525659;
 }
 
 .admin-file-preview-img-wrap {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-    box-sizing: border-box;
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px;
+	box-sizing: border-box;
 }
 
 .admin-file-preview-img {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
 }
 
 .admin-file-preview-fallback {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 24px;
-    text-align: center;
-    color: #555;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 24px;
+	text-align: center;
+	color: #555;
 }
 
 /* =========================================
    9. 모바일 반응형 처리
 ========================================= */
 @media (max-width: 768px) {
-    .bq-admin-view { padding: 20px 10px; }
-    .admin-header { flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; }
-    .admin-header h2 { font-size: 1.6rem; }
-    
-    .admin-management-grid { grid-template-columns: 1fr; gap: 15px; }
-    .mgmt-section { padding: 20px; }
-    .bq-btn-admin-action { padding: 14px; font-size: 1rem; }
-    .bq-admin-view .btn-primary { width: 100%; padding: 12px; }
-    .category-add-box { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
-    .admin-table-wrapper { border: 1px solid #eee; -webkit-overflow-scrolling: touch; max-height: min(65vh, calc(100vh - 140px)); }
-    .admin-table { min-width: 560px; font-size: 0.9rem; }
-    .admin-table th, .admin-table td { padding: 10px 8px; font-size: 13px; }
-    .modal-content { width: 92%; margin: 10px; padding: 25px; max-height: 90vh; overflow-y: auto; }
-    .modal-content .modal-actions { flex-direction: column; gap: 10px; }
+	.bq-admin-view { padding: 20px 10px; }
+	.admin-header { flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; }
+	.admin-header h2 { font-size: 1.6rem; }
+	
+	.admin-management-grid { grid-template-columns: 1fr; gap: 15px; }
+	.mgmt-section { padding: 20px; }
+	.bq-btn-admin-action { padding: 14px; font-size: 1rem; }
+	.bq-admin-view .btn-primary { width: 100%; padding: 12px; }
+	.category-add-box { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
+	.admin-table-wrapper { border: 1px solid #eee; -webkit-overflow-scrolling: touch; max-height: min(65vh, calc(100vh - 140px)); }
+	.admin-table { min-width: 560px; font-size: 0.9rem; }
+	.admin-table th, .admin-table td { padding: 10px 8px; font-size: 13px; }
+	.modal-content { width: 92%; margin: 10px; padding: 25px; max-height: 90vh; overflow-y: auto; }
+	.modal-content .modal-actions { flex-direction: column; gap: 10px; }
 }
 
 /* === Dynamic & Playful: 버튼 탄성(호버 번짐 + active 눌림) === */
@@ -502,12 +502,12 @@
 .modal-content .btn-add:not(:disabled),
 .modal-content .btn-cancel:not(:disabled),
 .modal-content .modal-actions button:not(:disabled) {
-    transition: all 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 .bq-admin-view .btn-edit:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .bq-admin-view .admin-table .btn-delete:not(:disabled):hover,
@@ -515,8 +515,8 @@
 .bq-admin-view .admin-table .btn-cancel:not(:disabled):hover,
 .bq-admin-view .admin-filter-btn:not(:disabled):hover,
 .modal-content .btn-cancel:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .bq-admin-view .btn-primary:not(:disabled):hover,
@@ -525,7 +525,7 @@
 .modal-content .btn-primary:not(:disabled):hover,
 .modal-content .btn-save:not(:disabled):hover,
 .modal-content .btn-add:not(:disabled):hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .bq-admin-view .btn-primary:not(:disabled):active,
@@ -542,228 +542,228 @@
 .modal-content .btn-add:not(:disabled):active,
 .modal-content .btn-cancel:not(:disabled):active,
 .modal-content .modal-actions button:not(:disabled):active {
-    transform: scale(0.96);
+	transform: scale(0.96);
 }
 
 .admin-file-preview-tab-btn:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .admin-file-preview-tab-btn:not(:disabled):active {
-    transform: scale(0.96);
+	transform: scale(0.96);
 }
 
 .emoji-btn:not(:disabled) {
-    transition: all 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 .emoji-btn:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .emoji-btn:not(:disabled):active {
-    transform: scale(0.96);
+	transform: scale(0.96);
 }
 
 /* ========== 인라인 스타일 분리: 페이지별 ========== */
 
 /* AdminUser.jsx */
 .admin-user__header-toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    flex: 1 1 auto;
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	flex: 1 1 auto;
 }
 
 .admin-user__search-input {
-    width: 250px;
-    margin: 0;
-    padding: 10px;
-    flex: 1 1 260px;
-    min-width: 220px;
-    max-width: 340px;
+	width: 250px;
+	margin: 0;
+	padding: 10px;
+	flex: 1 1 260px;
+	min-width: 220px;
+	max-width: 340px;
 }
 
 .btn-primary--sync-blue {
-    background-color: #4a90e2;
+	background-color: #4a90e2;
 }
 
 .admin-user__name-cell {
-    font-weight: bold;
+	font-weight: bold;
 }
 
 .admin-user__resigned-tag {
-    font-size: 0.75rem;
-    color: #ff6a3d;
-    margin-left: 5px;
+	font-size: 0.75rem;
+	color: #ff6a3d;
+	margin-left: 5px;
 }
 
 .admin-user__join-date {
-    font-size: 0.9rem;
+	font-size: 0.9rem;
 }
 
 .admin-user__resign-date {
-    font-size: 0.8rem;
-    color: #ff6a3d;
+	font-size: 0.8rem;
+	color: #ff6a3d;
 }
 
 .admin-user__vac-remain {
-    color: var(--primary-color);
-    font-weight: bold;
+	color: var(--primary-color);
+	font-weight: bold;
 }
 
 .admin-user__vac-total {
-    color: #888;
-    font-size: 0.85rem;
+	color: #888;
+	font-size: 0.85rem;
 }
 
 .admin-table__empty {
-    text-align: center;
-    padding: 30px;
-    color: #888;
+	text-align: center;
+	padding: 30px;
+	color: #888;
 }
 
 .admin-table__empty--lg {
-    text-align: center;
-    padding: 60px;
-    color: #888;
+	text-align: center;
+	padding: 60px;
+	color: #888;
 }
 
 /* HolidayMgmt.jsx */
 .holiday-mgmt__toolbar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    flex: 1 1 auto;
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	flex: 1 1 auto;
 }
 
 .holiday-mgmt__year-select {
-    width: 120px;
-    margin: 0;
-    flex: 0 0 120px;
+	width: 120px;
+	margin: 0;
+	flex: 0 0 120px;
 }
 
 .admin-user__header-toolbar .btn-primary,
 .holiday-mgmt__toolbar .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    min-height: 42px;
-    padding-inline: 16px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	flex: 0 0 auto;
+	min-height: 42px;
+	padding-inline: 16px;
 }
 
 .admin-user__header-toolbar .admin-user__search-input,
 .holiday-mgmt__toolbar .holiday-mgmt__year-select {
-    margin-bottom: 0;
+	margin-bottom: 0;
 }
 
 @media (max-width: 1024px) {
-    .admin-user__header-toolbar,
-    .holiday-mgmt__toolbar {
-        justify-content: flex-start;
-    }
+	.admin-user__header-toolbar,
+	.holiday-mgmt__toolbar {
+		justify-content: flex-start;
+	}
 }
 
 .holiday-mgmt__form-outer {
-    margin-bottom: 8px;
+	margin-bottom: 8px;
 }
 
 .category-add-box--single-line {
-    flex-wrap: nowrap;
+	flex-wrap: nowrap;
 }
 
 .holiday-mgmt__add-btn {
-    white-space: nowrap;
-    padding: 12px 20px;
+	white-space: nowrap;
+	padding: 12px 20px;
 }
 
 .holiday-mgmt__hint {
-    font-size: 0.82rem;
-    color: #64748b;
-    margin: 8px 0 0;
-    line-height: 1.45;
+	font-size: 0.82rem;
+	color: #64748b;
+	margin: 8px 0 0;
+	line-height: 1.45;
 }
 
 .holiday-mgmt__date-warning {
-    font-size: 0.88rem;
-    color: #c2410c;
-    margin: 8px 0 0;
-    font-weight: 600;
-    line-height: 1.45;
+	font-size: 0.88rem;
+	color: #c2410c;
+	margin: 8px 0 0;
+	font-weight: 600;
+	line-height: 1.45;
 }
 
 .holiday-mgmt__th--20 {
-    width: 20%;
+	width: 20%;
 }
 
 .holiday-mgmt__th--15 {
-    width: 15%;
+	width: 15%;
 }
 
 .holiday-mgmt__th--30 {
-    width: 30%;
+	width: 30%;
 }
 
 .role-badge--company-custom {
-    background: #e8f5e9;
-    color: #2e7d32;
+	background: #e8f5e9;
+	color: #2e7d32;
 }
 
 .holiday-mgmt__cell-name {
-    font-weight: 600;
-    color: #141414;
+	font-weight: 600;
+	color: #141414;
 }
 
 .holiday-mgmt__cell-desc {
-    color: #888;
+	color: #888;
 }
 
 /* ApplicantStatus.jsx */
 .applicant-status__header--spaced {
-    margin-bottom: 20px;
+	margin-bottom: 20px;
 }
 
 .applicant-status__table-scroll {
-    max-height: min(70vh, 640px);
-    overflow-y: auto;
+	max-height: min(70vh, 640px);
+	overflow-y: auto;
 }
 
 .applicant-status__th--center {
-    text-align: center;
+	text-align: center;
 }
 
 .applicant-status__th--narrow {
-    width: 150px;
+	width: 150px;
 }
 
 .applicant-status__td--strong {
-    font-weight: bold;
+	font-weight: bold;
 }
 
 .applicant-status__td--center {
-    text-align: center;
+	text-align: center;
 }
 
 /* RecruitmentAdmin.jsx */
 .recruitment-admin__th-actions {
-    min-width: 220px;
+	min-width: 220px;
 }
 
 .recruitment-admin__cell-title {
-    text-align: left;
-    font-weight: bold;
+	text-align: left;
+	font-weight: bold;
 }
 
 .recruitment-admin__btn-lead {
-    margin-right: 5px;
+	margin-right: 5px;
 }
 
 /* AdminTodo.jsx */
@@ -781,105 +781,105 @@
 }
 
 .admin-todo__empty {
-    text-align: center;
-    padding: 40px;
-    color: #888;
+	text-align: center;
+	padding: 40px;
+	color: #888;
 }
 
 .admin-todo__category-badge {
-    background-color: #f0eee9;
-    color: #141414;
-    border: 1px solid #e2dfd8;
+	background-color: #f0eee9;
+	color: #141414;
+	border: 1px solid #e2dfd8;
 }
 
 .admin-todo__title-cell {
-    cursor: pointer;
-    color: var(--primary-color);
-    font-weight: 600;
+	cursor: pointer;
+	color: var(--primary-color);
+	font-weight: 600;
 }
 
 .admin-todo__del-btn {
-    padding: 6px 12px;
-    font-size: 0.85rem;
+	padding: 6px 12px;
+	font-size: 0.85rem;
 }
 
 /* AdminMessage.jsx */
 .admin-message__empty-cell {
-    text-align: center;
+	text-align: center;
 }
 
 .admin-message__read-label {
-    font-weight: bold;
+	font-weight: bold;
 }
 
 .admin-message__read-label--read {
-    color: var(--primary);
+	color: var(--primary);
 }
 
 .admin-message__read-label--unread {
-    color: var(--accent);
+	color: var(--accent);
 }
 
 .admin-message__row {
-    cursor: pointer;
+	cursor: pointer;
 }
 
 /* MessageSendModal.jsx */
 .admin-message-send__modal-content {
-    max-width: 800px;
+	max-width: 800px;
 }
 
 .admin-message-send__title {
-    margin-top: 0;
-    margin-bottom: 25px;
-    color: var(--text-main);
-    font-weight: 800;
+	margin-top: 0;
+	margin-bottom: 25px;
+	color: var(--text-main);
+	font-weight: 800;
 }
 
 .admin-message-send__checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
 }
 
 .admin-message-send__checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
 }
 
 .admin-message-send__accent-text {
-    color: var(--accent);
-    font-weight: bold;
+	color: var(--accent);
+	font-weight: bold;
 }
 
 .admin-message-send__required-mark {
-    color: red;
+	color: red;
 }
 
 .admin-message-send__editor-frame {
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    overflow: hidden;
+	border: 1px solid #ddd;
+	border-radius: 12px;
+	overflow: hidden;
 }
 
 .admin-message-send__file-input {
-    padding: 10px;
-    background: #f8f9fa;
+	padding: 10px;
+	background: #f8f9fa;
 }
 
 /* JobPostingModal.jsx */
 .job-posting-modal__content {
-    max-width: 800px;
+	max-width: 800px;
 }
 
 .job-posting-modal__editor-offset {
-    margin-top: 10px;
+	margin-top: 10px;
 }
 
 /* AdminUser.jsx — 퇴사 행 */
 .admin-user__row--resigned {
-    --stagger-to-opacity: 0.6;
-    background-color: #fafafa;
+	--stagger-to-opacity: 0.6;
+	background-color: #fafafa;
 }

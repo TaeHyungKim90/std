@@ -5,9 +5,9 @@ REM Run from this script's directory (project root)
 cd /d "%~dp0"
 
 if not exist "venv\Scripts\python.exe" (
-    echo [ERROR] venv not found: "%cd%\venv"
-    echo Create it first: python -m venv venv
-    exit /b 1
+	echo [ERROR] venv not found: "%cd%\venv"
+	echo Create it first: python -m venv venv
+	exit /b 1
 )
 
 call "venv\Scripts\activate.bat"

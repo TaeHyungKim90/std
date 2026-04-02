@@ -2,71 +2,71 @@
 
 /* 상단 KPI 요약 섹션 */
 .hr-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    margin-bottom: 25px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 25px;
+	margin-bottom: 25px;
 }
 
 /* 대시보드 메인 콘텐츠 섹션 (1:1 비율로 두 패널 배치) */
 .hr-content-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr; 
-    gap: 25px;
-    flex: 1; /* 🚨 추가: 남은 화면 높이를 전부 차지함 */
-    min-height: 0; /* 🚨 추가 */
+	display: grid;
+	grid-template-columns: 1fr 1fr; 
+	gap: 25px;
+	flex: 1; /* 🚨 추가: 남은 화면 높이를 전부 차지함 */
+	min-height: 0; /* 🚨 추가 */
 }
 
 .hr-widget {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(15px);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(15px);
+	border-radius: 20px;
+	padding: 30px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.8);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
 }
 
 .hr-widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	margin-bottom: 20px;
+	border-bottom: 2px solid #eee;
+	padding-bottom: 10px;
 }
 
 .hr-widget-header h3 {
-    font-size: 1.2rem;
-    color: #141414;
-    margin: 0;
+	font-size: 1.2rem;
+	color: #141414;
+	margin: 0;
 }
 
 /* 리스트 공통 스타일 */
 .hr-list { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px; 
+	display: flex; 
+	flex-direction: column; 
+	gap: 15px; 
 }
 
 .hr-list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #ffffff;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #f0f0f0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: #ffffff;
+	padding: 15px;
+	border-radius: 12px;
+	border: 1px solid #f0f0f0;
 }
 
 /* 🚨 1. 여기가 리스트가 밑으로 무한히 늘어나지 않게 막아주는 핵심입니다! */
 .scrollable-list {
-    flex: 1;
-    /* max-height: 420px; */
-    overflow-y: auto;
-    padding-right: 10px;
+	flex: 1;
+	/* max-height: 420px; */
+	overflow-y: auto;
+	padding-right: 10px;
 }
 .scrollable-list::-webkit-scrollbar { width: 6px; }
 .scrollable-list::-webkit-scrollbar-thumb { background-color: rgba(61, 175, 122, 0.3); border-radius: 10px; }
@@ -75,10 +75,10 @@
 /* 유저 정보 및 아바타 */
 .user-info { display: flex; align-items: center; gap: 12px; }
 .user-avatar { 
-    width: 40px; height: 40px; 
-    border-radius: 50%; 
-    display: flex; align-items: center; justify-content: center; 
-    font-size: 1.1rem; font-weight: bold; 
+	width: 40px; height: 40px; 
+	border-radius: 50%; 
+	display: flex; align-items: center; justify-content: center; 
+	font-size: 1.1rem; font-weight: bold; 
 }
 .user-details { display: flex; flex-direction: column; }
 .user-name { font-weight: 700; font-size: 1rem; color: var(--font-color, #141414); }
@@ -86,7 +86,7 @@
 
 /* 상태 태그 (휴가 상태) */
 .status-tag { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-.status-tag.status-past { background: #f1f3f5; color: #999; }     
+.status-tag.status-past { background: #f1f3f5; color: #999; }	 
 .status-tag.status-now { background: #fff0eb; color: #FF6A3D; } 
 .status-tag.status-future { background: rgb(var(--primary-rgb) / 0.12); color: var(--primary-color); } 
 
@@ -101,70 +101,70 @@
 
 /* 모바일 대응 */
 @media (max-width: 1024px) {
-    .hr-content-row { grid-template-columns: 1fr; }
+	.hr-content-row { grid-template-columns: 1fr; }
 }
 
 /* AdminDashboard.jsx — KPI 및 빈 상태 */
 .admin-dashboard__loading {
-    text-align: center;
-    padding: 100px;
-    color: #888;
+	text-align: center;
+	padding: 100px;
+	color: #888;
 }
 
 .mgmt-section--kpi {
-    text-align: center;
+	text-align: center;
 }
 
 .mgmt-section--kpi h3 {
-    color: var(--text-dim);
-    font-size: 1rem;
-    margin-bottom: 10px;
+	color: var(--text-dim);
+	font-size: 1rem;
+	margin-bottom: 10px;
 }
 
 .admin-dashboard__kpi-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--text-main);
+	font-size: 2.5rem;
+	font-weight: 800;
+	color: var(--text-main);
 }
 
 .admin-dashboard__kpi-value--accent {
-    color: var(--primary);
+	color: var(--primary);
 }
 
 .admin-dashboard__kpi-suffix {
-    font-size: 1.2rem;
-    color: #888;
-    margin-left: 5px;
+	font-size: 1.2rem;
+	color: #888;
+	margin-left: 5px;
 }
 
 .admin-dashboard__system-status {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #4a90e2;
-    margin-top: 10px;
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: #4a90e2;
+	margin-top: 10px;
 }
 
 .hr-list__empty {
-    text-align: center;
-    padding: 40px 0;
-    color: #aaa;
+	text-align: center;
+	padding: 40px 0;
+	color: #aaa;
 }
 
 .hr-widget-header__meta {
-    font-size: 0.85rem;
-    color: #888;
-    font-weight: 600;
+	font-size: 0.85rem;
+	color: #888;
+	font-weight: 600;
 }
 
 .hr-list-item--balance {
-    flex-direction: column;
-    align-items: stretch;
+	flex-direction: column;
+	align-items: stretch;
 }
 
 .admin-dashboard__balance-strong--warn {
-    color: #ff6a3d;
+	color: #ff6a3d;
 }
 
 .admin-dashboard__balance-strong--ok {
-    color: var(--primary-color);
+	color: var(--primary-color);
 }

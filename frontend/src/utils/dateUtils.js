@@ -69,41 +69,41 @@ export const firstMondayOnOrAfter = (monthStart) => {
  * @returns {{ month: number, weekIndex: number }}
  */
 export const getIsoMonthAndWeek = (date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
 
-    // 1. 해당 주의 목요일 구하기 (기준점)
-    const day = d.getDay(); // 0:일, 1:월 ... 6:토
-    const diffToThursday = day === 0 ? -3 : 4 - day; 
-    const targetThursday = new Date(d);
-    targetThursday.setDate(d.getDate() + diffToThursday);
+	// 1. 해당 주의 목요일 구하기 (기준점)
+	const day = d.getDay(); // 0:일, 1:월 ... 6:토
+	const diffToThursday = day === 0 ? -3 : 4 - day; 
+	const targetThursday = new Date(d);
+	targetThursday.setDate(d.getDate() + diffToThursday);
 
-    // 2. 타겟 월(Month)은 목요일이 속한 월
-    const targetYear = targetThursday.getFullYear();
-    const targetMonth = targetThursday.getMonth(); 
+	// 2. 타겟 월(Month)은 목요일이 속한 월
+	const targetYear = targetThursday.getFullYear();
+	const targetMonth = targetThursday.getMonth(); 
 
-    // 3. 타겟 월의 1일이 속한 주의 목요일 구하기
-    const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
-    const firstDayDay = firstDayOfMonth.getDay();
-    const firstDayDiffToThursday = firstDayDay === 0 ? -3 : 4 - firstDayDay;
-    const firstThursday = new Date(firstDayOfMonth);
-    firstThursday.setDate(firstDayOfMonth.getDate() + firstDayDiffToThursday);
+	// 3. 타겟 월의 1일이 속한 주의 목요일 구하기
+	const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
+	const firstDayDay = firstDayOfMonth.getDay();
+	const firstDayDiffToThursday = firstDayDay === 0 ? -3 : 4 - firstDayDay;
+	const firstThursday = new Date(firstDayOfMonth);
+	firstThursday.setDate(firstDayOfMonth.getDate() + firstDayDiffToThursday);
 
-    // 4. 핵심 방어 로직: 1일의 목요일이 이전 달이라면, '그다음 주 목요일'이 진짜 1주차!
-    let monthFirstThursday = new Date(firstThursday);
-    if (firstThursday.getMonth() !== targetMonth) {
-        monthFirstThursday.setDate(firstThursday.getDate() + 7);
-    }
+	// 4. 핵심 방어 로직: 1일의 목요일이 이전 달이라면, '그다음 주 목요일'이 진짜 1주차!
+	let monthFirstThursday = new Date(firstThursday);
+	if (firstThursday.getMonth() !== targetMonth) {
+		monthFirstThursday.setDate(firstThursday.getDate() + 7);
+	}
 
-    // 5. (현재 목요일 - 진짜 1주차 목요일) / 7일 + 1 = 현재 주차
-    const diffInMs = targetThursday.getTime() - monthFirstThursday.getTime();
-    const weekIndex = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 7)) + 1;
+	// 5. (현재 목요일 - 진짜 1주차 목요일) / 7일 + 1 = 현재 주차
+	const diffInMs = targetThursday.getTime() - monthFirstThursday.getTime();
+	const weekIndex = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 7)) + 1;
 
-    return {
-        year: targetYear,
-        month: targetMonth + 1, // 1-based
-        weekIndex: weekIndex
-    };
+	return {
+		year: targetYear,
+		month: targetMonth + 1, // 1-based
+		weekIndex: weekIndex
+	};
 }
 
 export const toTimeInputValue = (iso) => {
