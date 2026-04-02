@@ -50,6 +50,30 @@ export const adminApi = {
   // 카테고리 삭제
   deleteCategoryType: (id) => 
 	client.delete(`${PATH}/category-types/${id}`),
+
+  /**
+   * 시스템관리: 부서
+   */
+  getDepartments: () =>
+	client.get(`${PATH}/departments`),
+  createDepartment: (payload) =>
+	client.post(`${PATH}/departments`, payload),
+  updateDepartment: (departmentId, payload) =>
+	client.patch(`${PATH}/departments/${departmentId}`, payload),
+  deleteDepartment: (departmentId) =>
+	client.delete(`${PATH}/departments/${departmentId}`),
+
+  /**
+   * 시스템관리: 직급
+   */
+  getPositions: () =>
+	client.get(`${PATH}/positions`),
+  createPosition: (payload) =>
+	client.post(`${PATH}/positions`, payload),
+  updatePosition: (positionId, payload) =>
+	client.patch(`${PATH}/positions/${positionId}`, payload),
+  deletePosition: (positionId) =>
+	client.delete(`${PATH}/positions/${positionId}`),
   /**
    * ⏰ 출퇴근 기록 조회 (필터 포함)
    */

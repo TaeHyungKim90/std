@@ -1,0 +1,405 @@
+.my-profile-edit-top {
+	display: grid;
+	grid-template-columns: 260px minmax(0, 1fr);
+	gap: 18px;
+	align-items: start;
+}
+
+.my-profile-photo-panel {
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 12px;
+	padding: 18px 16px;
+	box-shadow: 0 1px 2px rgba(20, 20, 20, 0.04);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.my-profile-photo-name {
+	margin-top: 12px;
+	font-weight: 800;
+	font-size: 1.05rem;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-photo-sub {
+	margin-top: 4px;
+	font-size: 0.85rem;
+	color: var(--bq-text-dim, #8a8a8a);
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 220px;
+}
+
+.my-profile-photo-meta {
+	margin-top: 14px;
+	width: 100%;
+	border-top: 1px solid var(--border-color, #e2dfd8);
+	padding-top: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.my-profile-photo-meta-item {
+	flex: 1;
+	min-width: 0;
+	text-align: center;
+}
+
+.my-profile-photo-meta-label {
+	font-size: 0.7rem;
+	font-weight: 800;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.my-profile-photo-meta-value {
+	font-size: 0.88rem;
+	color: var(--font-color, #141414);
+	font-weight: 800;
+	white-space: nowrap;
+}
+
+.my-profile-photo-meta-divider {
+	width: 1px;
+	height: 34px;
+	background: var(--border-color, #e2dfd8);
+	flex: 0 0 auto;
+}
+
+.my-profile-photo-upload {
+	margin-top: 14px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid rgba(63, 175, 122, 0.35);
+	background: rgb(var(--primary-rgb) / 0.06);
+	color: var(--primary-color, #3FAF7A);
+	cursor: pointer;
+	font-weight: 700;
+	font-size: 0.9rem;
+}
+
+.my-profile-photo-upload input {
+	display: none;
+}
+
+.my-profile-vacation-mini-card {
+	width: 100%;
+	margin-top: 16px;
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 12px;
+	padding: 14px 14px;
+}
+
+.my-profile-vacation-mini-card__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.my-profile-vacation-mini-card__title {
+	margin: 0;
+	font-weight: 900;
+	font-size: 1rem;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-vacation-mini-card__detail {
+	font-size: 0.72rem;
+	font-weight: 900;
+	color: var(--primary-color, #3FAF7A);
+	cursor: pointer;
+	user-select: none;
+	border: none;
+	background: transparent;
+	padding: 0;
+}
+
+.my-profile-vacation-mini-card__summary {
+	margin: 0 0 10px;
+	font-size: 0.85rem;
+	line-height: 1.45;
+}
+
+.vacation-progress--mini {
+	height: 10px;
+	margin-bottom: 8px;
+}
+
+.my-profile-vacation-mini-card__labels {
+	font-size: 0.75rem;
+}
+
+.my-profile-vacation-mini-card__empty {
+	margin: 0;
+	font-size: 0.85rem;
+}
+
+.my-profile-vacation-detail-modal {
+	max-width: 520px;
+	padding: 26px;
+}
+
+.my-profile-vacation-detail-modal__title {
+	margin: 0 0 14px;
+	text-align: center;
+	font-weight: 900;
+}
+
+.my-profile-password-detail-modal {
+	max-width: 520px;
+	padding: 26px;
+}
+
+.my-profile-modal-actions {
+	margin-top: 18px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.my-profile-btn--secondary {
+	background: #E8EBE9;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-btn--secondary:hover:not(:disabled) {
+	background: #dce0de;
+}
+
+.my-profile-basic-edit-panel {
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 12px;
+	padding: 0;
+	box-shadow: 0 1px 2px rgba(20, 20, 20, 0.04);
+	overflow: hidden;
+}
+
+.my-profile-basic-edit-panel__title {
+	margin: 0;
+	font-weight: 900;
+	font-size: 1.05rem;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-basic-edit-panel__header {
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--border-color, #e2dfd8);
+	background: rgba(248, 250, 252, 0.85);
+}
+
+.my-profile-basic-edit-panel__content {
+	padding: 18px;
+}
+
+.my-profile-basic-info-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 16px 18px;
+}
+
+.my-profile-field label {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 800;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.my-profile-field input,
+.my-profile-field select {
+	box-sizing: border-box;
+	width: 100%;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 0.95rem;
+	background: #fff;
+}
+
+.my-profile-field input.my-profile-readonly {
+	background: #f4f3ef;
+	color: var(--bq-text-dim, #8a8a8a);
+}
+
+.my-profile-field--empty {
+	min-height: 10px;
+}
+
+.my-profile-basic-subcard-grid {
+	margin-top: 18px;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 16px;
+}
+
+.my-profile-subcard {
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 12px;
+	padding: 16px 14px;
+}
+
+.my-profile-subcard__title {
+	margin: 0 0 14px;
+	font-weight: 900;
+	font-size: 0.95rem;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-subcard__body {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.my-profile-subcard__body select,
+.my-profile-subcard__body input {
+	box-sizing: border-box;
+	width: 100%;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 0.95rem;
+	background: #fff;
+}
+
+.my-profile-password-auth-btn {
+	width: 100%;
+	background: #fff;
+	border: 1px solid var(--primary-color, #3FAF7A);
+	color: var(--primary-color, #3FAF7A);
+	padding: 12px 14px;
+	border-radius: 10px;
+	font-weight: 900;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.my-profile-password-auth-btn:hover:not(:disabled) {
+	background: rgb(var(--primary-rgb) / 0.06);
+}
+
+.my-profile-password-hint {
+	margin: 0;
+	text-align: center;
+	font-size: 0.75rem;
+	color: var(--bq-text-dim, #8a8a8a);
+}
+
+.my-profile-password-fields {
+	margin-top: 14px;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 12px;
+}
+
+.my-profile-password-fields label {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 800;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.my-profile-password-fields input {
+	box-sizing: border-box;
+	width: 100%;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 0.95rem;
+	background: #fff;
+}
+
+.my-profile-password-social-msg {
+	margin: 0;
+	font-size: 0.9rem;
+	color: var(--font-color, #141414);
+}
+
+.my-profile-photo-row {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+}
+
+.my-profile-form-actions {
+	margin-top: 18px;
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+}
+
+.my-profile-form-grid-extended {
+	margin-top: 0;
+}
+
+.my-profile-salary-row {
+	display: grid;
+	grid-template-columns: 170px minmax(0, 1fr);
+	gap: 12px;
+	align-items: start;
+}
+
+.my-profile-salary-row select,
+.my-profile-salary-row input {
+	width: 100%;
+}
+
+.my-profile-salary-row select {
+	box-sizing: border-box;
+	padding: 8px 12px;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 8px;
+	font-size: 0.95rem;
+	background: #fff;
+}
+
+.my-profile-salary-row input {
+	box-sizing: border-box;
+	padding: 8px 12px;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 8px;
+	font-size: 0.95rem;
+}
+
+@media (max-width: 900px) {
+	.my-profile-edit-top {
+		grid-template-columns: 1fr;
+	}
+
+	.my-profile-photo-sub {
+		max-width: 100%;
+	}
+}
+
+@media (min-width: 720px) {
+	.my-profile-basic-info-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.my-profile-basic-subcard-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+

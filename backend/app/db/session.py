@@ -1,6 +1,6 @@
 # session.py
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from core.config import settings
@@ -27,11 +27,34 @@ def init_db():
 	from db import base
 	from models.auth_models import User
 	from models.hr_models import TodoCategoryType
+	from models.system_models import Department, Position
 	from core.security import get_password_hash
 	
 	# 테이블 생성 (이미 있으면 무시됨)
 	print("🚀 테이블 생성 시도 중...")
 	Base.metadata.create_all(bind=engine)
+
+	# 기존 SQLite DB에 신규 컬럼이 없을 경우, 런타임에서 안전하게 ALTER TABLE을 시도합니다.
+	# (운영에서는 마이그레이션(Alembic 등)을 권장합니다.)
+	try:
+		if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+			conn = engine.connect()
+			try:
+				existing_cols = {row["name"] for row in conn.execute(text("PRAGMA table_info(users)")).mappings()}
+				add_cols = {
+					"user_profile_image_url": "TEXT",
+					"user_department": "TEXT",
+					"user_position": "TEXT",
+					"salary_bank_name": "TEXT",
+					"salary_account_number": "TEXT",
+				}
+				for col, col_type in add_cols.items():
+					if col not in existing_cols:
+						conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+			finally:
+				conn.close()
+	except Exception as e:
+		print(f"ℹ️ users 프로필 컬럼 ALTER TABLE 시도 실패(무시): {e}")
 	
 	db = SessionLocal()
 	try:

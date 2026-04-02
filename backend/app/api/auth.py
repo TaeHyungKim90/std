@@ -1,4 +1,5 @@
 import uuid
+import re
 from datetime import date, datetime
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
@@ -228,6 +229,31 @@ def patch_my_profile(
 
 	if "user_phone_number" in data:
 		user.user_phone_number = data["user_phone_number"]
+
+	# 사용자 프로필 확장 필드(부서/직급/급여계좌/사진 URL)
+	if "user_profile_image_url" in data:
+		user.user_profile_image_url = data["user_profile_image_url"] or None
+
+	if "user_department" in data:
+		raw = data["user_department"]
+		user.user_department = str(raw).strip() if raw else None
+
+	if "user_position" in data:
+		raw = data["user_position"]
+		user.user_position = str(raw).strip() if raw else None
+
+	if "salary_bank_name" in data:
+		raw = data["salary_bank_name"]
+		user.salary_bank_name = str(raw).strip() if raw else None
+
+	if "salary_account_number" in data:
+		raw = data["salary_account_number"]
+		if raw is None:
+			user.salary_account_number = None
+		else:
+			# 숫자만 저장(입력값에 하이픈/공백이 섞여도 방어)
+			s = re.sub(r"\D+", "", str(raw)).strip()
+			user.salary_account_number = s if s else None
 
 	db.commit()
 	db.refresh(user)

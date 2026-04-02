@@ -32,6 +32,8 @@ export const MENU_ITEMS = [
 		  title: '시스템관리',
 		  items: [		   
 			  { id: 'admin-categories', label: '카테고리 관리', path: PATHS.ADMIN_CATEGORIES },
+			  { id: 'admin-departments', label: '부서 관리', path: PATHS.ADMIN_DEPARTMENTS },
+			  { id: 'admin-positions', label: '직급 관리', path: PATHS.ADMIN_POSITIONS },
 			  { id: 'admin-holidays', label: '공휴일 관리', path: PATHS.ADMIN_HOLIDAYS },
 			  // 뒷부분 생략된 기존 메뉴들 (holidays 등) 그대로 유지하시면 됩니다!
 		  ]

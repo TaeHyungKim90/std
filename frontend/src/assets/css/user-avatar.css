@@ -1,0 +1,27 @@
+.user-avatar {
+	border-radius: 999px;
+	background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	flex: 0 0 auto;
+	font-weight: 800;
+	color: #fff;
+	user-select: none;
+}
+
+.user-avatar__img {
+	object-fit: cover;
+	display: block;
+}
+
+.user-avatar__fallback {
+	font-size: 1.25rem;
+	line-height: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+

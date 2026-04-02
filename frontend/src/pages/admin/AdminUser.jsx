@@ -1,6 +1,9 @@
+import 'assets/css/admin-user-profile-extra.css';
+
 import { adminApi } from 'api/adminApi';
 import UserModal from 'components/admin/UserModal';
 import IdCopyChip from 'components/common/IdCopyChip';
+import UserAvatar from 'components/common/UserAvatar';
 import { useLoading } from 'context/LoadingContext';
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
@@ -122,8 +125,23 @@ const AdminUser = () => {
 										<IdCopyChip value={u.user_login_id} compact />
 									</td>
                                     <td className="admin-user__name-cell">
-                                        {u.user_name} 
-                                        {isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
+										<div className="admin-user__name-wrap">
+											<UserAvatar
+												imageUrl={u.user_profile_image_url || null}
+												nickname={u.user_nickname || null}
+												name={u.user_name || null}
+												size={34}
+											/>
+											<div>
+												<div>
+													{u.user_name}
+													{isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
+												</div>
+												<div className="admin-user__deptpos">
+													{u.user_department || '-'} · {u.user_position || '-'}
+												</div>
+											</div>
+										</div>
                                     </td>
                                     <td>{u.user_nickname || '-'}</td>
                                     <td>{u.user_phone_number || '-'}</td>

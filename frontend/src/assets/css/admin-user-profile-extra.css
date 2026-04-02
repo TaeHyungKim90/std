@@ -1,0 +1,61 @@
+.admin-user__name-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.admin-user__deptpos {
+	margin-top: 2px;
+	font-size: 0.82rem;
+	color: var(--bq-text-dim, #8a8a8a);
+	white-space: nowrap;
+}
+
+.admin-user__resigned-tag {
+	margin-left: 6px;
+	font-size: 0.78rem;
+}
+
+.user-modal-photo-row {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 14px;
+	margin: 10px 0 14px;
+}
+
+.user-modal-photo-upload {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid rgba(63, 175, 122, 0.35);
+	background: rgb(var(--primary-rgb) / 0.06);
+	color: var(--primary-color, #3FAF7A);
+	cursor: pointer;
+	font-weight: 700;
+	font-size: 0.9rem;
+}
+
+.user-modal-photo-upload input {
+	display: none;
+}
+
+.user-modal-salary-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.user-modal-scroll {
+	overflow-y: auto;
+	max-height: calc(85vh - 140px); /* 저장 버튼은 아래에 고정되도록 입력영역만 스크롤 */
+	padding-right: 6px;
+}
+
+.user-modal-actions {
+	margin-top: 18px;
+	padding-top: 0;
+}
+

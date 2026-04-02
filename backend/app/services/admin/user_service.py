@@ -24,6 +24,11 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 		user_password=hashed_pw,
 		user_name=payload.user_name,
 		user_nickname=payload.user_nickname,
+		user_profile_image_url=payload.user_profile_image_url,
+		user_department=payload.user_department,
+		user_position=payload.user_position,
+		salary_bank_name=payload.salary_bank_name,
+		salary_account_number=payload.salary_account_number,
 		role=payload.role,
 		join_date=payload.joined_at,
 		resignation_date=payload.resignation_date

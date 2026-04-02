@@ -17,6 +17,12 @@ class User(Base):
 	user_password = Column[str](String(255), nullable=False)				# 해싱된 pw
 	user_name = Column[str](String(50), nullable=False)				 		# 실명
 	user_nickname = Column[str](String(50))							 		# 닉네임
+	# 사용자 프로필 확장 필드(사진/부서/직급/급여계좌)
+	user_profile_image_url = Column[str](String(500), nullable=True)		# 파일 저장 경로(/uploads/...)
+	user_department = Column[str](String(100), nullable=True)				# 부서
+	user_position = Column[str](String(100), nullable=True)					# 직급
+	salary_bank_name = Column[str](String(100), nullable=True)				# 급여 은행명
+	salary_account_number = Column[str](String(50), nullable=True)			# 급여 계좌번호
 	role = Column[str](String(20), default="user")					 		# 권한
 	user_phone_number = Column[str](String(20), nullable=True)
 	created_at = Column[datetime](DateTime, server_default=func.now())

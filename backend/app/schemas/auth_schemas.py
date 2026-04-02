@@ -37,6 +37,12 @@ class UserCreate(BaseModel):
 	user_name: str = Field(..., description="실명")
 	user_nickname: Optional[str] = None
 	user_phone_number: Optional[str] = None
+	# 사용자 프로필 확장
+	user_profile_image_url: Optional[str] = None
+	user_department: Optional[str] = None
+	user_position: Optional[str] = None
+	salary_bank_name: Optional[str] = None
+	salary_account_number: Optional[str] = None
 	role: str = Field("user", description="권한 (admin/user)")
 	joined_at: Optional[date] = Field(
 		default=None,
@@ -59,6 +65,11 @@ class UserUpdate(BaseModel):
 	user_name: Optional[str] = None
 	user_nickname: Optional[str] = None
 	user_phone_number: Optional[str] = None
+	user_profile_image_url: Optional[str] = None
+	user_department: Optional[str] = None
+	user_position: Optional[str] = None
+	salary_bank_name: Optional[str] = None
+	salary_account_number: Optional[str] = None
 	role: Optional[str] = None
 	user_password: Optional[str] = None 
 	joined_at: Optional[date] = Field(
@@ -97,6 +108,11 @@ class MeProfilePatch(BaseModel):
 
 	user_nickname: Optional[str] = Field(None, max_length=50)
 	user_phone_number: Optional[str] = None
+	user_profile_image_url: Optional[str] = None
+	user_department: Optional[str] = None
+	user_position: Optional[str] = None
+	salary_bank_name: Optional[str] = None
+	salary_account_number: Optional[str] = None
 	current_password: Optional[str] = Field(None, description="비밀번호 변경 시 필수")
 	new_password: Optional[str] = Field(None, min_length=6, max_length=128, description="새 비밀번호")
 
@@ -121,6 +137,11 @@ class UserResponse(BaseModel):
 	user_name: str
 	user_nickname: Optional[str]
 	user_phone_number: Optional[str] = None
+	user_profile_image_url: Optional[str] = None
+	user_department: Optional[str] = None
+	user_position: Optional[str] = None
+	salary_bank_name: Optional[str] = None
+	salary_account_number: Optional[str] = None
 	role: str
 	created_at: datetime
 	join_date: Optional[date] = None 
