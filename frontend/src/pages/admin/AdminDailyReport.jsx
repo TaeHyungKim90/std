@@ -13,6 +13,8 @@ import {
 	toYmd,
 } from 'utils/dateUtils';
 import 'assets/css/report.css';
+import 'assets/css/attendance.css';
+import IdCopyChip from 'components/common/IdCopyChip';
 
 const MONITOR_TABS = [
 	{ id: 'daily', label: '일일보고 작성 현황' },
@@ -196,13 +198,61 @@ const AdminDailyReport = () => {
 
 	return (
 		<div className="rep-page">
-			<h1 className="rep-page__title">보고서 모니터링</h1>
-			<p className="rep-page__sub">
-				일일 탭은 선택한 근무일 기준 직원별 작성 상태(휴일·휴가·작성·미작성)를, 주간 탭은 해당 주의 주간보고 제출·요약을 확인합니다. 행을 클릭하면 해당 주의 상세 Drawer가
-				열립니다.
-			</p>
+			<div className="rep-admin-daily-top-row">
+				<div className="rep-admin-daily-top-row__intro">
+					<h1 className="rep-page__title">보고서 모니터링</h1>
+					<p className="rep-page__sub">
+						일일 탭은 선택한 근무일 기준 직원별 작성 상태(휴일·휴가·작성·미작성)를, 주간 탭은 해당 주의 주간보고 제출·요약을 확인합니다.
+						<br />
+						행을 클릭하면 해당 주의 상세 Drawer가 열립니다.
+					</p>
+				</div>
+				{monitorTab === 'daily' ? (
+					<div className="rep-admin-daily-top-row__date-wrap">
+						<div className="adm-attendance__date-toolbar rep-admin-daily-top-row__date">
+							<label className="adm-attendance__date-label" htmlFor="rep-admin-daily-work-date">
+								기준일
+								<input
+									id="rep-admin-daily-work-date"
+									type="date"
+									className="adm-attendance__date-input"
+									value={dailyWorkYmd}
+									disabled={pageBusy}
+									onChange={(e) => setDailyWorkYmd(e.target.value || getTodayYmd())}
+								/>
+								<button
+									type="button"
+									className="adm-attendance__today-btn"
+									disabled={pageBusy}
+									onClick={() => setDailyWorkYmd(getTodayYmd())}
+								>
+									오늘
+								</button>
+							</label>
+						</div>
+						<p className="rep-admin-daily-date-toolbar__hint">
+							{formatYmdToWeekKo(dailyWorkYmd)} · 선택한 날짜 기준으로 상태를 표시합니다.
+						</p>
+					</div>
+				) : (
+					<div className="rep-admin-weekly-top-row__nav-wrap">
+						<p className="rep-admin-weekly-nav__week">{weekLabelText}</p>
+						<div className="rep-admin-weekly-nav__btns" aria-label="주차 이동">
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(-1)}>
+								이전 주
+							</button>
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(1)}>
+								다음 주
+							</button>
+						</div>
+						<p className="rep-admin-daily-date-toolbar__hint rep-admin-weekly-nav__hint">
+							선택한 주차 기준으로 제출·요약을 표시합니다.
+						</p>
+					</div>
+				)}
+			</div>
 
-			<div className="rep-tabs" role="tablist">
+			<div className="rep-tabs rep-tabs--segment" role="tablist">
 				{MONITOR_TABS.map((t) => (
 					<button
 						key={t.id}
@@ -219,53 +269,23 @@ const AdminDailyReport = () => {
 			</div>
 
 			{monitorTab === 'daily' && (
-				<div className="rep-admin-toolbar-stack">
-					<div className="rep-toolbar rep-toolbar--admin-daily">
-						<div className="rep-admin-filter-bar rep-admin-filter-bar--inline">
-							<label className="rep-admin-filter-label">
-								<span className="rep-label">상태 필터</span>
-								<select
-									className="rep-admin-filter-select"
-									value={statusFilter}
-									disabled={pageBusy}
-									onChange={(e) => setStatusFilter(e.target.value)}
-								>
-									{filterOptions.map((o) => (
-										<option key={o.value} value={o.value}>
-											{o.label}
-										</option>
-									))}
-								</select>
-							</label>
-						</div>
-						<label className="rep-admin-date-label">
-							<span className="rep-label">기준일</span>
-							<input
-								type="date"
-								className="rep-admin-date-input"
-								value={dailyWorkYmd}
-								disabled={pageBusy}
-								onChange={(e) => setDailyWorkYmd(e.target.value || getTodayYmd())}
-							/>
-							<span className="rep-admin-date-hint">
-								{formatYmdToWeekKo(dailyWorkYmd)} · 선택한 날짜 기준으로 상태를 표시합니다.
-							</span>
-						</label>
-					</div>
-				</div>
-			)}
-
-			{monitorTab === 'weekly' && (
-				<div className="rep-toolbar">
-					<span className="rep-label">{weekLabelText}</span>
-					<div>
-						<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(-1)}>
-							이전 주
-						</button>
-						<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(1)}>
-							다음 주
-						</button>
-					</div>
+				<div className="rep-admin-toolbar-stack rep-admin-toolbar-stack--daily-filter" aria-label="일일 보고 필터">
+					<label className="rep-admin-daily-toolbar__group" htmlFor="rep-admin-daily-status-filter">
+						<span className="rep-admin-daily-toolbar__label">상태 필터</span>
+						<select
+							id="rep-admin-daily-status-filter"
+							className="rep-admin-filter-select"
+							value={statusFilter}
+							disabled={pageBusy}
+							onChange={(e) => setStatusFilter(e.target.value)}
+						>
+							{filterOptions.map((o) => (
+								<option key={o.value} value={o.value}>
+									{o.label}
+								</option>
+							))}
+						</select>
+					</label>
 				</div>
 			)}
 
@@ -318,7 +338,9 @@ const AdminDailyReport = () => {
 							tableRows.map((row) => (
 								<tr key={row.user_login_id} onClick={() => (!pageBusy ? openDrawer(row, bundleWeekFromDaily, dailyWorkYmd) : undefined)}>
 									<td>{row.user_name}</td>
-									<td>{row.user_login_id}</td>
+									<td className="rep-admin-td-login">
+										<IdCopyChip value={row.user_login_id} compact isolateRowClick />
+									</td>
 									<td>
 										<DailyStatusBadge status={row.daily_status} />
 									</td>
@@ -328,7 +350,9 @@ const AdminDailyReport = () => {
 							tableRows.map((row) => (
 								<tr key={row.user_login_id} onClick={() => (!pageBusy ? openDrawer(row, mondayYmd) : undefined)}>
 									<td>{row.user_name}</td>
-									<td>{row.user_login_id}</td>
+									<td className="rep-admin-td-login">
+										<IdCopyChip value={row.user_login_id} compact isolateRowClick />
+									</td>
 									<td>
 										{row.weekly_status === 'VACATION' ? (
 											<span className="rep-status-badge rep-status-badge--vacation">휴가</span>
@@ -362,8 +386,17 @@ const AdminDailyReport = () => {
 				panelClassName="rep-admin-drawer-panel rep-drawer-panel dynamic-enter"
 			>
 				<div className="rep-drawer-head">
-					<h2 className="rep-drawer-title">
-						{drawerUser ? `${drawerUser.user_name} (${drawerUser.user_login_id})` : '상세'}
+					<h2 className={`rep-drawer-title${drawerUser ? ' rep-drawer-title--with-meta' : ''}`}>
+						{drawerUser ? (
+							<>
+								<span>{drawerUser.user_name}</span>
+								<span className="rep-drawer-title__meta">
+									(<IdCopyChip value={drawerUser.user_login_id} compact />)
+								</span>
+							</>
+						) : (
+							'상세'
+						)}
 					</h2>
 					<button type="button" className="rep-drawer-close" onClick={closeDrawer} aria-label="닫기">
 						×
