@@ -1,11 +1,15 @@
-from datetime import datetime, date as date_type, time as time_type
+from datetime import datetime, date as date_type, time as time_type, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
+from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.hr_models import Attendance
 from models.auth_models import User
+from models.holiday_models import Holiday
+from models.hr_models import Todo
+from services.hr.attendance_service import is_vacation_status
 
 def get_all_attendance(
 	db: Session,
@@ -118,8 +122,27 @@ def get_user_attendance_range(
 	start_date: str | None,
 	end_date: str | None,
 ) -> dict:
-	"""특정 직원의 근태 기록을 기간(포함)으로 조회."""
+	"""특정 직원의 근태 기록을 기간(포함)으로 조회.
+
+	- 기존 Attendance가 있으면 해당 값을 우선 반환
+	- Attendance가 없는 평일(휴일/공휴일 제외)에는 ABSENT 가상 행을 생성
+	- 입사 전/퇴사 후 날짜는 제외
+	"""
 	start_d, end_d = _parse_range_dates(start_date, end_date)
+	today = datetime.now().date()
+	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	if not user:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+
+	# 입사/퇴사일 기준으로 조회 구간을 재정렬
+	if user.join_date and start_d < user.join_date:
+		start_d = user.join_date
+	if user.resignation_date and end_d > user.resignation_date:
+		end_d = user.resignation_date
+	if end_d > today:
+		end_d = today
+	if start_d > end_d:
+		return {"items": []}
 
 	records = (
 		db.query(Attendance)
@@ -131,6 +154,34 @@ def get_user_attendance_range(
 		.order_by(Attendance.work_date.asc(), Attendance.id.asc())
 		.all()
 	)
+	record_by_day = {r.work_date: r for r in records}
+
+	holiday_rows = (
+		db.query(Holiday.holiday_date)
+		.filter(Holiday.holiday_date >= start_d, Holiday.holiday_date <= end_d)
+		.all()
+	)
+	holiday_dates = {row[0] for row in holiday_rows}
+
+	vac_attendance_dates = {r.work_date for r in records if is_vacation_status(r.status)}
+	day_start = datetime.combine(start_d, time_type.min)
+	day_end = datetime.combine(end_d, time_type.max)
+	vac_todo_rows = (
+		db.query(Todo.start_date, Todo.end_date)
+		.filter(Todo.user_id == user_login_id)
+		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
+		.filter(Todo.start_date <= day_end)
+		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
+		.all()
+	)
+
+	vac_todo_dates: set[date_type] = set()
+	for sdt, edt in vac_todo_rows:
+		cur = max(start_d, sdt.date())
+		last = min(end_d, (edt or sdt).date())
+		while cur <= last:
+			vac_todo_dates.add(cur)
+			cur += timedelta(days=1)
 
 	items = [
 		{
@@ -147,6 +198,35 @@ def get_user_attendance_range(
 		}
 		for r in records
 	]
+
+	cur = start_d
+	while cur <= end_d:
+		# 주말/공휴일/휴가일은 결근 가상행 생성 제외
+		is_weekend = cur.weekday() >= 5
+		if (
+			not is_weekend
+			and cur not in holiday_dates
+			and cur not in vac_attendance_dates
+			and cur not in vac_todo_dates
+			and cur not in record_by_day
+		):
+			items.append(
+				{
+					"id": -int(cur.strftime("%Y%m%d")),
+					"user_id": user_login_id,
+					"work_date": cur,
+					"clock_in_time": None,
+					"clock_out_time": None,
+					"clock_in_location": None,
+					"clock_out_location": None,
+					"status": "ABSENT",
+					"work_minutes": 0,
+					"note": "AUTO_ABSENT",
+				}
+			)
+		cur += timedelta(days=1)
+
+	items.sort(key=lambda x: (x["work_date"], x["id"]))
 	return {"items": items}
 
 

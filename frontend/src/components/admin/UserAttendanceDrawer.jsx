@@ -304,6 +304,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 								{items.map((row, index) => {
 									const weekend = isWeekendYmd(row.work_date);
 									const badge = getStatusBadge(row.status);
+									const isSyntheticAbsent = typeof row.id === 'number' && row.id < 0;
 
 									return (
 										<tr
@@ -361,7 +362,9 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 											<td className="uta-td-workminutes">{formatWorkMinutes(row.work_minutes)}</td>
 
 											<td className="uta-td-manage">
-												{editingId === row.id ? (
+												{isSyntheticAbsent ? (
+													<span className="rep-empty rep-empty--table">자동결근</span>
+												) : editingId === row.id ? (
 													<div className="uta-edit-actions">
 														<button
 															type="button"
