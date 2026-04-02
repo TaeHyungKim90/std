@@ -1,0 +1,59 @@
+/* 목록·상세의 긴 ID: 축약 표시 + 복사 */
+
+.id-copy-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+.id-copy-chip--block {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.id-copy-chip__text {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.85em;
+	line-height: 1.3;
+	word-break: break-all;
+}
+
+.id-copy-chip--compact .id-copy-chip__text {
+	font-size: 0.8em;
+}
+
+.id-copy-chip__btn {
+	flex-shrink: 0;
+	padding: 0.15rem 0.45rem;
+	font-size: 0.7rem;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--primary, #3faf7a);
+	background: rgba(61, 175, 122, 0.1);
+	border: 1px solid rgba(61, 175, 122, 0.35);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.id-copy-chip__btn:hover {
+	background: rgba(61, 175, 122, 0.18);
+	border-color: var(--primary, #3faf7a);
+}
+
+.id-copy-chip__btn:focus-visible {
+	outline: 2px solid var(--primary, #3faf7a);
+	outline-offset: 1px;
+}
+
+.id-copy-chip--muted .id-copy-chip__btn {
+	color: #6b7280;
+	background: #f3f4f6;
+	border-color: #e5e7eb;
+}
+
+.id-copy-chip--muted .id-copy-chip__btn:hover {
+	background: #e5e7eb;
+}
