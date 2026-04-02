@@ -16,6 +16,7 @@ export const PATHS = {
 	MY_ATTENDANCE: `${MY}/attendance`,
 	MY_MESSAGES: `${MY}/messages`,
 	MY_REPORTS: `${MY}/reports`,
+	MY_PROFILE: `${MY}/profile`,
 	CAREERS,
 	CAREERS_LOGIN: `${CAREERS}/login`,
 	CAREERS_SIGNUP: `${CAREERS}/signup`,
@@ -84,5 +85,6 @@ export const ROUTE_SEGMENTS = {
 		ATTENDANCE: PATHS.MY_ATTENDANCE.slice(MY.length + 1),
 		MESSAGES: PATHS.MY_MESSAGES.slice(MY.length + 1),
 		REPORTS: PATHS.MY_REPORTS.slice(MY.length + 1),
+		PROFILE: PATHS.MY_PROFILE.slice(MY.length + 1),
 	},
 };

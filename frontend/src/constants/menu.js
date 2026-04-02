@@ -5,6 +5,7 @@ export const MENU_ITEMS = [
 	{ id: 'my-reports', label: '내 보고서', path: PATHS.MY_REPORTS, adminOnly: false },
 	{ id: 'commute', label: '출퇴근', path: PATHS.MY_ATTENDANCE, adminOnly: false },
 	{ id: 'messages', label: '내 수신함', path: PATHS.MY_MESSAGES, adminOnly: false },
+	{ id: 'my-profile', label: '내 정보', path: PATHS.MY_PROFILE, adminOnly: false },
 	{ id: 'admin', label: '관리모드', path: PATHS.ADMIN_DASHBOARD, adminOnly: true }
   ];
   

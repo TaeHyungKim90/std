@@ -1,0 +1,189 @@
+/* 마이페이지: 기본은 웹(넓은 레이아웃), 좁은 화면에서만 모바일용 스타일 */
+
+.my-profile-page {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 1.5rem 0 2.5rem;
+}
+
+.my-profile-page__title {
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: #111827;
+	margin: 0 0 8px;
+	letter-spacing: -0.02em;
+}
+
+.my-profile-page__lead {
+	color: #6b7280;
+	font-size: 0.95rem;
+	margin: 0 0 28px;
+	line-height: 1.5;
+	max-width: 48rem;
+}
+
+.my-profile-card {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	padding: 22px 24px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.my-profile-card__title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #1f2937;
+	margin: 0 0 16px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+/* 데스크톱: 라벨 열 + 입력이 남은 폭을 쓰도록 */
+.my-profile-grid {
+	display: grid;
+	grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+	gap: 14px 24px;
+	align-items: start;
+}
+
+.my-profile-grid label {
+	font-size: 0.875rem;
+	color: #6b7280;
+}
+
+.my-profile-grid .my-profile-value {
+	font-size: 0.95rem;
+	color: #111827;
+}
+
+.my-profile-grid input[type='text'],
+.my-profile-grid input[type='password'],
+.my-profile-grid input[type='tel'] {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.95rem;
+}
+
+.my-profile-grid input:focus {
+	outline: none;
+	border-color: #6366f1;
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.my-profile-readonly {
+	background: #f9fafb;
+	color: #4b5563;
+}
+
+.my-profile-hint {
+	font-size: 0.8rem;
+	color: #9ca3af;
+	margin-top: 4px;
+}
+
+.my-profile-actions {
+	margin-top: 18px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.my-profile-btn {
+	padding: 10px 20px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 0.9rem;
+	cursor: pointer;
+	border: none;
+}
+
+.my-profile-btn--primary {
+	background: #4f46e5;
+	color: #fff;
+}
+
+.my-profile-btn--primary:hover:not(:disabled) {
+	background: #4338ca;
+}
+
+.my-profile-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.vacation-summary-text {
+	font-size: 1rem;
+	color: #374151;
+	margin: 0 0 14px;
+	line-height: 1.6;
+}
+
+.vacation-summary-text strong {
+	color: #111827;
+	font-weight: 700;
+}
+
+.vacation-progress {
+	height: 12px;
+	background: #e5e7eb;
+	border-radius: 999px;
+	overflow: hidden;
+	margin-bottom: 8px;
+	width: 100%;
+}
+
+.vacation-progress__fill {
+	height: 100%;
+	border-radius: 999px;
+	background: linear-gradient(90deg, #6366f1, #8b5cf6);
+	transition: width 0.35s ease;
+}
+
+.vacation-progress__labels {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.my-profile-empty {
+	color: #9ca3af;
+	font-size: 0.95rem;
+	margin: 0;
+}
+
+/* 모바일: 한 열·여백 축소 (모바일 접속 시에만 이 구간이 주로 적용됨) */
+@media (max-width: 640px) {
+	.my-profile-page {
+		max-width: 100%;
+		padding: 1rem 0.875rem 2rem;
+	}
+
+	.my-profile-card {
+		padding: 16px 14px;
+	}
+
+	.my-profile-grid {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.my-profile-grid label {
+		font-weight: 600;
+		color: #374151;
+		margin-top: 4px;
+	}
+
+	.my-profile-grid label:first-child {
+		margin-top: 0;
+	}
+}
