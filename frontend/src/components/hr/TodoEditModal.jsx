@@ -1,11 +1,14 @@
 import 'assets/css/todoEditModal.css';
 
 import { todoService } from 'api/todoApi';
-import React, { useActionState, useEffect,useState } from 'react';
+import { useAuth } from 'context/AuthContext';
+import React, { useActionState, useEffect, useState } from 'react';
 import SunEditor from 'suneditor-react';
+import { getEmploymentRangeError, toSeoulYmd } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
+	const { joinDate, resignationDate } = useAuth();
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');
 	const [description, setDescription] = useState(''); // 에디터 내용을 관리할 새로운 State
@@ -41,6 +44,11 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		const end = isHalfVacation ? start : formData.get("end_date");
 
 		if (new Date(start) > new Date(end)) return "종료일이 시작일보다 빠를 수 없습니다.";
+
+		const startY = String(start).slice(0, 10);
+		const endY = String(end).slice(0, 10);
+		const empErr = getEmploymentRangeError(startY, endY, joinDate, resignationDate);
+		if (empErr) return empErr;
 
 		const todoData = {
 			title,
@@ -86,6 +94,8 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 
 	const defaultStart = mode === 'edit' ? event?.start?.split('T')[0] : selectedDate?.start;
 	const defaultEnd = mode === 'edit' ? event?.end?.split('T')[0] : selectedDate?.end;
+	const hireMin = joinDate ? toSeoulYmd(joinDate) : undefined;
+	const resignMax = resignationDate ? toSeoulYmd(resignationDate) : undefined;
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
@@ -94,11 +104,21 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 				<h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
 				<form action={submitAction}>
 					<div className="date-group">
-						<input type="date" name="start_date" defaultValue={defaultStart} required className="bq-input" />
+						<input
+							type="date"
+							name="start_date"
+							defaultValue={defaultStart}
+							min={hireMin || undefined}
+							max={resignMax || undefined}
+							required
+							className="bq-input"
+						/>
 						<input
 							type="date"
 							name="end_date"
 							defaultValue={isHalfVacation ? defaultStart : defaultEnd}
+							min={hireMin || undefined}
+							max={resignMax || undefined}
 							disabled={isHalfVacation}
 							className="bq-input"
 							style={isHalfVacation ? { opacity: 0.5, cursor: 'not-allowed' } : {}}

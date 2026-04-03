@@ -10,9 +10,15 @@ import TodoSidebar from 'components/hr/TodoSidebar';
 import TodoTemplateModal from 'components/hr/TodoTemplateModal';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback,useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getContrastColor } from 'utils/colorUtils';
-import { toLocalIsoNoMs, toLocalYmd } from 'utils/dateUtils';
+import {
+	fcAllDaySpanToInclusiveYmd,
+	getEmploymentRangeError,
+	seoulYmdAddDays,
+	todoDbToFullCalendarAllDayRange,
+	toSeoulYmd,
+} from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
 
@@ -21,7 +27,20 @@ const TodoListView = () => {
 	const holidaysRef = useRef([]);
 	const [categories, setCategories] = useState([]);
 	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3FAF7A', selectedDescription: ''});
-	const { userId } = useAuth();
+	const { userId, joinDate, resignationDate } = useAuth();
+
+	const employmentValidRange = useMemo(() => {
+		const o = {};
+		if (joinDate) {
+			const j = toSeoulYmd(joinDate);
+			if (j) o.start = j;
+		}
+		if (resignationDate) {
+			const r = toSeoulYmd(resignationDate);
+			if (r) o.end = seoulYmdAddDays(r, 1);
+		}
+		return Object.keys(o).length ? o : undefined;
+	}, [joinDate, resignationDate]);
 	const { showLoading, hideLoading } = useLoading();
 	const calendarRef = useRef(null);
 	const externalEventsRef = useRef(null);
@@ -55,15 +74,26 @@ const TodoListView = () => {
 		const formattedTodos = todoRes.data
 			.map((todo) => {
 			const isOwner = todo.user_id === userId;
-			const endDate = new Date(todo.end_date);
-			endDate.setSeconds(endDate.getSeconds() + 1);
 			const nickname = todo.author?.user_nickname || '';
 			const name = todo.author?.user_name || '';
 			const eventTextColor = getContrastColor(todo.color);
 
+			/* DB: 종료일 당일 23:59:59(포함). FC 종일: 배타적 end = 포함 종료일 +1일 00:00(날짜만). 서울 달력 기준. */
+			const range = todoDbToFullCalendarAllDayRange(todo.start_date, todo.end_date);
+			let start = todo.start_date;
+			let end;
+			if (range) {
+				start = range.start;
+				end = range.end;
+			} else {
+				const endDate = new Date(todo.end_date);
+				endDate.setSeconds(endDate.getSeconds() + 1);
+				end = endDate;
+			}
+
 			return {
 				id: todo.id.toString(), title: `[${nickname}(${name})] ${todo.title}`,
-				start: todo.start_date, end: endDate, allDay: true, backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
+				start, end, allDay: true, backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
 				startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
 			};
 		});
@@ -84,7 +114,17 @@ const TodoListView = () => {
 	}, [fetchCategoriesAndConfigs]);
 
 	const handleSwitchToEdit = () => { setIsDetailOpen(false); setModalMode('edit'); setIsEditOpen(true); };
-	const handleDateClick = (info) => { setSelectedDate({ start: info.dateStr, end: info.dateStr }); setModalMode('create'); setIsEditOpen(true); };
+	const handleDateClick = (info) => {
+		const ymd = toSeoulYmd(info.date);
+		const err = getEmploymentRangeError(ymd, ymd, joinDate, resignationDate);
+		if (err) {
+			Notify.toastWarn(err);
+			return;
+		}
+		setSelectedDate({ start: info.dateStr, end: info.dateStr });
+		setModalMode('create');
+		setIsEditOpen(true);
+	};
 	const handleEventClick = (info) => { 
 		const event = info.event.toPlainObject(); 
 		const props = event.extendedProps; 
@@ -104,15 +144,34 @@ const TodoListView = () => {
 			return;
 		}
 
-		const startStr = event.startStr || "";
-		const startDate = startStr.includes('T') ? startStr.split('T')[0] + "T00:00:00" : startStr + "T00:00:00";
-		
+		const span = fcAllDaySpanToInclusiveYmd(event.start, event.end);
+		const empErr = getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate);
+		if (empErr) {
+			info.revert();
+			Notify.toastWarn(empErr);
+			return;
+		}
+
+		const ymdOk = /^\d{4}-\d{2}-\d{2}$/.test(span.startYmd) && /^\d{4}-\d{2}-\d{2}$/.test(span.endYmd);
+		let startDate;
 		let endDate;
-		if (event.end) {
-			const tempEnd = new Date(event.end);
-			tempEnd.setSeconds(tempEnd.getSeconds() - 1);
-			endDate = toLocalIsoNoMs(tempEnd);
-		} else { endDate = event.startStr.split('T')[0] + "T23:59:59"; }
+		if (ymdOk) {
+			startDate = `${span.startYmd}T00:00:00`;
+			endDate = `${span.endYmd}T23:59:59`;
+		} else {
+			const startStr = event.startStr || "";
+			startDate = startStr.includes('T') ? startStr.split('T')[0] + "T00:00:00" : `${startStr}T00:00:00`;
+			if (event.end) {
+				const tempEnd = new Date(event.end);
+				tempEnd.setSeconds(tempEnd.getSeconds() - 1);
+				const y = tempEnd.getFullYear();
+				const m = String(tempEnd.getMonth() + 1).padStart(2, '0');
+				const d = String(tempEnd.getDate()).padStart(2, '0');
+				endDate = `${y}-${m}-${d}T23:59:59`;
+			} else {
+				endDate = `${event.startStr.split('T')[0]}T23:59:59`;
+			}
+		}
 
 		// 🌟 toastPromise 로 드래그 앤 드롭 수정 처리!
 		Notify.toastPromise(
@@ -144,6 +203,13 @@ const TodoListView = () => {
 		if (!fallbackCat) {
 			info.revert();
 			Notify.toastError("기본 카테고리 정보가 없어 일정을 등록할 수 없습니다.");
+			return;
+		}
+		const dropYmd = toSeoulYmd(event.startStr || event.start);
+		const empErr = getEmploymentRangeError(dropYmd, dropYmd, joinDate, resignationDate);
+		if (empErr) {
+			info.revert();
+			Notify.toastWarn(empErr);
 			return;
 		}
 		const newTodo = {
@@ -212,11 +278,13 @@ const TodoListView = () => {
 					initialView="dayGridMonth"
 					headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
 					locale="ko"
+					timeZone="Asia/Seoul"
+					validRange={employmentValidRange}
 					events={events}
 					editable={true}
 					droppable={true}
 					dayCellContent={(arg) => {
-						const dateStr = toLocalYmd(arg.date);
+						const dateStr = toSeoulYmd(arg.date);
 						const holiday = holidaysRef.current.find(h => h.holiday_date === dateStr);
 						const isHoliday = !!holiday;
 						let dateColor = '';
@@ -240,7 +308,19 @@ const TodoListView = () => {
 							</div>
 						);
 					}}
+					selectAllow={(selectInfo) => {
+						const span = fcAllDaySpanToInclusiveYmd(selectInfo.start, selectInfo.end);
+						return (
+							getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate) == null
+						);
+					}}
 					eventAllow={(dropInfo, draggedEvent) => {
+						const span = fcAllDaySpanToInclusiveYmd(dropInfo.start, dropInfo.end);
+						if (
+							getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate) != null
+						) {
+							return false;
+						}
 						const category = draggedEvent.extendedProps.category;
 						if (category === "vacation_am" || category === "vacation_pm") {
 							const startDate = new Date(dropInfo.start);

@@ -1,15 +1,61 @@
-from datetime import datetime, timedelta
-from typing import Any
+from datetime import date, datetime, timedelta
+from typing import Any, cast
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from core.constants import VACATION_CATEGORIES, VACATION_HALF_DAY_CATEGORIES
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
-from models.auth_models import UserVacation
+from models.auth_models import User, UserVacation
 from models.holiday_models import Holiday
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
 from fastapi import HTTPException
+
+_SEOUL = ZoneInfo("Asia/Seoul")
+
+
+def _to_seoul_date(dt: datetime | str) -> date:
+	"""일정 시각을 서울 달력 날짜로 변환 (naive는 서울 현지 시각으로 간주)."""
+	if isinstance(dt, str):
+		normalized = dt.replace("Z", "+00:00")
+		d2 = datetime.fromisoformat(normalized)
+	else:
+		d2 = dt
+	if d2.tzinfo is None:
+		d2 = d2.replace(tzinfo=_SEOUL)
+	return d2.astimezone(_SEOUL).date()
+
+
+def _assert_todo_range_within_employment(
+	db: Session, user_id: str, start_date: datetime, end_date: datetime
+) -> None:
+	user = db.query(User).filter(User.user_login_id == user_id).first()
+	if not user:
+		return
+	start_d = _to_seoul_date(start_date)
+	end_d = _to_seoul_date(end_date)
+	if end_d < start_d:
+		start_d, end_d = end_d, start_d
+	jd = user.join_date
+	rd = user.resignation_date
+	if jd is not None and start_d < jd:
+		raise HTTPException(
+			status_code=400, detail="입사일 이전 날짜에는 일정을 등록할 수 없습니다."
+		)
+	if jd is not None and end_d < jd:
+		raise HTTPException(
+			status_code=400, detail="입사일 이전 날짜에는 일정을 등록할 수 없습니다."
+		)
+	if rd is not None and start_d > rd:
+		raise HTTPException(
+			status_code=400, detail="퇴사일 이후 날짜에는 일정을 등록할 수 없습니다."
+		)
+	if rd is not None and end_d > rd:
+		raise HTTPException(
+			status_code=400, detail="퇴사일 이후 날짜에는 일정을 등록할 수 없습니다."
+		)
+
 
 # --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
 def get_deduct_days(db: Session, category_key: Any, start_date=None, end_date=None) -> float:
@@ -69,6 +115,8 @@ def get_todos(db: Session, skip: int = 0, limit: int = 100):
 	return q.offset(skip).limit(limit).all()
 
 def create_todo(db: Session, todo: TodoCreate, user_id: str):
+	end_for_range = todo.end_date if todo.end_date is not None else todo.start_date
+	_assert_todo_range_within_employment(db, user_id, todo.start_date, end_for_range)
 	# 🌟 수정됨: 기간을 계산하여 연차 차감
 	deduct_days = get_deduct_days(db, todo.category, todo.start_date, todo.end_date)
 	
@@ -106,9 +154,19 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	# 🌟 핵심 수정: 기존 차감일수와 변경될 차감일수를 각각 계산
 	old_deduct = get_deduct_days(db, old_category, db_todo.start_date, db_todo.end_date)
 	
-	# 수정 요청에 날짜가 없으면 기존 날짜 사용
-	new_start = todo_update.start_date if todo_update.start_date is not None else db_todo.start_date
-	new_end = todo_update.end_date if todo_update.end_date is not None else db_todo.end_date
+	# 수정 요청에 날짜가 없으면 기존 날짜 사용 (ORM 컬럼은 Pyright에 Column[datetime]으로 잡혀 cast)
+	new_start: datetime = (
+		todo_update.start_date
+		if todo_update.start_date is not None
+		else cast(datetime, db_todo.start_date)
+	)
+	new_end: datetime | None = (
+		todo_update.end_date
+		if todo_update.end_date is not None
+		else cast(datetime | None, db_todo.end_date)
+	)
+	end_for_range: datetime = new_end if new_end is not None else new_start
+	_assert_todo_range_within_employment(db, user_id, new_start, end_for_range)
 	new_deduct = get_deduct_days(db, new_category, new_start, new_end)
 
 	# 카테고리가 바뀌었거나, '일수' 자체가 달라졌을 때 재정산 실행!
