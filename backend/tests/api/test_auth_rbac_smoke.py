@@ -32,6 +32,11 @@ def test_hr_attendance_today_requires_authentication():
 	assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+def test_hr_attendance_clock_context_requires_authentication():
+	res = _client().get("/api/hr/attendance/clock-context")
+	assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+
 def test_hr_reports_daily_requires_authentication():
 	d0 = date.today()
 	d1 = d0 - timedelta(days=6)
@@ -80,6 +85,8 @@ def test_public_recruitment_apply_me_requires_applicant_session():
 	assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_public_recruitment_me_requires_applicant_session():
+def test_public_recruitment_me_anonymous_returns_logged_out():
+	"""비로그인도 401이 아니라 열람용 세션 확인 응답(토스트·리다이렉트 방지)."""
 	res = _client().get("/api/public/recruitment/me")
-	assert res.status_code == status.HTTP_401_UNAUTHORIZED
+	assert res.status_code == status.HTTP_200_OK
+	assert res.json().get("isLoggedIn") is False
