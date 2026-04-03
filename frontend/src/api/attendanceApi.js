@@ -12,6 +12,15 @@ export const attendanceApi = {
 	getTodayAttendance: () => client.get(`${PATH}/today`),
 
 	/**
+	 * 출퇴근 확인 팝업용 맥락(휴가·공휴일·주말)
+	 * GET /hr/attendance/clock-context?work_date=선택
+	 */
+	getClockContext: (workDate) =>
+		client.get(`${PATH}/clock-context`, {
+			params: workDate ? { work_date: workDate } : {},
+		}),
+
+	/**
 	 * 특정 근무일의 본인 출퇴근 기록 (없으면 data null)
 	 * GET /hr/attendance/day?work_date=YYYY-MM-DD
 	 */

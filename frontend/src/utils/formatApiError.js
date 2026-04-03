@@ -15,6 +15,9 @@ function formatDetailPayload(detail) {
 			.filter(Boolean)
 			.join(' ');
 	}
+	if (typeof detail === 'object' && detail !== null && typeof detail.message === 'string') {
+		return detail.message;
+	}
 	if (typeof detail === 'object' && detail !== null && 'msg' in detail) {
 		return String(detail.msg);
 	}

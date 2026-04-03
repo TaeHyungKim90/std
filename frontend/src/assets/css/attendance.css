@@ -510,9 +510,40 @@
 	color: var(--uta-text);
 }
 
+.uta-td-schedule {
+	min-width: 140px;
+	max-width: 220px;
+	vertical-align: top;
+	font-size: 0.88rem;
+	line-height: 1.35;
+}
+
+.uta-schedule-text {
+	font-weight: 800;
+	color: var(--uta-text);
+}
+
+.uta-schedule-empty {
+	color: var(--uta-muted, #8b949e);
+}
+
+.uta-review-hint {
+	margin-top: 4px;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: rgb(var(--primary-rgb) / 0.85);
+}
+
 .uta-td-time {
 	white-space: nowrap;
 	width: 150px;
+}
+
+.uta-time-cell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
 }
 
 .uta-time-text {
@@ -520,6 +551,15 @@
 	font-variant-numeric: tabular-nums;
 	font-weight: 900;
 	color: var(--uta-text);
+}
+
+.uta-vacation-caption {
+	font-size: 0.78rem;
+	font-weight: 800;
+	color: rgb(var(--primary-rgb) / 0.88);
+	line-height: 1.25;
+	max-width: 200px;
+	white-space: normal;
 }
 
 .uta-time-input {

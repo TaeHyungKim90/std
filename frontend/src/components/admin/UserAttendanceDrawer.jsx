@@ -67,6 +67,10 @@ const getStatusBadge = (status) => {
 		return { className: 'badge-absent', label: '결근' };
 	}
 
+	if (st.includes('MISSING') || st.includes('소명')) {
+		return { className: 'badge-missed', label: '기록 누락(소명 요망)' };
+	}
+
 	// 기본: 안전하게 빨간 배지
 	return { className: 'badge-red', label: status };
 };
@@ -95,6 +99,8 @@ const classifyAttendanceSummaryBucket = (status) => {
 	if (st.includes('LATE') || st.includes('MISSED') || st.includes('지각')) return 'late';
 
 	if (st.includes('ABSENT') || st.includes('결근')) return 'absent';
+
+	if (st.includes('MISSING') || st.includes('소명')) return 'pending';
 
 	return null;
 };
@@ -139,7 +145,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 	}, [baseDate, viewMode]);
 
 	const statusSummary = useMemo(() => {
-		const counts = { normal: 0, late: 0, absent: 0, vacation: 0 };
+		const counts = { normal: 0, late: 0, absent: 0, vacation: 0, pending: 0 };
 		if (!Array.isArray(items)) return counts;
 		for (const row of items) {
 			const bucket = classifyAttendanceSummaryBucket(row?.status);
@@ -225,13 +231,14 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 								<div
 									className="uta-header-summary"
 									role="status"
-									aria-label={`이번 기간 근태 요약: 정상 ${statusSummary.normal}, 지각 ${statusSummary.late}, 결근 ${statusSummary.absent}, 휴가 ${statusSummary.vacation}`}
+									aria-label={`이번 기간 근태 요약: 정상 ${statusSummary.normal}, 지각 ${statusSummary.late}, 결근 ${statusSummary.absent}, 휴가 ${statusSummary.vacation}, 소명요망 ${statusSummary.pending}`}
 								>
 									{[
 										{ key: 'normal', label: '정상', count: statusSummary.normal, mod: 'uta-summary-normal' },
 										{ key: 'late', label: '지각', count: statusSummary.late, mod: 'uta-summary-late' },
 										{ key: 'absent', label: '결근', count: statusSummary.absent, mod: 'uta-summary-absent' },
 										{ key: 'vacation', label: '휴가', count: statusSummary.vacation, mod: 'uta-summary-vacation' },
+										{ key: 'pending', label: '소명', count: statusSummary.pending, mod: 'uta-summary-late' },
 									].map((b, i) => (
 										<span
 											key={b.key}
@@ -292,6 +299,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 								<tr>
 									<th>일자</th>
 									<th>요일</th>
+									<th>휴가·일정</th>
 									<th>출근시간</th>
 									<th>퇴근시간</th>
 									<th>상태</th>
@@ -302,17 +310,57 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 							<tbody>
 								{items.map((row, index) => {
 									const weekend = isWeekendYmd(row.work_date);
+									const holiday = row.is_public_holiday;
 									const badge = getStatusBadge(row.status);
-									const isSyntheticAbsent = typeof row.id === 'number' && row.id < 0;
+									const isSynthetic = typeof row.id === 'number' && row.id < 0;
+									const isSyntheticAbsent = isSynthetic && row.status === 'ABSENT';
+									const scheduleLine = [
+										row.vacation_todo_summary,
+										holiday ? row.holiday_name || '공휴일' : null,
+									]
+										.filter(Boolean)
+										.join(' · ');
+									const reviewLabels = {
+										HALF_DAY_NO_ATTENDANCE: '반차일·출퇴근 없음',
+										HALF_DAY_OK: '반차 구간 대체로 일치',
+										HALF_DAY_NEEDS_REVIEW: '반차·시각 검토',
+										HALF_DAY_BOTH_NO_ATTENDANCE: '전일반차·출퇴근 없음',
+										HALF_DAY_BOTH_NEEDS_REVIEW: '전일반차·시각 수동 검토',
+									};
+
+									const vacationClockCaption = () => {
+										const s = row.vacation_todo_summary;
+										if (!s) return null;
+										const cin = row.clock_in_time;
+										const cout = row.clock_out_time;
+										if (cin && cout) {
+											return `[${s}] ${formatDt(cin)} 출근 · ${formatDt(cout)} 퇴근`;
+										}
+										if (cin) {
+											return `[${s}] ${formatDt(cin)} 출근`;
+										}
+										return `[${s}]`;
+									};
+									const vacCap = vacationClockCaption();
 
 									return (
 										<tr
 											key={row.id}
-											className={`stagger-item${weekend ? ' uta-tr-weekend' : ''}`}
+											className={`stagger-item${weekend || holiday ? ' uta-tr-weekend' : ''}`}
 											style={{ animationDelay: `${index * 0.04}s` }}
 										>
 											<td className="uta-td-date">{formatYmdToMd(row.work_date)}</td>
 											<td className="uta-td-dow">{formatYmdToWeekKo(row.work_date)}</td>
+											<td className="uta-td-schedule">
+												{scheduleLine ? (
+													<span className="uta-schedule-text">{scheduleLine}</span>
+												) : (
+													<span className="uta-schedule-empty">—</span>
+												)}
+												{row.review_hint && reviewLabels[row.review_hint] ? (
+													<div className="uta-review-hint">{reviewLabels[row.review_hint]}</div>
+												) : null}
+											</td>
 
 											<td className="uta-td-time">
 												{editingId === row.id ? (
@@ -323,7 +371,10 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 														className="uta-time-input"
 													/>
 												) : (
-													<span className="uta-time-text">{formatDt(row.clock_in_time)}</span>
+													<span className="uta-time-cell">
+														<span className="uta-time-text">{formatDt(row.clock_in_time)}</span>
+														{vacCap ? <div className="uta-vacation-caption">{vacCap}</div> : null}
+													</span>
 												)}
 											</td>
 
@@ -363,6 +414,8 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 											<td className="uta-td-manage">
 												{isSyntheticAbsent ? (
 													<span className="rep-empty rep-empty--table">자동결근</span>
+												) : isSynthetic && row.status === 'MISSING_EXPLANATION' ? (
+													<span className="rep-empty rep-empty--table">소명 요망</span>
 												) : editingId === row.id ? (
 													<div className="uta-edit-actions">
 														<button
