@@ -5,17 +5,20 @@ from fastapi import HTTPException, status
 from datetime import datetime
 from models import recruitment_models, auth_models
 from schemas.admin import recruitment_schemas
-from services import auth_service 
+from services import auth_service
+from services.admin import resume_template_service as resume_template_svc
 from core.security import get_password_hash, looks_like_password_hash
 
 # --- 1. 채용 공고 관리 ---
 def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):
+	tid = resume_template_svc.resolve_template_id_for_new_job(db, data.resume_template_id)
 	new_job = recruitment_models.JobPosting(
 		title=data.title,
 		description=data.description,
 		deadline=data.deadline,
 		status=data.status,
-		author_id=author_id
+		author_id=author_id,
+		resume_template_id=tid,
 	)
 	db.add(new_job)
 	db.commit()
@@ -32,7 +35,12 @@ def update_job_posting(db: Session, job_id: int, data: recruitment_schemas.JobPo
 	job = db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.id == job_id).first()
 	if not job:
 		raise HTTPException(status_code=404, detail="공고를 찾을 수 없습니다.")
-	for key, value in data.model_dump(exclude_unset=True).items():
+	patch = data.model_dump(exclude_unset=True)
+	if "resume_template_id" in patch:
+		if patch["resume_template_id"] is None:
+			raise HTTPException(status_code=400, detail="이력서 템플릿을 비울 수 없습니다. 템플릿을 선택해 주세요.")
+		resume_template_svc.assert_template_active_for_job(db, int(patch["resume_template_id"]))
+	for key, value in patch.items():
 		setattr(job, key, value)
 	db.commit()
 	db.refresh(job)

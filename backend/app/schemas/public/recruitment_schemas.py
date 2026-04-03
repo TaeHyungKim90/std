@@ -8,6 +8,8 @@ class JobPostingPublicResponse(BaseModel):
 	title: str
 	description: str
 	deadline: Optional[date] = None
+	resume_template_id: Optional[int] = None
+	has_applied: bool = False
 
 	model_config = ConfigDict(from_attributes=True)
 

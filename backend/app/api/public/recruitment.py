@@ -1,12 +1,21 @@
 import logging
+import os
+from typing import Optional, cast
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from db.session import get_db
+from models.recruitment_models import JobPosting, ResumeTemplate
 from schemas.public import recruitment_schemas
+from services import common_service
 from services.public import recruitment_service as service
-from services.public.applicant_auth import get_current_applicant
+from services.public.applicant_auth import (
+	get_applicant_jwt_payload_if_any,
+	get_current_applicant,
+	try_get_applicant_id,
+)
 from core.config import settings
 from core.security import create_access_token, decode_auth_token
 
@@ -37,16 +46,58 @@ APPLICANT_COOKIE_OPTIONS = {
 # 1. [공개] 진행 중인 채용 공고 리스트 조회 (페이징)
 @router.get("/jobs", response_model=recruitment_schemas.JobPostingPublicListPage)
 def get_public_jobs(
+	request: Request,
 	skip: int = Query(0, ge=0),
 	limit: int = Query(20, ge=1, le=100),
 	db: Session = Depends(get_db),
 ):
-	"""현재 게시 중인 채용 공고를 페이징으로 가져옵니다."""
+	"""현재 게시 중인 채용 공고를 페이징으로 가져옵니다. 지원자 쿠키가 있으면 마감된 공고 중 본인이 지원한 공고도 포함합니다."""
 	try:
-		return service.get_public_jobs(db, skip=skip, limit=limit)
+		applicant_id = try_get_applicant_id(request)
+		return service.get_public_jobs(db, skip=skip, limit=limit, applicant_id=applicant_id)
 	except Exception:
 		logger.exception("Failed to get public jobs")
 		raise HTTPException(status_code=500, detail="공고 조회 중 서버 오류가 발생했습니다.")
+
+
+@router.get("/jobs/{job_id}/resume-template")
+def download_job_resume_template(job_id: int, db: Session = Depends(get_db)):
+	"""공고에 연결된 이력서 양식(.docx) 다운로드 (비로그인 허용)."""
+	job = db.query(JobPosting).filter(JobPosting.id == job_id).first()
+	if not job or not job.resume_template_id:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="이력서 양식을 찾을 수 없습니다.")
+	tpl = db.query(ResumeTemplate).filter(ResumeTemplate.id == job.resume_template_id).first()
+	if not tpl:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="이력서 양식을 찾을 수 없습니다.")
+	full_path = os.path.join(common_service.UPLOAD_DIR, cast(str, tpl.saved_name))
+	if not os.path.isfile(full_path):
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="파일이 저장소에 없습니다.")
+	safe_name = f"{cast(str, tpl.name).replace('/', '_')}.docx"
+	return FileResponse(
+		full_path,
+		filename=safe_name,
+		media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	)
+
+
+@router.post("/upload-apply-files")
+async def upload_application_files(
+	resume: UploadFile = File(...),
+	portfolio: Optional[UploadFile] = File(None),
+	db: Session = Depends(get_db),
+	current_applicant: dict = Depends(get_current_applicant),
+):
+	"""지원자 전용: 이력서(.docx) 및 선택 포트폴리오 업로드 후 URL 반환."""
+	try:
+		resume_url, portfolio_url = await service.upload_application_attachments(db, resume, portfolio)
+		return {"resume_file_url": resume_url, "portfolio_file_url": portfolio_url}
+	except ValueError as ve:
+		raise HTTPException(status_code=400, detail=str(ve))
+	except HTTPException:
+		raise
+	except Exception:
+		logger.exception("upload-apply-files failed")
+		raise HTTPException(status_code=500, detail="파일 업로드 중 서버 오류가 발생했습니다.")
 
 # 2. [공개] 입사 지원서 제출
 @router.post("/apply")
@@ -168,14 +219,20 @@ def logout_applicant(response: Response):
 
 
 @router.get("/me")
-def get_applicant_me(current_applicant: dict = Depends(get_current_applicant)):
-	"""지원자 세션 확인(쿠키 기반)"""
+def get_applicant_me(request: Request):
+	"""
+	지원자 세션 확인. 비로그인·만료 토큰이어도 401이 아닌 200 + isLoggedIn:false
+	(채용 공고 열람만 하는 방문자에게 세션 만료 토스트가 뜨지 않도록).
+	"""
+	payload = get_applicant_jwt_payload_if_any(request)
+	if not payload:
+		return {"isLoggedIn": False}
 	return {
 		"isLoggedIn": True,
-		"id": current_applicant.get("applicantId"),
-		"email_id": current_applicant.get("email_id"),
-		"name": current_applicant.get("name"),
-		"phone": current_applicant.get("phone"),
+		"id": payload.get("applicantId"),
+		"email_id": payload.get("email_id"),
+		"name": payload.get("name"),
+		"phone": payload.get("phone"),
 	}
 # 🌟 5. [공개] 지원자 정보 수정
 def _ensure_same_applicant(current_applicant: dict, applicant_id: int) -> int:

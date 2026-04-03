@@ -9,7 +9,7 @@ from api.public import recruitment as recruitment_api
 
 
 def test_public_jobs_returns_paginated_shape(monkeypatch):
-	def _fake_jobs(db, skip=0, limit=20):
+	def _fake_jobs(db, skip=0, limit=20, applicant_id=None):
 		return {"items": [], "total": 0}
 
 	monkeypatch.setattr(recruitment_api.service, "get_public_jobs", _fake_jobs)
@@ -23,7 +23,7 @@ def test_public_jobs_returns_paginated_shape(monkeypatch):
 
 
 def test_public_jobs_wraps_unexpected_errors_as_500(monkeypatch):
-	def _boom(db, skip=0, limit=20):
+	def _boom(db, skip=0, limit=20, applicant_id=None):
 		raise RuntimeError("simulated db failure")
 
 	monkeypatch.setattr(recruitment_api.service, "get_public_jobs", _boom)

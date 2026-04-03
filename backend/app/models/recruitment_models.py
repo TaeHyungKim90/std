@@ -1,10 +1,26 @@
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from db.session import Base
+
+
+# --- 0. 이력서 양식 템플릿 (관리자 업로드 + 시드) ---
+class ResumeTemplate(Base):
+	__tablename__ = "resume_templates"
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	name = Column[str](String(200), nullable=False)
+	saved_name = Column[str](String(255), nullable=False, unique=True)
+	file_path = Column[str](String(500), nullable=False)
+	is_default = Column[bool](Boolean, nullable=False, default=False)
+	is_deleted = Column[bool](Boolean, nullable=False, default=False)
+	created_at = Column[datetime](DateTime, server_default=func.now())
+
+	job_postings = relationship("JobPosting", back_populates="resume_template")
+
 
 # --- 1. 외부 지원자용 테이블 (Applicants) ---
 class Applicant(Base):
@@ -31,11 +47,18 @@ class JobPosting(Base):
 	status = Column[str](String(20), default="open") # open(진행중), closed(마감), draft(임시저장)
 	deadline = Column[date](Date, nullable=True)
 	# 내부 직원/관리자 테이블(users)과 연결
-	author_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="SET NULL")) 
+	author_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="SET NULL"))
+	resume_template_id = Column[int](
+		Integer,
+		ForeignKey("resume_templates.id", ondelete="SET NULL"),
+		nullable=True,
+		index=True,
+	)
 	created_at = Column[datetime](DateTime, server_default=func.now())
 
 	# 관계 설정: 하나의 공고에 여러 지원서가 접수됨
 	applications = relationship("Application", back_populates="job_posting", cascade="all, delete")
+	resume_template = relationship("ResumeTemplate", back_populates="job_postings")
 
 
 # --- 3. 지원서 제출 내역 테이블 (Applications) ---

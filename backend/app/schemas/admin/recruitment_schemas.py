@@ -8,6 +8,7 @@ class JobPostingBase(BaseModel):
 	description: str
 	deadline: Optional[date] = None
 	status: Optional[str] = "open"
+	resume_template_id: Optional[int] = None
 
 class JobPostingCreate(JobPostingBase):
 	pass
@@ -17,6 +18,7 @@ class JobPostingUpdate(BaseModel):
 	description: Optional[str] = None
 	deadline: Optional[date] = None
 	status: Optional[str] = None
+	resume_template_id: Optional[int] = None
 
 class JobPostingResponse(JobPostingBase):
 	id: int

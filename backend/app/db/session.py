@@ -88,6 +88,13 @@ def init_db():
 							text("UPDATE users SET department_id = :dept_id, position_id = :pos_id WHERE id = :user_id"),
 							{"dept_id": dept_id, "pos_id": pos_id, "user_id": row["id"]},
 						)
+				# 채용 공고: 이력서 템플릿 FK 컬럼 (SQLite 런타임 보강)
+				try:
+					jp_cols = {r["name"] for r in conn.execute(text("PRAGMA table_info(job_postings)")).mappings()}
+					if "resume_template_id" not in jp_cols:
+						conn.execute(text("ALTER TABLE job_postings ADD COLUMN resume_template_id INTEGER"))
+				except Exception as jp_e:
+					print(f"ℹ️ job_postings resume_template_id ALTER 시도 실패(무시): {jp_e}")
 				conn.commit()
 			finally:
 				conn.close()
@@ -127,6 +134,42 @@ def init_db():
 			]
 			db.add_all(default_categories)
 			print("--- ✅ 기본 카테고리 설정 완료 ---")
+		# 이력서 템플릿 시드: DB에 행이 없으면 assets 기본 .docx를 uploads로 복사 후 1건 등록
+		try:
+			import shutil
+			import uuid
+			from pathlib import Path
+
+			from models.recruitment_models import JobPosting, ResumeTemplate
+			from services import common_service as _common_paths
+
+			if db.query(ResumeTemplate).count() == 0:
+				asset = Path(BASE_DIR) / "app" / "assets" / "templates" / "default_resume_template.docx"
+				upload_root = _common_paths.UPLOAD_DIR
+				os.makedirs(upload_root, exist_ok=True)
+				saved = f"{uuid.uuid4().hex}.docx"
+				dest = os.path.join(upload_root, saved)
+				if asset.is_file():
+					shutil.copy2(str(asset), dest)
+				else:
+					print(f"⚠️ 기본 이력서 템플릿 파일이 없습니다: {asset}")
+					raise FileNotFoundError(str(asset))
+				tpl = ResumeTemplate(
+					name="기본 양식 (v1)",
+					saved_name=saved,
+					file_path=f"/uploads/{saved}",
+					is_default=True,
+					is_deleted=False,
+				)
+				db.add(tpl)
+				db.flush()
+				db.query(JobPosting).filter(JobPosting.resume_template_id.is_(None)).update(
+					{JobPosting.resume_template_id: tpl.id},
+					synchronize_session=False,
+				)
+				print("--- ✅ 기본 이력서 템플릿(시드) 등록 완료 ---")
+		except Exception as seed_e:
+			print(f"ℹ️ 이력서 템플릿 시드 건너뜀 또는 실패: {seed_e}")
 		db.commit()
 	except Exception as e:
 		print(f"❌ 초기화 에러: {e}")

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
+
 from db.session import get_db
-from schemas.admin import recruitment_schemas
-from services.admin import recruitment_service
+from schemas.admin import recruitment_schemas, resume_template_schemas
+from services.admin import recruitment_service, resume_template_service as resume_template_svc
 from services.auth_service import get_current_admin
 
 router = APIRouter()
@@ -72,3 +73,61 @@ def migrate_applicant_passwords(
 		max_rows=max_rows,
 		batch_size=batch_size,
 	)
+
+
+# 8. 이력서 템플릿 관리
+@router.get("/resume-templates", response_model=resume_template_schemas.ResumeTemplateListPage)
+def list_resume_templates(
+	include_deleted: bool = Query(False),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	items = resume_template_svc.list_templates(db, include_deleted=include_deleted)
+	return {"items": items, "total": len(items)}
+
+
+@router.post("/resume-templates", response_model=resume_template_schemas.ResumeTemplateResponse)
+async def create_resume_template(
+	name: str = Form(...),
+	is_default: bool = Form(False),
+	file: UploadFile = File(...),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return resume_template_svc.create_template(db, name=name, file=file, set_default=is_default)
+
+
+@router.patch("/resume-templates/{template_id}", response_model=resume_template_schemas.ResumeTemplateResponse)
+def patch_resume_template(
+	template_id: int,
+	body: resume_template_schemas.ResumeTemplatePatch,
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return resume_template_svc.update_template(
+		db,
+		template_id,
+		name=body.name,
+		is_default=body.is_default,
+		file=None,
+	)
+
+
+@router.put("/resume-templates/{template_id}/file", response_model=resume_template_schemas.ResumeTemplateResponse)
+async def replace_resume_template_file(
+	template_id: int,
+	file: UploadFile = File(...),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	return resume_template_svc.update_template(db, template_id, file=file)
+
+
+@router.delete("/resume-templates/{template_id}")
+def delete_resume_template(
+	template_id: int,
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	resume_template_svc.soft_delete_template(db, template_id)
+	return {"message": "삭제(비활성화)되었습니다."}
