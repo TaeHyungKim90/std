@@ -7,6 +7,7 @@ from services.admin import attendance_service as service
 from schemas.admin.attendance_schemas import (
 	AdminAttendanceRangeResponse,
 	AdminAttendanceRecordOut,
+	AdminAttendanceRecomputeResponse,
 	AdminAttendanceUpdate,
 )
 
@@ -49,3 +50,32 @@ def get_all_attendance(
 ):
 	"""[관리자] 전체 직원 근태 기록 조회·필터·페이징."""
 	return service.get_all_attendance(db, user_name, work_date, skip=skip, limit=limit)
+
+
+@router.post("/recompute-work-minutes", response_model=AdminAttendanceRecomputeResponse)
+def post_recompute_work_minutes(
+	start_date: str = Query(..., description="YYYY-MM-DD"),
+	end_date: str = Query(..., description="YYYY-MM-DD"),
+	dry_run: bool = Query(
+		True,
+		description="true면 변경 없이 차이만 조회. false일 때만 DB에 work_minutes 반영",
+	),
+	user_login_id: Optional[str] = Query(
+		None,
+		description="지정 시 해당 직원만. 미지정 시 기간 내 전원",
+	),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	"""[관리자] 출·퇴근 시각 기준 work_minutes 일괄 재계산(과거 오계산 정정용).
+
+	기본은 dry_run=true — 먼저 `changes`로 차이를 확인한 뒤 dry_run=false로 다시 호출하세요.
+	"""
+	raw = service.recompute_work_minutes_bulk(
+		db,
+		start_date,
+		end_date,
+		user_login_id=user_login_id,
+		dry_run=dry_run,
+	)
+	return AdminAttendanceRecomputeResponse.model_validate(raw)
