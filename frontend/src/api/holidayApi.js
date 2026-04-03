@@ -2,16 +2,15 @@ import { API_ENDPOINTS } from 'constants/constants';
 
 import { client } from './axiosInstance.js'; // api.js에서 만든 공통 client 임포트
 
-const PATH = API_ENDPOINTS.ADMIN_HOLIDAYS;
+const PATH = API_ENDPOINTS.ADMIN_HOLIDAYS.replace(/\/$/, '');
+/** FastAPI `@router.get("/")` 는 `/admin/holidays/` 로 등록되어 슬래시 없으면 307 리다이렉트 발생 */
+const HOLIDAYS_ROOT = `${PATH}/`;
 
 export const holidayApi = {
-	// 공휴일 목록 조회 (연도별 필터링 지원)
-	getHolidays: (year = '') => 
-		client.get(year ? `${PATH}?year=${year}` : PATH),
+	getHolidays: (year = '') =>
+		client.get(year ? `${HOLIDAYS_ROOT}?year=${year}` : HOLIDAYS_ROOT),
 
-	// 신규 공휴일 등록
-	createHoliday: (holidayData) => 
-		client.post(PATH, holidayData),
+	createHoliday: (holidayData) => client.post(HOLIDAYS_ROOT, holidayData),
 
 	// 공휴일 삭제
 	deleteHoliday: (holidayId) => 

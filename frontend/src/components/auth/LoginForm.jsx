@@ -94,8 +94,8 @@ const LoginForm = () => {
 				)}
 				<input
 					type="text"				// 브라우저에게 영문 입력을 강력하게 제안
-					inputmode="url"			// 모바일 영문 키보드 강제 유도
-					spellcheck="false"		// 빨간 밑줄 방지
+					inputMode="url"
+					spellCheck={false}
 					autoCapitalize="none"	// 첫 글자 대문자 자동 전환 방지
 					placeholder="아이디 (ID)"
 					value={id}
