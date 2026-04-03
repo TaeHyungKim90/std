@@ -1,5 +1,4 @@
-import { commonApi } from 'api/commonApi';
-import { recruitmentApi } from 'api/recruitmentApi'; 
+import { recruitmentApi } from 'api/recruitmentApi';
 import { pathCareersJobApply,PATHS } from 'constants/paths';
 import React, { useEffect,useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -62,7 +61,13 @@ const JobApplyPage = () => {
 	}, [job, navigate]);
 
 	const handleFileChange = (e, type) => {
-		setFiles({ ...files, [type]: e.target.files[0] });
+		const f = e.target.files?.[0];
+		if (type === 'resume' && f && !f.name.toLowerCase().endsWith('.docx')) {
+			Notify.toastWarn('이력서는 .docx(워드) 파일만 업로드할 수 있습니다.');
+			e.target.value = '';
+			return;
+		}
+		setFiles({ ...files, [type]: f });
 	};
 
 	const handleSubmit = async (e) => {
@@ -75,15 +80,16 @@ const JobApplyPage = () => {
 		setIsSubmitting(true);
 		
 		const processApplicationTask = async () => {
-			// STEP 1: 파일 업로드
 			const fileFormData = new FormData();
-			fileFormData.append("files", files.resume);
-			if (files.portfolio) fileFormData.append("files", files.portfolio);
+			fileFormData.append('resume', files.resume);
+			if (files.portfolio) fileFormData.append('portfolio', files.portfolio);
 
-			const uploadRes = await commonApi.uploadFiles(fileFormData);
-			const uploadedFiles = uploadRes.data; 
-			const resumeFileUrl = uploadedFiles[0].file_path; 
-			const portfolioFileUrl = files.portfolio ? uploadedFiles[1].file_path : null;
+			const uploadRes = await recruitmentApi.uploadApplyFiles(fileFormData);
+			const resumeFileUrl = uploadRes.data?.resume_file_url;
+			const portfolioFileUrl = uploadRes.data?.portfolio_file_url ?? null;
+			if (!resumeFileUrl) {
+				throw new Error('이력서 업로드 응답이 올바르지 않습니다.');
+			}
 
 			// STEP 2: 지원서 제출
 			const applicationData = {
@@ -139,13 +145,23 @@ const JobApplyPage = () => {
 				</div>
 
 				<form onSubmit={handleSubmit}>
+					<p className="job-apply__hint" style={{ marginBottom: '1rem', fontSize: '0.95rem', lineHeight: 1.5 }}>
+						정해진 워드(.docx) 양식을 작성하여 업로드해 주세요. (구형 .doc 형식은 보안상 지원하지 않습니다.)
+					</p>
 					<div className="form-group">
-						<label>이력서 (PDF 등, 필수) <span className="job-apply__req-star">*</span></label>
-						<input type="file" accept=".pdf,.doc,.docx" required onChange={(e) => handleFileChange(e, 'resume')} />
+						<label>
+							이력서 (.docx, 필수) <span className="job-apply__req-star">*</span>
+						</label>
+						<input
+							type="file"
+							accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+							required
+							onChange={(e) => handleFileChange(e, 'resume')}
+						/>
 					</div>
 					<div className="form-group">
-						<label>포트폴리오 (선택)</label>
-						<input type="file" accept=".pdf,.zip" onChange={(e) => handleFileChange(e, 'portfolio')} />
+						<label>포트폴리오 (선택, PDF·ZIP)</label>
+						<input type="file" accept=".pdf,.zip,application/pdf,application/zip" onChange={(e) => handleFileChange(e, 'portfolio')} />
 					</div>
 					<button type="submit" disabled={isSubmitting} className={`job-apply__submit ${isSubmitting ? 'job-apply__submit--busy' : 'job-apply__submit--ready'}`}>
 						{isSubmitting ? '파일 업로드 및 제출 중...' : '지원서 최종 제출'}

@@ -39,6 +39,14 @@ function isCredentialLoginRequest(config) {
 client.interceptors.request.use(
 	(config) => {
 		delete config.headers.Authorization;
+		// FormData(multipart) 요청에 json Content-Type이 붙으면 boundary가 없어 서버가 필드를 못 읽고 422(Field required)가 납니다.
+		if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+			if (typeof config.headers.delete === 'function') {
+				config.headers.delete('Content-Type');
+			} else {
+				delete config.headers['Content-Type'];
+			}
+		}
 		return config;
 	},
 	(error) => Promise.reject(error)

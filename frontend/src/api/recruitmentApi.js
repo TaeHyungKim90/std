@@ -15,6 +15,14 @@ export const recruitmentApi = {
 	createJobPosting: (payload) => client.post(`${ADMIN_PATH}/jobs`, payload),
 	updateJobPosting: (jobId, payload) => client.put(`${ADMIN_PATH}/jobs/${jobId}`, payload),
 	deleteJobPosting: (jobId) => client.delete(`${ADMIN_PATH}/jobs/${jobId}`),
+	getResumeTemplates: (params = {}) =>
+		client.get(`${ADMIN_PATH}/resume-templates`, { params }),
+	createResumeTemplate: (formData) => client.post(`${ADMIN_PATH}/resume-templates`, formData),
+	patchResumeTemplate: (templateId, payload) =>
+		client.patch(`${ADMIN_PATH}/resume-templates/${templateId}`, payload),
+	replaceResumeTemplateFile: (templateId, formData) =>
+		client.put(`${ADMIN_PATH}/resume-templates/${templateId}/file`, formData),
+	deleteResumeTemplate: (templateId) => client.delete(`${ADMIN_PATH}/resume-templates/${templateId}`),
 	// 2. 지원서 및 전형 관리
 	getApplicationsByJob: (jobId) => 
 		client.get(`${ADMIN_PATH}/jobs/${jobId}/applications`),
@@ -32,7 +40,10 @@ export const recruitmentApi = {
 		client.get(`${PUBLIC_PATH}/jobs`, {
 			params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 		}),
-	
+	downloadJobResumeTemplate: (jobId) =>
+		client.get(`${PUBLIC_PATH}/jobs/${jobId}/resume-template`, { responseType: 'blob' }),
+	uploadApplyFiles: (formData) => client.post(`${PUBLIC_PATH}/upload-apply-files`, formData),
+
 	submitApplication: (payload) => client.post(`${PUBLIC_PATH}/apply/me`, payload),
 	signupApplicant: (payload) => client.post(`${PUBLIC_PATH}/signup`, payload),
 	loginApplicant: (payload) =>
