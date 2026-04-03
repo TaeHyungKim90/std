@@ -39,24 +39,41 @@ def read_attendance_for_day(
 	user_id = _require_user_id(current_user)
 	return service.get_today_attendance(db, user_id, work_date)
 
+@router.get("/clock-context", response_model=attendance_schemas.AttendanceClockContextResponse)
+def read_clock_context(
+	work_date: Optional[date_type] = Query(None, description="미지정 시 오늘"),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 출근 확인 팝업·휴일 표시용 맥락."""
+	user_id = _require_user_id(current_user)
+	d = work_date or datetime.now().date()
+	ctx = service.get_clock_context(db, user_id, d)
+	return attendance_schemas.AttendanceClockContextResponse.model_validate(ctx)
+
+
 @router.post("/clock-in", response_model=attendance_schemas.AttendanceResponse)
 def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
 	"""[유저] 출근 처리 (중복 출근 방지 로직 포함)"""
 	user_id = _require_user_id(current_user)
 	now = datetime.now()
 
-	# 최상단 방어 로직: 입사일 미등록자/휴가자 출근 차단
-	service.assert_user_can_clock_in(db, user_id, now)
-
 	record = service.get_today_attendance(db, user_id, now.date())
-	if record:
-		# 이미 존재하는 Attendance가 휴가 상태인 경우는 방어 로직에서 잡아야 하지만,
-		# 혹시 모를 예외를 위해 여기서도 메시지를 분기합니다.
-		if service.is_vacation_status(record.status):
-			raise HTTPException(status_code=400, detail="휴가 중에는 출근을 기록할 수 없습니다.")
+	if record and record.clock_in_time is not None:
 		raise HTTPException(status_code=400, detail="이미 출근 기록이 존재합니다.")
 
-	return service.create_clock_in(db, user_id, now, status="NORMAL", location=req.location_name, lat=req.latitude, lng=req.longitude, note=req.note)
+	return service.create_clock_in(
+		db,
+		user_id,
+		now,
+		status="NORMAL",
+		location=req.location_name,
+		lat=req.latitude,
+		lng=req.longitude,
+		note=req.note,
+		confirm_full_day_vacation=req.confirm_full_day_vacation,
+		confirm_official_leave=req.confirm_official_leave,
+	)
 
 @router.post("/clock-out", response_model=attendance_schemas.AttendanceResponse)
 def clock_out(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):

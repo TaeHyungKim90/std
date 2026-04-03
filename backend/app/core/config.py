@@ -50,6 +50,11 @@ class Settings(BaseSettings):
 	# 레거시 지원자 API(/update/{applicant_id}, /my-applications/{applicant_id} 등) 허용 여부.
 	# 운영에서는 False 권장(지원자 /me 기반 API만 사용).
 	ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS: bool = False
+	# 근태 반차 검증용 소정근로·휴게 구간(HH:MM). 법정 고정 아님 — 취업규칙에 맞게 .env 조정.
+	ATTENDANCE_WORKDAY_START: str = "09:00"
+	ATTENDANCE_WORKDAY_END: str = "18:00"
+	ATTENDANCE_LUNCH_START: str = "13:00"
+	ATTENDANCE_LUNCH_END: str = "14:00"
 
 	model_config = SettingsConfigDict(env_file=ENV_PATH)
 
