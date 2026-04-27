@@ -25,8 +25,13 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
-# 모든 업로드 파일 무시
-static/uploads/*
+# 운영 프론트 빌드 산출물(static) 무시
+/static/*
+!/static/index.html
 
-# 하지만 .gitkeep 파일은 제외 (폴더 구조 유지를 위해)
-!static/uploads/.gitkeep
+# 업로드 폴더는 유지하되 파일은 무시
+!/static/uploads/
+/static/uploads/*
+
+# 폴더 구조 유지를 위한 .gitkeep만 추적
+!/static/uploads/.gitkeep

@@ -1,6 +1,7 @@
 # HR / 채용 통합 앱 — 온보딩
 
 로컬 실행, 환경 변수, **직원**·**지원자** 인증 차이를 한곳에서 정리했습니다. 상세한 CRA 안내는 [`frontend/README.md`](frontend/README.md)를 참고하세요.
+Windows 운영 실행 절차는 [`PRODUCTION_GUIDE.md`](PRODUCTION_GUIDE.md)를 참고하세요.
 
 ---
 

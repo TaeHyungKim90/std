@@ -12,6 +12,18 @@ if not exist "venv\Scripts\python.exe" (
 
 call "venv\Scripts\activate.bat"
 
+if not exist "deploy_frontend.bat" (
+	echo [ERROR] deploy_frontend.bat not found in project root.
+	exit /b 1
+)
+
+echo [INFO] Deploying frontend build to .\static ...
+call ".\deploy_frontend.bat"
+if errorlevel 1 (
+	echo [ERROR] Frontend deployment failed. Production server will not start.
+	exit /b 1
+)
+
 REM Production profile overrides
 set ENVIRONMENT=production
 set DEV_AUTO_START_REACT=false

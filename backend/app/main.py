@@ -50,13 +50,46 @@ app.include_router(api_router, prefix="/api")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "static"))
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
+FRONTEND_STATIC_DIR = os.path.join(STATIC_DIR, "static")
 if not os.path.exists(UPLOAD_DIR):
 	os.makedirs(UPLOAD_DIR)
 if os.path.exists(STATIC_DIR):
-	app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="static")
+	# CRA 프로덕션 빌드는 /static/* 경로(JS/CSS 청크)를 사용합니다.
+	if os.path.isdir(FRONTEND_STATIC_DIR):
+		app.mount("/static", StaticFiles(directory=FRONTEND_STATIC_DIR), name="frontend_static")
+	# 기존 자산 경로 호환용(/assets/*)
+	app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 # 운영: SERVE_UPLOADS_STATIC=False 로 두고 /api/common/files/{file_id} 만 사용 (인증 필요)
 if settings.SERVE_UPLOADS_STATIC and os.path.isdir(UPLOAD_DIR):
 	app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+@app.get("/manifest.json")
+async def read_manifest():
+	manifest_path = os.path.join(STATIC_DIR, "manifest.json")
+	if os.path.exists(manifest_path):
+		return FileResponse(manifest_path)
+	return {"message": "manifest.json not found."}
+
+@app.get("/asset-manifest.json")
+async def read_asset_manifest():
+	asset_manifest_path = os.path.join(STATIC_DIR, "asset-manifest.json")
+	if os.path.exists(asset_manifest_path):
+		return FileResponse(asset_manifest_path)
+	return {"message": "asset-manifest.json not found."}
+
+@app.get("/robots.txt")
+async def read_robots():
+	robots_path = os.path.join(STATIC_DIR, "robots.txt")
+	if os.path.exists(robots_path):
+		return FileResponse(robots_path)
+	return {"message": "robots.txt not found."}
+
+@app.get("/favicon.ico")
+async def read_favicon():
+	favicon_path = os.path.join(STATIC_DIR, "favicon.ico")
+	if os.path.exists(favicon_path):
+		return FileResponse(favicon_path)
+	return {"message": "favicon.ico not found."}
 
 @app.get("/")
 async def read_root():

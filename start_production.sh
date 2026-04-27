@@ -11,6 +11,19 @@ fi
 
 source "venv/bin/activate"
 
+if [[ ! -f "./deploy_frontend.sh" ]]; then
+  echo "[ERROR] deploy_frontend.sh not found in project root."
+  exit 1
+fi
+
+if [[ ! -x "./deploy_frontend.sh" ]]; then
+  echo "[INFO] Making deploy_frontend.sh executable..."
+  chmod +x "./deploy_frontend.sh"
+fi
+
+echo "[INFO] Deploying frontend build to ./static ..."
+bash "./deploy_frontend.sh"
+
 export ENVIRONMENT=production
 export DEV_AUTO_START_REACT=false
 export BOOTSTRAP_DEFAULT_ADMIN=false
