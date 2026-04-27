@@ -7,6 +7,7 @@
 - 프로젝트 루트에 `venv`가 있어야 합니다.
 - Node.js / npm이 설치되어 있어야 합니다.
 - 루트 `.env`와 `frontend/.env.production` 값이 운영값으로 설정되어 있어야 합니다.
+- 백엔드는 `backend/.env.production` 파일을 자동 로드하지 않습니다. 백엔드 운영값은 **루트 `.env` 또는 서버 환경 변수**로 설정하세요.
 - 특히 `frontend/.env.production`의 `REACT_APP_API_BASE_URL`은 필수입니다.
 
 예시:

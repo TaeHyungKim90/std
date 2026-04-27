@@ -5,7 +5,7 @@ import threading
 import platform
 import atexit
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -97,6 +97,24 @@ async def read_root():
 	if os.path.exists(index_path):
 		return FileResponse(index_path)
 	return {"message": "Server is running. Frontend static files not found."}
+
+
+def _serve_spa_index_or_404():
+	index_path = os.path.join(STATIC_DIR, "index.html")
+	if os.path.exists(index_path):
+		return FileResponse(index_path)
+	raise HTTPException(status_code=404, detail="Not Found")
+
+
+@app.get("/login")
+@app.get("/signup")
+@app.get("/oauth/callback")
+@app.get("/admin/{path:path}")
+@app.get("/my/{path:path}")
+@app.get("/careers/{path:path}")
+async def spa_fallback():
+	"""SPA 라우트 새로고침 대응: 프론트 라우트만 index.html로 폴백."""
+	return _serve_spa_index_or_404()
 
 # 5. 리액트 자동 실행 함수 (개발 편의용)
 def run_react():

@@ -55,6 +55,8 @@ Windows 운영 실행 절차는 [`PRODUCTION_GUIDE.md`](PRODUCTION_GUIDE.md)를 
 
 `pydantic-settings`가 루트 `.env`를 로드합니다. 샘플은 [`.env.example`](.env.example), 운영 참고는 [`backend/.env.production.example`](backend/.env.production.example)입니다.
 
+> 주의: 백엔드는 `backend/.env.production` 파일을 자동 로드하지 않습니다. 운영 환경 변수는 **루트 `.env` 또는 서버 환경 변수**로 주입해야 합니다.
+
 | 변수 | 필수 | 설명 |
 |------|------|------|
 | `SECRET_KEY` | ✅ | JWT 서명용 비밀키 (충분히 긴 랜덤 문자열) |
