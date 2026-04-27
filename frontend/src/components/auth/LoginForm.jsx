@@ -8,6 +8,7 @@ import { useLoading } from 'context/LoadingContext';
 import React, { useEffect, useRef,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
+import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 import * as Notify from 'utils/toastUtils';
 
 import SocialButtons from './SocialButtons';
@@ -22,6 +23,10 @@ const LoginForm = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const timerRef = useRef(null);
+	useEffect(() => {
+		warnApiBaseMismatchOnLogin();
+	}, []);
+
 	useEffect(() => {
 		// 로딩이 끝났고(false), 로그인 상태(true)라면 '/my/todos' 로 이동 (이미 로그인된 채 로그인 페이지 진입)
 		if (!loading && isLoggedIn) {

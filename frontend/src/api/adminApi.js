@@ -9,7 +9,7 @@ export const adminApi = {
    * GET /api/admin/all-todo-list
    */
   getAllTodos: (params = {}) =>
-	client.get(`${PATH}/todos`, {
+	client.get(`${PATH}/todos/`, {
 		params: { ...params, skip: params.skip ?? 0, limit: params.limit ?? DEFAULT_PAGE_SIZE },
 	}),
 
@@ -27,14 +27,14 @@ export const adminApi = {
    * GET /api/admin/dashboard
    */
   getDashboard: () => 
-	client.get(`${PATH}/stats`),
+	client.get(`${PATH}/stats/`),
 
   /**
    * 3. 카테고리 마스터 목록 조회
    * GET /api/admin/category-types
    */
   getCategoryTypes: () => 
-	client.get(`${PATH}/category-types`),
+	client.get(`${PATH}/category-types/`),
 
   /**
    * 4. 새로운 카테고리 마스터 등록
@@ -42,7 +42,7 @@ export const adminApi = {
    * @param {object} payload - { category_key, category_name, icon }
    */
   createCategoryType: (payload) => 
-	client.post(`${PATH}/category-types`, payload),
+	client.post(`${PATH}/category-types/`, payload),
   // 카테고리 수정
   updateCategoryType: (id, payload) => 
 	client.patch(`${PATH}/category-types/${id}`, payload),
@@ -55,9 +55,9 @@ export const adminApi = {
    * 시스템관리: 부서
    */
   getDepartments: () =>
-	client.get(`${PATH}/departments`),
+	client.get(`${PATH}/departments/`),
   createDepartment: (payload) =>
-	client.post(`${PATH}/departments`, payload),
+	client.post(`${PATH}/departments/`, payload),
   updateDepartment: (departmentId, payload) =>
 	client.patch(`${PATH}/departments/${departmentId}`, payload),
   deleteDepartment: (departmentId) =>
@@ -67,9 +67,9 @@ export const adminApi = {
    * 시스템관리: 직급
    */
   getPositions: () =>
-	client.get(`${PATH}/positions`),
+	client.get(`${PATH}/positions/`),
   createPosition: (payload) =>
-	client.post(`${PATH}/positions`, payload),
+	client.post(`${PATH}/positions/`, payload),
   updatePosition: (positionId, payload) =>
 	client.patch(`${PATH}/positions/${positionId}`, payload),
   deletePosition: (positionId) =>
@@ -98,13 +98,13 @@ export const adminApi = {
   /**
    * 👥 유저 관리 기능 추가
    */
-// 모든 사용자 목록 조회
+// 모든 사용자 목록 조회 (@router.get("/") → /api/admin/users/ 만 매칭, 슬래시 없으면 307)
   getUsers: () => 
-	client.get(`${PATH}/users`), //
+	client.get(`${PATH}/users/`), //
 
   // 신규 사용자 등록
   createUser: (payload) => 
-	client.post(`${PATH}/users`, payload), //
+	client.post(`${PATH}/users/`, payload), //
 
   // 사용자 정보 수정 (PATCH)
   updateUser: (userId, payload) => 

@@ -1,15 +1,20 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import { PATHS } from 'constants/paths';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
 import { clearCachedApplicantUser,syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { formatApiDetail } from 'utils/formatApiError';
+import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 import * as Notify from 'utils/toastUtils';
 
 const ApplicantLoginPage = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [loginForm, setLoginForm] = useState({ email_id: '', password: '' });
+
+	useEffect(() => {
+		warnApiBaseMismatchOnLogin();
+	}, []);
 
 	const handleLoginSubmit = async (e) => {
 		e.preventDefault();

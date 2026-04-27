@@ -9,7 +9,7 @@ const PATH = API_ENDPOINTS.MESSAGES;
 export const messageApi = {
 	// 메시지 발송 (급여명세서, 공지사항 등)
 	sendMessage: (messageData) => 
-		client.post(`${PATH}`, messageData),
+		client.post(`${PATH}/`, messageData),
 
 	// 내 수신함 조회 (페이징: skip, limit)
 	getInbox: (params = {}) =>
