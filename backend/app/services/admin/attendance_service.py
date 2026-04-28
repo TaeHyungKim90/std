@@ -86,7 +86,7 @@ def get_all_attendance(
 
 	results = (
 		query.order_by(
-			Attendance.clock_in_time.desc().nullslast(),
+			Attendance.clock_in_time.desc(),
 			User.user_name.asc(),
 		)
 		.offset(skip)
