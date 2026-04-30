@@ -27,6 +27,7 @@ class AuthCheckResponse(BaseModel):
 	role: Optional[str] = None
 	access_token: Optional[str] = None
 	userId: Optional[str] = None
+	user_profile_image_url: Optional[str] = None
 	join_date: Optional[date] = None
 	resignation_date: Optional[date] = None
 

@@ -1,5 +1,6 @@
 // src/components/layout/Header.js
 import logo from 'assets/icon/favicon.png';
+import UserAvatar from 'components/common/UserAvatar';
 import { MENU_ITEMS } from 'constants/menu';
 import { PATH_PREFIX,PATHS } from 'constants/paths';
 import { AuthContext } from 'context/AuthContext';
@@ -8,7 +9,7 @@ import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const Header = () => {
-	const { isLoggedIn, logout, userNickname, userRole, userName } = useContext(AuthContext);
+	const { isLoggedIn, logout, userNickname, userRole, userName, userProfileImageUrl } = useContext(AuthContext);
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -64,7 +65,17 @@ const Header = () => {
 
 					<div className="gnb-right">
 						<div className="bq-user-info">
-							<div className="bq-status-dot"></div>
+							{userProfileImageUrl ? (
+								<UserAvatar
+									imageUrl={userProfileImageUrl}
+									nickname={userNickname}
+									name={userName}
+									size={24}
+									className="bq-user-avatar"
+								/>
+							) : (
+								<div className="bq-status-dot"></div>
+							)}
 							<span className="user-name-text">
 								{userNickname || userName}
 								{userNickname && userName && userNickname !== userName ? `(${userName})` : ''} 님

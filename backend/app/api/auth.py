@@ -128,12 +128,14 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 
 	join_date = None
 	resignation_date = None
+	user_profile_image_url = None
 	user_pk = payload.get("id")
 	if user_pk is not None:
 		user = db.query(User).filter(User.id == user_pk).first()
 		if user:
 			join_date = user.join_date
 			resignation_date = user.resignation_date
+			user_profile_image_url = user.user_profile_image_url
 	if join_date is None:
 		join_date = _optional_date_from_payload(payload.get("join_date"))
 	if resignation_date is None:
@@ -145,6 +147,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 		"userNickname": payload.get("userNickname"),
 		"role": payload.get("role"),
 		"userId": payload.get("userId"),
+		"user_profile_image_url": user_profile_image_url,
 		"join_date": join_date,
 		"resignation_date": resignation_date,
 	}

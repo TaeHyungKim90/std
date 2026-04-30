@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
 	const [userNickname, setUserNickname] = useState('');
 	const [userRole, setUserRole] = useState('user');
 	const [userId, setUserId] = useState('');
+	const [userProfileImageUrl, setUserProfileImageUrl] = useState(null);
 	const [joinDate, setJoinDate] = useState(null);
 	const [resignationDate, setResignationDate] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
 		setUserName('');
 		setUserNickname('');
 		setUserId('');
+		setUserProfileImageUrl(null);
 		setUserRole('user');
 		setJoinDate(null);
 		setResignationDate(null);
@@ -69,6 +71,7 @@ export const AuthProvider = ({ children }) => {
 				setUserName(res.data.userName);
 				setUserNickname(res.data.userNickname);
 				setUserId(res.data.userId);
+				setUserProfileImageUrl(res.data.user_profile_image_url || null);
 				setUserRole(res.data.role || 'user');
 				setJoinDate(res.data.join_date || null);
 				setResignationDate(res.data.resignation_date || null);
@@ -123,6 +126,7 @@ export const AuthProvider = ({ children }) => {
 			userNickname, setUserNickname,
 			userRole, setUserRole,
 			userId, setUserId,
+			userProfileImageUrl, setUserProfileImageUrl,
 			joinDate, setJoinDate, // DB의 join_date 필드와 매핑됨
 			resignationDate, setResignationDate,
 			loading, logout,

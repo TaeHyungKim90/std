@@ -102,6 +102,10 @@
 	border-radius: 50%;
 }
 
+.bq-user-avatar {
+	flex: 0 0 auto;
+}
+
 .user-name-text {
 	font-size: 0.95rem;
 	color: var(--font-color, #141414);
