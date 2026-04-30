@@ -113,9 +113,11 @@ class UserVacationResponse(BaseModel):
 class MeProfilePatch(BaseModel):
 	"""로그인 사용자 본인만 수정. 빈 문자열은 미전송과 동일하게 취급하지 않고 명시적 null/빈값 처리는 라우터에서 수행."""
 
+	user_name: Optional[str] = Field(None, max_length=50)
 	user_nickname: Optional[str] = Field(None, max_length=50)
 	user_phone_number: Optional[str] = None
 	user_profile_image_url: Optional[str] = None
+	join_date: Optional[date] = None
 	department_id: Optional[int] = None
 	position_id: Optional[int] = None
 	salary_bank_name: Optional[str] = None

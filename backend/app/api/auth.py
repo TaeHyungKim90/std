@@ -129,10 +129,18 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 	join_date = None
 	resignation_date = None
 	user_profile_image_url = None
+	user_name = payload.get("userName")
+	user_nickname = payload.get("userNickname")
+	user_role = payload.get("role")
+	user_login_id = payload.get("userId")
 	user_pk = payload.get("id")
 	if user_pk is not None:
 		user = db.query(User).filter(User.id == user_pk).first()
 		if user:
+			user_name = user.user_name
+			user_nickname = user.user_nickname
+			user_role = user.role
+			user_login_id = user.user_login_id
 			join_date = user.join_date
 			resignation_date = user.resignation_date
 			user_profile_image_url = user.user_profile_image_url
@@ -143,10 +151,10 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 
 	return {
 		"isLoggedIn": True,
-		"userName": payload.get("userName"),
-		"userNickname": payload.get("userNickname"),
-		"role": payload.get("role"),
-		"userId": payload.get("userId"),
+		"userName": user_name,
+		"userNickname": user_nickname,
+		"role": user_role,
+		"userId": user_login_id,
 		"user_profile_image_url": user_profile_image_url,
 		"join_date": join_date,
 		"resignation_date": resignation_date,
@@ -234,6 +242,13 @@ def patch_my_profile(
 			s = str(raw).strip()
 			u.user_nickname = s if s else None
 
+	if "user_name" in data:
+		raw = data["user_name"]
+		s = str(raw or "").strip()
+		if not s:
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이름을 입력해 주세요.")
+		u.user_name = s
+
 	if "user_phone_number" in data:
 		u.user_phone_number = data["user_phone_number"]
 
@@ -255,6 +270,9 @@ def patch_my_profile(
 	# 사용자 프로필 확장 필드(부서/직급/급여계좌/사진 URL)
 	if "user_profile_image_url" in data:
 		u.user_profile_image_url = data["user_profile_image_url"] or None
+
+	if "join_date" in data:
+		u.join_date = data["join_date"]
 
 	if "department_id" in data:
 		if data["department_id"] is None:

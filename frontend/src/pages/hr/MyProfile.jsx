@@ -33,7 +33,9 @@ const MyProfile = () => {
 	const [saving, setSaving] = useState(false);
 	const [profile, setProfile] = useState(null);
 
+	const [name, setName] = useState('');
 	const [nickname, setNickname] = useState('');
+	const [joinDate, setJoinDate] = useState('');
 	const [phone, setPhone] = useState('');
 	const [salaryBankName, setSalaryBankName] = useState('');
 	const [salaryAccountNumber, setSalaryAccountNumber] = useState('');
@@ -53,7 +55,9 @@ const MyProfile = () => {
 			const res = await authApi.getMe();
 			const data = res.data;
 			setProfile(data);
+			setName(data.user_name ?? '');
 			setNickname(data.user_nickname ?? '');
+			setJoinDate(formatYmd(data.join_date) === '—' ? '' : formatYmd(data.join_date));
 			setPhone(data.user_phone_number ?? '');
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
@@ -91,15 +95,15 @@ const MyProfile = () => {
 	const remainingDays = vacation?.remaining_days ?? 0;
 	const usedPct = totalDays > 0 ? Math.min(100, Math.round((usedDays / totalDays) * 1000) / 10) : 0;
 
-	const joinYmd = formatYmd(profile?.join_date);
+	const joinYmd = joinDate || '—';
 	const tenureDays = useMemo(() => {
-		if (!profile?.join_date) return null;
-		const d = new Date(profile.join_date);
+		if (!joinDate) return null;
+		const d = new Date(joinDate);
 		if (Number.isNaN(d.getTime())) return null;
 		const now = new Date();
 		const diffMs = now.getTime() - d.getTime();
 		return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24))) + 1;
-	}, [profile?.join_date]);
+	}, [joinDate]);
 
 	const openVacationDetail = () => setVacationDetailOpen(true);
 	const closeVacationDetail = () => setVacationDetailOpen(false);
@@ -116,10 +120,24 @@ const MyProfile = () => {
 		try {
 			const payload = {};
 
+			// 이름
+			const nameTrim = (name || '').trim();
+			const prevName = (profile.user_name || '').trim();
+			if (!nameTrim) {
+				Notify.toastWarn('이름을 입력해 주세요.');
+				return;
+			}
+			if (nameTrim !== prevName) payload.user_name = nameTrim;
+
 			// 닉네임
 			const nickTrim = (nickname || '').trim();
 			const prevNick = (profile.user_nickname || '').trim();
 			if (nickTrim !== prevNick) payload.user_nickname = nickTrim || null;
+
+			// 입사일
+			const nextJoinDate = joinDate || null;
+			const prevJoinDate = formatYmd(profile.join_date) === '—' ? null : formatYmd(profile.join_date);
+			if (nextJoinDate !== prevJoinDate) payload.join_date = nextJoinDate;
 
 			// 전화번호(숫자만)
 			const phoneDigits = (phone || '').replace(/\D/g, '');
@@ -155,7 +173,9 @@ const MyProfile = () => {
 
 			const res = await authApi.patchMe(payload);
 			setProfile(res.data);
+			setName(res.data.user_name ?? '');
 			setNickname(res.data.user_nickname ?? '');
+			setJoinDate(formatYmd(res.data.join_date) === '—' ? '' : formatYmd(res.data.join_date));
 			setPhone(res.data.user_phone_number ?? '');
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
@@ -297,7 +317,7 @@ const MyProfile = () => {
 							<UserAvatar
 								imageUrl={photoPreviewUrl}
 								nickname={nickname}
-								name={profile.user_name}
+								name={name}
 								size={92}
 								avatarAdjust={avatarAdjust}
 								imageCacheBust={avatarImgCacheKey}
@@ -306,7 +326,7 @@ const MyProfile = () => {
 								<Camera size={14} />
 							</span>
 						</button>
-						<div className="my-profile-photo-name">{profile.user_name || ''}</div>
+						<div className="my-profile-photo-name">{name || ''}</div>
 						<div className="my-profile-photo-sub">
 							{(profile.department_name || '부서 없음').trim()} · {(profile.position_name || '직급 없음').trim()}
 						</div>
@@ -370,14 +390,24 @@ const MyProfile = () => {
 									<label htmlFor="mp-name">이름</label>
 									<input
 										id="mp-name"
-										className="my-profile-readonly"
 										type="text"
-										value={profile.user_name || ''}
-										readOnly
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										autoComplete="name"
+										maxLength={50}
+										required
 									/>
 								</div>
 
-								<div className="my-profile-field my-profile-field--empty" />
+								<div className="my-profile-field">
+									<label htmlFor="mp-join-date">입사일</label>
+									<input
+										id="mp-join-date"
+										type="date"
+										value={joinDate}
+										onChange={(e) => setJoinDate(e.target.value)}
+									/>
+								</div>
 
 								<div className="my-profile-field">
 									<label htmlFor="mp-nick">닉네임</label>
