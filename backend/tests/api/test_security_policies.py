@@ -6,8 +6,11 @@ from fastapi.testclient import TestClient
 import main as app_main  # noqa: E402
 from core.config import settings  # noqa: E402
 from db.session import get_db  # noqa: E402
+from models.auth_models import User  # noqa: E402
+from models.common_models import UploadedFile  # noqa: E402
 from services.auth_service import get_current_user  # noqa: E402
 from services.public.applicant_auth import get_current_applicant  # noqa: E402
+from support.memory_db import memory_db_session  # noqa: E402
 
 
 class _FakeQuery:
@@ -57,6 +60,93 @@ def test_common_download_returns_403_when_authorized_user_has_no_permission(monk
 	assert res.status_code == status.HTTP_403_FORBIDDEN
 
 	app_main.app.dependency_overrides.clear()
+
+
+def test_common_download_allows_own_profile_image(monkeypatch, tmp_path):
+	from services import common_service
+
+	saved_name = "profile.png"
+	(tmp_path / saved_name).write_bytes(b"fake png")
+	monkeypatch.setattr(common_service, "UPLOAD_DIR", str(tmp_path))
+
+	with memory_db_session() as db:
+		user = User(
+			user_login_id="profile-owner",
+			user_password="hashed",
+			user_name="Profile Owner",
+			role="user",
+			user_profile_image_url=f"/uploads/{saved_name}",
+		)
+		file_row = UploadedFile(
+			original_name=saved_name,
+			saved_name=saved_name,
+			file_path=f"/uploads/{saved_name}",
+			file_size=8,
+			content_type="image/png",
+		)
+		db.add_all([user, file_row])
+		db.commit()
+		db.refresh(user)
+
+		def _override_db():
+			yield db
+
+		app_main.app.dependency_overrides[get_current_user] = lambda: {"id": user.id, "role": "user"}
+		app_main.app.dependency_overrides[get_db] = _override_db
+
+		try:
+			client = TestClient(app_main.app)
+			res = client.get(f"/api/common/files/by-saved-name/{saved_name}")
+			assert res.status_code == status.HTTP_200_OK
+			assert res.content == b"fake png"
+		finally:
+			app_main.app.dependency_overrides.clear()
+
+
+def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path):
+	from services import common_service
+
+	saved_name = "other-profile.png"
+	(tmp_path / saved_name).write_bytes(b"fake png")
+	monkeypatch.setattr(common_service, "UPLOAD_DIR", str(tmp_path))
+
+	with memory_db_session() as db:
+		owner = User(
+			user_login_id="profile-owner",
+			user_password="hashed",
+			user_name="Profile Owner",
+			role="user",
+			user_profile_image_url=f"/uploads/{saved_name}",
+		)
+		other = User(
+			user_login_id="profile-viewer",
+			user_password="hashed",
+			user_name="Profile Viewer",
+			role="user",
+		)
+		file_row = UploadedFile(
+			original_name=saved_name,
+			saved_name=saved_name,
+			file_path=f"/uploads/{saved_name}",
+			file_size=8,
+			content_type="image/png",
+		)
+		db.add_all([owner, other, file_row])
+		db.commit()
+		db.refresh(other)
+
+		def _override_db():
+			yield db
+
+		app_main.app.dependency_overrides[get_current_user] = lambda: {"id": other.id, "role": "user"}
+		app_main.app.dependency_overrides[get_db] = _override_db
+
+		try:
+			client = TestClient(app_main.app)
+			res = client.get(f"/api/common/files/by-saved-name/{saved_name}")
+			assert res.status_code == status.HTTP_403_FORBIDDEN
+		finally:
+			app_main.app.dependency_overrides.clear()
 
 
 def test_legacy_applicant_endpoint_returns_410_when_disabled():

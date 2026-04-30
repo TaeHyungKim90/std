@@ -53,7 +53,8 @@ async def save_files_to_db_and_disk(db: Session, files: List[UploadFile]):
 
 
 def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uploaded_row: UploadedFile) -> None:
-	"""메시지 첨부가 아닌 파일은 관리자만. 첨부는 발신/수신 또는 전체 공지(로그인 직원)만."""
+	"""관리자는 전체, 프로필 이미지는 본인, 메시지 첨부는 발신/수신 또는 전체 공지만 허용."""
+	from models.auth_models import User
 	from models.message_models import MessageAttachment, Message
 
 	if current_user.get("role") == "admin":
@@ -62,6 +63,18 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 	uid = current_user.get("id")
 	if uid is None:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
+
+	saved_name = str(uploaded_row.saved_name or "")
+	file_path = str(uploaded_row.file_path or "")
+	profile_paths = {path for path in (file_path, f"/uploads/{saved_name}" if saved_name else "") if path}
+	if profile_paths:
+		profile_owner = (
+			db.query(User)
+			.filter(User.id == uid, User.user_profile_image_url.in_(profile_paths))
+			.first()
+		)
+		if profile_owner:
+			return
 
 	links = db.query(MessageAttachment).filter(MessageAttachment.file_id == uploaded_row.id).all()
 	if not links:
