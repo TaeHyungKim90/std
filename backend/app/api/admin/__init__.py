@@ -9,6 +9,7 @@ from .recruitment import router as recruitment_router
 from .reports import router as reports_router
 from .departments import router as departments_router
 from .positions import router as positions_router
+from .work_locations import router as work_locations_router
 
 router = APIRouter()
 
@@ -23,3 +24,4 @@ router.include_router(recruitment_router, prefix="/recruitment", tags=["Admin Re
 router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])
 router.include_router(departments_router, prefix="/departments", tags=["Admin Departments"])
 router.include_router(positions_router, prefix="/positions", tags=["Admin Positions"])
+router.include_router(work_locations_router, prefix="/work-locations", tags=["Admin Work Locations"])

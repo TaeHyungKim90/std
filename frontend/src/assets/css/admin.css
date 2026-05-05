@@ -692,6 +692,25 @@
 	line-height: 1.45;
 }
 
+/* WorkLocationMgmt.jsx */
+.work-location-mgmt__form {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1.2fr auto;
+	align-items: center;
+}
+
+.work-location-mgmt__add-btn {
+	white-space: nowrap;
+	padding: 12px 20px;
+}
+
+.work-location-mgmt__hint {
+	font-size: 0.84rem;
+	color: #64748b;
+	margin: -8px 0 8px;
+	line-height: 1.45;
+}
+
 .holiday-mgmt__date-warning {
 	font-size: 0.88rem;
 	color: #c2410c;
@@ -882,4 +901,16 @@
 .admin-user__row--resigned {
 	--stagger-to-opacity: 0.6;
 	background-color: #fafafa;
+}
+
+@media (max-width: 1024px) {
+	.work-location-mgmt__form {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.work-location-mgmt__form {
+		grid-template-columns: 1fr;
+	}
 }

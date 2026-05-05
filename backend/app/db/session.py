@@ -27,7 +27,7 @@ def init_db():
 	from db import base
 	from models.auth_models import User
 	from models.hr_models import TodoCategoryType
-	from models.system_models import Department, Position
+	from models.system_models import Department, Position, WorkLocation
 	from core.security import get_password_hash
 	
 	# 테이블 생성 (이미 있으면 무시됨)
@@ -134,6 +134,18 @@ def init_db():
 			]
 			db.add_all(default_categories)
 			print("--- ✅ 기본 카테고리 설정 완료 ---")
+
+		work_location_count = db.query(WorkLocation).count()
+		if work_location_count == 0:
+			print("--- 📍 기본 근무장소(회사) 생성 중 ---")
+			default_work_location = WorkLocation(
+				location_key="company",
+				location_value="회사",
+				description="기본 근무장소",
+				is_active=True,
+			)
+			db.add(default_work_location)
+			print("--- ✅ 기본 근무장소 설정 완료 ---")
 		# 이력서 템플릿 시드: DB에 행이 없으면 assets 기본 .docx를 uploads로 복사 후 1건 등록
 		try:
 			import shutil

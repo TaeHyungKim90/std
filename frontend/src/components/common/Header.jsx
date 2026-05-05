@@ -4,7 +4,7 @@ import UserAvatar from 'components/common/UserAvatar';
 import { MENU_ITEMS } from 'constants/menu';
 import { PATH_PREFIX,PATHS } from 'constants/paths';
 import { AuthContext } from 'context/AuthContext';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
@@ -13,12 +13,37 @@ const Header = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const isAdmin = userRole === 'admin';
-
-	if (!isLoggedIn) return null;
 
 	const currentPath = location.pathname;
 	const isAdminMode = currentPath.startsWith(PATH_PREFIX.ADMIN);
+	const mobileMenuItems = MENU_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+	const quickActions = [
+		{ id: 'quick-attendance', label: '출퇴근', icon: '⏱', path: PATHS.MY_ATTENDANCE },
+		{ id: 'quick-report', label: '보고서', icon: '📝', path: PATHS.MY_REPORTS },
+		{ id: 'quick-todos', label: '일정', icon: '📅', path: PATHS.MY_TODOS },
+	];
+
+	useEffect(() => {
+		setIsMobileMenuOpen(false);
+	}, [location.pathname]);
+
+	useEffect(() => {
+		if (!isMobileMenuOpen) return undefined;
+
+		const handleEscape = (event) => {
+			if (event.key === 'Escape') setIsMobileMenuOpen(false);
+		};
+
+		document.addEventListener('keydown', handleEscape);
+		document.body.style.overflow = 'hidden';
+
+		return () => {
+			document.removeEventListener('keydown', handleEscape);
+			document.body.style.overflow = '';
+		};
+	}, [isMobileMenuOpen]);
 
 	const handleLogout = async () => {
 		if (isLoggingOut) return;
@@ -36,6 +61,8 @@ const Header = () => {
 				setIsLoggingOut(false);
 			});
 	};
+
+	if (!isLoggedIn) return null;
 
 	return (
 		<header className="modern-header-wrapper">
@@ -84,7 +111,96 @@ const Header = () => {
 						<button onClick={handleLogout} className="bq-btn-logout" disabled={isLoggingOut}>
 							{isLoggingOut ? '처리중...' : '로그아웃'}
 						</button>
+						<button
+							type="button"
+							className={`bq-mobile-menu-trigger ${isMobileMenuOpen ? 'is-open' : ''}`}
+							aria-label="모바일 메뉴 열기"
+							aria-expanded={isMobileMenuOpen}
+							onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+						>
+							<span />
+							<span />
+							<span />
+						</button>
 					</div>
+			</div>
+			<div
+				className={`bq-mobile-drawer-overlay ${isMobileMenuOpen ? 'is-open' : ''}`}
+				onClick={() => setIsMobileMenuOpen(false)}
+				role="presentation"
+			>
+				<aside
+					className={`bq-mobile-drawer ${isMobileMenuOpen ? 'is-open' : ''}`}
+					role="dialog"
+					aria-modal="true"
+					aria-label="모바일 네비게이션"
+					onClick={(event) => event.stopPropagation()}
+				>
+					<div className="bq-mobile-drawer-header">
+						<div className="bq-mobile-drawer-user">
+							{userProfileImageUrl ? (
+								<UserAvatar
+									imageUrl={userProfileImageUrl}
+									nickname={userNickname}
+									name={userName}
+									size={28}
+									className="bq-user-avatar"
+								/>
+							) : (
+								<div className="bq-status-dot" />
+							)}
+							<div className="bq-mobile-drawer-user-text">
+								<span>{userNickname || userName}</span>
+								{userNickname && userName && userNickname !== userName ? (
+									<small>{userName}</small>
+								) : null}
+							</div>
+						</div>
+						<button
+							type="button"
+							className="bq-mobile-drawer-close"
+							aria-label="모바일 메뉴 닫기"
+							onClick={() => setIsMobileMenuOpen(false)}
+						>
+							닫기
+						</button>
+					</div>
+					<nav className="bq-mobile-drawer-nav">
+						{mobileMenuItems.map((item) => {
+							const isActive = item.id === 'admin' ? isAdminMode : currentPath.startsWith(item.path);
+							return (
+								<Link
+									key={item.id}
+									to={item.path}
+									className={`bq-mobile-drawer-item ${isActive ? 'active' : ''}`}
+								>
+									{item.label}
+								</Link>
+							);
+						})}
+					</nav>
+					<div className="bq-mobile-quick-actions">
+						<div className="bq-mobile-quick-actions-title">빠른 액션</div>
+						<div className="bq-mobile-quick-actions-grid">
+							{quickActions.map((action) => (
+								<Link key={action.id} to={action.path} className="bq-mobile-quick-action-btn">
+									<span className="bq-mobile-quick-action-icon" aria-hidden="true">
+										{action.icon}
+									</span>
+									{action.label}
+								</Link>
+							))}
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={handleLogout}
+						className="bq-mobile-drawer-logout"
+						disabled={isLoggingOut}
+					>
+						{isLoggingOut ? '처리중...' : '로그아웃'}
+					</button>
+				</aside>
 			</div>
 		</header>
 	);

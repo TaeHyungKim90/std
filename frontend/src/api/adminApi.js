@@ -75,6 +75,17 @@ export const adminApi = {
   deletePosition: (positionId) =>
 	client.delete(`${PATH}/positions/${positionId}`),
   /**
+   * 시스템관리: 근무장소
+   */
+  getWorkLocations: () =>
+	client.get(`${PATH}/work-locations/`),
+  createWorkLocation: (payload) =>
+	client.post(`${PATH}/work-locations/`, payload),
+  updateWorkLocation: (workLocationId, payload) =>
+	client.patch(`${PATH}/work-locations/${workLocationId}`, payload),
+  deleteWorkLocation: (workLocationId) =>
+	client.delete(`${PATH}/work-locations/${workLocationId}`),
+  /**
    * ⏰ 출퇴근 기록 조회 (필터 포함)
    */
   getAllAttendance: (params = {}) =>

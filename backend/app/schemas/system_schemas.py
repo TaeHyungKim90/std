@@ -35,3 +35,28 @@ class PositionResponse(BaseModel):
 
 	model_config = ConfigDict(from_attributes=True)
 
+
+class WorkLocationCreate(BaseModel):
+	location_key: str = Field(..., min_length=2, max_length=50)
+	location_value: str = Field(..., min_length=1, max_length=120)
+	description: Optional[str] = Field(None, max_length=255)
+	is_active: bool = True
+
+
+class WorkLocationUpdate(BaseModel):
+	location_key: Optional[str] = Field(None, min_length=2, max_length=50)
+	location_value: Optional[str] = Field(None, min_length=1, max_length=120)
+	description: Optional[str] = Field(None, max_length=255)
+	is_active: Optional[bool] = None
+
+
+class WorkLocationResponse(BaseModel):
+	id: int
+	location_key: str
+	location_value: str
+	description: Optional[str] = None
+	is_active: bool
+	created_at: datetime
+
+	model_config = ConfigDict(from_attributes=True)
+
