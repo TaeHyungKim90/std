@@ -8,8 +8,8 @@ import { useLoading } from 'context/LoadingContext';
 import React, { useEffect, useRef,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
-import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 import * as Notify from 'utils/toastUtils';
+import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 
 import SocialButtons from './SocialButtons';
 
@@ -121,7 +121,7 @@ const LoginForm = () => {
 				<button type="submit" className="login-button" disabled={isSubmitting}>
 					{isSubmitting ? '로그인 중...' : '로그인'}
 				</button>
-				<SocialButtons />
+				<SocialButtons mode="login" />
 				<div className="signup-prompt">
 					계정이 없으신가요?
 					<button type="button" onClick={() => navigate(PATHS.SIGNUP)} className="signup-link-btn">

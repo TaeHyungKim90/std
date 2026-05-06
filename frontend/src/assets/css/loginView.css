@@ -45,6 +45,10 @@ body {
 	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
 }
 
+.login-container--signup {
+	max-width: 540px;
+}
+
 /* 3. 로그인 텍스트 & 인풋 필드 */
 .login-title {
 	text-align: center;
@@ -95,6 +99,12 @@ body {
 	background-color: var(--primary-hover-color, #359a6a);
 }
 
+.login-button:disabled {
+	background-color: #cbd5e1;
+	cursor: not-allowed;
+	transform: none;
+}
+
 .login-button:active {
 	transform: scale(0.98); /* 클릭 시 살짝 눌리는 효과 */
 }
@@ -122,6 +132,15 @@ body {
 	text-decoration: underline;
 	text-underline-offset: 4px; /* 밑줄을 살짝 아래로 띄워서 세련되게 */
 }
+
+.signup-step-note {
+	margin: -16px 0 16px;
+	color: #666;
+	font-size: 14px;
+	line-height: 1.5;
+	text-align: center;
+}
+
 /* ==========================================
    소셜 로그인 & 회원가입 영역
    ========================================== */
@@ -287,6 +306,14 @@ body {
 	margin-top: 20px;
 }
 
+.social-login-help {
+	margin: -8px 0 2px;
+	color: #777;
+	font-size: 12px;
+	line-height: 1.45;
+	text-align: center;
+}
+
 .status-message--success {
 	color: var(--primary-color);
 }
@@ -301,6 +328,83 @@ body {
 
 .login-input.login-input--confirm-password.login-input--mb-tight {
 	margin-bottom: 5px;
+}
+
+.privacy-consent {
+	margin-top: 4px;
+	padding: 16px;
+	background: rgba(255, 255, 255, 0.82);
+	border: 1px solid rgba(20, 20, 20, 0.08);
+	border-radius: 14px;
+	color: #141414;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.privacy-consent__header {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 10px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.privacy-consent__header span {
+	flex-shrink: 0;
+	color: #666;
+	font-size: 12px;
+}
+
+.privacy-consent__body {
+	max-height: 180px;
+	overflow-y: auto;
+	padding: 12px;
+	background: #F8F7F3;
+	border: 1px solid #e5e0d6;
+	border-radius: 10px;
+	font-size: 12px;
+	line-height: 1.55;
+}
+
+.privacy-consent__intro {
+	margin: 0 0 10px;
+	color: #444;
+}
+
+.privacy-consent__section + .privacy-consent__section {
+	margin-top: 12px;
+}
+
+.privacy-consent__section h3 {
+	margin: 0 0 5px;
+	font-size: 13px;
+	color: var(--primary-color);
+}
+
+.privacy-consent__section ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.privacy-consent__section li + li {
+	margin-top: 4px;
+}
+
+.privacy-consent__check-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	margin-top: 12px;
+	font-size: 13px;
+	line-height: 1.45;
+	cursor: pointer;
+}
+
+.privacy-consent__check {
+	width: 16px;
+	height: 16px;
+	margin-top: 2px;
+	accent-color: var(--primary-color);
 }
 
 .circle-btn__letter--kakao {

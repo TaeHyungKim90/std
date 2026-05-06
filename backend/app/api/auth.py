@@ -1,7 +1,14 @@
+import base64
+import binascii
+import hashlib
+import hmac
+import json
 import uuid
 import re
+import time
 from datetime import date, datetime
 from typing import Any
+from urllib.parse import urlencode
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
 from fastapi.responses import RedirectResponse
@@ -51,13 +58,104 @@ def generate_user_token(user):
 		"resignation_date": user.resignation_date.isoformat() if user.resignation_date else None,
 	}
 	return create_access_token(token_data)
-def _create_social_login_response(user):
-	"""💡 공통 헬퍼 함수: 소셜 로그인 토큰 발급 & 쿠키 세팅"""
-	
+
+
+def _normalize_social_mode(mode: str | None) -> str:
+	return "signup" if mode == "signup" else "login"
+
+
+def _create_oauth_state(mode: str | None) -> str:
+	payload = {
+		"nonce": str(uuid.uuid4()),
+		"mode": _normalize_social_mode(mode),
+		"iat": int(time.time()),
+	}
+	raw_payload = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+	encoded_payload = base64.urlsafe_b64encode(raw_payload).decode("ascii").rstrip("=")
+	signature = hmac.new(
+		settings.SECRET_KEY.encode("utf-8"),
+		encoded_payload.encode("ascii"),
+		hashlib.sha256,
+	).digest()
+	encoded_signature = base64.urlsafe_b64encode(signature).decode("ascii").rstrip("=")
+	return f"{encoded_payload}.{encoded_signature}"
+
+
+def _read_oauth_state(state: str) -> str:
+	try:
+		encoded_payload, encoded_signature = state.split(".", 1)
+		expected_signature = hmac.new(
+			settings.SECRET_KEY.encode("utf-8"),
+			encoded_payload.encode("ascii"),
+			hashlib.sha256,
+		).digest()
+		actual_signature = base64.urlsafe_b64decode(encoded_signature + "=" * (-len(encoded_signature) % 4))
+		raw_payload = base64.urlsafe_b64decode(encoded_payload + "=" * (-len(encoded_payload) % 4))
+		payload = json.loads(raw_payload.decode("utf-8"))
+	except (binascii.Error, ValueError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+
+	if not hmac.compare_digest(actual_signature, expected_signature):
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+
+	try:
+		issued_at = int(payload.get("iat") or 0)
+	except (TypeError, ValueError):
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+	if issued_at <= 0 or int(time.time()) - issued_at > 300:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OAuth 인증 시간이 만료되었습니다. 다시 시도해 주세요.")
+	return _normalize_social_mode(payload.get("mode"))
+
+
+def _oauth_callback_url(**params: str) -> str:
+	query = urlencode(params)
+	return f"{settings.FRONTEND_URL}/oauth/callback?{query}" if query else f"{settings.FRONTEND_URL}/oauth/callback"
+
+
+def _create_social_login_response(user, *, social_status: str, provider: str):
+	"""소셜 로그인 토큰 발급 후 프론트 콜백에 처리 결과를 전달합니다."""
 	token = generate_user_token(user)
-	response = RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback")
+	response = RedirectResponse(url=_oauth_callback_url(social_status=social_status, provider=provider))
 	response.set_cookie(value=token, **COOKIE_OPTIONS)
 	return response
+
+
+def _create_social_notice_response(*, social_status: str, provider: str):
+	return RedirectResponse(url=_oauth_callback_url(social_status=social_status, provider=provider))
+
+
+def _process_social_callback(
+	db: Session,
+	*,
+	provider: str,
+	provider_id: str,
+	name: str,
+	nickname: str,
+	phone: str | None,
+	social_mode: str,
+):
+	try:
+		user, created = service.process_social_login(
+			db,
+			provider,
+			provider_id,
+			name,
+			nickname,
+			phone,
+			allow_create=social_mode == "signup",
+		)
+	except HTTPException as exc:
+		if exc.status_code == status.HTTP_404_NOT_FOUND and social_mode == "login":
+			return _create_social_notice_response(social_status="not_registered", provider=provider)
+		raise
+
+	if social_mode == "signup" and not created:
+		return _create_social_notice_response(social_status="already_registered", provider=provider)
+	return _create_social_login_response(
+		user,
+		social_status="signed_up" if created else "logged_in",
+		provider=provider,
+	)
 
 # ==========================================
 # 🚀 API 엔드포인트 (Router + Controller 통합)
@@ -316,38 +414,25 @@ def patch_my_profile(
 # ==========================================
 
 @router.get("/kakao/login")
-async def kakao_login(response: Response):
+async def kakao_login(mode: str | None = None):
 	"""사용자를 카카오 로그인 페이지로 보내는 URL 생성"""
-	state = str(uuid.uuid4())
-	response.set_cookie(
-		key="kakao_oauth_state",
-		value=state,
-		httponly=True,
-		secure=IS_PROD,
-		samesite="lax",
-		max_age=300,
-		path="/",
-	)
-	kakao_auth_url = (
-		f"https://kauth.kakao.com/oauth/authorize?"
-		f"client_id={KAKAO_CLIENT_ID}&"
-		f"redirect_uri={KAKAO_REDIRECT_URI}&"
-		f"response_type=code&"
-		f"state={state}"
-	)
+	state = _create_oauth_state(mode)
+	kakao_auth_url = "https://kauth.kakao.com/oauth/authorize?" + urlencode({
+		"client_id": KAKAO_CLIENT_ID,
+		"redirect_uri": KAKAO_REDIRECT_URI,
+		"response_type": "code",
+		"state": state,
+	})
 	return {"url": kakao_auth_url}
 
 @router.get("/kakao/callback")
 async def kakao_callback_handler(
 	code: str,
 	state: str,
-	request: Request,
 	db: Session = Depends(get_db),
 ):
 	"""카카오 인증 완료 후 돌아오는 지점"""
-	cookie_state = request.cookies.get("kakao_oauth_state")
-	if not cookie_state or cookie_state != state:
-		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+	social_mode = _read_oauth_state(state)
 
 	async with httpx.AsyncClient() as client:
 		token_res = await client.post("https://kauth.kakao.com/oauth/token", data={
@@ -364,45 +449,39 @@ async def kakao_callback_handler(
 	nickname = properties.get("nickname", "카카오유저")
 	phone = kakao_account.get("phone_number")
 	
-	# DB 조회 및 자동가입 로직은 Service에 맡깁니다.
-	user = service.process_social_login(db, "kakao", kakao_id, nickname, nickname, phone)
-	response = _create_social_login_response(user)
+	response = _process_social_callback(
+		db,
+		provider="kakao",
+		provider_id=kakao_id,
+		name=nickname,
+		nickname=nickname,
+		phone=phone,
+		social_mode=social_mode,
+	)
 	response.delete_cookie(key="kakao_oauth_state", path="/")
+	response.delete_cookie(key="kakao_oauth_mode", path="/")
 	return response
 
 @router.get("/naver/login")
-async def naver_login(response: Response):
+async def naver_login(mode: str | None = None):
 	"""네이버 로그인 창으로 보내는 URL 생성"""
-	state = str(uuid.uuid4())
-	# OAuth CSRF 방어: 콜백에서 검증할 state를 httpOnly 쿠키로 보관
-	response.set_cookie(
-		key="naver_oauth_state",
-		value=state,
-		httponly=True,
-		secure=IS_PROD,
-		samesite="lax",
-		max_age=300,
-		path="/",
-	)
-	naver_auth_url = (
-		f"https://nid.naver.com/oauth2.0/authorize?response_type=code"
-		f"&client_id={NAVER_CLIENT_ID}"
-		f"&redirect_uri={NAVER_REDIRECT_URI}"
-		f"&state={state}"
-	)
+	state = _create_oauth_state(mode)
+	naver_auth_url = "https://nid.naver.com/oauth2.0/authorize?" + urlencode({
+		"response_type": "code",
+		"client_id": NAVER_CLIENT_ID,
+		"redirect_uri": NAVER_REDIRECT_URI,
+		"state": state,
+	})
 	return {"url": naver_auth_url}
 
 @router.get("/naver/callback")
 async def naver_callback_handler(
 	code: str,
 	state: str,
-	request: Request,
 	db: Session = Depends(get_db),
 ):
 	"""네이버 인증 완료 후 돌아오는 지점"""
-	cookie_state = request.cookies.get("naver_oauth_state")
-	if not cookie_state or cookie_state != state:
-		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
+	social_mode = _read_oauth_state(state)
 
 	async with httpx.AsyncClient() as client:
 		token_res = await client.get("https://nid.naver.com/oauth2.0/token", params={
@@ -419,8 +498,15 @@ async def naver_callback_handler(
 	name = naver_data.get("name")
 	phone = naver_data.get("mobile")
 
-	# DB 조회 및 자동가입
-	user = service.process_social_login(db, "naver", naver_id, name, nickname, phone)
-	response = _create_social_login_response(user)
+	response = _process_social_callback(
+		db,
+		provider="naver",
+		provider_id=naver_id,
+		name=name,
+		nickname=nickname,
+		phone=phone,
+		social_mode=social_mode,
+	)
 	response.delete_cookie(key="naver_oauth_state", path="/")
+	response.delete_cookie(key="naver_oauth_mode", path="/")
 	return response

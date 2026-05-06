@@ -1,4 +1,5 @@
 import { authApi } from 'api/authApi';
+import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
 import { PATHS } from 'constants/paths';
 import { useLoading } from 'context/LoadingContext';
 import React, { useCallback,useState } from 'react';
@@ -22,6 +23,8 @@ const SignupForm = () => {
 	});
 
 	const [error, setError] = useState('');
+	const [privacyAgreed, setPrivacyAgreed] = useState(false);
+	const [policyAccepted, setPolicyAccepted] = useState(false);
 	// 아이디 중복 확인 상태 (null: 확인 전, 'available': 가능, 'duplicate': 중복)
 	const [idStatus, setIdStatus] = useState(null);
 
@@ -70,6 +73,7 @@ const SignupForm = () => {
 
 		if (idStatus !== 'available') return setError('아이디 중복 확인을 진행해 주세요.');
 		if (formData.user_password !== formData.password_confirm) return setError('비밀번호가 일치하지 않습니다.');
+		if (!policyAccepted) return setError('개인정보처리방침 동의 후 회원가입을 진행해 주세요.');
 
 		showLoading("회원가입 정보를 등록 중입니다... ⏳");
 		const signupTask = async () => {
@@ -93,12 +97,38 @@ const SignupForm = () => {
 		}).finally(() => {
 			hideLoading();
 		});
-	}, [formData, idStatus, navigate, showLoading, hideLoading]);
+	}, [formData, idStatus, policyAccepted, navigate, showLoading, hideLoading]);
 
 	const isPasswordMatching = formData.user_password && formData.password_confirm && formData.user_password === formData.password_confirm;
 
+	if (!policyAccepted) {
+		return (
+			<div className="login-container login-container--signup">
+				<div className="login-form-stack">
+					<h2 className="login-title">가입 약관 동의</h2>
+					<p className="signup-step-note">
+						회원가입 전에 개인정보처리방침을 먼저 확인해 주세요.
+					</p>
+					<PrivacyPolicyConsent checked={privacyAgreed} onChange={setPrivacyAgreed} />
+					<button
+						type="button"
+						className="login-button"
+						disabled={!privacyAgreed}
+						onClick={() => setPolicyAccepted(true)}
+					>
+						동의
+					</button>
+					<div className="signup-prompt">
+						이미 계정이 있으신가요?
+						<button type="button" onClick={() => navigate(PATHS.LOGIN)} className="signup-link-btn">로그인하기</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div className="login-container">
+		<div className="login-container login-container--signup">
 			<form onSubmit={handleSignup} className="login-form-stack">
 				<h2 className="login-title">SIGN UP</h2>
 
@@ -131,7 +161,7 @@ const SignupForm = () => {
 
 				<button type="submit" className="login-button">가입하기</button>
 
-				<SocialButtons />
+				<SocialButtons mode="signup" />
 
 				<div className="signup-prompt">
 					이미 계정이 있으신가요?

@@ -7,7 +7,7 @@ import atexit
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -67,7 +67,7 @@ if settings.SERVE_UPLOADS_STATIC and os.path.isdir(UPLOAD_DIR):
 async def read_manifest():
 	manifest_path = os.path.join(STATIC_DIR, "manifest.json")
 	if os.path.exists(manifest_path):
-		return FileResponse(manifest_path)
+		return FileResponse(manifest_path, headers={"Cache-Control": "no-store"})
 	return {"message": "manifest.json not found."}
 
 @app.get("/asset-manifest.json")
@@ -95,14 +95,21 @@ async def read_favicon():
 async def read_root():
 	index_path = os.path.join(STATIC_DIR, 'index.html')
 	if os.path.exists(index_path):
-		return FileResponse(index_path)
+		return FileResponse(index_path, headers={"Cache-Control": "no-store"})
 	return {"message": "Server is running. Frontend static files not found."}
+
+
+@app.get("/logo192.png")
+@app.get("/logo512.png")
+async def legacy_cra_logo():
+	"""이전 manifest 캐시가 남아 있어도 누락 아이콘 404 로그가 반복되지 않게 합니다."""
+	return Response(status_code=204, headers={"Cache-Control": "no-store"})
 
 
 def _serve_spa_index_or_404():
 	index_path = os.path.join(STATIC_DIR, "index.html")
 	if os.path.exists(index_path):
-		return FileResponse(index_path)
+		return FileResponse(index_path, headers={"Cache-Control": "no-store"})
 	raise HTTPException(status_code=404, detail="Not Found")
 
 

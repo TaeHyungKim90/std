@@ -1,4 +1,5 @@
 import { recruitmentApi } from 'api/recruitmentApi';
+import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
 import { PATHS } from 'constants/paths';
 import React, { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
@@ -9,14 +10,15 @@ const ApplicantSignupPage = () => {
 	const navigate = useNavigate();
 	const [form, setForm] = useState({ email_id: '', password: '', name: '', phone: '' });
 	const [agreed, setAgreed] = useState(false); 
+	const [policyAccepted, setPolicyAccepted] = useState(false);
 
 	const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 	
-		if (!agreed) {
-			Notify.toastWarn("개인정보 수집 및 이용에 동의하셔야 가입이 가능합니다.");
+		if (!policyAccepted) {
+			Notify.toastWarn("개인정보처리방침 동의 후 회원가입을 진행해 주세요.");
 			return; 
 		}	
 	
@@ -38,6 +40,31 @@ const ApplicantSignupPage = () => {
 		});
 	};
 
+	if (!policyAccepted) {
+		return (
+			<div className="careers-content-wrapper auth-center-wrapper">
+				<div className="glass-box auth-glass-box applicant-signup__glass">
+					<h2>가입 약관 동의</h2>
+					<p className="applicant-signup__step-note">
+						지원자 회원가입 전에 개인정보처리방침을 먼저 확인해 주세요.
+					</p>
+					<PrivacyPolicyConsent checked={agreed} onChange={setAgreed} className="privacy-consent--careers" />
+					<button
+						type="button"
+						className="applicant-signup__submit"
+						disabled={!agreed}
+						onClick={() => setPolicyAccepted(true)}
+					>
+						동의
+					</button>
+					<div className="applicant-signup__footer">
+						이미 계정이 있으신가요? <Link to={PATHS.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="careers-content-wrapper auth-center-wrapper">
 			<div className="glass-box auth-glass-box applicant-signup__glass">
@@ -48,18 +75,8 @@ const ApplicantSignupPage = () => {
 					<input type="password" name="password" placeholder="비밀번호" required onChange={handleChange} className="applicant-signup__input" />
 					<input type="tel" name="phone" placeholder="연락처 (010-0000-0000)" required onChange={handleChange} className="applicant-signup__input" />
 					
-					<div className="applicant-signup__terms">
-						<label className="applicant-signup__terms-label">
-							<input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="applicant-signup__terms-check" />
-							<span>
-								<strong>[필수] 개인정보 수집 및 이용 동의</strong><br/>
-								입사 지원 서비스 제공을 위해 귀하의 개인정보를 수집하며, 수집된 정보는 <b>가입일로부터 2년간 보관</b> 후 지체 없이 파기됩니다.
-							</span>
-						</label>
-					</div>
-
 					<button type="submit" className="applicant-signup__submit">
-						동의하고 가입하기
+						가입하기
 					</button>
 				</form>
 				<div className="applicant-signup__footer">

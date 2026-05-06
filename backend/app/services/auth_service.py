@@ -118,10 +118,13 @@ def process_social_login(
 	name: str,
 	nickname: str,
 	phone: str | None = None,
-):
+	*,
+	allow_create: bool = True,
+) -> tuple[User, bool]:
 	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통)"""
 	user_login_id = f"{provider}_{provider_id}"
 	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	created = False
 
 	clean_phone = None
 	if phone:
@@ -130,6 +133,12 @@ def process_social_login(
 		if clean_phone.startswith('82'):
 			clean_phone = '0' + clean_phone[2:]
 	
+	if not user and not allow_create:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="가입되지 않은 소셜 계정입니다. 회원가입 페이지에서 소셜 회원가입을 진행해 주세요.",
+		)
+
 	if not user:
 		# 최초 소셜 로그인 시 자동 회원가입
 		secure_random_password = secrets.token_urlsafe(32)
@@ -145,9 +154,10 @@ def process_social_login(
 		db.add(user)
 		db.commit()
 		db.refresh(user)
+		created = True
 	else:
 		if not user.user_phone_number and clean_phone:
 			user.user_phone_number = clean_phone
 			db.commit()
 		
-	return user
+	return user, created

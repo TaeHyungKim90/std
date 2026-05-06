@@ -442,25 +442,89 @@
 	background: rgba(255, 255, 255, 0.9);
 }
 
-.applicant-signup__terms {
-	background: rgba(255, 255, 255, 0.6);
-	padding: 15px;
-	border-radius: 10px;
-	font-size: 0.85rem;
-	color: #444;
-	margin-top: 10px;
-	border: 1px solid rgba(0, 0, 0, 0.05);
+.applicant-signup__step-note {
+	margin: 0 0 16px;
+	color: #475569;
+	font-size: 0.95rem;
+	line-height: 1.5;
+	text-align: center;
 }
 
-.applicant-signup__terms-label {
+.privacy-consent {
+	margin-top: 4px;
+	padding: 16px;
+	background: rgba(255, 255, 255, 0.78);
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	border-radius: 14px;
+	color: #263238;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.privacy-consent__header {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 10px;
+	font-size: 0.88rem;
+	line-height: 1.4;
+}
+
+.privacy-consent__header span {
+	flex-shrink: 0;
+	color: #64748b;
+	font-size: 0.76rem;
+}
+
+.privacy-consent__body {
+	max-height: 190px;
+	overflow-y: auto;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.82);
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	border-radius: 10px;
+	font-size: 0.78rem;
+	line-height: 1.55;
+}
+
+.privacy-consent__intro {
+	margin: 0 0 10px;
+	color: #475569;
+}
+
+.privacy-consent__section + .privacy-consent__section {
+	margin-top: 12px;
+}
+
+.privacy-consent__section h3 {
+	margin: 0 0 5px;
+	font-size: 0.82rem;
+	color: var(--primary-color);
+}
+
+.privacy-consent__section ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.privacy-consent__section li + li {
+	margin-top: 4px;
+}
+
+.privacy-consent__check-label {
 	display: flex;
 	align-items: flex-start;
-	gap: 10px;
+	gap: 9px;
+	margin-top: 12px;
+	font-size: 0.82rem;
+	line-height: 1.45;
 	cursor: pointer;
 }
 
-.applicant-signup__terms-check {
+.privacy-consent__check {
+	width: 16px;
+	height: 16px;
 	margin-top: 2px;
+	accent-color: var(--primary-color);
 }
 
 .applicant-signup__submit {
@@ -474,6 +538,11 @@
 	cursor: pointer;
 	margin-top: 10px;
 	transition: all 0.2s;
+}
+
+.applicant-signup__submit:disabled {
+	background: #cbd5e1;
+	cursor: not-allowed;
 }
 
 .applicant-signup__footer {

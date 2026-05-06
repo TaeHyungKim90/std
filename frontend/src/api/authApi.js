@@ -52,14 +52,14 @@ export const authApi = {
    * 6. 카카오 로그인 URL 요청
    * GET /api/auth/kakao/login
    */
-  getKakaoLoginUrl: () => 
-	client.get(`${PATH}/kakao/login`),
+  getKakaoLoginUrl: (mode = 'login') => 
+	client.get(`${PATH}/kakao/login`, { params: { mode } }),
 
   /**
    * 7. 네이버 로그인 URL 요청 (준비용)
    * GET /api/auth/naver/login
    */
-  getNaverLoginUrl: () => 
-	client.get(`${PATH}/naver/login`),
+  getNaverLoginUrl: (mode = 'login') => 
+	client.get(`${PATH}/naver/login`, { params: { mode } }),
   
 }
