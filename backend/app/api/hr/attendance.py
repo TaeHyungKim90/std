@@ -1,5 +1,6 @@
 from datetime import date as date_type
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from typing import Any, Optional
 
@@ -13,6 +14,12 @@ from schemas.hr import attendance_schemas
 from schemas.system_schemas import WorkLocationResponse
 
 router = APIRouter()
+_SEOUL = ZoneInfo("Asia/Seoul")
+
+
+def _now_seoul_naive() -> datetime:
+	"""DB 컬럼이 naive DateTime이므로 한국시간 값을 timezone 없이 저장합니다."""
+	return datetime.now(_SEOUL).replace(tzinfo=None)
 
 
 def _require_user_id(current_user: dict) -> str:
@@ -26,7 +33,7 @@ def _require_user_id(current_user: dict) -> str:
 def read_today_attendance(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
 	"""[유저] 오늘의 출퇴근 기록을 조회합니다."""
 	user_id = _require_user_id(current_user)
-	now = datetime.now()
+	now = _now_seoul_naive()
 	return service.get_today_attendance(db, user_id, now.date())
 
 
@@ -48,7 +55,7 @@ def read_clock_context(
 ):
 	"""[유저] 출근 확인 팝업·휴일 표시용 맥락."""
 	user_id = _require_user_id(current_user)
-	d = work_date or datetime.now().date()
+	d = work_date or _now_seoul_naive().date()
 	ctx = service.get_clock_context(db, user_id, d)
 	return attendance_schemas.AttendanceClockContextResponse.model_validate(ctx)
 
@@ -67,7 +74,7 @@ def read_active_work_locations(
 def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
 	"""[유저] 출근 처리 (중복 출근 방지 로직 포함)"""
 	user_id = _require_user_id(current_user)
-	now = datetime.now()
+	now = _now_seoul_naive()
 
 	record = service.get_today_attendance(db, user_id, now.date())
 	if record and record.clock_in_time is not None:
@@ -90,7 +97,7 @@ def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(ge
 def clock_out(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
 	"""[유저] 퇴근 처리 (출근 기록 확인 및 중복 퇴근 방지)"""
 	user_id = _require_user_id(current_user)
-	now = datetime.now()
+	now = _now_seoul_naive()
 	
 	record = service.get_today_attendance(db, user_id, now.date())
 	if not record:

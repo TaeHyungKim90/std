@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from typing import cast
 
 from sqlalchemy.orm import Session, joinedload
@@ -8,8 +10,14 @@ from models.hr_models import Todo
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
-from datetime import date, timedelta
 from models.holiday_models import Holiday
+
+
+@dataclass(frozen=True)
+class VacationUsageItem:
+	category: str | None
+	start_date: datetime
+	end_date: datetime | None = None
 
 # 1. 전체 사용자 목록 조회
 def get_all_users(db: Session):
@@ -55,12 +63,20 @@ def _calculate_total_vacation(join_date: date, today: date) -> int:
 	return min(15 + bonus_days, 25)
 
 
-def _get_holiday_dates(db: Session, todos: list[Todo]) -> set[date]:
+def _todo_to_vacation_usage_item(todo: Todo) -> VacationUsageItem:
+	return VacationUsageItem(
+		category=cast(str | None, todo.category),
+		start_date=cast(datetime, todo.start_date),
+		end_date=cast(datetime | None, todo.end_date),
+	)
+
+
+def _get_holiday_dates(db: Session, items: list[VacationUsageItem]) -> set[date]:
 	global_start: date | None = None
 	global_end: date | None = None
-	for todo in todos:
-		start_day = todo.start_date.date()
-		end_day = (todo.end_date or todo.start_date).date()
+	for item in items:
+		start_day = item.start_date.date()
+		end_day = (item.end_date or item.start_date).date()
 		if end_day < start_day:
 			start_day, end_day = end_day, start_day
 		if global_start is None or start_day < global_start:
@@ -79,14 +95,14 @@ def _get_holiday_dates(db: Session, todos: list[Todo]) -> set[date]:
 	}
 
 
-def _calculate_used_vacation_days(todos: list[Todo], holiday_dates: set[date]) -> float:
+def _calculate_used_vacation_days(items: list[VacationUsageItem], holiday_dates: set[date]) -> float:
 	recalculated_used_days = 0.0
-	for todo in todos:
-		if todo.category not in VACATION_DEDUCTIBLE_CATEGORIES:
+	for item in items:
+		if item.category not in VACATION_DEDUCTIBLE_CATEGORIES:
 			continue
-		if todo.category == "vacation_full":
-			start_day = todo.start_date.date()
-			end_day = (todo.end_date or todo.start_date).date()
+		if item.category == "vacation_full":
+			start_day = item.start_date.date()
+			end_day = (item.end_date or item.start_date).date()
 			if end_day < start_day:
 				start_day, end_day = end_day, start_day
 			current = start_day
@@ -99,6 +115,40 @@ def _calculate_used_vacation_days(todos: list[Todo], holiday_dates: set[date]) -
 	return recalculated_used_days
 
 
+def calculate_user_vacation_snapshot(
+	db: Session,
+	user: User,
+	today: date | None = None,
+	*,
+	extra_items: list[VacationUsageItem] | None = None,
+	exclude_todo_id: int | None = None,
+) -> dict[str, float]:
+	"""저장 전 검증과 저장 후 정산이 공유하는 사용자 연차 계산 스냅샷."""
+	if user.join_date is None or user.resignation_date is not None:
+		return {"total_days": 0.0, "used_days": 0.0, "remaining_days": 0.0}
+
+	today = today or date.today()
+	query = (
+		db.query(Todo)
+		.filter(Todo.user_id == user.user_login_id)
+		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
+	)
+	if exclude_todo_id is not None:
+		query = query.filter(Todo.id != exclude_todo_id)
+	items = [_todo_to_vacation_usage_item(todo) for todo in query.all()]
+	if extra_items:
+		items.extend(extra_items)
+
+	holiday_dates = _get_holiday_dates(db, items)
+	total_vacation = _calculate_total_vacation(cast(date, user.join_date), today)
+	used_days = _calculate_used_vacation_days(items, holiday_dates)
+	return {
+		"total_days": float(total_vacation),
+		"used_days": used_days,
+		"remaining_days": max(total_vacation - used_days, 0.0),
+	}
+
+
 def sync_user_vacation(db: Session, user: User, today: date | None = None) -> UserVacation | None:
 	"""사용자 1명의 입사일과 휴가 일정 기준으로 연차를 재정산합니다."""
 	if user.join_date is None or user.resignation_date is not None:
@@ -109,25 +159,16 @@ def sync_user_vacation(db: Session, user: User, today: date | None = None) -> Us
 			return vacation_record
 		return None
 
-	today = today or date.today()
-	vacation_todos = (
-		db.query(Todo)
-		.filter(Todo.user_id == user.user_login_id)
-		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
-		.all()
-	)
-	holiday_dates = _get_holiday_dates(db, vacation_todos)
-	total_vacation = _calculate_total_vacation(cast(date, user.join_date), today)
-	used_days = _calculate_used_vacation_days(vacation_todos, holiday_dates)
+	snapshot = calculate_user_vacation_snapshot(db, user, today)
 
 	vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
 	if not vacation_record:
 		vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
 		db.add(vacation_record)
 
-	vacation_record.total_days = total_vacation
-	vacation_record.used_days = used_days
-	vacation_record.remaining_days = max(total_vacation - used_days, 0.0)
+	vacation_record.total_days = int(snapshot["total_days"])
+	vacation_record.used_days = snapshot["used_days"]
+	vacation_record.remaining_days = snapshot["remaining_days"]
 	return vacation_record
 
 # 2. 신규 사용자 등록 (관리자용)
@@ -268,13 +309,14 @@ def sync_all_users_vacation(db: Session):
 		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
 		.all()
 	)
-	todos_by_user: dict[str, list[Todo]] = {}
+	items_by_user: dict[str, list[VacationUsageItem]] = {}
 	global_start: date | None = None
 	global_end: date | None = None
 	for todo in vacation_todos:
-		todos_by_user.setdefault(cast(str, todo.user_id), []).append(todo)
-		start_day = todo.start_date.date()
-		end_day = (todo.end_date or todo.start_date).date()
+		item = _todo_to_vacation_usage_item(todo)
+		items_by_user.setdefault(cast(str, todo.user_id), []).append(item)
+		start_day = item.start_date.date()
+		end_day = (item.end_date or item.start_date).date()
 		if global_start is None or start_day < global_start:
 			global_start = start_day
 		if global_end is None or end_day > global_end:
@@ -305,7 +347,7 @@ def sync_all_users_vacation(db: Session):
 			db.add(vacation_record)
 
 		recalculated_used_days = _calculate_used_vacation_days(
-			todos_by_user.get(cast(str, user.user_login_id), []),
+			items_by_user.get(cast(str, user.user_login_id), []),
 			holiday_dates,
 		)
 			

@@ -1,15 +1,17 @@
-from datetime import date, datetime, timedelta
-from typing import Any, cast
+from datetime import date, datetime
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
-from core.constants import VACATION_CATEGORIES, VACATION_HALF_DAY_CATEGORIES
 from models.hr_models import Todo, TodoConfig, TodoCategoryType
-from models.auth_models import User, UserVacation
-from models.holiday_models import Holiday
+from models.auth_models import User
 from schemas.hr.todos_schemas import TodoCreate, TodoUpdate, TodoConfigBase
+from services.admin.user_service import (
+	VacationUsageItem,
+	calculate_user_vacation_snapshot,
+	sync_user_vacation,
+)
 from fastapi import HTTPException
 
 _SEOUL = ZoneInfo("Asia/Seoul")
@@ -57,55 +59,34 @@ def _assert_todo_range_within_employment(
 		)
 
 
-# --- 헬퍼 함수: 카테고리 + 날짜 기간에 따른 연차 차감 일수 계산 ---
-def get_deduct_days(db: Session, category_key: Any, start_date=None, end_date=None) -> float:
-	"""카테고리 키와 날짜 기간에 따라 차감할 연차 일수를 정확히 계산합니다."""
-	if category_key is None:
-		return 0.0
-	key = str(category_key).strip()
-	if key not in VACATION_DEDUCTIBLE_CATEGORIES:
-		return 0.0
+def _get_user_for_vacation(db: Session, user_id: str) -> User:
+	user = db.query(User).filter(User.user_login_id == user_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+	return user
 
-	# 날짜가 명확하지 않을 때의 기본값
-	if not start_date or not end_date:
-		return 0.5 if key in VACATION_HALF_DAY_CATEGORIES else 1.0
 
-	# 문자열로 들어올 경우를 대비한 방어 코드 (ISO 포맷 파싱)
-	if isinstance(start_date, str):
-		start_date = datetime.fromisoformat(start_date.replace("Z", ""))
-	if isinstance(end_date, str):
-		end_date = datetime.fromisoformat(end_date.replace("Z", ""))
-
-	# 날짜 차이 계산 (예: 1일~3일 이면 3일 차감)
-	days = (end_date.date() - start_date.date()).days + 1
-	if days < 1: 
-		days = 1
-
-	if key == VACATION_CATEGORIES["FULL"]:
-		start_day = start_date.date()
-		end_day = end_date.date()
-
-		holiday_dates = {
-			row[0]
-			for row in db.query(Holiday.holiday_date).filter(
-				Holiday.holiday_date >= start_day,
-				Holiday.holiday_date <= end_day,
-			).all()
-		}
-
-		deductible_days = 0
-		current = start_day
-		while current <= end_day:
-			is_weekend = current.weekday() >= 5
-			is_holiday = current in holiday_dates
-			if (not is_weekend) and (not is_holiday):
-				deductible_days += 1
-			current += timedelta(days=1)
-
-		return float(max(deductible_days, 0))
-	else:
-		# 반차는 기간이 늘어나도 0.5일 고정 (프론트에서도 막지만 백엔드 이중 방어)
-		return 0.5
+def _assert_vacation_balance(
+	db: Session,
+	user: User,
+	*,
+	extra_item: VacationUsageItem | None = None,
+	exclude_todo_id: int | None = None,
+) -> None:
+	if extra_item is None or extra_item.category not in VACATION_DEDUCTIBLE_CATEGORIES:
+		return
+	snapshot = calculate_user_vacation_snapshot(
+		db,
+		user,
+		extra_items=[extra_item],
+		exclude_todo_id=exclude_todo_id,
+	)
+	if snapshot["used_days"] > snapshot["total_days"]:
+		needed = snapshot["used_days"] - snapshot["total_days"]
+		raise HTTPException(
+			status_code=400,
+			detail=f"잔여 연차가 부족합니다. (초과: {needed:g}일, 총 연차: {snapshot['total_days']:g}일)",
+		)
 
 # 모든 목록 조회 (캘린더)
 # - 관리자: 전체 일정
@@ -117,25 +98,20 @@ def get_todos(db: Session, skip: int = 0, limit: int = 100):
 def create_todo(db: Session, todo: TodoCreate, user_id: str):
 	end_for_range = todo.end_date if todo.end_date is not None else todo.start_date
 	_assert_todo_range_within_employment(db, user_id, todo.start_date, end_for_range)
-	# 🌟 수정됨: 기간을 계산하여 연차 차감
-	deduct_days = get_deduct_days(db, todo.category, todo.start_date, todo.end_date)
-	
-	if deduct_days > 0:
-		vacation = db.query(UserVacation).filter(UserVacation.user_id == user_id).first()
-		if not vacation:
-			raise HTTPException(status_code=400, detail="연차 정산 데이터가 없습니다. 관리자에게 문의하세요.")
-		
-		if vacation.remaining_days < deduct_days:
-			raise HTTPException(status_code=400, detail=f"잔여 연차가 부족합니다. (필요: {deduct_days}일, 현재: {vacation.remaining_days}일)")
-			
-		vacation.used_days += deduct_days
-		vacation.remaining_days -= deduct_days
+	user = _get_user_for_vacation(db, user_id)
+	_assert_vacation_balance(
+		db,
+		user,
+		extra_item=VacationUsageItem(todo.category, todo.start_date, todo.end_date),
+	)
 
 	todo_data = todo.model_dump(exclude={"user_id"}) 
 	db_todo = Todo(**todo_data, user_id=user_id)
 	
 	try:
 		db.add(db_todo)
+		db.flush()
+		sync_user_vacation(db, user)
 		db.commit()
 		db.refresh(db_todo)
 		return db_todo
@@ -147,13 +123,10 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	db_todo = db.query(Todo).filter(Todo.id == todo_id, Todo.user_id == user_id).first()
 	if not db_todo:
 		return None
-		
-	old_category = db_todo.category
-	new_category = todo_update.category if todo_update.category is not None else old_category
 
-	# 🌟 핵심 수정: 기존 차감일수와 변경될 차감일수를 각각 계산
-	old_deduct = get_deduct_days(db, old_category, db_todo.start_date, db_todo.end_date)
-	
+	user = _get_user_for_vacation(db, user_id)
+	new_category = todo_update.category if todo_update.category is not None else db_todo.category
+
 	# 수정 요청에 날짜가 없으면 기존 날짜 사용 (ORM 컬럼은 Pyright에 Column[datetime]으로 잡혀 cast)
 	new_start: datetime = (
 		todo_update.start_date
@@ -167,32 +140,12 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	)
 	end_for_range: datetime = new_end if new_end is not None else new_start
 	_assert_todo_range_within_employment(db, user_id, new_start, end_for_range)
-	new_deduct = get_deduct_days(db, new_category, new_start, new_end)
-
-	# 카테고리가 바뀌었거나, '일수' 자체가 달라졌을 때 재정산 실행!
-	if old_category != new_category or old_deduct != new_deduct:
-		vacation = db.query(UserVacation).filter(UserVacation.user_id == user_id).first()
-		if not vacation:
-			raise HTTPException(status_code=400, detail="연차 정산 데이터가 없습니다.")
-		
-		# (A) 기존에 차감됐던 분량 원상복구 (환불)
-		if old_deduct > 0:
-			vacation.used_days -= old_deduct
-			vacation.remaining_days += old_deduct
-			
-		# (B) 새로운 일수 기준으로 재차감
-		if new_deduct > 0:
-			if vacation.remaining_days < new_deduct:
-				# 잔여 연차 부족 시 롤백 (원상복구했던 거 다시 되돌림)
-				vacation.used_days += old_deduct
-				vacation.remaining_days -= old_deduct
-				raise HTTPException(status_code=400, detail=f"잔여 연차가 부족하여 연장할 수 없습니다. (필요: {new_deduct}일)")
-			
-			vacation.used_days += new_deduct
-			vacation.remaining_days -= new_deduct
-
-		if vacation.used_days < 0: vacation.used_days = 0.0
-		vacation.remaining_days = vacation.total_days - vacation.used_days
+	_assert_vacation_balance(
+		db,
+		user,
+		extra_item=VacationUsageItem(cast(str | None, new_category), new_start, new_end),
+		exclude_todo_id=todo_id,
+	)
 		
 	# 실제 DB 필드 업데이트
 	update_data = todo_update.model_dump(exclude_unset=True)
@@ -200,6 +153,8 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 		setattr(db_todo, key, value)
 		
 	try:
+		db.flush()
+		sync_user_vacation(db, user)
 		db.commit()
 		db.refresh(db_todo)
 		return db_todo
@@ -212,17 +167,11 @@ def delete_todo(db: Session, todo_id: int, user_id: str):
 	if not db_todo:
 		return None
 
-	# 🌟 수정됨: 삭제 시에도 정확한 기간을 계산하여 전액 환불
-	refund_days = get_deduct_days(db, db_todo.category, db_todo.start_date, db_todo.end_date)
-	
-	if refund_days > 0:
-		vacation = db.query(UserVacation).filter(UserVacation.user_id == user_id).first()
-		if vacation:
-			vacation.used_days -= refund_days
-			vacation.remaining_days += refund_days
-			if vacation.used_days < 0: vacation.used_days = 0.0
+	user = _get_user_for_vacation(db, user_id)
 
 	db.delete(db_todo)
+	db.flush()
+	sync_user_vacation(db, user)
 	db.commit()
 	return db_todo
 
