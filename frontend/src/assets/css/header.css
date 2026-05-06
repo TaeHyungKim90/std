@@ -22,6 +22,16 @@
 .gnb-left, .gnb-right {
 	display: flex;
 	align-items: center;
+	min-width: 0;
+}
+
+.gnb-left {
+	flex: 1 1 auto;
+	overflow: hidden;
+}
+
+.gnb-right {
+	flex: 0 0 auto;
 }
 
 /* 기존 로고 스타일 보존 */
@@ -31,6 +41,7 @@
 	gap: 10px;
 	cursor: pointer;
 	margin-right: 48px;
+	flex-shrink: 0;
 }
 
 .bq-logo-img {
@@ -46,6 +57,8 @@
 	font-size: 1.25rem;
 	font-weight: 800;
 	letter-spacing: -0.5px;
+	white-space: nowrap;
+	word-break: keep-all;
 }
 
 .bq-logo-main {
@@ -61,6 +74,14 @@
 	display: flex;
 	gap: 32px;
 	height: 64px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+.gnb-nav::-webkit-scrollbar {
+	display: none;
 }
 
 .gnb-item {
@@ -72,6 +93,9 @@
 	align-items: center;
 	position: relative;
 	transition: color 0.2s;
+	flex: 0 0 auto;
+	white-space: nowrap;
+	word-break: keep-all;
 }
 
 .gnb-item:hover { color: var(--font-color, #141414); }
@@ -122,6 +146,9 @@
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s;
+	white-space: nowrap;
+	word-break: keep-all;
+	writing-mode: horizontal-tb;
 }
 
 .bq-btn-logout:hover {
@@ -132,6 +159,296 @@
 .bq-btn-logout:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
+}
+
+.bq-mobile-menu-trigger {
+	display: none;
+	border: 0;
+	background: transparent;
+	width: 36px;
+	height: 36px;
+	padding: 8px 6px;
+	border-radius: 10px;
+	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.bq-mobile-menu-trigger span {
+	display: block;
+	width: 18px;
+	height: 2px;
+	border-radius: 999px;
+	background: var(--font-color, #141414);
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.bq-mobile-menu-trigger.is-open span:nth-child(1) {
+	transform: translateY(6px) rotate(45deg);
+}
+
+.bq-mobile-menu-trigger.is-open span:nth-child(2) {
+	opacity: 0;
+}
+
+.bq-mobile-menu-trigger.is-open span:nth-child(3) {
+	transform: translateY(-6px) rotate(-45deg);
+}
+
+.bq-mobile-drawer-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgb(20 20 20 / 0.3);
+	backdrop-filter: blur(2px);
+	-webkit-backdrop-filter: blur(2px);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.25s ease;
+	z-index: 1200;
+}
+
+.bq-mobile-drawer-overlay.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.bq-mobile-drawer {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: min(86vw, 320px);
+	height: 100%;
+	background: #fff;
+	box-shadow: -10px 0 30px rgb(0 0 0 / 0.12);
+	padding: 20px 16px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	transform: translateX(100%);
+	transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.bq-mobile-drawer.is-open {
+	transform: translateX(0);
+}
+
+.bq-mobile-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--border-color, #e2dfd8);
+}
+
+.bq-mobile-drawer-user {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.bq-mobile-drawer-user-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	color: var(--font-color, #141414);
+	min-width: 0;
+}
+
+.bq-mobile-drawer-user-text > span {
+	font-size: 0.95rem;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bq-mobile-drawer-user-text > small {
+	font-size: 0.76rem;
+	color: var(--bq-text-dim, #8a8a8a);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bq-mobile-drawer-close {
+	border: 1px solid var(--border-color, #e2dfd8);
+	background: #fff;
+	color: var(--bq-text-dim, #8a8a8a);
+	padding: 5px 10px;
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.bq-mobile-drawer-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.bq-mobile-drawer-item {
+	text-decoration: none;
+	color: var(--font-color, #141414);
+	background: #f7f6f3;
+	border: 1px solid transparent;
+	border-radius: 12px;
+	padding: 12px 14px;
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+
+.bq-mobile-drawer-item.active {
+	background: rgb(var(--primary-rgb) / 0.12);
+	color: var(--primary-color);
+	border-color: rgb(var(--primary-rgb) / 0.3);
+}
+
+.bq-mobile-quick-actions {
+	margin-top: 8px;
+	padding-top: 14px;
+	border-top: 1px solid var(--border-color, #e2dfd8);
+}
+
+.bq-mobile-quick-actions-title {
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 8px;
+}
+
+.bq-mobile-quick-actions-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.bq-mobile-quick-action-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	gap: 4px;
+	text-decoration: none;
+	padding: 10px 8px;
+	border-radius: 10px;
+	background: #f3f2ee;
+	color: var(--font-color, #141414);
+	font-size: 0.82rem;
+	font-weight: 700;
+	border: 1px solid transparent;
+	white-space: nowrap;
+	word-break: keep-all;
+}
+
+.bq-mobile-quick-action-icon {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.bq-mobile-quick-action-btn:hover {
+	background: rgb(var(--primary-rgb) / 0.12);
+	border-color: rgb(var(--primary-rgb) / 0.25);
+}
+
+.bq-mobile-drawer-logout {
+	margin-top: auto;
+	background: #fff;
+	border: 1px solid var(--border-color, #e2dfd8);
+	border-radius: 12px;
+	padding: 12px 14px;
+	color: var(--bq-text-dim, #8a8a8a);
+	font-size: 0.95rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.bq-mobile-drawer-logout:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+	.modern-gnb {
+		height: 56px;
+		padding: 0 0.875rem;
+		gap: 10px;
+	}
+
+	.bq-logo {
+		margin-right: 12px;
+		gap: 8px;
+	}
+
+	.bq-logo-img {
+		width: 24px;
+		height: 24px;
+	}
+
+	.bq-logo-text-group {
+		font-size: 1.05rem;
+	}
+
+	.gnb-nav {
+		gap: 18px;
+		height: 56px;
+	}
+
+	.gnb-item {
+		font-size: 0.95rem;
+	}
+
+	.bq-user-info {
+		margin-right: 10px;
+	}
+
+	.user-name-text {
+		display: none;
+	}
+
+	.bq-btn-logout {
+		padding: 5px 10px;
+		font-size: 0.8rem;
+	}
+
+	.bq-mobile-menu-trigger {
+		display: inline-flex;
+	}
+
+	.gnb-nav {
+		display: none;
+	}
+}
+
+@media (max-width: 640px) {
+	.modern-gnb {
+		padding: 0 0.75rem;
+	}
+
+	.bq-logo-text-group {
+		font-size: 0.95rem;
+	}
+
+	.gnb-nav {
+		gap: 14px;
+	}
+
+	.gnb-item {
+		font-size: 0.9rem;
+	}
+
+	.bq-btn-logout {
+		display: none;
+	}
+
+	.bq-user-info {
+		margin-right: 8px;
+	}
 }
 
 /* 2층 LNB (서브 헤더) */
