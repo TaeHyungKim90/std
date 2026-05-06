@@ -7,13 +7,25 @@ import SunEditor from 'suneditor-react';
 import { getEmploymentRangeError, toSeoulYmd } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
+
+const COLOR_PRESETS = ['#3FAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'];
+
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const { joinDate, resignationDate } = useAuth();
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');
 	const [description, setDescription] = useState(''); // 에디터 내용을 관리할 새로운 State
+	const [isCompactEditor, setIsCompactEditor] = useState(false);
 
 	const isHalfVacation = category === 'vacation_am' || category === 'vacation_pm';
+
+	useEffect(() => {
+		const media = window.matchMedia('(max-width: 640px)');
+		const syncCompactEditor = () => setIsCompactEditor(media.matches);
+		syncCompactEditor();
+		media.addEventListener('change', syncCompactEditor);
+		return () => media.removeEventListener('change', syncCompactEditor);
+	}, []);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -133,19 +145,44 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 							<option value="">카테고리 불러오는 중...</option>
 						)}
 					</select>
+					<div className="todo-edit__color-picker" aria-label="일정 색상 선택">
+						<span className="todo-edit__color-picker-label">색상</span>
+						<div className="todo-edit__color-options">
+							{COLOR_PRESETS.map((color) => (
+								<button
+									type="button"
+									key={color}
+									className={`todo-edit__color-dot${selectedColor === color ? ' todo-edit__color-dot--selected' : ''}`}
+									style={{ backgroundColor: color }}
+									aria-label={`${color} 색상 선택`}
+									onClick={() => setSelectedColor(color)}
+								/>
+							))}
+							<label className="todo-edit__native-color-label">
+								직접
+								<input
+									type="color"
+									value={selectedColor}
+									onChange={(e) => setSelectedColor(e.target.value)}
+									className="todo-edit__native-color"
+									aria-label="직접 색상 선택"
+								/>
+							</label>
+						</div>
+					</div>
 					<input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
 
 					<div className="todo-edit__editor-shell">
 						<SunEditor
 							setContents={description}
 							onChange={setDescription}
-							height="250px"
+							height={isCompactEditor ? '150px' : '250px'}
 							setOptions={{
 								buttonList: [
-									['undo', 'redo'],
-									['font', 'fontSize', 'formatBlock'],
-									['bold', 'underline', 'italic', 'strike', 'fontColor', 'hiliteColor'],
-									['align', 'list', 'table', 'link']
+									...(isCompactEditor ? [] : [['undo', 'redo']]),
+									...(isCompactEditor ? [] : [['font', 'fontSize', 'formatBlock']]),
+									['bold', 'underline', 'italic', 'fontColor'],
+									['list', 'link']
 								]
 							}}
 						/>

@@ -16,3 +16,149 @@
 	margin-bottom: 15px;
 	text-align: left;
 }
+
+.todo-edit__color-picker {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 12px 0;
+	padding: 10px 12px;
+	border: 1px solid rgba(20, 20, 20, 0.08);
+	border-radius: 12px;
+	background: rgba(240, 238, 233, 0.55);
+}
+
+.todo-edit__color-picker-label {
+	flex: 0 0 auto;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--bq-text-main, #141414);
+}
+
+.todo-edit__color-options {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.todo-edit__color-dot {
+	width: 28px;
+	height: 28px;
+	border: 2px solid transparent;
+	border-radius: 999px;
+	cursor: pointer;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+	transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.todo-edit__color-dot:hover {
+	transform: translateY(-1px);
+}
+
+.todo-edit__color-dot--selected {
+	border-color: var(--bq-text-main, #141414);
+	outline: 2px solid #fff;
+}
+
+.todo-edit__native-color-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+}
+
+.todo-edit__native-color {
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	cursor: pointer;
+}
+
+@media (max-width: 640px) {
+	.todo-edit-modal__content {
+		width: min(94vw, 360px);
+		padding: 24px 20px 18px;
+		max-height: 92vh;
+		overflow-y: auto;
+	}
+
+	.todo-edit__color-bar {
+		margin-top: -18px;
+		margin-bottom: 12px;
+	}
+
+	.todo-edit-modal__content h2 {
+		margin-bottom: 18px;
+		font-size: 1.35rem;
+	}
+
+	.todo-edit-modal__content .date-group {
+		gap: 10px;
+	}
+
+	.todo-edit-modal__content .bq-input,
+	.todo-edit-modal__content .bq-select,
+	.todo-edit-modal__content .bq-input-title {
+		min-height: 48px;
+		font-size: 0.95rem;
+	}
+
+	.todo-edit__color-picker {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 8px;
+		margin: 10px 0;
+		padding: 10px;
+	}
+
+	.todo-edit__color-options {
+		gap: 7px;
+	}
+
+	.todo-edit__color-dot {
+		width: 26px;
+		height: 26px;
+	}
+
+	.todo-edit__editor-shell {
+		margin-top: 12px;
+		margin-bottom: 14px;
+	}
+
+	.todo-edit__editor-shell .sun-editor {
+		border-color: #ddd;
+	}
+
+	.todo-edit__editor-shell .sun-editor .se-toolbar {
+		padding: 4px;
+	}
+
+	.todo-edit__editor-shell .sun-editor .se-btn-tray {
+		gap: 3px;
+	}
+
+	.todo-edit__editor-shell .sun-editor .se-btn-module {
+		margin: 0 2px 2px 0;
+	}
+
+	.todo-edit__editor-shell .sun-editor .se-btn {
+		width: 30px;
+		height: 30px;
+		min-width: 30px;
+	}
+
+	.todo-edit__editor-shell .sun-editor .se-wrapper {
+		min-height: 150px;
+	}
+
+	.todo-edit-modal__content .form-actions {
+		gap: 10px;
+		margin-top: 12px;
+	}
+}

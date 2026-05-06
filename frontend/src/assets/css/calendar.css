@@ -230,4 +230,51 @@
 	.fc-view-harness {
 		min-height: 500px !important; 
 	}
+
+	/* 공휴일명이 긴 경우 모바일 셀 폭을 밀지 않도록 축약 배지로 표시 */
+	.fc {
+		padding: 10px;
+	}
+
+	.fc .fc-daygrid-day-top {
+		min-width: 0;
+	}
+
+	.fc .fc-day-cell-custom {
+		gap: 2px;
+		padding: 1px 2px;
+		min-height: 1.15em;
+		line-height: 1.15;
+		overflow: hidden;
+	}
+
+	.fc .fc-day-cell-custom--holiday {
+		justify-content: flex-end;
+	}
+
+	.fc .fc-holiday-label {
+		flex: 0 0 auto;
+		max-width: 2.1rem;
+		padding: 1px 3px;
+		border-radius: 999px;
+		background: rgba(255, 75, 75, 0.1);
+		border: 1px solid rgba(255, 75, 75, 0.22);
+		font-size: 0;
+		line-height: 1.1;
+		text-align: center;
+		letter-spacing: -0.04em;
+		color: #ff4b4b;
+	}
+
+	.fc .fc-holiday-label::before {
+		content: '휴';
+		font-size: 0.58rem;
+	}
+
+	.fc .fc-day-number-text {
+		flex: 0 0 auto;
+		min-width: 1.45em;
+		text-align: right;
+		font-size: 0.78rem;
+	}
 }

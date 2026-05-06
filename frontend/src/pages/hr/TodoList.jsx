@@ -326,7 +326,7 @@ const TodoListView = () => {
 						return (
 							<div className={`fc-day-cell-custom${isHoliday ? ' fc-day-cell-custom--holiday' : ''}`}>
 								{isHoliday && (
-									<span className="fc-holiday-label" title={holiday.holiday_name}>
+									<span className="fc-holiday-label" title={holiday.holiday_name} aria-label={holiday.holiday_name}>
 										{holiday.holiday_name}
 									</span>
 								)}
