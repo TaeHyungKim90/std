@@ -21,6 +21,7 @@ from db.session import get_db
 from models.auth_models import User, UserAvatarSetting
 from models.system_models import Department, Position
 from schemas import auth_schemas
+from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
 router = APIRouter()
@@ -371,6 +372,7 @@ def patch_my_profile(
 
 	if "join_date" in data:
 		u.join_date = data["join_date"]
+		sync_user_vacation(db, u)
 
 	if "department_id" in data:
 		if data["department_id"] is None:
@@ -404,9 +406,13 @@ def patch_my_profile(
 			u.salary_account_number = s if s else None
 
 	db.commit()
-	db.refresh(u)
-	# joinedload(vacation)은 refresh 후에도 세션에 남아 있음
-	return auth_schemas.UserResponse.model_validate(u)
+	updated_user = (
+		db.query(User)
+		.options(joinedload(User.vacation), joinedload(User.avatar_setting), joinedload(User.department), joinedload(User.position))
+		.filter(User.id == user_pk)
+		.first()
+	)
+	return auth_schemas.UserResponse.model_validate(updated_user or u)
 
 
 # ==========================================

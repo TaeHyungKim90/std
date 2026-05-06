@@ -42,6 +42,94 @@ def _resolve_department_position(db: Session, payload) -> tuple[int | None, int 
 
 	return department_id, position_id
 
+
+def _calculate_total_vacation(join_date: date, today: date) -> int:
+	months_diff = (today.year - join_date.year) * 12 + today.month - join_date.month
+	if today.day < join_date.day:
+		months_diff -= 1
+	months_diff = max(months_diff, 0)
+	years_worked = months_diff // 12
+	if years_worked == 0:
+		return months_diff
+	bonus_days = (years_worked - 1) // 2
+	return min(15 + bonus_days, 25)
+
+
+def _get_holiday_dates(db: Session, todos: list[Todo]) -> set[date]:
+	global_start: date | None = None
+	global_end: date | None = None
+	for todo in todos:
+		start_day = todo.start_date.date()
+		end_day = (todo.end_date or todo.start_date).date()
+		if end_day < start_day:
+			start_day, end_day = end_day, start_day
+		if global_start is None or start_day < global_start:
+			global_start = start_day
+		if global_end is None or end_day > global_end:
+			global_end = end_day
+
+	if global_start is None or global_end is None:
+		return set()
+	return {
+		row[0]
+		for row in db.query(Holiday.holiday_date).filter(
+			Holiday.holiday_date >= global_start,
+			Holiday.holiday_date <= global_end,
+		).all()
+	}
+
+
+def _calculate_used_vacation_days(todos: list[Todo], holiday_dates: set[date]) -> float:
+	recalculated_used_days = 0.0
+	for todo in todos:
+		if todo.category not in VACATION_DEDUCTIBLE_CATEGORIES:
+			continue
+		if todo.category == "vacation_full":
+			start_day = todo.start_date.date()
+			end_day = (todo.end_date or todo.start_date).date()
+			if end_day < start_day:
+				start_day, end_day = end_day, start_day
+			current = start_day
+			while current <= end_day:
+				if current.weekday() < 5 and current not in holiday_dates:
+					recalculated_used_days += 1.0
+				current += timedelta(days=1)
+		else:
+			recalculated_used_days += 0.5
+	return recalculated_used_days
+
+
+def sync_user_vacation(db: Session, user: User, today: date | None = None) -> UserVacation | None:
+	"""사용자 1명의 입사일과 휴가 일정 기준으로 연차를 재정산합니다."""
+	if user.join_date is None or user.resignation_date is not None:
+		vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
+		if vacation_record and user.join_date is None:
+			vacation_record.total_days = 0
+			vacation_record.remaining_days = 0.0
+			return vacation_record
+		return None
+
+	today = today or date.today()
+	vacation_todos = (
+		db.query(Todo)
+		.filter(Todo.user_id == user.user_login_id)
+		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
+		.all()
+	)
+	holiday_dates = _get_holiday_dates(db, vacation_todos)
+	total_vacation = _calculate_total_vacation(cast(date, user.join_date), today)
+	used_days = _calculate_used_vacation_days(vacation_todos, holiday_dates)
+
+	vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
+	if not vacation_record:
+		vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
+		db.add(vacation_record)
+
+	vacation_record.total_days = total_vacation
+	vacation_record.used_days = used_days
+	vacation_record.remaining_days = max(total_vacation - used_days, 0.0)
+	return vacation_record
+
 # 2. 신규 사용자 등록 (관리자용)
 def create_user_by_admin(db: Session, payload: UserCreate):
 	existing_user = db.query(User).filter(User.user_login_id == payload.user_login_id).first()
@@ -67,6 +155,10 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 	db.add(new_user)
 	db.commit()
 	db.refresh(new_user)
+	if payload.joined_at is not None:
+		sync_user_vacation(db, new_user)
+		db.commit()
+		db.refresh(new_user)
 	if payload.avatar_zoom is not None or payload.avatar_offset_x is not None or payload.avatar_offset_y is not None:
 		setting = UserAvatarSetting(
 			user_id=new_user.id,
@@ -131,9 +223,22 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 		if avatar_offset_y is not None:
 			setting.offset_y = avatar_offset_y
 
+	if "join_date" in update_data or "joined_at" in payload.model_fields_set:
+		sync_user_vacation(db, user)
+
 	db.commit()
-	db.refresh(user)
-	return user
+	updated_user = (
+		db.query(User)
+		.options(
+			joinedload(User.vacation),
+			joinedload(User.avatar_setting),
+			joinedload(User.department),
+			joinedload(User.position),
+		)
+		.filter(User.id == user_id)
+		.first()
+	)
+	return updated_user or user
 
 def delete_user_by_admin(db: Session, user_id: int):
 	# 1. 대상 사용자 조회
@@ -190,23 +295,7 @@ def sync_all_users_vacation(db: Session):
 	for user in users:
 		join_date = user.join_date
 		
-		# 1. 근속 개월 수 및 연수 계산 (순수 파이썬 로직)
-		months_diff = (today.year - join_date.year) * 12 + today.month - join_date.month
-		if today.day < join_date.day:
-			months_diff -= 1
-		months_diff = max(months_diff, 0)
-			
-		years_worked = months_diff // 12
-		
-		# 2. 총 연차 계산 (근로기준법)
-		total_vacation = 0
-		if years_worked == 0:
-			# 1년 미만: 1개월 만근마다 1일
-			total_vacation = months_diff
-		else:
-			# 1년 이상: 기본 15일 + (근속연수-1)//2 만큼 가산 (최대 25일)
-			bonus_days = (years_worked - 1) // 2
-			total_vacation = min(15 + bonus_days, 25)
+		total_vacation = _calculate_total_vacation(cast(date, join_date), today)
 			
 		# 3. DB 테이블 업데이트 (없으면 생성, 있으면 수정)
 		vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
@@ -215,25 +304,10 @@ def sync_all_users_vacation(db: Session):
 			vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
 			db.add(vacation_record)
 
-		# 4. 사용 연차 재집계
-		# - 연차(종일): 주말/공휴일 제외
-		# - 반차: 0.5 고정
-		recalculated_used_days = 0.0
-		for todo in todos_by_user.get(cast(str, user.user_login_id), []):
-			if todo.category not in VACATION_DEDUCTIBLE_CATEGORIES:
-				continue
-			if todo.category == "vacation_full":
-				start_day = todo.start_date.date()
-				end_day = (todo.end_date or todo.start_date).date()
-				if end_day < start_day:
-					start_day, end_day = end_day, start_day
-				current = start_day
-				while current <= end_day:
-					if current.weekday() < 5 and current not in holiday_dates:
-						recalculated_used_days += 1.0
-					current += timedelta(days=1)
-			else:
-				recalculated_used_days += 0.5
+		recalculated_used_days = _calculate_used_vacation_days(
+			todos_by_user.get(cast(str, user.user_login_id), []),
+			holiday_dates,
+		)
 			
 		vacation_record.total_days = total_vacation
 		vacation_record.used_days = recalculated_used_days

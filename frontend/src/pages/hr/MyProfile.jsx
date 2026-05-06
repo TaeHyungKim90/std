@@ -3,6 +3,7 @@ import 'assets/css/my-profile-extra.css';
 
 import { authApi } from 'api/authApi';
 import { commonApi } from 'api/commonApi';
+import { todoService } from 'api/todoApi';
 import AppModal from 'components/common/AppModal';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
@@ -27,6 +28,19 @@ function isSocialLoginId(loginId) {
 	return loginId.startsWith('kakao_') || loginId.startsWith('naver_');
 }
 
+const VACATION_USAGE_CATEGORIES = {
+	vacation_full: { label: '연차', amountLabel: '종일' },
+	vacation_am: { label: '오전반차', amountLabel: '0.5일' },
+	vacation_pm: { label: '오후반차', amountLabel: '0.5일' },
+};
+
+function formatDateRange(startDate, endDate) {
+	const start = formatYmd(startDate);
+	const end = formatYmd(endDate || startDate);
+	if (start === end || end === '—') return start;
+	return `${start} ~ ${end}`;
+}
+
 const MyProfile = () => {
 	const { checkAuth } = useAuth();
 	const [loading, setLoading] = useState(true);
@@ -46,6 +60,8 @@ const MyProfile = () => {
 	const [cropModalOpen, setCropModalOpen] = useState(false);
 	const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
 	const [vacationDetailOpen, setVacationDetailOpen] = useState(false);
+	const [vacationUsageLoading, setVacationUsageLoading] = useState(false);
+	const [vacationUsages, setVacationUsages] = useState([]);
 	/** 동일 /uploads 경로일 때 브라우저가 옛 이미지를 캐시하는 문제 방지 */
 	const [avatarImgCacheKey, setAvatarImgCacheKey] = useState(0);
 
@@ -105,7 +121,31 @@ const MyProfile = () => {
 		return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24))) + 1;
 	}, [joinDate]);
 
-	const openVacationDetail = () => setVacationDetailOpen(true);
+	const loadVacationUsages = useCallback(async () => {
+		if (!profile?.user_login_id) {
+			setVacationUsages([]);
+			return;
+		}
+		setVacationUsageLoading(true);
+		try {
+			const res = await todoService.getTodos(0, 500);
+			const usageRows = (Array.isArray(res.data) ? res.data : [])
+				.filter((todo) => todo.user_id === profile.user_login_id)
+				.filter((todo) => Object.prototype.hasOwnProperty.call(VACATION_USAGE_CATEGORIES, todo.category))
+				.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+			setVacationUsages(usageRows);
+		} catch (err) {
+			Notify.toastApiFailure(err, '연차 사용 내역을 불러오지 못했습니다.');
+			setVacationUsages([]);
+		} finally {
+			setVacationUsageLoading(false);
+		}
+	}, [profile?.user_login_id]);
+
+	const openVacationDetail = () => {
+		setVacationDetailOpen(true);
+		loadVacationUsages();
+	};
 	const closeVacationDetail = () => setVacationDetailOpen(false);
 
 	const openPasswordChange = () => setPasswordChangeOpen(true);
@@ -515,6 +555,36 @@ const MyProfile = () => {
 						<div className="vacation-progress__labels">
 							<span>사용 {usedDays}일</span>
 							<span>잔여 {remainingDays}일</span>
+						</div>
+						<div className="my-profile-vacation-usage">
+							<h3 className="my-profile-vacation-usage__title">연차 사용 내역</h3>
+							{vacationUsageLoading ? (
+								<p className="my-profile-empty">사용 내역을 불러오는 중입니다...</p>
+							) : vacationUsages.length > 0 ? (
+								<ul className="my-profile-vacation-usage__list">
+									{vacationUsages.map((todo) => {
+										const meta = VACATION_USAGE_CATEGORIES[todo.category] || { label: '휴가', amountLabel: '-' };
+										return (
+											<li className="my-profile-vacation-usage__item" key={todo.id}>
+												<div className="my-profile-vacation-usage__main">
+													<span className="my-profile-vacation-usage__date">
+														{formatDateRange(todo.start_date, todo.end_date)}
+													</span>
+													<strong className="my-profile-vacation-usage__title-text">
+														{todo.title || meta.label}
+													</strong>
+												</div>
+												<div className="my-profile-vacation-usage__meta">
+													<span>{meta.label}</span>
+													<span>{meta.amountLabel}</span>
+												</div>
+											</li>
+										);
+									})}
+								</ul>
+							) : (
+								<p className="my-profile-empty">연차 사용 내역이 없습니다.</p>
+							)}
 						</div>
 					</>
 				) : (
