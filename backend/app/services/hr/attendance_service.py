@@ -15,6 +15,7 @@ from core.config import settings
 from models.hr_models import Attendance, Todo
 from models.auth_models import User
 from models.holiday_models import Holiday
+from models.system_models import WorkLocation
 
 
 def is_vacation_status(status_str: Any) -> bool:
@@ -44,6 +45,15 @@ def _vacation_todos_for_day(db: Session, user_id: str, target_date: date) -> lis
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
+		.all()
+	)
+
+
+def get_active_work_locations(db: Session) -> list[WorkLocation]:
+	return (
+		db.query(WorkLocation)
+		.filter(WorkLocation.is_active.is_(True))
+		.order_by(WorkLocation.created_at.desc(), WorkLocation.id.desc())
 		.all()
 	)
 

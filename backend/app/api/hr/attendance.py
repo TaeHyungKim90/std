@@ -10,6 +10,7 @@ from db.session import get_db
 from services.auth_service import get_current_user
 from services.hr import attendance_service as service
 from schemas.hr import attendance_schemas
+from schemas.system_schemas import WorkLocationResponse
 
 router = APIRouter()
 
@@ -50,6 +51,16 @@ def read_clock_context(
 	d = work_date or datetime.now().date()
 	ctx = service.get_clock_context(db, user_id, d)
 	return attendance_schemas.AttendanceClockContextResponse.model_validate(ctx)
+
+
+@router.get("/work-locations", response_model=list[WorkLocationResponse])
+def read_active_work_locations(
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 출퇴근 선택용 활성 근무장소 목록을 조회합니다."""
+	_require_user_id(current_user)
+	return service.get_active_work_locations(db)
 
 
 @router.post("/clock-in", response_model=attendance_schemas.AttendanceResponse)

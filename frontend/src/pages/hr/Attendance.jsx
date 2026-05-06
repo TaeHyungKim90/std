@@ -11,16 +11,10 @@ const AttendanceView = () => {
 	const [todayRecord, setTodayRecord] = useState(null);
 	const [clockCtx, setClockCtx] = useState(null);
 	const [currentTime, setCurrentTime] = useState(new Date());
-	const [locationName, setLocationName] = useState('본사');
+	const [locationName, setLocationName] = useState('');
+	const [locationOptions, setLocationOptions] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const lastActionAtRef = useRef(0);
-
-	const LOCATION_OPTIONS = [
-		{ label: '🏢 본사', value: '본사' },
-		{ label: '🏠 재택', value: '재택' },
-		{ label: '💼 출장', value: '출장' },
-		{ label: '🚗 외근', value: '외근' },
-	];
 
 	useEffect(() => {
 		fetchTodayStatus();
@@ -33,14 +27,36 @@ const AttendanceView = () => {
 	const fetchTodayStatus = async () => {
 		setLoading(true);
 		try {
-			const [attRes, ctxRes] = await Promise.all([
+			const workLocationReq = attendanceApi.getWorkLocations().catch((err) => {
+				console.error('근무장소 목록 로드 실패', err);
+				Notify.toastApiFailure(err, '근무장소 목록을 불러오지 못했습니다.');
+				return null;
+			});
+			const [attRes, ctxRes, workLocationRes] = await Promise.all([
 				attendanceApi.getTodayAttendance(),
 				attendanceApi.getClockContext(),
+				workLocationReq,
 			]);
 			setTodayRecord(attRes.data);
 			setClockCtx(ctxRes.data);
-			if (attRes.data?.clock_in_location) {
-				setLocationName(attRes.data.clock_in_location);
+			const activeLocations = Array.isArray(workLocationRes?.data)
+				? workLocationRes.data.filter((row) => row?.is_active !== false && row?.location_value)
+				: [];
+			const savedLocation = attRes.data?.clock_in_location || '';
+			const nextOptions = activeLocations.map((row) => ({
+				label: row.location_value,
+				value: row.location_value,
+			}));
+			if (savedLocation && !nextOptions.some((opt) => opt.value === savedLocation)) {
+				nextOptions.unshift({ label: savedLocation, value: savedLocation });
+			}
+			setLocationOptions(nextOptions);
+			if (savedLocation) {
+				setLocationName(savedLocation);
+			} else if (nextOptions.length > 0) {
+				setLocationName((prev) => (nextOptions.some((opt) => opt.value === prev) ? prev : nextOptions[0].value));
+			} else {
+				setLocationName('');
 			}
 		} catch (err) {
 			console.error('출퇴근 기록 로드 실패', err);
@@ -61,6 +77,10 @@ const AttendanceView = () => {
 
 	const handleClockIn = async () => {
 		if (!guardDebounce()) return;
+		if (!locationName) {
+			Notify.toastWarn('등록된 근무장소가 없습니다. 시스템 관리에서 근무장소를 먼저 등록해 주세요.');
+			return;
+		}
 
 		let confirmFullDayVacation = false;
 		let confirmOfficialLeave = false;
@@ -111,6 +131,10 @@ const AttendanceView = () => {
 
 	const handleClockOut = async () => {
 		if (!guardDebounce()) return;
+		if (!locationName) {
+			Notify.toastWarn('퇴근 처리할 근무장소를 선택해 주세요.');
+			return;
+		}
 
 		if (clockCtx?.requires_official_leave_confirm) {
 			if (!window.confirm('공가 일정이 있습니다. 퇴근 기록을 등록하시겠습니까?')) return;
@@ -153,7 +177,12 @@ const AttendanceView = () => {
 	const isClockedOut = !!todayRecord?.clock_out_time;
 
 	const isJoinDateMissing = !authLoading && joinDate == null;
-	const disabledReason = isJoinDateMissing ? '입사일이 등록되지 않은 계정입니다.' : '';
+	const isWorkLocationMissing = !loading && locationOptions.length === 0;
+	const disabledReason = isJoinDateMissing
+		? '입사일이 등록되지 않은 계정입니다.'
+		: isWorkLocationMissing
+			? '등록된 근무장소가 없습니다. 관리자에게 근무장소 등록을 요청해 주세요.'
+			: '';
 
 	return (
 		<div className="attendance-container">
@@ -177,9 +206,10 @@ const AttendanceView = () => {
 							className="bq-select"
 							value={locationName}
 							onChange={(e) => setLocationName(e.target.value)}
-							disabled={isClockedIn && !isClockedOut}
+							disabled={(isClockedIn && !isClockedOut) || locationOptions.length === 0}
 						>
-							{LOCATION_OPTIONS.map((opt) => (
+							{locationOptions.length === 0 ? <option value="">등록된 근무장소 없음</option> : null}
+							{locationOptions.map((opt) => (
 								<option key={opt.value} value={opt.value}>
 									{opt.label}
 								</option>
@@ -192,7 +222,7 @@ const AttendanceView = () => {
 							type="button"
 							className={`btn-clock-in ${isClockedIn ? 'disabled' : ''}`}
 							onClick={handleClockIn}
-							disabled={isClockedIn || loading || isJoinDateMissing}
+							disabled={isClockedIn || loading || isJoinDateMissing || isWorkLocationMissing}
 							title={disabledReason || ''}
 						>
 							{loading && !isClockedIn ? '확인 중...' : isClockedIn ? '✅ 출근 완료' : '출근하기'}
@@ -201,7 +231,7 @@ const AttendanceView = () => {
 							type="button"
 							className={`btn-clock-out ${!isClockedIn || isClockedOut ? 'disabled' : ''}`}
 							onClick={handleClockOut}
-							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing}
+							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing || !locationName}
 							title={disabledReason || ''}
 						>
 							{loading && isClockedIn && !isClockedOut ? '확인 중..' : isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}

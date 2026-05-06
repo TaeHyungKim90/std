@@ -28,6 +28,12 @@ export const attendanceApi = {
 		client.get(`${PATH}/day`, { params: { work_date: workDate } }),
 
 	/**
+	 * 출퇴근 선택용 활성 근무장소 목록
+	 * GET /hr/attendance/work-locations
+	 */
+	getWorkLocations: () => client.get(`${PATH}/work-locations`),
+
+	/**
 	 * 출근하기
 	 * POST /hr/attendance/clock-in
 	 */
