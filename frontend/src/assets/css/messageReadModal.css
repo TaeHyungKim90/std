@@ -31,6 +31,7 @@
 	margin: 0;
 	font-size: 1.4rem;
 	color: var(--text-main);
+	overflow-wrap: anywhere;
 }
 
 .message-read-modal__meta {
@@ -47,6 +48,8 @@
 	border: none;
 	background-color: transparent;
 	margin: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .message-read-modal__attachments {
@@ -78,6 +81,8 @@
 	font-weight: bold;
 	font: inherit;
 	text-align: left;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .message-read-modal__actions {
@@ -87,4 +92,60 @@
 
 .message-read-modal__parsed-img {
 	max-width: 100%;
+	height: auto;
+}
+
+@media (max-width: 640px) {
+	.message-read-modal__content {
+		width: calc(100vw - 24px);
+		max-width: none;
+		max-height: calc(100vh - 24px);
+		padding: 18px;
+		box-sizing: border-box;
+	}
+
+	.message-read-modal__header {
+		padding-bottom: 12px;
+		margin-bottom: 14px;
+	}
+
+	.message-read-modal__header-top {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.message-read-modal__title {
+		font-size: 1.18rem;
+		line-height: 1.35;
+	}
+
+	.message-read-modal__meta {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.message-read-modal__body {
+		padding: 8px 0;
+	}
+
+	.message-read-modal__body table {
+		display: block;
+		max-width: 100%;
+		overflow-x: auto;
+	}
+
+	.message-read-modal__attachments {
+		margin-top: 14px;
+		padding: 12px;
+	}
+
+	.message-read-modal__attachments-list {
+		padding-left: 16px;
+	}
+
+	.message-read-modal__actions {
+		margin-top: 16px;
+	}
 }

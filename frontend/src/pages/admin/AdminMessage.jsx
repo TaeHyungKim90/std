@@ -16,6 +16,7 @@ const AdminMessage = () => {
 	const [total, setTotal] = useState(null);
 	const [page, setPage] = usePaginationSearchParams({ pageSize: PAGE_SIZE, total });
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [sendModalKey, setSendModalKey] = useState(0);
 
 	const [selectedMessage, setSelectedMessage] = useState(null);
 	const [isReadModalOpen, setIsReadModalOpen] = useState(false);
@@ -46,6 +47,11 @@ const AdminMessage = () => {
 		setSelectedMessage(msg);
 		setIsReadModalOpen(true);
 	};
+
+	const handleOpenSendModal = () => {
+		setSendModalKey((prev) => prev + 1);
+		setIsModalOpen(true);
+	};
 	
 	return (
 		<div className="bq-admin-view">
@@ -54,7 +60,7 @@ const AdminMessage = () => {
 					<h2>메시지 <span>관리</span></h2>
 					<p>직원들에게 보낸 알림톡과 전체 공지사항 발신함을 관리합니다.</p>
 				</div>
-				<button  className="btn-primary" onClick={() => setIsModalOpen(true)}>+ 새 메시지 발송</button>
+				<button  className="btn-primary" onClick={handleOpenSendModal}>+ 새 메시지 발송</button>
 			</div>
 			<div className="admin-filter-section">
 				<div className="admin-search-group">
@@ -111,6 +117,7 @@ const AdminMessage = () => {
 			<PaginationBar page={page} pageSize={PAGE_SIZE} total={total ?? 0} onPageChange={setPage} />
 
 			<MessageSendModal 
+				key={sendModalKey}
 				isOpen={isModalOpen} 
 				onClose={() => setIsModalOpen(false)} 
 				onSuccess={refreshOutbox} 

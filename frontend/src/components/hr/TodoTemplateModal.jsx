@@ -2,11 +2,19 @@ import 'assets/css/todoTemplateModal.css';
 
 import { todoService } from 'api/todoApi';
 import AppModal from 'components/common/AppModal';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
 
 const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCategoriesAndConfigs }) => {
+	const [editorKey, setEditorKey] = useState(0);
+
+	useEffect(() => {
+		if (isOpen) {
+			setEditorKey((prev) => prev + 1);
+		}
+	}, [isOpen, colorModal.targetCat?.category_key]);
+
 	if (!isOpen) return null;
 
 	const handleSaveColor = async () => { 
@@ -59,6 +67,7 @@ const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCa
 						📝 기본 등록 멘트 (해당 카테고리 선택 시 자동 입력)
 					</label>
 					<SunEditor
+						key={editorKey}
 						setContents={colorModal.selectedDescription || " "}
 						onChange={(content) => setColorModal(prev => ({ ...prev, selectedDescription: content }))}
 						height="200px"

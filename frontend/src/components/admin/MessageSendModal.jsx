@@ -8,18 +8,22 @@ import React, { useCallback,useEffect, useState } from 'react';
 // 🌟 SunEditor 임포트 (CSS 포함 필수)
 import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
+const INITIAL_FORM_DATA = {
+	title: '',
+	content: '',
+	message_type: 'individual',
+	is_global: false,
+	receiver_id: ''
+};
+
 const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const [formData, setFormData] = useState({
-		title: '',
-		content: '',
-		message_type: 'individual',
-		is_global: false,
-		receiver_id: ''
-	});
+	const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+	const [editorKey, setEditorKey] = useState(0);
+	const [fileInputKey, setFileInputKey] = useState(0);
 
 	const [selectedFile, setSelectedFile] = useState(null);
 
@@ -38,8 +42,10 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 	useEffect(() => {
 		if (isOpen) {
 			fetchUsers();
-			setFormData({ title: '', content: '', message_type: 'individual', is_global: false, receiver_id: '' });
+			setFormData(INITIAL_FORM_DATA);
 			setSelectedFile(null);
+			setEditorKey((prev) => prev + 1);
+			setFileInputKey((prev) => prev + 1);
 		}
 	}, [isOpen, fetchUsers]);
 
@@ -172,6 +178,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 						<label>상세 내용</label>
 						<div className="admin-message-send__editor-frame">
 							<SunEditor
+								key={editorKey}
 								setContents={formData.content}
 								onChange={handleEditorChange}
 								setOptions={{
@@ -194,6 +201,7 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 					<div className="form-group">
 						<label>첨부파일 (PDF, Excel 등)</label>
 						<input
+							key={fileInputKey}
 							type="file"
 							onChange={handleFileChange}
 							className="admin-message-send__file-input"

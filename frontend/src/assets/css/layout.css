@@ -407,6 +407,105 @@
 	color: var(--primary);
 }
 
+@media (max-width: 640px) {
+	.admin-table-wrapper.my-messages__table-wrapper {
+		overflow-x: visible;
+		max-height: none;
+		border: none;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.admin-table.my-messages__table {
+		display: block;
+		min-width: 0;
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	.admin-table.my-messages__table thead {
+		display: none;
+	}
+
+	.admin-table.my-messages__table tbody {
+		display: block;
+		width: 100%;
+	}
+
+	.admin-table.my-messages__table .my-messages__row {
+		display: block;
+		width: 100%;
+		margin-bottom: 12px;
+		padding: 14px;
+		border: 1px solid rgba(20, 20, 20, 0.08);
+		border-radius: 16px;
+		box-shadow: 0 8px 20px rgba(20, 20, 20, 0.06);
+		box-sizing: border-box;
+	}
+
+	.admin-table.my-messages__table .my-messages__row:hover td {
+		background: transparent;
+	}
+
+	.admin-table.my-messages__table td {
+		display: block;
+		width: 100%;
+		padding: 4px 0;
+		border-bottom: none;
+		box-sizing: border-box;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.admin-table.my-messages__table td:nth-child(1) {
+		margin-bottom: 6px;
+	}
+
+	.admin-table.my-messages__table td:nth-child(2) {
+		font-size: 1rem;
+		line-height: 1.35;
+	}
+
+	.admin-table.my-messages__table td:nth-child(3),
+	.admin-table.my-messages__table td:nth-child(4),
+	.admin-table.my-messages__table td:nth-child(5) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		font-size: 0.85rem;
+		color: var(--text-dim);
+	}
+
+	.admin-table.my-messages__table td:nth-child(3)::before {
+		content: '보낸사람';
+		font-weight: 700;
+		color: var(--text-main);
+	}
+
+	.admin-table.my-messages__table td:nth-child(4)::before {
+		content: '받은날짜';
+		font-weight: 700;
+		color: var(--text-main);
+	}
+
+	.admin-table.my-messages__table td:nth-child(5)::before {
+		content: '상태';
+		font-weight: 700;
+		color: var(--text-main);
+	}
+
+	.my-messages__empty-cell {
+		display: block;
+		width: 100%;
+		padding: 32px 12px;
+		border-radius: 16px;
+		background: #fff;
+		box-sizing: border-box;
+	}
+}
+
 /* UserModal.jsx — 날짜 행 */
 .modal-form-row {
 	display: flex;

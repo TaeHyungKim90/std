@@ -65,8 +65,8 @@ const MyMessages = () => {
 				</div>
 			</div>
 
-			<div className="admin-table-wrapper">
-				<table className="admin-table">
+			<div className="admin-table-wrapper my-messages__table-wrapper">
+				<table className="admin-table my-messages__table">
 					<thead>
 						<tr>
 							<th>유형</th>

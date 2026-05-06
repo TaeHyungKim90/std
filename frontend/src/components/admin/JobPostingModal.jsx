@@ -14,6 +14,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 		resume_template_id: null,
 	});
 	const [templates, setTemplates] = useState([]);
+	const [editorKey, setEditorKey] = useState(0);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -34,6 +35,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 	}, [isOpen]);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		if (editingJob) {
 			setFormData({
 				...editingJob,
@@ -50,6 +52,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 				resume_template_id: null,
 			});
 		}
+		setEditorKey((prev) => prev + 1);
 	}, [editingJob, isOpen]);
 
 	// 신규 공고: 템플릿 목록이 오면 기본 템플릿 자동 선택
@@ -168,6 +171,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 						<label>직무 설명 (JD)</label>
 						<div className="job-posting-modal__editor-offset">
 							<SunEditor
+								key={editorKey}
 								setContents={formData.description}
 								onChange={handleEditorChange}
 								height="400px"
