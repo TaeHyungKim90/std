@@ -189,12 +189,11 @@ const AttendanceView = () => {
 			<div className="attendance-card">
 				<div className="attendance-header">
 					<p className="today-date">
-						{currentTime.toLocaleDateString('ko-KR', {
+						{`${currentTime.toLocaleDateString('ko-KR', {
 							year: 'numeric',
 							month: 'long',
 							day: 'numeric',
-							weekday: 'short',
-						})}
+						})} (${currentTime.toLocaleDateString('ko-KR', { weekday: 'short' })})`}
 					</p>
 					<h1 className="digital-clock">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</h1>
 				</div>

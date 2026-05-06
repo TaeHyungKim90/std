@@ -22,6 +22,8 @@ import {
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
 
+const VACATION_DEDUCTIBLE_CATEGORIES = new Set(['vacation_full', 'vacation_am', 'vacation_pm']);
+
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
 	const holidaysRef = useRef([]);
@@ -49,6 +51,7 @@ const TodoListView = () => {
 	const [selectedDate, setSelectedDate] = useState(null);
 	const [selectedEvent, setSelectedEvent] = useState(null);
 	const [modalMode, setModalMode] = useState('create');
+	const [editModalKey, setEditModalKey] = useState(0);
 	const defaultCategoryKey = categories[0]?.category_key || null;
 
 	const fetchCategoriesAndConfigs = useCallback(async () => {
@@ -113,7 +116,26 @@ const TodoListView = () => {
 		});
 	}, [fetchCategoriesAndConfigs]);
 
-	const handleSwitchToEdit = () => { setIsDetailOpen(false); setModalMode('edit'); setIsEditOpen(true); };
+	const hasVacationOnDate = useCallback((ymd) => {
+		if (!ymd) return false;
+		return events.some((event) => {
+			const props = event.extendedProps || {};
+			if (!VACATION_DEDUCTIBLE_CATEGORIES.has(props.category)) return false;
+			const startYmd = toSeoulYmd(props.start_date || event.start);
+			const endYmd = toSeoulYmd(props.end_date || event.end || props.start_date || event.start);
+			if (!startYmd || !endYmd) return false;
+			const from = startYmd <= endYmd ? startYmd : endYmd;
+			const to = startYmd <= endYmd ? endYmd : startYmd;
+			return from <= ymd && ymd <= to;
+		});
+	}, [events]);
+
+	const handleSwitchToEdit = () => {
+		setIsDetailOpen(false);
+		setModalMode('edit');
+		setEditModalKey((prev) => prev + 1);
+		setIsEditOpen(true);
+	};
 	const handleDateClick = (info) => {
 		const ymd = toSeoulYmd(info.date);
 		const err = getEmploymentRangeError(ymd, ymd, joinDate, resignationDate);
@@ -121,8 +143,14 @@ const TodoListView = () => {
 			Notify.toastWarn(err);
 			return;
 		}
+		if (hasVacationOnDate(ymd)) {
+			Notify.toastWarn('이미 해당 날짜에 연차 일정이 등록되어 있어 추가 등록할 수 없습니다.');
+			return;
+		}
 		setSelectedDate({ start: info.dateStr, end: info.dateStr });
+		setSelectedEvent(null);
 		setModalMode('create');
+		setEditModalKey((prev) => prev + 1);
 		setIsEditOpen(true);
 	};
 	const handleEventClick = (info) => { 
@@ -347,7 +375,7 @@ const TodoListView = () => {
 			{/* 🌟 지저분했던 인라인 모달이 컴포넌트 한 줄로 깔끔해졌습니다! */}
 			<TodoTemplateModal isOpen={colorModal.isOpen} onClose={() => setColorModal({...colorModal, isOpen: false})} colorModal={colorModal} setColorModal={setColorModal} fetchCategoriesAndConfigs={refreshCategoriesAfterSave} />
 
-			<TodoEditModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} categories={categories} />
+			<TodoEditModal key={editModalKey} isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} categories={categories} />
 			<TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} onEditClick={handleSwitchToEdit} categories={categories} />
 		</div>
 	);

@@ -88,6 +88,43 @@ def _assert_vacation_balance(
 			detail=f"잔여 연차가 부족합니다. (초과: {needed:g}일, 총 연차: {snapshot['total_days']:g}일)",
 		)
 
+
+def _assert_no_vacation_date_overlap(
+	db: Session,
+	user_id: str,
+	category: str | None,
+	start_date: datetime,
+	end_date: datetime | None,
+	*,
+	exclude_todo_id: int | None = None,
+) -> None:
+	if category not in VACATION_DEDUCTIBLE_CATEGORIES:
+		return
+
+	new_start = _to_seoul_date(start_date)
+	new_end = _to_seoul_date(end_date or start_date)
+	if new_end < new_start:
+		new_start, new_end = new_end, new_start
+
+	query = (
+		db.query(Todo)
+		.filter(Todo.user_id == user_id)
+		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
+	)
+	if exclude_todo_id is not None:
+		query = query.filter(Todo.id != exclude_todo_id)
+
+	for existing in query.all():
+		existing_start = _to_seoul_date(cast(datetime, existing.start_date))
+		existing_end = _to_seoul_date(cast(datetime | None, existing.end_date) or cast(datetime, existing.start_date))
+		if existing_end < existing_start:
+			existing_start, existing_end = existing_end, existing_start
+		if new_start <= existing_end and existing_start <= new_end:
+			raise HTTPException(
+				status_code=400,
+				detail="해당 날짜에는 이미 연차 일정이 등록되어 있습니다. 같은 날짜에 연차를 중복 등록할 수 없습니다.",
+			)
+
 # 모든 목록 조회 (캘린더)
 # - 관리자: 전체 일정
 # - 일반: 본인 일정 전체 
@@ -99,6 +136,7 @@ def create_todo(db: Session, todo: TodoCreate, user_id: str):
 	end_for_range = todo.end_date if todo.end_date is not None else todo.start_date
 	_assert_todo_range_within_employment(db, user_id, todo.start_date, end_for_range)
 	user = _get_user_for_vacation(db, user_id)
+	_assert_no_vacation_date_overlap(db, user_id, todo.category, todo.start_date, todo.end_date)
 	_assert_vacation_balance(
 		db,
 		user,
@@ -140,6 +178,14 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	)
 	end_for_range: datetime = new_end if new_end is not None else new_start
 	_assert_todo_range_within_employment(db, user_id, new_start, end_for_range)
+	_assert_no_vacation_date_overlap(
+		db,
+		user_id,
+		cast(str | None, new_category),
+		new_start,
+		new_end,
+		exclude_todo_id=todo_id,
+	)
 	_assert_vacation_balance(
 		db,
 		user,

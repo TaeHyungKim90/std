@@ -348,6 +348,14 @@ aside.rep-drawer-panel.dynamic-enter {
 	font-weight: 500;
 }
 
+.rep-date-color--holiday {
+	color: #ff4b4b !important;
+}
+
+.rep-date-color--saturday {
+	color: #2e8af6 !important;
+}
+
 .rep-list-item__preview-wrap {
 	flex: 1;
 	min-width: 0;

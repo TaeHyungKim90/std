@@ -1,6 +1,7 @@
 import 'assets/css/report.css';
 
 import { attendanceApi } from 'api/attendanceApi';
+import { holidayApi } from 'api/holidayApi';
 import { reportApi } from 'api/reportApi';
 import AppModal from 'components/common/AppModal';
 import SideDrawer from 'components/common/SideDrawer';
@@ -15,7 +16,6 @@ import {
 	normalizeStatus,
 	normalizeToMidnight,
 	pad2,
-	startOfWeekMonday,
 	toYmd,
 } from 'utils/dateUtils';
 import {
@@ -42,16 +42,76 @@ function monthStartEndYmd(viewMonth) {
 	return { dateFrom: toYmd(from), dateTo: toYmd(to) };
 }
 
-function weekEndYmd(mondayYmd) {
-	const d = new Date(mondayYmd + 'T00:00:00');
+function weekEndYmd(weekStartYmd) {
+	const d = new Date(weekStartYmd + 'T00:00:00');
 	const end = addDays(d, 6);
 	return toYmd(end);
 }
 
-function weekLabel(mondayDate) {
-	const start = toYmd(mondayDate);
+function startOfWeekSunday(d) {
+	const x = normalizeToMidnight(d);
+	x.setDate(x.getDate() - x.getDay());
+	return x;
+}
+
+function weekLabel(weekStartDate) {
+	const start = toYmd(weekStartDate);
 	const end = weekEndYmd(start);
 	return `${start.replace(/-/g, '.')} ~ ${end.replace(/-/g, '.')}`;
+}
+
+function getYearsInRange(startYmd, endYmd) {
+	const startYear = Number(String(startYmd).slice(0, 4));
+	const endYear = Number(String(endYmd).slice(0, 4));
+	if (!Number.isFinite(startYear) || !Number.isFinite(endYear)) return [];
+	const years = [];
+	for (let y = startYear; y <= endYear; y += 1) {
+		years.push(String(y));
+	}
+	return years;
+}
+
+function getDateTone(ymd, holidayDates) {
+	if (!ymd) return '';
+	const d = new Date(`${ymd}T00:00:00`);
+	if (Number.isNaN(d.getTime())) return '';
+	if (holidayDates.has(ymd) || d.getDay() === 0) return 'holiday';
+	if (d.getDay() === 6) return 'saturday';
+	return '';
+}
+
+function getDailyConfirmMessage(ymd, clockCtx) {
+	const d = new Date(`${ymd}T00:00:00`);
+	const reasons = [];
+	if (clockCtx?.is_public_holiday) {
+		reasons.push('공휴일');
+	} else if (!Number.isNaN(d.getTime()) && d.getDay() === 0) {
+		reasons.push('휴일');
+	}
+	if (!Number.isNaN(d.getTime()) && d.getDay() === 6) {
+		reasons.push('토요일');
+	}
+	if (
+		clockCtx?.requires_full_day_vacation_confirm ||
+		clockCtx?.has_half_day_vacation ||
+		clockCtx?.has_sick_or_special_vacation ||
+		clockCtx?.requires_official_leave_confirm
+	) {
+		reasons.push('휴가일');
+	}
+	if (reasons.length === 0) {
+		return '출근 기록이 없는 날입니다. 작성을 진행하시겠습니까?';
+	}
+	return `${reasons.join(', ')}입니다. 작성을 진행하시겠습니까?`;
+}
+
+function isVacationContext(clockCtx) {
+	return Boolean(
+		clockCtx?.requires_full_day_vacation_confirm ||
+			clockCtx?.has_half_day_vacation ||
+			clockCtx?.has_sick_or_special_vacation ||
+			clockCtx?.requires_official_leave_confirm
+	);
 }
 
 const MyReports = () => {
@@ -65,14 +125,18 @@ const MyReports = () => {
 
 	const [mainTab, setMainTab] = useState('daily');
 	const [viewMonth, setViewMonth] = useState(() => normalizeToMidnight(new Date()));
-	const [weekAnchor, setWeekAnchor] = useState(() => startOfWeekMonday(new Date()));
+	const [weekAnchor, setWeekAnchor] = useState(() => startOfWeekSunday(new Date()));
 
 	const [dailyRows, setDailyRows] = useState([]);
 	const [dailyLoading, setDailyLoading] = useState(false);
+	const [holidayDates, setHolidayDates] = useState(() => new Set());
+	const [holidayNames, setHolidayNames] = useState({});
+	const [dailyClockContexts, setDailyClockContexts] = useState({});
 
 	const [weekDailies, setWeekDailies] = useState([]);
 	const [weekSummaryDraft, setWeekSummaryDraft] = useState('');
 	const [weekLoading, setWeekLoading] = useState(false);
+	const [weekClockContexts, setWeekClockContexts] = useState({});
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [drawerDate, setDrawerDate] = useState('');
@@ -82,6 +146,7 @@ const MyReports = () => {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmTargetYmd, setConfirmTargetYmd] = useState('');
 	const [confirmTargetAttendance, setConfirmTargetAttendance] = useState(null);
+	const [confirmMessage, setConfirmMessage] = useState('출근 기록이 없는 날입니다. 작성을 진행하시겠습니까?');
 
 	const putDailyCall = useCallback((payload) => reportApi.putDaily(payload), []);
 	const { request: saveDailyReq, loading: savingDaily } = useApiRequest(putDailyCall);
@@ -90,7 +155,31 @@ const MyReports = () => {
 	const { request: saveWeeklyReq, loading: savingWeekly } = useApiRequest(putWeeklyCall);
 
 	const { dateFrom, dateTo } = useMemo(() => monthStartEndYmd(viewMonth), [viewMonth]);
-	const mondayYmd = useMemo(() => toYmd(weekAnchor), [weekAnchor]);
+	const weekStartYmd = useMemo(() => toYmd(startOfWeekSunday(weekAnchor)), [weekAnchor]);
+
+	const loadHolidayDates = useCallback(async (startYmd, endYmd) => {
+		const years = getYearsInRange(startYmd, endYmd);
+		if (years.length === 0) {
+			setHolidayDates(new Set());
+			setHolidayNames({});
+			return;
+		}
+		const responses = await Promise.all(years.map((year) => holidayApi.getHolidays(year)));
+		const next = new Set();
+		const names = {};
+		for (const res of responses) {
+			for (const holiday of Array.isArray(res.data) ? res.data : []) {
+				if (holiday?.holiday_date) {
+					next.add(holiday.holiday_date);
+					if (holiday?.holiday_name) {
+						names[holiday.holiday_date] = holiday.holiday_name;
+					}
+				}
+			}
+		}
+		setHolidayDates(next);
+		setHolidayNames(names);
+	}, []);
 
 	const dailyByDate = useMemo(() => {
 		const m = new Map();
@@ -101,38 +190,67 @@ const MyReports = () => {
 	}, [dailyRows]);
 
 	const loadMonthDailies = useCallback(async () => {
+		const monthYmds = [];
+		const startDate = new Date(`${dateFrom}T00:00:00`);
+		const endDate = new Date(`${dateTo}T00:00:00`);
+		for (let d = startDate; d <= endDate; d = addDays(d, 1)) {
+			monthYmds.push(toYmd(d));
+		}
 		setDailyLoading(true);
 		try {
-			const res = await reportApi.getDailyRange(dateFrom, dateTo);
+			const [res, , ctxResponses] = await Promise.all([
+				reportApi.getDailyRange(dateFrom, dateTo),
+				loadHolidayDates(dateFrom, dateTo),
+				Promise.all(
+					monthYmds.map((ymd) =>
+						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
+					)
+				),
+			]);
 			setDailyRows(Array.isArray(res.data) ? res.data : []);
+			setDailyClockContexts(
+				Object.fromEntries(monthYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
+			);
 		} catch (err) {
 			Notify.toastApiFailure(err, '일일 보고를 불러오지 못했습니다.');
 			setDailyRows([]);
+			setDailyClockContexts({});
 		} finally {
 			setDailyLoading(false);
 		}
-	}, [dateFrom, dateTo]);
+	}, [dateFrom, dateTo, loadHolidayDates]);
 
 	const loadWeekBundle = useCallback(async () => {
-		const start = mondayYmd;
+		const start = weekStartYmd;
 		const end = weekEndYmd(start);
+		const weekYmds = Array.from({ length: 7 }, (_, i) => toYmd(addDays(new Date(`${start}T00:00:00`), i)));
 		setWeekLoading(true);
 		try {
-			const [dRes, wRes] = await Promise.all([
+			const [dRes, wRes, , ctxResponses] = await Promise.all([
 				reportApi.getDailyRange(start, end),
 				reportApi.getWeekly(start),
+				loadHolidayDates(start, end),
+				Promise.all(
+					weekYmds.map((ymd) =>
+						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
+					)
+				),
 			]);
 			setWeekDailies(Array.isArray(dRes.data) ? dRes.data : []);
+			setWeekClockContexts(
+				Object.fromEntries(weekYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
+			);
 			const w = wRes.data;
 			setWeekSummaryDraft(w?.summary ? String(w.summary) : '');
 		} catch (err) {
 			Notify.toastApiFailure(err, '주간 데이터를 불러오지 못했습니다.');
 			setWeekDailies([]);
+			setWeekClockContexts({});
 			setWeekSummaryDraft('');
 		} finally {
 			setWeekLoading(false);
 		}
-	}, [mondayYmd]);
+	}, [weekStartYmd, loadHolidayDates]);
 
 	useEffect(() => {
 		if (reportsBlockedNoHireDate) return;
@@ -186,6 +304,7 @@ const MyReports = () => {
 		setConfirmOpen(false);
 		setConfirmTargetYmd('');
 		setConfirmTargetAttendance(null);
+		setConfirmMessage('출근 기록이 없는 날입니다. 작성을 진행하시겠습니까?');
 	}, []);
 
 	const proceedConfirmOpen = useCallback(() => {
@@ -212,12 +331,17 @@ const MyReports = () => {
 
 			setDailyDrawerPreflight(true);
 			try {
-				const res = await attendanceApi.getAttendanceForDay(ymd);
+				const [res, ctxRes] = await Promise.all([
+					attendanceApi.getAttendanceForDay(ymd),
+					attendanceApi.getClockContext(ymd),
+				]);
 				const rec = res.data ?? null;
+				const clockCtx = ctxRes.data ?? null;
 
 				if (shouldConfirmNoAttendanceRecord(rec)) {
 					setConfirmTargetYmd(ymd);
 					setConfirmTargetAttendance(rec);
+					setConfirmMessage(getDailyConfirmMessage(ymd, clockCtx));
 					setConfirmOpen(true);
 					return;
 				}
@@ -264,7 +388,7 @@ const MyReports = () => {
 			return;
 		}
 		try {
-			await saveWeeklyReq({ week_start_date: mondayYmd, summary: text });
+			await saveWeeklyReq({ week_start_date: weekStartYmd, summary: text });
 			await loadWeekBundle();
 		} catch {
 			/* noop */
@@ -276,22 +400,43 @@ const MyReports = () => {
 	const pageBusy = dailyLoading || weekLoading || savingDaily || savingWeekly || dailyDrawerPreflight;
 
 	const weekReadonlyBlocks = useMemo(() => {
-		const start = normalizeToMidnight(new Date(mondayYmd + 'T00:00:00'));
+		const start = normalizeToMidnight(new Date(weekStartYmd + 'T00:00:00'));
 		const lines = [];
 		for (let i = 0; i < 7; i += 1) {
 			const d = addDays(start, i);
 			const ymd = toYmd(d);
 			const hit = weekDailies.find((x) => x.report_date === ymd);
+			const hasDailyReport = Boolean(hit);
+			const clockCtx = weekClockContexts[ymd] ?? null;
+			const isVacationDay = isVacationContext(clockCtx);
+			const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+			const isPublicHoliday = holidayDates.has(ymd) || clockCtx?.is_public_holiday;
+			const holidayLabel = holidayNames[ymd] || clockCtx?.holiday_name || '공휴일';
+			const skipIfEmpty = isWeekend;
+			if (!hasDailyReport && skipIfEmpty) {
+				continue;
+			}
+			const dateTone = isVacationDay ? 'holiday' : getDateTone(ymd, holidayDates);
 			lines.push({
 				ymd,
 				label: `${ymd.slice(5).replace('-', '/')} (${formatYmdToWeekKo(ymd)})`,
-				text: hit?.content ? String(hit.content) : '— 등록된 일일 보고가 없습니다 —',
+				text: hit?.content
+					? String(hit.content)
+					: isVacationDay
+						? '— 휴가 —'
+						: isPublicHoliday
+							? `— ${holidayLabel} —`
+							: '— 등록된 일일 보고가 없습니다 —',
+				dateTone,
+				isVacationDay,
+				isPublicHoliday,
+				holidayLabel,
 				beforeJoin:
 					!authLoading && hasHireDate && isYmdStrictlyBeforeJoinDate(ymd, hireDate),
 			});
 		}
 		return lines;
-	}, [mondayYmd, weekDailies, authLoading, hasHireDate, hireDate]);
+	}, [weekStartYmd, weekDailies, authLoading, hasHireDate, hireDate, holidayDates, weekClockContexts]);
 
 	useEffect(() => {
 		return () => {
@@ -363,6 +508,8 @@ const MyReports = () => {
 									: '';
 								const beforeJoin =
 									hasHireDate && isYmdStrictlyBeforeJoinDate(ymd, hireDate);
+								const isVacationDay = isVacationContext(dailyClockContexts[ymd]);
+								const dateTone = isVacationDay ? 'holiday' : getDateTone(ymd, holidayDates);
 								return (
 									<button
 										key={ymd}
@@ -378,8 +525,11 @@ const MyReports = () => {
 										}}
 									>
 										<div className="rep-list-item__title-block">
-											<div className="rep-list-item__date">{ymd}</div>
-											<div className="rep-list-item__meta">{formatYmdToWeekKo(ymd)}</div>
+											<div className={`rep-list-item__date${dateTone ? ` rep-date-color--${dateTone}` : ''}`}>{ymd}</div>
+											<div className={`rep-list-item__meta${dateTone ? ` rep-date-color--${dateTone}` : ''}`}>
+												{formatYmdToWeekKo(ymd)}
+												{isVacationDay ? ' 휴가' : ''}
+											</div>
 										</div>
 										<div className="rep-list-item__preview-wrap">
 											<span className="rep-list-item__preview-label">내용</span>
@@ -403,7 +553,7 @@ const MyReports = () => {
 			{!reportsBlockedNoHireDate && mainTab === 'weekly' && (
 				<>
 					<div className="rep-toolbar">
-						<span className="rep-label">주간: {weekLabel(weekAnchor)}</span>
+						<span className="rep-label">주간: {weekLabel(startOfWeekSunday(weekAnchor))}</span>
 						<div>
 							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(-1)}>
 								이전 주
@@ -425,8 +575,8 @@ const MyReports = () => {
 											key={b.ymd}
 											className={`rep-daily-row${b.beforeJoin ? ' rep-daily-row--before-join' : ''}`}
 										>
-											<div className="rep-daily-row__title">{b.label}</div>
-											<div className="rep-daily-row__body">
+											<div className={`rep-daily-row__title${b.dateTone ? ` rep-date-color--${b.dateTone}` : ''}`}>{b.label}</div>
+											<div className={`rep-daily-row__body${(b.isVacationDay && b.text === '— 휴가 —') || (b.isPublicHoliday && b.text === `— ${b.holidayLabel} —`) ? ' rep-date-color--holiday' : ''}`}>
 												{b.beforeJoin ? '입사일 이전 날짜입니다.' : b.text}
 											</div>
 										</div>
@@ -509,7 +659,7 @@ const MyReports = () => {
 
 			<AppModal isOpen={confirmOpen} onClose={closeConfirmModal} contentClassName="rep-confirm-modal">
 				<h3 className="rep-confirm-modal__title">출근 기록 확인</h3>
-				<p className="rep-confirm-modal__message">출근 기록이 없는 날입니다. 작성을 진행하시겠습니까?</p>
+				<p className="rep-confirm-modal__message">{confirmMessage}</p>
 				<div className="rep-confirm-modal__actions">
 					<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={closeConfirmModal}>
 						취소
