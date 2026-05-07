@@ -4,6 +4,25 @@ import { client } from './axiosInstance.js'; // api.js에서 만든 공통 clien
 
 const PATH = API_ENDPOINTS.ATTENDANCE;
 
+/** 브라우저 위치 권한 팝업에서 사용자가 응답할 때까지 기다릴 수 있도록 여유 있게 둡니다. */
+const GEOLOCATION_TIMEOUT_MS = 90000;
+
+function geolocationErrorMessage(error) {
+	if (!error || typeof error.code !== 'number') {
+		return '위치 정보를 가져오지 못했습니다.';
+	}
+	switch (error.code) {
+		case 1:
+			return '위치 권한이 거부되었습니다. 브라우저 또는 기기 설정에서 위치 권한을 허용해 주세요.';
+		case 2:
+			return '현재 위치를 확인할 수 없습니다. GPS·네트워크 상태를 확인한 뒤 다시 시도해 주세요.';
+		case 3:
+			return '위치 확인 시간이 초과되었습니다. 권한 요청 창에서 허용을 누른 뒤 다시 시도해 주세요.';
+		default:
+			return '위치 정보를 가져오지 못했습니다.';
+	}
+}
+
 export const attendanceApi = {
 	/**
 	 * 오늘 나의 출퇴근 기록 조회
@@ -48,26 +67,44 @@ export const attendanceApi = {
 	/**
 	 * 🌐 브라우저 GPS 좌표 가져오기 (Helper)
 	 */
-	getCurrentLocation: () => {
-	return new Promise((resolve, reject) => {
+	getCurrentLocation: async () => {
 		if (!navigator.geolocation) {
-			reject(new Error("이 브라우저에서는 위치 정보를 지원하지 않습니다."));
-			return;
+			throw new Error('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
 		}
 
-		navigator.geolocation.getCurrentPosition(
-		(position) => {
-			resolve({
-				latitude: position.coords.latitude,
-				longitude: position.coords.longitude,
-			});
-		},
-		(error) => {
-			console.error("GPS 획득 실패:", error);
-			reject(error);
-		},
-		{ enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-		);
-	});
-	}
+		let deniedBeforePrompt = false;
+		if (navigator.permissions?.query) {
+			try {
+				const status = await navigator.permissions.query({ name: 'geolocation' });
+				if (status.state === 'denied') {
+					deniedBeforePrompt = true;
+				}
+			} catch (_) {
+				/* Permissions API 미지원 등은 무시하고 getCurrentPosition 사용 */
+			}
+		}
+		if (deniedBeforePrompt) {
+			throw new Error(geolocationErrorMessage({ code: 1 }));
+		}
+
+		return new Promise((resolve, reject) => {
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					resolve({
+						latitude: position.coords.latitude,
+						longitude: position.coords.longitude,
+					});
+				},
+				(error) => {
+					console.error('GPS 획득 실패:', error);
+					reject(new Error(geolocationErrorMessage(error)));
+				},
+				{
+					enableHighAccuracy: true,
+					timeout: GEOLOCATION_TIMEOUT_MS,
+					maximumAge: 0,
+				}
+			);
+		});
+	},
 };
