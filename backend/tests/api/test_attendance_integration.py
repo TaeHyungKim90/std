@@ -8,6 +8,7 @@ from fastapi import status
 from db.session import SessionLocal
 from integration_constants import INTEGRATION_EMPLOYEE_LOGIN_ID
 from models.hr_models import Attendance, Todo
+from utils.seoul_time import today_seoul
 
 
 def _cleanup_employee_day(user_login_id: str, work_date: date, todo_id: int | None) -> None:
@@ -27,7 +28,7 @@ def _cleanup_employee_day(user_login_id: str, work_date: date, todo_id: int | No
 @pytest.fixture
 def vacation_full_todo_today():
 	"""당일 종일 연차 To-Do를 DB에 직접 넣고 테스트 후 삭제(HR To-Do API는 연차 정산 전제)."""
-	today = date.today()
+	today = today_seoul()
 	db = SessionLocal()
 	try:
 		t = Todo(
@@ -75,7 +76,7 @@ def test_hr_clock_in_409_without_confirm_when_vacation_full(
 
 
 def test_hr_clock_in_ok_with_confirm_when_vacation_full(integration_employee_client, vacation_full_todo_today):
-	today = date.today()
+	today = today_seoul()
 	try:
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-in",
@@ -94,8 +95,8 @@ def test_hr_clock_in_ok_with_confirm_when_vacation_full(integration_employee_cli
 
 
 def test_admin_user_attendance_range_includes_meta_keys(integration_admin_client):
-	start = (date.today() - timedelta(days=7)).isoformat()
-	end = date.today().isoformat()
+	start = (today_seoul() - timedelta(days=7)).isoformat()
+	end = today_seoul().isoformat()
 	r = integration_admin_client.get(
 		f"/api/admin/attendance/user/{INTEGRATION_EMPLOYEE_LOGIN_ID}/range",
 		params={"start_date": start, "end_date": end},

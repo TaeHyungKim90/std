@@ -1,7 +1,5 @@
 import os
-from datetime import date, datetime
 from typing import Optional, Tuple
-from zoneinfo import ZoneInfo
 
 from fastapi import UploadFile
 from sqlalchemy import or_
@@ -11,17 +9,12 @@ from models import recruitment_models
 from schemas.public import recruitment_schemas
 from services import common_service
 from core.security import get_password_hash, looks_like_password_hash, verify_password
-
-_SEOUL = ZoneInfo("Asia/Seoul")
-
-
-def seoul_today() -> date:
-	return datetime.now(_SEOUL).date()
+from utils.seoul_time import today_seoul
 
 
 def get_public_jobs(db: Session, skip: int = 0, limit: int = 20, applicant_id: Optional[int] = None):
 	"""진행 중(open) 공고 중, 마감 전이거나(게스트 포함) 로그인 지원자가 이미 지원한 공고는 마감 후에도 노출."""
-	today = seoul_today()
+	today = today_seoul()
 	applied_ids: set[int] = set()
 	if applicant_id is not None:
 		applied_ids = {
@@ -143,7 +136,7 @@ def submit_application_authenticated(
 	job = db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.id == data.job_id).first()
 	if not job:
 		raise ValueError("채용 공고를 찾을 수 없습니다.")
-	today = seoul_today()
+	today = today_seoul()
 	if job.deadline is not None and job.deadline < today:
 		raise ValueError("지원 마감일이 지난 공고에는 지원할 수 없습니다.")
 

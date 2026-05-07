@@ -3,8 +3,9 @@ from datetime import date, datetime
 
 from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+
 from db.session import Base
+from utils.seoul_time import now_seoul_naive
 
 
 # --- 0. 이력서 양식 템플릿 (관리자 업로드 + 시드) ---
@@ -17,7 +18,7 @@ class ResumeTemplate(Base):
 	file_path = Column[str](String(500), nullable=False)
 	is_default = Column[bool](Boolean, nullable=False, default=False)
 	is_deleted = Column[bool](Boolean, nullable=False, default=False)
-	created_at = Column[datetime](DateTime, server_default=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 
 	job_postings = relationship("JobPosting", back_populates="resume_template")
 
@@ -31,7 +32,7 @@ class Applicant(Base):
 	password = Column[str](String(255), nullable=False) # 해싱된 비밀번호
 	name = Column[str](String(50), nullable=False)
 	phone = Column[str](String(20), nullable=True)
-	created_at = Column[datetime](DateTime, server_default=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 
 	# 관계 설정: 한 명의 지원자가 여러 공고에 지원할 수 있음
 	applications = relationship("Application", back_populates="applicant", cascade="all, delete")
@@ -54,7 +55,7 @@ class JobPosting(Base):
 		nullable=True,
 		index=True,
 	)
-	created_at = Column[datetime](DateTime, server_default=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 
 	# 관계 설정: 하나의 공고에 여러 지원서가 접수됨
 	applications = relationship("Application", back_populates="job_posting", cascade="all, delete")
@@ -76,7 +77,7 @@ class Application(Base):
 	
 	# 전형 상태: applied(서류접수), document_passed(서류합격), interviewing(면접중), final_passed(최종합격), rejected(불합격)
 	status = Column[str](String(30), default="applied") 
-	applied_at = Column[datetime](DateTime, server_default=func.now())
+	applied_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 
 	# 관계 설정
 	job_posting = relationship("JobPosting", back_populates="applications")

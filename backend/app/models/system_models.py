@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, CheckConstraint, Column, Integer, String, DateTime
-from sqlalchemy.sql import func
 
 from db.session import Base
+from utils.seoul_time import now_seoul_naive
 
 
 class Department(Base):
@@ -9,7 +9,7 @@ class Department(Base):
 
 	id = Column[int](Integer, primary_key=True, index=True)
 	department_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column(DateTime, server_default=func.now())
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 
 
 class Position(Base):
@@ -17,7 +17,7 @@ class Position(Base):
 
 	id = Column[int](Integer, primary_key=True, index=True)
 	position_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column(DateTime, server_default=func.now())
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 
 
 class WorkLocation(Base):
@@ -32,5 +32,5 @@ class WorkLocation(Base):
 	location_value = Column[str](String(120), unique=True, nullable=False)
 	description = Column[str](String(255), nullable=True)
 	is_active = Column[bool](Boolean, nullable=False, server_default="1")
-	created_at = Column(DateTime, server_default=func.now())
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 

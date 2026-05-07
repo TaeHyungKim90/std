@@ -1,11 +1,10 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date
 from constants.vacation_categories import VACATION_STATS_CATEGORIES
 from models.hr_models import Todo, TodoCategoryType
 from models.auth_models import User, UserVacation
-
 from datetime import date
+from utils.seoul_time import today_seoul
 
 def get_admin_stats(db: Session):
 	# 각 테이블의 count를 조회
@@ -14,7 +13,7 @@ def get_admin_stats(db: Session):
 	# 2.카테고리수 수
 	category_count = db.query(TodoCategoryType).count()
 	# 3. 이번달 휴가자 수
-	today = date.today();
+	today = today_seoul()
 	first_day = today.replace(day=1)
 	if today.month == 12:
 		last_day = today.replace(year=today.year + 1, month=1, day=1)

@@ -9,6 +9,7 @@ from models.auth_models import User
 from models.hr_models import Attendance, Todo
 from services.hr import attendance_service as hr_att
 from support.memory_db import memory_db_session
+from utils.seoul_time import today_seoul
 
 
 @pytest.fixture()
@@ -51,7 +52,7 @@ def _dt(d: date, h: int = 9, m: int = 0) -> datetime:
 
 
 def test_vacation_full_requires_confirm(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_full", d)
 	with pytest.raises(HTTPException) as ei:
 		hr_att.check_clock_in_allowed(
@@ -67,7 +68,7 @@ def test_vacation_full_requires_confirm(db_session, user_joined):
 
 
 def test_vacation_full_allowed_with_confirm(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_full", d)
 	hr_att.check_clock_in_allowed(
 		db_session,
@@ -79,7 +80,7 @@ def test_vacation_full_allowed_with_confirm(db_session, user_joined):
 
 
 def test_official_leave_requires_confirm(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "official_leave", d)
 	with pytest.raises(HTTPException) as ei:
 		hr_att.check_clock_in_allowed(
@@ -95,7 +96,7 @@ def test_official_leave_requires_confirm(db_session, user_joined):
 
 
 def test_vacation_sick_does_not_require_confirm(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_sick", d)
 	hr_att.check_clock_in_allowed(
 		db_session,
@@ -107,7 +108,7 @@ def test_vacation_sick_does_not_require_confirm(db_session, user_joined):
 
 
 def test_half_day_todo_does_not_require_confirm(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_am", d)
 	hr_att.check_clock_in_allowed(
 		db_session,
@@ -119,7 +120,7 @@ def test_half_day_todo_does_not_require_confirm(db_session, user_joined):
 
 
 def test_clock_in_appends_official_leave_note(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	t = Todo(
 		user_id="clock_user",
 		title="공가",
@@ -155,7 +156,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 
 
 def test_clock_out_appends_official_leave_note(db_session, user_joined):
-	d = date.today()
+	d = today_seoul()
 	t = Todo(
 		user_id="clock_user",
 		title="공가",
@@ -201,7 +202,7 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 def test_get_clock_context_flags(db_session, user_joined):
 	from models.holiday_models import Holiday
 
-	d = date.today()
+	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_full", d)
 	_add_vacation_todo(db_session, "clock_user", "vacation_am", d)
 

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 import main as app_main
 from services.auth_service import get_current_user
+from utils.seoul_time import today_seoul
 
 
 def _client():
@@ -38,7 +39,7 @@ def test_hr_attendance_clock_context_requires_authentication():
 
 
 def test_hr_reports_daily_requires_authentication():
-	d0 = date.today()
+	d0 = today_seoul()
 	d1 = d0 - timedelta(days=6)
 	res = _client().get(
 		"/api/hr/reports/daily",
@@ -48,7 +49,7 @@ def test_hr_reports_daily_requires_authentication():
 
 
 def test_admin_reports_daily_status_requires_authentication():
-	wd = date.today().isoformat()
+	wd = today_seoul().isoformat()
 	res = _client().get("/api/admin/reports/daily-status", params={"work_date": wd})
 	assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -70,7 +71,7 @@ def test_admin_reports_forbidden_for_non_admin_role():
 		"role": "user",
 	}
 	try:
-		wd = date.today().isoformat()
+		wd = today_seoul().isoformat()
 		res = _client().get("/api/admin/reports/daily-status", params={"work_date": wd})
 		assert res.status_code == status.HTTP_403_FORBIDDEN
 	finally:

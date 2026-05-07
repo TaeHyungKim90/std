@@ -1,10 +1,11 @@
 import enum
-from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 # 프로젝트 기존 구조에 맞춘 Base 임포트
 from db.session import Base
+from utils.seoul_time import now_seoul_naive
+
 # 관계 설정을 위한 모델 임포트
 from models.common_models import UploadedFile
 from models.auth_models import User
@@ -29,7 +30,7 @@ class Message(Base):
 	# 수신자 (개별 메시지일 때만 값이 있음)
 	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 	
-	created_at = Column(DateTime, default=datetime.now)
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 	is_read = Column(Boolean, default=False)
 
 	# 🤝 관계 설정
@@ -51,7 +52,7 @@ class MessageReadReceipt(Base):
 	id = Column(Integer, primary_key=True, autoincrement=True)
 	message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
 	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	read_at = Column(DateTime, default=datetime.now)
+	read_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 
 	message = relationship("Message", back_populates="read_receipts")
 	user = relationship("User", foreign_keys=[user_id])
@@ -66,7 +67,7 @@ class MessageAttachment(Base):
 	# 🌟 기존 UploadedFile 테이블의 ID를 그대로 사용 (재사용성 극대화)
 	file_id = Column(Integer, ForeignKey("uploaded_files.id"), nullable=False)
 	
-	created_at = Column(DateTime, default=datetime.now)
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 
 	# 🤝 관계 설정
 	message = relationship("Message", back_populates="attachments")

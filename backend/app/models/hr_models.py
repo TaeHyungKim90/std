@@ -4,9 +4,10 @@ from typing import Any
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean, func, UniqueConstraint
+from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from db.session import Base # 상위 폴더의 database.py를 참조하도록 설정
+from utils.seoul_time import now_seoul_naive
 #일정
 class Todo(Base):
 	__tablename__ = "todos"
@@ -21,8 +22,8 @@ class Todo(Base):
 	category = Column[str](String(20))					 				# vacation / report
 	
 	# --- 날짜 기록 컬럼 추가 ---
-	created_at = Column[datetime](DateTime, server_default=func.now()) # 처음 생성 시 자동 기록
-	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now()) # 수정 시마다 자동 갱신
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive) # 처음 생성 시 자동 기록
+	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) # 수정 시마다 자동 갱신
 	
 	author = relationship("User", foreign_keys=[user_id])
 #일정 카테고리
@@ -83,8 +84,8 @@ class DailyReport(Base):
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	report_date = Column[date](Date, nullable=False, index=True)
 	content = Column[str](Text, nullable=False)
-	created_at = Column[datetime](DateTime, server_default=func.now())
-	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
 
 
 class WeeklyReport(Base):
@@ -96,5 +97,5 @@ class WeeklyReport(Base):
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	week_start_date = Column[date](Date, nullable=False, index=True)
 	summary = Column[str](Text, nullable=False)
-	created_at = Column[datetime](DateTime, server_default=func.now())
-	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)

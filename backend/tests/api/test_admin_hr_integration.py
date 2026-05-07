@@ -11,6 +11,7 @@ from integration_constants import (
 	INTEGRATION_ADMIN_LOGIN_ID,
 	INTEGRATION_EMPLOYEE_LOGIN_ID,
 )
+from utils.seoul_time import today_seoul
 
 
 def _monday_of(d: date) -> date:
@@ -18,7 +19,7 @@ def _monday_of(d: date) -> date:
 
 
 def test_admin_daily_status_ok(integration_admin_client):
-	wd = date.today().isoformat()
+	wd = today_seoul().isoformat()
 	r = integration_admin_client.get("/api/admin/reports/daily-status", params={"work_date": wd})
 	assert r.status_code == status.HTTP_200_OK, r.text
 	body = r.json()
@@ -29,7 +30,7 @@ def test_admin_daily_status_ok(integration_admin_client):
 
 
 def test_admin_week_status_ok(integration_admin_client):
-	ws = _monday_of(date.today()).isoformat()
+	ws = _monday_of(today_seoul()).isoformat()
 	r = integration_admin_client.get("/api/admin/reports/status", params={"week_start": ws})
 	assert r.status_code == status.HTTP_200_OK, r.text
 	assert isinstance(r.json(), list)
@@ -49,7 +50,7 @@ def test_employee_hr_attendance_today_ok(integration_employee_client):
 
 
 def test_employee_daily_report_upsert_and_list(integration_employee_client):
-	d0 = date.today()
+	d0 = today_seoul()
 	d1 = d0 - timedelta(days=3)
 	r_put = integration_employee_client.put(
 		"/api/hr/reports/daily",
@@ -73,7 +74,7 @@ def test_admin_sees_submitted_daily_after_employee_writes(
 	integration_admin_client, integration_employee_client
 ):
 	"""평일이면 직원 일보 작성 후 관리자 일일 현황에 SUBMITTED 로 반영되는지 검증."""
-	today = date.today()
+	today = today_seoul()
 	if today.weekday() >= 5:
 		pytest.skip("주말에는 일일 현황이 HOLIDAY 로만 나와 SUBMITTED 검증 생략")
 
@@ -97,7 +98,7 @@ def test_admin_sees_submitted_daily_after_employee_writes(
 
 
 def test_employee_weekly_report_upsert(integration_employee_client):
-	ws = _monday_of(date.today())
+	ws = _monday_of(today_seoul())
 	r_put = integration_employee_client.put(
 		"/api/hr/reports/weekly",
 		json={"week_start_date": ws.isoformat(), "summary": "pytest 주간 요약"},

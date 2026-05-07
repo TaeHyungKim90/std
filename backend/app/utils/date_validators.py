@@ -1,9 +1,11 @@
 from datetime import date, timedelta
 
+from utils.seoul_time import today_seoul
+
 
 def validate_report_date_range(d: date, name: str) -> None:
 	"""과거 3년 초과 / 미래 1년 초과 날짜를 공통 검증한다."""
-	today = date.today()
+	today = today_seoul()
 	min_date = today - timedelta(days=365 * 3)
 	max_date = today + timedelta(days=365 * 1)
 	if d < min_date:

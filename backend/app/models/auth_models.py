@@ -6,8 +6,9 @@ from datetime import date, datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, Date, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+
 from db.session import Base
+from utils.seoul_time import now_seoul_naive
 
 class User(Base):
 	__tablename__ = "users"
@@ -25,7 +26,7 @@ class User(Base):
 	salary_account_number = Column[str](String(50), nullable=True)			# 급여 계좌번호
 	role = Column[str](String(20), default="user")					 		# 권한
 	user_phone_number = Column[str](String(20), nullable=True)
-	created_at = Column[datetime](DateTime, server_default=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 	join_date = Column[date](Date, nullable=True) 
 	resignation_date = Column[date](Date, nullable=True)
 	vacation = relationship("UserVacation", back_populates="user", uselist=False, cascade="all, delete")
@@ -61,7 +62,7 @@ class UserVacation(Base):
 	total_days = Column[int](Integer, default=0)												# 총 발생 연차
 	used_days = Column[Any](Float, default=0.0)													# 사용 연차 (반차를 위해 Float)
 	remaining_days = Column[Any](Float, default=0.0)											# 잔여 연차
-	last_updated = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now()) 	# 최근 정산일
+	last_updated = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) 	# 최근 정산일
 	
 	# User 테이블과의 연결 고리
 	user = relationship("User", back_populates="vacation")
@@ -75,7 +76,7 @@ class UserAvatarSetting(Base):
 	zoom = Column[Any](Float, nullable=False, default=1.0)
 	offset_x = Column[Any](Float, nullable=False, default=0.0)
 	offset_y = Column[Any](Float, nullable=False, default=0.0)
-	created_at = Column[datetime](DateTime, server_default=func.now())
-	updated_at = Column[datetime](DateTime, server_default=func.now(), onupdate=func.now())
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
 
 	user = relationship("User", back_populates="avatar_setting")

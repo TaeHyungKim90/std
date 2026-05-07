@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from services.admin import reports_service  # noqa: E402
 from api.admin import reports as admin_reports_api  # noqa: E402
+from utils.seoul_time import today_seoul
 
 
 @dataclass
@@ -223,7 +224,7 @@ def test_report_status_vacation_or_holiday(monkeypatch, case: str):
 
 def test_invalid_date_range():
 	# Given: 허용 범위를 벗어난 과거(3년 초과) 날짜
-	too_old = date.today() - timedelta(days=365 * 3 + 1)
+	too_old = today_seoul() - timedelta(days=365 * 3 + 1)
 	db = FakeSession(users=[])
 
 	# When/Then: API 레이어에서 HTTPException(400)을 발생시키는지 검증

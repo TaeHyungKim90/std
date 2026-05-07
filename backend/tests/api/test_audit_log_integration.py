@@ -10,6 +10,7 @@ from db.session import SessionLocal
 from integration_constants import INTEGRATION_ADMIN_LOGIN_ID, INTEGRATION_EMPLOYEE_LOGIN_ID
 from models.auth_models import User
 from models.common_models import AuditLog
+from utils.seoul_time import today_seoul
 
 
 def _monday_of(d: date) -> date:
@@ -17,7 +18,7 @@ def _monday_of(d: date) -> date:
 
 
 def test_report_bundle_creates_audit_log_row(integration_admin_client):
-	ws = _monday_of(date.today()).isoformat()
+	ws = _monday_of(today_seoul()).isoformat()
 	path = f"/api/admin/reports/users/{INTEGRATION_EMPLOYEE_LOGIN_ID}/bundle"
 	r = integration_admin_client.get(path, params={"week_start": ws})
 	assert r.status_code == status.HTTP_200_OK, r.text

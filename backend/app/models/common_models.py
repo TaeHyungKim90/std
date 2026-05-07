@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+
 from db.session import Base
-from sqlalchemy import ForeignKey
+from utils.seoul_time import now_seoul_naive
 
 class UploadedFile(Base):
 	__tablename__ = "uploaded_files"
@@ -11,7 +12,7 @@ class UploadedFile(Base):
 	file_path = Column(String(500), nullable=False)				# 웹에서 접근할 URL 경로 (/uploads/...)
 	file_size = Column(Integer, nullable=True)			 			# 파일 크기 (바이트)
 	content_type = Column(String(100), nullable=True)				# 파일 타입 (application/pdf, image/png 등)
-	created_at = Column(DateTime, server_default=func.now())
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
 
 
 class AuditLog(Base):
@@ -23,4 +24,4 @@ class AuditLog(Base):
 	action = Column(String(100), nullable=False)
 	endpoint = Column(String(300), nullable=False)
 	ip_address = Column(String(100), nullable=True)
-	created_at = Column(DateTime, server_default=func.now(), nullable=False)
+	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)

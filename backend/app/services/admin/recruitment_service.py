@@ -2,12 +2,12 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from datetime import datetime
 from models import recruitment_models, auth_models
 from schemas.admin import recruitment_schemas
 from services import auth_service
 from services.admin import resume_template_service as resume_template_svc
 from core.security import get_password_hash, looks_like_password_hash
+from utils.seoul_time import today_seoul
 
 # --- 1. 채용 공고 관리 ---
 def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):
@@ -86,7 +86,7 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 				user_name=applicant.name,
 				user_nickname=f"{applicant.name} 사원",
 				role="user",
-				join_date=datetime.now().date()
+				join_date=today_seoul()
 			)
 			db.add(new_employee)
 

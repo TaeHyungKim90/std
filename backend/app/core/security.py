@@ -48,6 +48,7 @@ def looks_like_password_hash(value: Any) -> bool:
 def create_access_token(data: dict) -> str:
 	"""JWT 토큰 생성"""
 	to_encode = data.copy()
+	# 만료 시각은 JWT 관례에 맞춰 UTC 기준 (업무일시 KST와 혼동 금지).
 	expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
 	to_encode.update({"exp": expire})
 	return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

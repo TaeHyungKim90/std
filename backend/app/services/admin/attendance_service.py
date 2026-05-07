@@ -15,6 +15,7 @@ from models.auth_models import User
 from models.holiday_models import Holiday
 from models.hr_models import Todo
 from services.hr.attendance_service import is_vacation_status
+from utils.seoul_time import today_seoul
 
 def get_all_attendance(
 	db: Session,
@@ -48,7 +49,7 @@ def get_all_attendance(
 	parsed_work_date = _parse_ymd(work_date)
 	if parsed_work_date is None:
 		# work_date가 없거나 파싱이 실패하면 "오늘"을 기본으로 사용
-		parsed_work_date = datetime.now().date()
+		parsed_work_date = today_seoul()
 
 	# User 기준 + 지정 work_date에 해당하는 Attendance만 outer join
 	query = (
@@ -236,7 +237,7 @@ def get_user_attendance_range(
 	- 연차·공가 일정일은 결근 가상행 생략; 병가·경조 등은 무기록 시 결근 가상행 유지
 	"""
 	start_d, end_d = _parse_range_dates(start_date, end_date)
-	today = datetime.now().date()
+	today = today_seoul()
 	user = db.query(User).filter(User.user_login_id == user_login_id).first()
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")

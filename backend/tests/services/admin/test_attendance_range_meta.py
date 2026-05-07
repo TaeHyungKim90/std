@@ -9,6 +9,7 @@ from models.hr_models import Attendance, Todo
 from models.holiday_models import Holiday
 from services.admin import attendance_service as admin_att
 from support.memory_db import memory_db_session
+from utils.seoul_time import today_seoul
 
 
 @pytest.fixture()
@@ -53,7 +54,7 @@ def _wd_eq(r: dict, d: date) -> bool:
 
 def test_half_day_no_attendance_yields_missing_explanation(db_session, range_user):
 	"""반차 To-Do만 있고 근태 행이 없으면 MISSING_EXPLANATION 가상행."""
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	wed = mon + timedelta(days=2)
 	assert wed.weekday() == 2
 	_todo(db_session, "range_user", "vacation_am", wed)
@@ -73,7 +74,7 @@ def test_half_day_no_attendance_yields_missing_explanation(db_session, range_use
 
 def test_vacation_full_skips_absent_virtual(db_session, range_user):
 	"""종일 연차일·무기록이면 결근 가상행을 만들지 않음."""
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	tue = mon + timedelta(days=1)
 	_todo(db_session, "range_user", "vacation_full", tue)
 
@@ -91,7 +92,7 @@ def test_vacation_full_skips_absent_virtual(db_session, range_user):
 
 
 def test_sick_todo_weekday_no_record_yields_auto_absent(db_session, range_user):
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	thu = mon + timedelta(days=3)
 	assert thu.weekday() == 3
 	_todo(db_session, "range_user", "vacation_sick", thu)
@@ -112,7 +113,7 @@ def test_sick_todo_weekday_no_record_yields_auto_absent(db_session, range_user):
 
 
 def test_real_row_merged_with_vacation_summary(db_session, range_user):
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	fri = mon + timedelta(days=4)
 	assert fri.weekday() == 4
 	_todo(db_session, "range_user", "vacation_pm", fri)
@@ -143,7 +144,7 @@ def test_real_row_merged_with_vacation_summary(db_session, range_user):
 
 def test_weekend_half_day_no_attendance_yields_missing(db_session, range_user):
 	"""주말에도 반차 To-Do는 MISSING 가상행으로 병기(§1.5)."""
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	sat = mon + timedelta(days=5)
 	assert sat.weekday() == 5
 	_todo(db_session, "range_user", "vacation_pm", sat)
@@ -159,7 +160,7 @@ def test_weekend_half_day_no_attendance_yields_missing(db_session, range_user):
 
 
 def test_public_holiday_row_has_name(db_session, range_user):
-	mon = _monday_on_or_before(date.today() - timedelta(days=10))
+	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	wed = mon + timedelta(days=2)
 	db_session.add(Holiday(holiday_date=wed, holiday_name="임시공휴일", is_official=True))
 	ci = datetime.combine(wed, time(10, 0))

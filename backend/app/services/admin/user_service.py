@@ -11,6 +11,7 @@ from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
 from models.holiday_models import Holiday
+from utils.seoul_time import today_seoul
 
 
 @dataclass(frozen=True)
@@ -127,7 +128,7 @@ def calculate_user_vacation_snapshot(
 	if user.join_date is None or user.resignation_date is not None:
 		return {"total_days": 0.0, "used_days": 0.0, "remaining_days": 0.0}
 
-	today = today or date.today()
+	today = today or today_seoul()
 	query = (
 		db.query(Todo)
 		.filter(Todo.user_id == user.user_login_id)
@@ -299,7 +300,7 @@ def sync_all_users_vacation(db: Session):
 		User.resignation_date.is_(None)
 	).all()
 	
-	today = date.today()
+	today = today_seoul()
 	user_login_ids = [u.user_login_id for u in users]
 
 	# 성능 최적화: 사용자별 Todo를 한 번에 조회해서 메모리에서 그룹핑
