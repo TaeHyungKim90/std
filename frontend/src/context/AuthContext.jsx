@@ -57,39 +57,51 @@ export const AuthProvider = ({ children }) => {
 		});
 	}, [resetAuthState]);
 
+	const applyAuthCheckResult = useCallback((res) => {
+		if (res.data && res.data.isLoggedIn) {
+			setIsLoggedIn(true);
+			setUserName(res.data.userName);
+			setUserNickname(res.data.userNickname);
+			setUserId(res.data.userId);
+			setUserProfileImageUrl(res.data.user_profile_image_url || null);
+			setUserRole(res.data.role || 'user');
+			setJoinDate(res.data.join_date || null);
+			setResignationDate(res.data.resignation_date || null);
+			return true;
+		}
+		resetAuthState();
+		return false;
+	}, [resetAuthState]);
+
 	// ✅ 2. 인증 확인 함수 (Macro 액션 -> 전체 로딩바 띄우고 토스트는 숨김!)
 	const checkAuth = useCallback(async () => {
 		// 🌟 앱 진입 시 하얀 화면을 막기 위해 전체 로딩바 ON
-		showLoading("사용자 정보를 확인 중입니다... ⏳"); 
-		
+		showLoading("사용자 정보를 확인 중입니다... ⏳");
+
 		try {
-			// 🚨 잦은 알림 방지를 위해 toastPromise 대신 일반 통신 사용
 			const res = await authApi.checkAuth();
-			
-			if (res.data && res.data.isLoggedIn) {
-				setIsLoggedIn(true);
-				setUserName(res.data.userName);
-				setUserNickname(res.data.userNickname);
-				setUserId(res.data.userId);
-				setUserProfileImageUrl(res.data.user_profile_image_url || null);
-				setUserRole(res.data.role || 'user');
-				setJoinDate(res.data.join_date || null);
-				setResignationDate(res.data.resignation_date || null);
-				return true;
-			} else {
-				resetAuthState();
-				return false; 
-			}
+			return applyAuthCheckResult(res);
 		} catch (err) {
 			console.error("인증 확인 실패:", err);
 			resetAuthState();
 			return false;
 		} finally {
-			// 🌟 통신이 끝나면 전체 로딩바 OFF
-			hideLoading(); 
-			setLoading(false); 
+			hideLoading();
+			setLoading(false);
 		}
-	}, [showLoading, hideLoading, resetAuthState]);
+	}, [showLoading, hideLoading, resetAuthState, applyAuthCheckResult]);
+
+	/** 전역 로딩 없이 DB 기준으로 세션·프로필(입사일 등)만 동기화 — 화면 재진입 시 사용 */
+	const refreshAuth = useCallback(async () => {
+		try {
+			const res = await authApi.checkAuth();
+			return applyAuthCheckResult(res);
+		} catch (err) {
+			console.error("인증 갱신 실패:", err);
+			resetAuthState();
+			return false;
+		}
+	}, [applyAuthCheckResult, resetAuthState]);
 
 	useEffect(() => {
 		checkAuth();
@@ -130,7 +142,8 @@ export const AuthProvider = ({ children }) => {
 			joinDate, setJoinDate, // DB의 join_date 필드와 매핑됨
 			resignationDate, setResignationDate,
 			loading, logout,
-			checkAuth
+			checkAuth,
+			refreshAuth
 		}}>
 			{children}
 		</AuthContext.Provider>

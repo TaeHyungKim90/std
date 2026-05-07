@@ -7,7 +7,7 @@ import AppModal from 'components/common/AppModal';
 import SideDrawer from 'components/common/SideDrawer';
 import { useAuth } from 'context/AuthContext';
 import { useApiRequest } from 'hooks/useApiRequest';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	addDays,
 	addMonths,
@@ -40,6 +40,18 @@ function monthStartEndYmd(viewMonth) {
 	const from = new Date(y, m, 1);
 	const to = new Date(y, m + 1, 0);
 	return { dateFrom: toYmd(from), dateTo: toYmd(to) };
+}
+
+/** dateFrom~dateTo(포함) YYYY-MM-DD 목록 — 렌더·API 구간 동일 기준 (31일 달 누락 방지) */
+function enumerateYmdInclusive(dateFrom, dateTo) {
+	const out = [];
+	const startDate = new Date(`${dateFrom}T00:00:00`);
+	const endDate = new Date(`${dateTo}T00:00:00`);
+	if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return out;
+	for (let d = startDate; d <= endDate; d = addDays(d, 1)) {
+		out.push(toYmd(d));
+	}
+	return out;
 }
 
 function weekEndYmd(weekStartYmd) {
@@ -114,8 +126,42 @@ function isVacationContext(clockCtx) {
 	);
 }
 
+function isSameCalendarMonth(a, b) {
+	return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+/** 내 보고서 일일 목록 스크롤 박스(.rep-my-reports-body--scroll)를 우선 — scrollHeight 판정 전에 잘못된 조상 선택 방지 */
+function getVerticalScrollParent(node) {
+	let el = node?.parentElement ?? null;
+	while (el && el !== document.documentElement) {
+		if (el.classList.contains('rep-my-reports-body--scroll')) {
+			return el;
+		}
+		const { overflowY } = getComputedStyle(el);
+		if (/(auto|scroll|overlay)/.test(overflowY) && el.scrollHeight > el.clientHeight + 1) {
+			return el;
+		}
+		el = el.parentElement;
+	}
+	return document.scrollingElement || document.documentElement;
+}
+
+/** 일일 목록 스크롤 박스 안에서 오늘 행이 보이는 영역 상단에 오도록 스크롤 */
+function scrollDailyRowToListViewportTop(rowEl, gapPx = 8) {
+	if (!rowEl || !(rowEl instanceof Element)) return;
+	const scrollParent = getVerticalScrollParent(rowEl);
+	if (!scrollParent) return;
+	const pRect = scrollParent.getBoundingClientRect();
+	const desiredRowTop = pRect.top + gapPx;
+	const eRect = rowEl.getBoundingClientRect();
+	const delta = eRect.top - desiredRowTop;
+	if (Math.abs(delta) < 2) return;
+	scrollParent.scrollTop += delta;
+}
+
 const MyReports = () => {
 	const auth = useAuth();
+	const refreshAuth = auth?.refreshAuth;
 	const joinDate = auth?.joinDate ?? null; // DB의 join_date 필드와 매핑됨
 	const authLoading = auth == null ? true : Boolean(auth.loading);
 	const hireDateRaw = joinDate ?? null;
@@ -147,6 +193,9 @@ const MyReports = () => {
 	const [confirmTargetYmd, setConfirmTargetYmd] = useState('');
 	const [confirmTargetAttendance, setConfirmTargetAttendance] = useState(null);
 	const [confirmMessage, setConfirmMessage] = useState('출근 기록이 없는 날입니다. 작성을 진행하시겠습니까?');
+
+	const dailyListRef = useRef(null);
+	const prevDailyLoadingRef = useRef(false);
 
 	const putDailyCall = useCallback((payload) => reportApi.putDaily(payload), []);
 	const { request: saveDailyReq, loading: savingDaily } = useApiRequest(putDailyCall);
@@ -190,12 +239,7 @@ const MyReports = () => {
 	}, [dailyRows]);
 
 	const loadMonthDailies = useCallback(async () => {
-		const monthYmds = [];
-		const startDate = new Date(`${dateFrom}T00:00:00`);
-		const endDate = new Date(`${dateTo}T00:00:00`);
-		for (let d = startDate; d <= endDate; d = addDays(d, 1)) {
-			monthYmds.push(toYmd(d));
-		}
+		const monthYmds = enumerateYmdInclusive(dateFrom, dateTo);
 		setDailyLoading(true);
 		try {
 			const [res, , ctxResponses] = await Promise.all([
@@ -252,9 +296,15 @@ const MyReports = () => {
 		}
 	}, [weekStartYmd, loadHolidayDates]);
 
+	// 다른 메뉴를 갔다가 다시 들어올 때 입사일 등 최신 값을 DB와 맞춤 (페이지 내 탭 전환만으로는 호출되지 않음)
+	useEffect(() => {
+		if (!refreshAuth) return;
+		refreshAuth();
+	}, [refreshAuth]);
+
 	useEffect(() => {
 		if (reportsBlockedNoHireDate) return;
-		if (mainTab === 'daily') loadMonthDailies();
+		if (mainTab === 'daily') void loadMonthDailies();
 	}, [mainTab, loadMonthDailies, reportsBlockedNoHireDate]);
 
 	useEffect(() => {
@@ -270,17 +320,43 @@ const MyReports = () => {
 		}
 	}, [reportsBlockedNoHireDate]);
 
-	const daysInMonth = useMemo(() => {
-		const y = viewMonth.getFullYear();
-		const m = viewMonth.getMonth();
-		const last = new Date(y, m + 1, 0).getDate();
-		const out = [];
-		for (let d = 1; d <= last; d += 1) {
-			const dt = new Date(y, m, d);
-			out.push(toYmd(dt));
-		}
-		return out;
-	}, [viewMonth]);
+	const daysInMonth = useMemo(() => enumerateYmdInclusive(dateFrom, dateTo), [dateFrom, dateTo]);
+
+	const viewingCurrentMonth = useMemo(
+		() => isSameCalendarMonth(viewMonth, normalizeToMidnight(new Date())),
+		[viewMonth]
+	);
+
+	// 일일 목록 로드가 끝난 직후에만 스크롤 — 마운트 시 dailyLoading=false인 채로 effect가 먼저 도는 레이스 방지
+	useEffect(() => {
+		const wasLoading = prevDailyLoadingRef.current;
+		const finishedMonthFetch = wasLoading === true && dailyLoading === false;
+		prevDailyLoadingRef.current = dailyLoading;
+
+		if (!finishedMonthFetch) return;
+		if (mainTab !== 'daily' || reportsBlockedNoHireDate || authLoading) return;
+		if (!viewingCurrentMonth) return;
+
+		const todayYmd = toYmd(normalizeToMidnight(new Date()));
+		const root = dailyListRef.current;
+		if (!root) return;
+		const el = root.querySelector(`[data-rep-daily-ymd="${todayYmd}"]`);
+		if (!el) return;
+
+		// 레이아웃은 .bq-main-content 가 스크롤 — scrollIntoView 만으론 맨 위 정렬이 불안정할 수 있음
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				scrollDailyRowToListViewportTop(el, 8);
+			});
+		});
+	}, [
+		authLoading,
+		dailyLoading,
+		mainTab,
+		reportsBlockedNoHireDate,
+		viewMonth,
+		viewingCurrentMonth,
+	]);
 
 	const closeDailyDrawer = useCallback(() => {
 		setDrawerOpen(false);
@@ -436,7 +512,7 @@ const MyReports = () => {
 			});
 		}
 		return lines;
-	}, [weekStartYmd, weekDailies, authLoading, hasHireDate, hireDate, holidayDates, weekClockContexts]);
+	}, [weekStartYmd, weekDailies, authLoading, hasHireDate, hireDate, holidayDates, holidayNames, weekClockContexts]);
 
 	useEffect(() => {
 		return () => {
@@ -447,38 +523,31 @@ const MyReports = () => {
 
 	return (
 		<div className="rep-page rep-page--wide rep-page--my-reports">
-			<h1 className="rep-page__title">내 보고서</h1>
-			<p className="rep-page__sub">일일 업무 내역과 주간 요약을 등록합니다. (캘린더 일정과는 별도입니다.)</p>
+			<div className="rep-my-reports-head">
+				<h1 className="rep-page__title">내 보고서</h1>
+				<p className="rep-page__sub">일일 업무 내역과 주간 요약을 등록합니다. (캘린더 일정과는 별도입니다.)</p>
 
-			<div className="rep-tabs" role="tablist">
-				{REPORT_TABS.map((t) => (
-					<button
-						key={t.id}
-						type="button"
-						role="tab"
-						aria-selected={mainTab === t.id}
-						disabled={reportsBlockedNoHireDate}
-						aria-disabled={reportsBlockedNoHireDate}
-						className={`rep-tab ${mainTab === t.id ? 'rep-tab--active' : ''}`}
-						onClick={() => {
-							if (reportsBlockedNoHireDate) return;
-							setMainTab(t.id);
-						}}
-					>
-						{t.label}
-					</button>
-				))}
-			</div>
-
-			{reportsBlockedNoHireDate ? (
-				<div className="rep-empty-state" role="alert">
-					<p className="rep-empty-state__title">보고서 작성 불가</p>
-					<p className="rep-empty-state__message">{NO_HIRE_DATE_MESSAGE}</p>
+				<div className="rep-tabs" role="tablist">
+					{REPORT_TABS.map((t) => (
+						<button
+							key={t.id}
+							type="button"
+							role="tab"
+							aria-selected={mainTab === t.id}
+							disabled={reportsBlockedNoHireDate}
+							aria-disabled={reportsBlockedNoHireDate}
+							className={`rep-tab ${mainTab === t.id ? 'rep-tab--active' : ''}`}
+							onClick={() => {
+								if (reportsBlockedNoHireDate) return;
+								setMainTab(t.id);
+							}}
+						>
+							{t.label}
+						</button>
+					))}
 				</div>
-			) : null}
 
-			{!reportsBlockedNoHireDate && mainTab === 'daily' && (
-				<>
+				{!reportsBlockedNoHireDate && mainTab === 'daily' ? (
 					<div className="rep-toolbar">
 						<span className="rep-label">
 							{viewMonth.getFullYear()}년 {pad2(viewMonth.getMonth() + 1)}월
@@ -492,12 +561,39 @@ const MyReports = () => {
 							</button>
 						</div>
 					</div>
-					{authLoading ? (
-						<p className="rep-empty">로그인·입사일 정보를 불러오는 중입니다…</p>
-					) : dailyLoading ? (
-						<p className="rep-empty">불러오는 중…</p>
-					) : (
-						<div className="rep-list">
+				) : null}
+
+				{!reportsBlockedNoHireDate && mainTab === 'weekly' ? (
+					<div className="rep-toolbar">
+						<span className="rep-label">주간: {weekLabel(startOfWeekSunday(weekAnchor))}</span>
+						<div>
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(-1)}>
+								이전 주
+							</button>
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(1)}>
+								다음 주
+							</button>
+						</div>
+					</div>
+				) : null}
+			</div>
+
+			<div className="rep-my-reports-body rep-my-reports-body--scroll">
+				{reportsBlockedNoHireDate ? (
+					<div className="rep-empty-state" role="alert">
+						<p className="rep-empty-state__title">보고서 작성 불가</p>
+						<p className="rep-empty-state__message">{NO_HIRE_DATE_MESSAGE}</p>
+					</div>
+				) : null}
+
+				{!reportsBlockedNoHireDate && mainTab === 'daily' && (
+					<>
+						{authLoading ? (
+							<p className="rep-empty">로그인·입사일 정보를 불러오는 중입니다…</p>
+						) : dailyLoading ? (
+							<p className="rep-empty">불러오는 중…</p>
+						) : (
+							<div className="rep-list" ref={dailyListRef}>
 							{dailyDrawerPreflight ? (
 								<p className="rep-empty rep-empty--inline">출퇴근 기록을 확인하는 중입니다…</p>
 							) : null}
@@ -514,6 +610,7 @@ const MyReports = () => {
 									<button
 										key={ymd}
 										type="button"
+										data-rep-daily-ymd={ymd}
 										className={`rep-list-item rep-list-item--daily stagger-item${beforeJoin ? ' rep-list-item--before-join' : ''}`}
 										disabled={pageBusy}
 										onClick={() => {
@@ -545,28 +642,17 @@ const MyReports = () => {
 									</button>
 								);
 							})}
-						</div>
-					)}
-				</>
-			)}
+							</div>
+						)}
+					</>
+				)}
 
-			{!reportsBlockedNoHireDate && mainTab === 'weekly' && (
-				<>
-					<div className="rep-toolbar">
-						<span className="rep-label">주간: {weekLabel(startOfWeekSunday(weekAnchor))}</span>
-						<div>
-							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(-1)}>
-								이전 주
-							</button>
-							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftWeek(1)}>
-								다음 주
-							</button>
-						</div>
-					</div>
-					{weekLoading ? (
-						<p className="rep-empty">불러오는 중…</p>
-					) : (
-						<div className="rep-split rep-split--weekly">
+				{!reportsBlockedNoHireDate && mainTab === 'weekly' && (
+					<>
+						{weekLoading ? (
+							<p className="rep-empty">불러오는 중…</p>
+						) : (
+							<div className="rep-split rep-split--weekly">
 							<div className="rep-split__col rep-split__col--readonly">
 								<h3 className="rep-split__col-title">이번 주 일일 보고 (읽기 전용)</h3>
 								<div className="rep-readonly-block">
@@ -601,10 +687,11 @@ const MyReports = () => {
 									{savingWeekly ? '저장 중…' : '주간 보고 저장'}
 								</button>
 							</div>
-						</div>
-					)}
-				</>
-			)}
+							</div>
+						)}
+					</>
+				)}
+			</div>
 
 			<SideDrawer
 				open={drawerOpen && hasHireDate && !reportsBlockedNoHireDate}

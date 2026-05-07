@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { attendanceApi } from 'api/attendanceApi';
+import { holidayApi } from 'api/holidayApi';
 import { reportApi } from 'api/reportApi';
 import { useAuth } from 'context/AuthContext';
 import React from 'react';
@@ -14,6 +15,13 @@ jest.mock('context/AuthContext', () => ({
 jest.mock('api/attendanceApi', () => ({
 	attendanceApi: {
 		getAttendanceForDay: jest.fn(),
+		getClockContext: jest.fn(),
+	},
+}));
+
+jest.mock('api/holidayApi', () => ({
+	holidayApi: {
+		getHolidays: jest.fn(),
 	},
 }));
 
@@ -50,7 +58,11 @@ describe('MyReports', () => {
 		useAuth.mockReturnValue({
 			loading: false,
 			joinDate: '2000-01-01',
+			refreshAuth: jest.fn().mockResolvedValue(true),
 		});
+
+		holidayApi.getHolidays.mockResolvedValue({ data: [] });
+		attendanceApi.getClockContext.mockResolvedValue({ data: null });
 
 		reportApi.getDailyRange.mockResolvedValue({ data: [] });
 		reportApi.getWeekly.mockResolvedValue({ data: { summary: '' } });

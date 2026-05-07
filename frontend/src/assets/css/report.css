@@ -42,9 +42,39 @@ aside.rep-drawer-panel.dynamic-enter {
 	padding: 1.25rem 0 2rem;
 }
 
-/* 내 보고서: 세로 리듬만 조금 넓게 */
+/* 내 보고서: 상단 블록 고정 + 일일/주간 본문만 안에서 스크롤 */
 .rep-page--wide.rep-page--my-reports {
 	padding: 1.35rem 0 2.25rem;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.rep-page--my-reports .rep-my-reports-head {
+	flex-shrink: 0;
+	margin: 0 0 0.5rem;
+	padding-bottom: 0.6rem;
+	background: var(--bq-bg-main, #f0eee9);
+	border-bottom: 1px solid var(--bq-border-soft, #e2dfd8);
+}
+
+.rep-page--my-reports .rep-my-reports-head .rep-toolbar {
+	margin-bottom: 0;
+}
+
+.rep-page--my-reports .rep-my-reports-body--scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* 말일 행도 목록 영역 맨 위까지 스크롤 가능하도록(뷰포트 높이만큼 여유) */
+.rep-page--my-reports .rep-my-reports-body--scroll .rep-list {
+	padding-bottom: max(65vh, 24rem, calc(100dvh - 9rem));
 }
 
 .rep-page__title {
@@ -322,6 +352,11 @@ aside.rep-drawer-panel.dynamic-enter {
 	padding: 0.45rem 0.65rem;
 	gap: 0.5rem;
 	border-radius: 8px;
+}
+
+/* 일일 목록(내부 스크롤): 포커스 시 약간만 여백 */
+.rep-page--my-reports .rep-list .rep-list-item--daily {
+	scroll-margin-top: 0.5rem;
 }
 
 .rep-list-item:hover {
