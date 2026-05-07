@@ -72,9 +72,20 @@ aside.rep-drawer-panel.dynamic-enter {
 	-webkit-overflow-scrolling: touch;
 }
 
-/* 말일 행도 목록 영역 맨 위까지 스크롤 가능하도록(뷰포트 높이만큼 여유) */
+/* 말일을 목록 상단까지 올릴 수 있는 최소 여백 — 과도한 vh 패딩으로 빈 스크롤이 생기지 않도록 */
 .rep-page--my-reports .rep-my-reports-body--scroll .rep-list {
-	padding-bottom: max(65vh, 24rem, calc(100dvh - 9rem));
+	padding-bottom: min(26vh, 12rem);
+}
+
+@supports (container-type: size) {
+	.rep-page--my-reports .rep-my-reports-body--scroll {
+		container-type: size;
+	}
+
+	.rep-page--my-reports .rep-my-reports-body--scroll .rep-list {
+		/* 스크롤 박스 세로의 100% − 한 행 여유 ≈ 말일을 맨 위에 붙일 최대치 */
+		padding-bottom: max(0px, calc(100cqh - 5.5rem));
+	}
 }
 
 .rep-page__title {
