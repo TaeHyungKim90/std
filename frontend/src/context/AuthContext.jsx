@@ -8,6 +8,20 @@ import * as Notify from 'utils/toastUtils';
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
 import { useLoading } from './LoadingContext';
 
+function normalizeSessionAvatarAdjust(src) {
+	if (!src || typeof src !== 'object') {
+		return { zoom: 1, offsetX: 0, offsetY: 0 };
+	}
+	const z = src.zoom ?? src.avatar_zoom;
+	const ox = src.offsetX ?? src.avatar_offset_x;
+	const oy = src.offsetY ?? src.avatar_offset_y;
+	return {
+		zoom: Number.isFinite(Number(z)) && Number(z) > 0 ? Number(z) : 1,
+		offsetX: Number.isFinite(Number(ox)) ? Number(ox) : 0,
+		offsetY: Number.isFinite(Number(oy)) ? Number(oy) : 0,
+	};
+}
+
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -17,6 +31,8 @@ export const AuthProvider = ({ children }) => {
 	const [userRole, setUserRole] = useState('user');
 	const [userId, setUserId] = useState('');
 	const [userProfileImageUrl, setUserProfileImageUrl] = useState(null);
+	const [userProfileImageCacheBust, setUserProfileImageCacheBust] = useState(0);
+	const [userAvatarAdjust, setUserAvatarAdjust] = useState(() => ({ zoom: 1, offsetX: 0, offsetY: 0 }));
 	const [joinDate, setJoinDate] = useState(null);
 	const [resignationDate, setResignationDate] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -35,6 +51,8 @@ export const AuthProvider = ({ children }) => {
 		setUserNickname('');
 		setUserId('');
 		setUserProfileImageUrl(null);
+		setUserProfileImageCacheBust(0);
+		setUserAvatarAdjust({ zoom: 1, offsetX: 0, offsetY: 0 });
 		setUserRole('user');
 		setJoinDate(null);
 		setResignationDate(null);
@@ -64,6 +82,7 @@ export const AuthProvider = ({ children }) => {
 			setUserNickname(res.data.userNickname);
 			setUserId(res.data.userId);
 			setUserProfileImageUrl(res.data.user_profile_image_url || null);
+			setUserAvatarAdjust(normalizeSessionAvatarAdjust(res.data));
 			setUserRole(res.data.role || 'user');
 			setJoinDate(res.data.join_date || null);
 			setResignationDate(res.data.resignation_date || null);
@@ -72,6 +91,14 @@ export const AuthProvider = ({ children }) => {
 		resetAuthState();
 		return false;
 	}, [resetAuthState]);
+
+	const syncUserProfileImage = useCallback((url, adjustSrc) => {
+		setUserProfileImageUrl(url || null);
+		if (adjustSrc != null) {
+			setUserAvatarAdjust(normalizeSessionAvatarAdjust(adjustSrc));
+		}
+		setUserProfileImageCacheBust((k) => k + 1);
+	}, []);
 
 	// ✅ 2. 인증 확인 함수 (Macro 액션 -> 전체 로딩바 띄우고 토스트는 숨김!)
 	const checkAuth = useCallback(async () => {
@@ -138,7 +165,11 @@ export const AuthProvider = ({ children }) => {
 			userNickname, setUserNickname,
 			userRole, setUserRole,
 			userId, setUserId,
-			userProfileImageUrl, setUserProfileImageUrl,
+			userProfileImageUrl,
+			setUserProfileImageUrl,
+			userProfileImageCacheBust,
+			syncUserProfileImage,
+			userAvatarAdjust,
 			joinDate, setJoinDate, // DB의 join_date 필드와 매핑됨
 			resignationDate, setResignationDate,
 			loading, logout,

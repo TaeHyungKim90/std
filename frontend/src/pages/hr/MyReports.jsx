@@ -187,8 +187,13 @@ const MyReports = () => {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [drawerDate, setDrawerDate] = useState('');
 	const [drawerContent, setDrawerContent] = useState('');
+	/** 열었을 때(또는 해당 날짜로 다시 적용했을 때) 서버/목록 기준 본문 — 수정 여부 판별용 */
+	const [drawerBaseline, setDrawerBaseline] = useState('');
 	const [drawerAttendance, setDrawerAttendance] = useState(null);
 	const [dailyDrawerPreflight, setDailyDrawerPreflight] = useState(false);
+	const [dailyUnsavedModal, setDailyUnsavedModal] = useState(null);
+	const suppressDailyDirtyGuardRef = useRef(false);
+	const openDailyDrawerRef = useRef(async (_ymd) => {});
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmTargetYmd, setConfirmTargetYmd] = useState('');
 	const [confirmTargetAttendance, setConfirmTargetAttendance] = useState(null);
@@ -362,19 +367,51 @@ const MyReports = () => {
 		setDrawerOpen(false);
 		setDrawerDate('');
 		setDrawerContent('');
+		setDrawerBaseline('');
 		setDrawerAttendance(null);
 	}, []);
 
 	const applyDailyDrawerOpen = useCallback(
 		(ymd, rec) => {
 			const row = dailyByDate.get(ymd);
+			const initial = row?.content ? String(row.content) : '';
 			setDrawerDate(ymd);
-			setDrawerContent(row?.content ? String(row.content) : '');
+			setDrawerContent(initial);
+			setDrawerBaseline(initial);
 			setDrawerAttendance(rec ?? null);
 			setDrawerOpen(true);
 		},
 		[dailyByDate]
 	);
+
+	const isDailyDrawerDirty = useMemo(() => {
+		if (!drawerOpen || !drawerDate) return false;
+		return drawerContent.trim() !== drawerBaseline.trim();
+	}, [drawerOpen, drawerDate, drawerContent, drawerBaseline]);
+
+	const requestCloseDailyDrawer = useCallback(() => {
+		if (!drawerOpen) return;
+		if (isDailyDrawerDirty) {
+			setDailyUnsavedModal({ intent: 'close', pendingYmd: null });
+			return;
+		}
+		closeDailyDrawer();
+	}, [drawerOpen, isDailyDrawerDirty, closeDailyDrawer]);
+
+	const discardDailyDraftAndProceed = useCallback(() => {
+		const pending = dailyUnsavedModal;
+		setDailyUnsavedModal(null);
+		if (!pending) return;
+		if (pending.intent === 'close') {
+			closeDailyDrawer();
+			return;
+		}
+		if (pending.intent === 'openOther' && pending.pendingYmd) {
+			closeDailyDrawer();
+			suppressDailyDirtyGuardRef.current = true;
+			void openDailyDrawerRef.current(pending.pendingYmd);
+		}
+	}, [dailyUnsavedModal, closeDailyDrawer]);
 
 	const closeConfirmModal = useCallback(() => {
 		setConfirmOpen(false);
@@ -405,6 +442,16 @@ const MyReports = () => {
 				return;
 			}
 
+			if (!suppressDailyDirtyGuardRef.current) {
+				if (drawerOpen && drawerDate && drawerDate !== ymd) {
+					if (drawerContent.trim() !== drawerBaseline.trim()) {
+						setDailyUnsavedModal({ intent: 'openOther', pendingYmd: ymd });
+						return;
+					}
+				}
+			}
+			suppressDailyDirtyGuardRef.current = false;
+
 			setDailyDrawerPreflight(true);
 			try {
 				const [res, ctxRes] = await Promise.all([
@@ -429,10 +476,27 @@ const MyReports = () => {
 				setDailyDrawerPreflight(false);
 			}
 		},
-		[authLoading, hasHireDate, hireDate, applyDailyDrawerOpen, dailyDrawerPreflight, savingDaily, weekLoading, dailyLoading]
+		[
+			authLoading,
+			hasHireDate,
+			hireDate,
+			applyDailyDrawerOpen,
+			dailyDrawerPreflight,
+			savingDaily,
+			weekLoading,
+			dailyLoading,
+			drawerOpen,
+			drawerDate,
+			drawerContent,
+			drawerBaseline,
+		]
 	);
 
-	const handleSaveDrawer = async () => {
+	useEffect(() => {
+		openDailyDrawerRef.current = openDailyDrawer;
+	}, [openDailyDrawer]);
+
+	const handleSaveDrawer = async (afterSuccess) => {
 		if (savingDaily || dailyDrawerPreflight) return;
 		if (!hasHireDate || reportsBlockedNoHireDate) {
 			Notify.toastError(NO_HIRE_DATE_MESSAGE);
@@ -445,8 +509,15 @@ const MyReports = () => {
 		}
 		try {
 			await saveDailyReq({ report_date: drawerDate, content: text });
-			closeDailyDrawer();
 			await loadMonthDailies();
+			setDailyUnsavedModal(null);
+			if (afterSuccess?.kind === 'openOther' && afterSuccess.ymd) {
+				closeDailyDrawer();
+				suppressDailyDirtyGuardRef.current = true;
+				await openDailyDrawerRef.current(afterSuccess.ymd);
+			} else {
+				closeDailyDrawer();
+			}
 		} catch {
 			/* toast는 훅에서 처리 */
 		}
@@ -695,13 +766,13 @@ const MyReports = () => {
 
 			<SideDrawer
 				open={drawerOpen && hasHireDate && !reportsBlockedNoHireDate}
-				onClose={closeDailyDrawer}
+				onClose={requestCloseDailyDrawer}
 				overlayClassName="rep-drawer-overlay"
 				panelClassName="rep-drawer-panel dynamic-enter"
 			>
 				<div className="rep-drawer-head">
 					<h2 className="rep-drawer-title">일일 보고 — {drawerDate}</h2>
-					<button type="button" className="rep-drawer-close" onClick={closeDailyDrawer} aria-label="닫기">
+					<button type="button" className="rep-drawer-close" onClick={requestCloseDailyDrawer} aria-label="닫기">
 						×
 					</button>
 				</div>
@@ -738,7 +809,12 @@ const MyReports = () => {
 						onChange={(e) => setDrawerContent(e.target.value)}
 						placeholder="당일 수행한 업무를 입력하세요."
 					/>
-					<button type="button" className="rep-btn-primary" disabled={savingDaily} onClick={handleSaveDrawer}>
+					<button
+						type="button"
+						className="rep-btn-primary"
+						disabled={savingDaily}
+						onClick={() => void handleSaveDrawer()}
+					>
 						{savingDaily ? '저장 중…' : '저장'}
 					</button>
 				</div>
@@ -753,6 +829,34 @@ const MyReports = () => {
 					</button>
 					<button type="button" className="rep-btn-primary" disabled={pageBusy} onClick={proceedConfirmOpen}>
 						진행
+					</button>
+				</div>
+			</AppModal>
+
+			<AppModal
+				isOpen={Boolean(dailyUnsavedModal)}
+				onClose={() => setDailyUnsavedModal(null)}
+				contentClassName="rep-confirm-modal"
+			>
+				<h3 className="rep-confirm-modal__title">저장되지 않은 내용</h3>
+				<p className="rep-confirm-modal__message">
+					{dailyUnsavedModal?.intent === 'openOther'
+						? '입력 중인 일일 보고가 있습니다. 다른 날짜로 이동하면 지금 입력한 내용이 사라집니다.'
+						: '입력 중인 일일 보고가 있습니다. 창을 닫으면 지금 입력한 내용이 사라집니다.'}
+				</p>
+				<div className="rep-confirm-modal__actions rep-confirm-modal__actions--stack">
+					<button type="button" className="rep-btn-primary" disabled={pageBusy} onClick={() => void handleSaveDrawer(
+						dailyUnsavedModal?.intent === 'openOther' && dailyUnsavedModal.pendingYmd
+							? { afterSuccess: { kind: 'openOther', ymd: dailyUnsavedModal.pendingYmd } }
+							: undefined
+					)}>
+						저장
+					</button>
+					<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={discardDailyDraftAndProceed}>
+						저장하지 않고 {dailyUnsavedModal?.intent === 'openOther' ? '이동' : '닫기'}
+					</button>
+					<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => setDailyUnsavedModal(null)}>
+						취소
 					</button>
 				</div>
 			</AppModal>

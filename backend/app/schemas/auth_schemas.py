@@ -28,6 +28,9 @@ class AuthCheckResponse(BaseModel):
 	access_token: Optional[str] = None
 	userId: Optional[str] = None
 	user_profile_image_url: Optional[str] = None
+	avatar_zoom: Optional[float] = None
+	avatar_offset_x: Optional[float] = None
+	avatar_offset_y: Optional[float] = None
 	join_date: Optional[date] = None
 	resignation_date: Optional[date] = None
 

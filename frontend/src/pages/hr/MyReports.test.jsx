@@ -102,5 +102,32 @@ describe('MyReports', () => {
 
 		await waitFor(() => expect(screen.queryByLabelText('업무 내역')).not.toBeInTheDocument());
 	});
+
+	test('일일 보고 입력 중 오버레이 클릭 시 확인 모달이 뜨고 취소하면 내용이 유지된다', async () => {
+		render(<MyReports />);
+
+		await waitFor(() => {
+			expect(screen.getAllByRole('button', { name: /\d{4}-\d{2}-\d{2}/ }).length).toBeGreaterThan(0);
+		});
+
+		const dayButtons = screen.getAllByRole('button', { name: /\d{4}-\d{2}-\d{2}/ });
+		await userEvent.click(dayButtons[0]);
+
+		const textarea = await screen.findByLabelText('업무 내역');
+		await userEvent.clear(textarea);
+		await userEvent.type(textarea, '작성 중인 초안');
+
+		const overlay = document.querySelector('.rep-drawer-overlay');
+		expect(overlay).toBeTruthy();
+		await userEvent.click(overlay);
+
+		expect(await screen.findByText('저장되지 않은 내용')).toBeInTheDocument();
+		await userEvent.click(screen.getByRole('button', { name: '취소' }));
+
+		await waitFor(() => {
+			expect(screen.queryByText('저장되지 않은 내용')).not.toBeInTheDocument();
+		});
+		expect(screen.getByLabelText('업무 내역')).toHaveValue('작성 중인 초안');
+	});
 });
 

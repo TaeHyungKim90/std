@@ -228,6 +228,9 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 	join_date = None
 	resignation_date = None
 	user_profile_image_url = None
+	avatar_zoom = 1.0
+	avatar_offset_x = 0.0
+	avatar_offset_y = 0.0
 	user_name = payload.get("userName")
 	user_nickname = payload.get("userNickname")
 	user_role = payload.get("role")
@@ -243,6 +246,9 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 			join_date = user.join_date
 			resignation_date = user.resignation_date
 			user_profile_image_url = user.user_profile_image_url
+			avatar_zoom = float(user.avatar_zoom)
+			avatar_offset_x = float(user.avatar_offset_x)
+			avatar_offset_y = float(user.avatar_offset_y)
 	if join_date is None:
 		join_date = _optional_date_from_payload(payload.get("join_date"))
 	if resignation_date is None:
@@ -255,6 +261,9 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 		"role": user_role,
 		"userId": user_login_id,
 		"user_profile_image_url": user_profile_image_url,
+		"avatar_zoom": avatar_zoom,
+		"avatar_offset_x": avatar_offset_x,
+		"avatar_offset_y": avatar_offset_y,
 		"join_date": join_date,
 		"resignation_date": resignation_date,
 	}

@@ -109,8 +109,42 @@
 .fc-event:hover {
 	transform: scale(1.02); /* 클릭 가능한 일정임을 시각적으로 표현 */
 }
+
+/* 월 뷰 셀 안: 확대 시 경계를 뚫는 것 방지 */
+.fc .fc-daygrid-event.fc-event:hover {
+	transform: none;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+}
 .fc-daygrid-day.fc-day-today {
 	background-color: rgba(61, 175, 122, 0.08) !important;
+}
+
+/* 월 그리드: 열이 내용에 끌려 넓어지지 않게 + 셀 경계 밖으로 텍스트가 나가지 않게 */
+.fc .fc-scrollgrid-sync-table {
+	table-layout: fixed;
+}
+
+.fc .fc-daygrid-day {
+	min-width: 0;
+}
+
+.fc .fc-daygrid-day-frame {
+	min-width: 0;
+}
+
+.fc .fc-daygrid-day-top {
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+/* 커스텀 day 셀 내용이 <a class="fc-daygrid-day-number"> 안에 들어가므로 앵커도 폭 제한 */
+.fc a.fc-daygrid-day-number {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow: hidden;
 }
 
 /* 한 줄: 왼쪽 공휴일(말줄임) · 오른쪽 날짜 */
@@ -121,10 +155,13 @@
 	justify-content: flex-end;
 	gap: 4px;
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	padding: 2px 4px;
 	box-sizing: border-box;
 	min-height: 1.25em;
 	line-height: 1.25;
+	overflow: hidden;
 }
 
 .fc .fc-day-cell-custom--holiday {
@@ -133,6 +170,7 @@
 
 .fc .fc-day-number-text {
 	flex: 0 0 auto;
+	flex-shrink: 0;
 }
 
 .fc .fc-holiday-label {
@@ -147,6 +185,43 @@
 	text-overflow: ellipsis;
 	cursor: default;
 }
+
+/* 일정 블록: 셀 안에서만 보이도록 + 제목 말줄임 (태블릿 등 좁은 칸) */
+.fc .fc-daygrid-event-harness {
+	max-width: 100%;
+}
+
+.fc .fc-daygrid-event,
+.fc .fc-daygrid-block-event.fc-h-event {
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.fc .fc-daygrid-event .fc-event-main,
+.fc .fc-daygrid-event .fc-event-main-frame {
+	min-width: 0;
+	overflow: hidden;
+}
+
+.fc .fc-daygrid-event .fc-event-title {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fc .fc-daygrid-dot-event {
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.fc .fc-daygrid-dot-event .fc-event-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .color-palette-container {
 	display: flex; 
 	justify-content: center; 

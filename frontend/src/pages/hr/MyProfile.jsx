@@ -42,7 +42,7 @@ function formatDateRange(startDate, endDate) {
 }
 
 const MyProfile = () => {
-	const { checkAuth } = useAuth();
+	const { checkAuth, syncUserProfileImage } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [profile, setProfile] = useState(null);
@@ -84,13 +84,14 @@ const MyProfile = () => {
 				offsetY: Number(data.avatar_offset_y ?? 0),
 			});
 			setAvatarImgCacheKey((k) => k + 1);
+			syncUserProfileImage(data.user_profile_image_url ?? null, data);
 		} catch (err) {
 			Notify.toastApiFailure(err, '내 정보를 불러오지 못했습니다.');
 			setProfile(null);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [syncUserProfileImage]);
 
 	useEffect(() => {
 		load();
@@ -293,6 +294,7 @@ const MyProfile = () => {
 			});
 			setProfile((prev) => (prev ? { ...prev, ...res.data } : res.data));
 			setAvatarImgCacheKey((k) => k + 1);
+			syncUserProfileImage(res.data?.user_profile_image_url ?? null, res.data);
 			setCropModalOpen(false);
 		} catch (err) {
 			Notify.toastApiFailure(err, '프로필 사진 저장 실패');

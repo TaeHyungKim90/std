@@ -9,7 +9,7 @@ import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const Header = () => {
-	const { isLoggedIn, logout, userNickname, userRole, userName, userProfileImageUrl } = useContext(AuthContext);
+	const { isLoggedIn, logout, userNickname, userRole, userName, userProfileImageUrl, userProfileImageCacheBust, userAvatarAdjust } = useContext(AuthContext);
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -100,6 +100,8 @@ const Header = () => {
 									name={userName}
 									size={24}
 									className="bq-user-avatar"
+									avatarAdjust={userAvatarAdjust}
+									imageCacheBust={userProfileImageCacheBust > 0 ? userProfileImageCacheBust : undefined}
 								/>
 							) : (
 								<div className="bq-status-dot"></div>
@@ -146,6 +148,8 @@ const Header = () => {
 									name={userName}
 									size={28}
 									className="bq-user-avatar"
+									avatarAdjust={userAvatarAdjust}
+									imageCacheBust={userProfileImageCacheBust > 0 ? userProfileImageCacheBust : undefined}
 								/>
 							) : (
 								<div className="bq-status-dot" />

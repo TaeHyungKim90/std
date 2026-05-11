@@ -36,7 +36,13 @@ const UserAvatar = ({
 		if (s.startsWith('blob:') || s.startsWith('data:')) return s;
 		let url = getFilePreviewUrl(s);
 		if (!url) return null;
-		if (imageCacheBust != null && String(imageCacheBust).length > 0) {
+		const bustNum = Number(imageCacheBust);
+		if (
+			imageCacheBust != null &&
+			imageCacheBust !== '' &&
+			Number.isFinite(bustNum) &&
+			bustNum !== 0
+		) {
 			const sep = url.includes('?') ? '&' : '?';
 			url = `${url}${sep}cb=${encodeURIComponent(imageCacheBust)}`;
 		}

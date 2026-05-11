@@ -1121,6 +1121,16 @@ aside.rep-drawer-panel.dynamic-enter {
 	gap: 0.55rem;
 }
 
+.rep-confirm-modal__actions--stack {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.rep-confirm-modal__actions--stack .rep-nav-btn,
+.rep-confirm-modal__actions--stack .rep-btn-primary {
+	justify-content: center;
+}
+
 .rep-loading-overlay {
 	position: fixed;
 	inset: 0;
