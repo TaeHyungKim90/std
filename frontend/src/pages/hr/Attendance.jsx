@@ -12,6 +12,9 @@ import * as Notify from 'utils/toastUtils';
 
 const ACTION_DEBOUNCE_MS = 800;
 
+/** 기본 근무장소: 시드 `location_key=company` (없으면 목록 첫 항목). */
+const DEFAULT_WORK_LOCATION_KEY = 'company';
+
 /** 브라우저 로컬 달력 기준 YYYY-MM-DD (야근 시 근무일 배너용) */
 function formatLocalCalendarYmd(d) {
 	const y = d.getFullYear();
@@ -64,6 +67,7 @@ const AttendanceView = () => {
 			const nextOptions = activeLocations.map((row) => ({
 				label: row.location_value,
 				value: row.location_value,
+				location_key: row.location_key,
 			}));
 			if (savedLocation && !nextOptions.some((opt) => opt.value === savedLocation)) {
 				nextOptions.unshift({ label: savedLocation, value: savedLocation });
@@ -89,7 +93,8 @@ const AttendanceView = () => {
 			} else if (fromLocalPreference) {
 				nextLocation = fromLocalPreference;
 			} else if (nextOptions.length > 0) {
-				nextLocation = nextOptions[0].value;
+				const byCompanyKey = nextOptions.find((o) => o.location_key === DEFAULT_WORK_LOCATION_KEY);
+				nextLocation = (byCompanyKey || nextOptions[0]).value;
 			}
 			setLocationName(nextLocation);
 		} catch (err) {
