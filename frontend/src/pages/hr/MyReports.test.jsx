@@ -14,7 +14,7 @@ jest.mock('context/AuthContext', () => ({
 
 jest.mock('api/attendanceApi', () => ({
 	attendanceApi: {
-		getAttendanceForDay: jest.fn(),
+		getAttendanceDaySessions: jest.fn(),
 		getClockContext: jest.fn(),
 	},
 }));
@@ -69,11 +69,19 @@ describe('MyReports', () => {
 		reportApi.putDaily.mockResolvedValue({ data: {} });
 		reportApi.putWeekly.mockResolvedValue({ data: {} });
 
-		attendanceApi.getAttendanceForDay.mockResolvedValue({
+		attendanceApi.getAttendanceDaySessions.mockResolvedValue({
 			data: {
-				clock_in_time: '2026-04-01T09:00:00',
-				clock_out_time: '2026-04-01T18:00:00',
-				status: 'NORMAL',
+				items: [
+					{
+						id: 1,
+						clock_in_time: '2026-04-01T09:00:00',
+						clock_out_time: '2026-04-01T18:00:00',
+						status: 'NORMAL',
+						night_work_minutes: 0,
+						shift_status: 'CLOSED',
+					},
+				],
+				summary: { total_work_minutes: 480, overtime_minutes: 0, total_night_minutes: 0 },
 			},
 		});
 	});

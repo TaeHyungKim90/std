@@ -31,6 +31,13 @@
 	margin-bottom: 10px;
 }
 
+.attendance-work-date-hint {
+	font-size: 0.88rem;
+	color: var(--bq-text-dim, #6b6b6b);
+	margin-top: 12px;
+	line-height: 1.45;
+}
+
 .digital-clock {
 	font-size: 3.5rem;
 	font-weight: 800;
@@ -162,6 +169,60 @@
 	color: #b42318;
 	font-weight: 700;
 	font-size: 0.9rem;
+}
+
+.attendance-day-totals .value {
+	font-size: 0.88rem;
+	font-weight: 600;
+}
+
+.attendance-day-sessions {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px dashed var(--border-color, #e2dfd8);
+}
+
+.attendance-day-sessions__title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 8px;
+}
+
+.attendance-day-sessions__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.attendance-day-sessions__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	font-size: 0.85rem;
+}
+
+.attendance-day-sessions__badge {
+	font-size: 0.72rem;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(20, 20, 20, 0.06);
+}
+
+.attendance-day-sessions__times {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.attendance-day-sessions__night {
+	font-size: 0.78rem;
+	color: var(--bq-primary);
+	font-weight: 700;
 }
 
 /* 모바일 최적화 */

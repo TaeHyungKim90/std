@@ -5,17 +5,19 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
+from constants.attendance_shift import SHIFT_STATUS_CLOSED, SHIFT_STATUS_IN_PROGRESS
 from constants.vacation_categories import (
 	VACATION_TODO_CATEGORIES,
 	VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM,
 	VACATION_TODO_REQUIRES_OFFICIAL_LEAVE_CONFIRM,
 	VACATION_STATUS_KEYWORDS,
 )
-from core.config import settings
 from models.hr_models import Attendance, Todo
 from models.auth_models import User
 from models.holiday_models import Holiday
 from models.system_models import WorkLocation
+from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
+from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
 
 
 def is_vacation_status(status_str: Any) -> bool:
@@ -34,6 +36,37 @@ def is_vacation_status(status_str: Any) -> bool:
 		elif keyword in s:
 			return True
 	return False
+
+
+def sync_shift_status_from_clock_times(record: Attendance) -> None:
+	"""clock_in / clock_out 조합에 맞춰 shift_status 정합성 유지."""
+	r: Any = record
+	if r.clock_in_time is not None and r.clock_out_time is None:
+		r.shift_status = SHIFT_STATUS_IN_PROGRESS
+	else:
+		r.shift_status = SHIFT_STATUS_CLOSED
+
+
+def get_open_shift(db: Session, user_id: str) -> Attendance | None:
+	"""퇴근 미처리 근무(출근 있음·퇴근 없음). 사용자당 1건 가정, 최근 출근 순."""
+	return (
+		db.query(Attendance)
+		.filter(
+			Attendance.user_id == user_id,
+			Attendance.clock_in_time.isnot(None),
+			Attendance.clock_out_time.is_(None),
+		)
+		.order_by(Attendance.clock_in_time.desc())
+		.first()
+	)
+
+
+def get_today_or_open_attendance(db: Session, user_id: str, today_date: date) -> Attendance | None:
+	"""GET /today용: 미종료 야근이 있으면 그 행을, 없으면 당일 work_date 행을 반환."""
+	open_rec = get_open_shift(db, user_id)
+	if open_rec is not None:
+		return open_rec
+	return get_today_attendance(db, user_id, today_date)
 
 
 def _vacation_todos_for_day(db: Session, user_id: str, target_date: date) -> list[Todo]:
@@ -144,11 +177,22 @@ def _append_official_leave_time_note(
 
 # 1. 특정 날짜의 내 출퇴근 기록 조회
 def get_today_attendance(db: Session, user_id: str, today_date: date):
-	"""오늘 날짜와 사용자 ID로 기존 출퇴근 레코드가 있는지 확인합니다."""
+	"""동일 work_date 중 가장 최근(id desc) 세션 1건. 다회 출근 시 마지막 행."""
 	return (
 		db.query(Attendance)
 		.filter(Attendance.user_id == user_id, Attendance.work_date == today_date)
+		.order_by(Attendance.id.desc())
 		.first()
+	)
+
+
+def list_attendance_sessions_for_work_date(db: Session, user_id: str, work_date: date) -> list[Attendance]:
+	"""당일 근태 행 전부(다회 출근·세션 순서)."""
+	return (
+		db.query(Attendance)
+		.filter(Attendance.user_id == user_id, Attendance.work_date == work_date)
+		.order_by(Attendance.id.asc())
+		.all()
 	)
 
 
@@ -181,7 +225,7 @@ def create_clock_in(
 	db: Session,
 	user_id: str,
 	current_time: datetime,
-	status: str,
+	record_status: str,
 	location: str,
 	lat: float,
 	lng: float,
@@ -199,20 +243,29 @@ def create_clock_in(
 		confirm_official_leave=confirm_official_leave,
 	)
 
-	existing = get_today_attendance(db, user_id, current_time.date())
-	if existing and existing.clock_in_time is not None:
+	if get_open_shift(db, user_id) is not None:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="이미 출근 기록이 존재합니다.",
+			detail="미종료 근무가 있습니다. 먼저 퇴근 처리한 뒤 출근할 수 있습니다.",
 		)
 
-	if existing and existing.clock_in_time is None:
-		rec: Any = existing
+	day_rows = list_attendance_sessions_for_work_date(db, user_id, current_time.date())
+	incomplete_same_day = [r for r in day_rows if r.clock_in_time is not None and r.clock_out_time is None]
+	if incomplete_same_day:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="미종료 근무가 있습니다. 먼저 퇴근 처리한 뒤 출근할 수 있습니다.",
+		)
+
+	placeholder = next((r for r in day_rows if r.clock_in_time is None), None)
+	if placeholder is not None:
+		rec = placeholder
 		rec.clock_in_time = current_time
 		rec.clock_in_location = location
 		rec.clock_in_lat = lat
 		rec.clock_in_lng = lng
-		rec.status = status
+		rec.status = record_status
+		rec.shift_status = SHIFT_STATUS_IN_PROGRESS
 		if note:
 			rec.note = note
 		_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
@@ -227,8 +280,9 @@ def create_clock_in(
 		clock_in_location=location,
 		clock_in_lat=lat,
 		clock_in_lng=lng,
-		status=status,
+		status=record_status,
 		note=note,
+		shift_status=SHIFT_STATUS_IN_PROGRESS,
 	)
 	db.add(new_record)
 	_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
@@ -242,7 +296,7 @@ def update_clock_out(
 	db: Session,
 	record: Attendance,
 	current_time: datetime,
-	status: str,
+	record_status: str,
 	location: str,
 	lat: float,
 	lng: float,
@@ -261,15 +315,18 @@ def update_clock_out(
 
 	if rec.clock_in_time is None:
 		rec.work_minutes = 0
+		rec.night_work_minutes = 0
 	else:
-		time_diff = current_time - rec.clock_in_time
-		total_minutes = max(0, int(time_diff.total_seconds() / 60))
-		if total_minutes >= 480:
-			total_minutes = max(0, total_minutes - 60)
-		rec.work_minutes = total_minutes
-	rec.status = status
+		cfg = app_break_tier_config()
+		session_m = session_minutes_at_clock_out(rec.clock_in_time, current_time, cfg=cfg)
+		rec.work_minutes = session_m.work_minutes
+		rec.night_work_minutes = session_m.night_work_minutes
+	rec.status = record_status
+	rec.shift_status = SHIFT_STATUS_CLOSED
 
 	_append_official_leave_time_note(db, str(rec.user_id), rec.work_date, current_time, clock_out=True)
+
+	refresh_attendance_daily_summary(db, str(rec.user_id), cast(date, rec.work_date))
 
 	db.commit()
 	db.refresh(rec)

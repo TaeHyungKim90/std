@@ -27,9 +27,26 @@ class AttendanceResponse(BaseModel):
 	clock_out_location: Optional[str]
 	status: str
 	work_minutes: int
+	night_work_minutes: int = 0
 	note: Optional[str]
+	shift_status: Optional[str] = None
 
 	model_config = ConfigDict(from_attributes=True)
+
+
+class AttendanceDailySummaryOut(BaseModel):
+	"""동일 근무일 CLOSED 세션 합산."""
+
+	total_work_minutes: int
+	overtime_minutes: int
+	total_night_minutes: int
+
+
+class AttendanceDaySessionsResponse(BaseModel):
+	"""당일 다회 출근 세션 목록 + 일별 합계."""
+
+	items: list[AttendanceResponse]
+	summary: Optional[AttendanceDailySummaryOut] = None
 
 
 class AttendanceClockContextResponse(BaseModel):

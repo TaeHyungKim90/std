@@ -1094,6 +1094,29 @@ aside.rep-drawer-panel.dynamic-enter {
 	font-variant-numeric: tabular-nums;
 }
 
+.rep-drawer-attendance-ref__summary {
+	font-size: 0.8rem;
+	color: var(--bq-text-dim);
+	margin-bottom: 0.4rem;
+}
+
+.rep-drawer-attendance-ref__session {
+	padding-top: 0.35rem;
+	border-top: 1px solid rgba(61, 175, 122, 0.2);
+}
+
+.rep-drawer-attendance-ref__session:first-of-type {
+	padding-top: 0;
+	border-top: none;
+}
+
+.rep-drawer-attendance-ref__session-label {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--bq-text-dim);
+	margin-bottom: 0.2rem;
+}
+
 /* AppModal 기반 확인 모달 */
 .rep-confirm-modal {
 	max-width: 28rem;

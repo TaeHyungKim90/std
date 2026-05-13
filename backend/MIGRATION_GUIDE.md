@@ -34,3 +34,13 @@ alembic init alembic
 | 기본 관리자 | `BOOTSTRAP_DEFAULT_ADMIN=false`, 초기 계정은 안전한 비밀번호로 별도 생성 |
 | 비밀·키 | `.env`만 사용, 저장소에 커밋 금지 |
 | 로그 | `config`의 `.env` 경로 출력은 개발에서만 (`ENVIRONMENT=development`) |
+
+## 4. 근태 컬럼 수동 보강 (비 SQLite / Alembic 미사용 시)
+
+앱 기동 시 `init_db()`가 SQLite에 대해 일부 컬럼을 `ALTER`로 보강합니다. 다른 DB에서는 아래를 한 번 실행할 수 있습니다.
+
+```sql
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS night_work_minutes INTEGER NOT NULL DEFAULT 0;
+```
+
+`attendance_daily_summary` 테이블은 앱 기동 시 없으면 `CREATE`로 생성됩니다(PostgreSQL 등에서는 권한·백업 정책에 맞게 별도 마이그레이션 권장).

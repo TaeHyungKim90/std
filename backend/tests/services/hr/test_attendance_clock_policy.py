@@ -1,10 +1,11 @@
 """출근 정책·공가 메모 갱신 단위 테스트 (인메모리 SQLite)."""
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from fastapi import HTTPException
 
+from constants.attendance_shift import SHIFT_STATUS_CLOSED, SHIFT_STATUS_IN_PROGRESS
 from models.auth_models import User
 from models.hr_models import Attendance, Todo
 from services.hr import attendance_service as hr_att
@@ -138,7 +139,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 		db_session,
 		"clock_user",
 		now,
-		status="NORMAL",
+		record_status="NORMAL",
 		location="본사",
 		lat=37.0,
 		lng=127.0,
@@ -146,6 +147,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 		confirm_official_leave=True,
 	)
 	assert rec.clock_in_time is not None
+	assert rec.shift_status == SHIFT_STATUS_IN_PROGRESS
 	t2 = db_session.query(Todo).filter(Todo.id == todo_id).one()
 	assert "출근처리" in (t2.description or "")
 	assert "원문" in (t2.description or "")
@@ -177,6 +179,8 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 		clock_out_time=None,
 		status="NORMAL",
 		work_minutes=0,
+		night_work_minutes=0,
+		shift_status=SHIFT_STATUS_IN_PROGRESS,
 	)
 	db_session.add(rec)
 	db_session.commit()
@@ -186,16 +190,54 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 		db_session,
 		rec,
 		cout,
-		status="NORMAL",
+		record_status="NORMAL",
 		location="본사",
 		lat=37.0,
 		lng=127.0,
 	)
+	db_session.refresh(rec)
+	assert rec.shift_status == SHIFT_STATUS_CLOSED
 	t2 = db_session.query(Todo).filter(Todo.id == todo_id).one()
 	assert "퇴근처리" in (t2.description or "")
 
 	db_session.query(Attendance).filter(Attendance.id == rec.id).delete()
 	db_session.query(Todo).filter(Todo.id == todo_id).delete()
+	db_session.commit()
+
+
+def test_update_clock_out_sets_night_and_tiered_break(db_session, user_joined):
+	d = today_seoul()
+	d2 = d + timedelta(days=1)
+	cin = datetime.combine(d, time(23, 55))
+	cout = datetime.combine(d2, time(3, 55))
+	rec = Attendance(
+		user_id="clock_user",
+		work_date=d,
+		clock_in_time=cin,
+		clock_out_time=None,
+		status="NORMAL",
+		work_minutes=0,
+		night_work_minutes=0,
+		shift_status=SHIFT_STATUS_IN_PROGRESS,
+	)
+	db_session.add(rec)
+	db_session.commit()
+	db_session.refresh(rec)
+
+	hr_att.update_clock_out(
+		db_session,
+		rec,
+		cout,
+		record_status="NORMAL",
+		location="본사",
+		lat=37.0,
+		lng=127.0,
+	)
+	db_session.refresh(rec)
+	assert rec.night_work_minutes == 240
+	assert rec.work_minutes == 210
+
+	db_session.query(Attendance).filter(Attendance.id == rec.id).delete()
 	db_session.commit()
 
 

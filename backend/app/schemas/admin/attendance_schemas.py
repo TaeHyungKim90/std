@@ -13,7 +13,9 @@ class AdminAttendanceRecordOut(BaseModel):
 	clock_out_location: Optional[str] = None
 	status: Optional[str] = None
 	work_minutes: Optional[int] = None
+	night_work_minutes: Optional[int] = None
 	note: Optional[str] = None
+	shift_status: Optional[str] = None
 	vacation_todo_summary: Optional[str] = None
 	half_day_type: Optional[str] = None
 	review_hint: Optional[str] = None

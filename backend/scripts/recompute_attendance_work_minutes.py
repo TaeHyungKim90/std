@@ -1,5 +1,5 @@
 """
-출·퇴근 시각으로 work_minutes 일괄 재계산 (과거 오계산 정정).
+출·퇴근 시각으로 work_minutes·night_work_minutes 일괄 재계산 및 일별 요약 갱신(과거 오계산 정정).
 
 실행 예 (백엔드 폴더에서, app이 PYTHONPATH에 있어야 함):
   cd backend

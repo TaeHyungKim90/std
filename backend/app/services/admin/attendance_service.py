@@ -14,7 +14,9 @@ from models.hr_models import Attendance
 from models.auth_models import User
 from models.holiday_models import Holiday
 from models.hr_models import Todo
-from services.hr.attendance_service import is_vacation_status
+from services.hr.attendance_service import is_vacation_status, sync_shift_status_from_clock_times
+from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
+from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
 from utils.seoul_time import today_seoul
 
 def get_all_attendance(
@@ -63,7 +65,9 @@ def get_all_attendance(
 			Attendance.clock_in_location.label("clock_in_location"),
 			Attendance.clock_out_location.label("clock_out_location"),
 			Attendance.work_minutes.label("work_minutes"),
+			Attendance.night_work_minutes.label("night_work_minutes"),
 			Attendance.status.label("status"),
+			Attendance.shift_status.label("shift_status"),
 		)
 		.outerjoin(
 			Attendance,
@@ -303,7 +307,9 @@ def get_user_attendance_range(
 				"clock_out_location": r.clock_out_location,
 				"status": r.status,
 				"work_minutes": r.work_minutes,
+				"night_work_minutes": int(getattr(r, "night_work_minutes", None) or 0),
 				"note": r.note,
+				"shift_status": r.shift_status,
 				**ex,
 			}
 		)
@@ -337,6 +343,7 @@ def get_user_attendance_range(
 						"clock_out_location": None,
 						"status": "MISSING_EXPLANATION",
 						"work_minutes": 0,
+						"night_work_minutes": 0,
 						"note": "HALF_DAY_PENDING",
 						**ex,
 					}
@@ -353,6 +360,7 @@ def get_user_attendance_range(
 						"clock_out_location": None,
 						"status": "ABSENT",
 						"work_minutes": 0,
+						"night_work_minutes": 0,
 						"note": "AUTO_ABSENT",
 						**ex,
 					}
@@ -377,6 +385,7 @@ def get_user_attendance_range(
 					"clock_out_location": None,
 					"status": "MISSING_EXPLANATION",
 					"work_minutes": 0,
+					"night_work_minutes": 0,
 					"note": "HALF_DAY_PENDING",
 					**ex,
 				}
@@ -393,6 +402,7 @@ def get_user_attendance_range(
 					"clock_out_location": None,
 					"status": "ABSENT",
 					"work_minutes": 0,
+					"night_work_minutes": 0,
 					"note": "AUTO_ABSENT",
 					**ex,
 				}
@@ -432,14 +442,14 @@ def _parse_clock_value(value: str | None, work_day: date_type) -> datetime | Non
 
 
 def _recompute_work_minutes(clock_in: datetime | None, clock_out: datetime | None) -> int:
-	if not clock_in or not clock_out:
-		return 0
-	delta = clock_out - clock_in
-	total_minutes = max(0, int(delta.total_seconds() // 60))
-	# 점심시간(휴게시간) 1시간 자동 공제: 8시간(480분) 이상 체류 시
-	if total_minutes >= 480:
-		total_minutes = max(0, total_minutes - 60)
-	return total_minutes
+	w, _n = _recompute_work_and_night(clock_in, clock_out)
+	return w
+
+
+def _recompute_work_and_night(clock_in: datetime | None, clock_out: datetime | None) -> tuple[int, int]:
+	cfg = app_break_tier_config()
+	s = session_minutes_at_clock_out(clock_in, clock_out, cfg=cfg)
+	return s.work_minutes, s.night_work_minutes
 
 
 def recompute_work_minutes_bulk(
@@ -475,14 +485,16 @@ def recompute_work_minutes_bulk(
 	unchanged = 0
 	changes: list[dict] = []
 
+	touched: set[tuple[str, date_type]] = set()
 	for rec in records:
 		rec_any: Any = rec
 		ci = rec_any.clock_in_time
 		co = rec_any.clock_out_time
-		new_m = _recompute_work_minutes(ci, co)
+		new_w, new_n = _recompute_work_and_night(ci, co)
 		old_m = int(rec_any.work_minutes or 0)
+		old_n = int(getattr(rec_any, "night_work_minutes", None) or 0)
 		examined += 1
-		if new_m == old_m:
+		if new_w == old_m and new_n == old_n:
 			unchanged += 1
 			continue
 		updated += 1
@@ -493,13 +505,17 @@ def recompute_work_minutes_bulk(
 					"user_id": str(rec_any.user_id),
 					"work_date": rec_any.work_date,
 					"old_work_minutes": old_m,
-					"new_work_minutes": new_m,
+					"new_work_minutes": new_w,
 				}
 			)
 		if not dry_run:
-			rec_any.work_minutes = new_m
+			rec_any.work_minutes = new_w
+			rec_any.night_work_minutes = new_n
+			touched.add((str(rec_any.user_id), cast(date_type, rec_any.work_date)))
 
 	if not dry_run and updated > 0:
+		for uid, wd in touched:
+			refresh_attendance_daily_summary(db, uid, wd)
 		db.commit()
 
 	return {
@@ -540,7 +556,12 @@ def update_attendance_record(
 	if "status" in updates and updates["status"] is not None:
 		rec.status = str(updates["status"]).strip() or rec.status
 
-	rec.work_minutes = _recompute_work_minutes(rec.clock_in_time, rec.clock_out_time)
+	sync_shift_status_from_clock_times(record)
+
+	w, n = _recompute_work_and_night(rec.clock_in_time, rec.clock_out_time)
+	rec.work_minutes = w
+	rec.night_work_minutes = n
+	refresh_attendance_daily_summary(db, str(rec.user_id), work_day)
 
 	db.add(rec)
 	db.commit()

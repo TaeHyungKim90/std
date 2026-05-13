@@ -1,14 +1,25 @@
 import { attendanceApi } from 'api/attendanceApi';
 import { useAuth } from 'context/AuthContext';
 import React, { useEffect, useRef, useState } from 'react';
+import 'assets/css/attendance.css';
 import { formatTimeHms } from 'utils/dateUtils';
 import * as Notify from 'utils/toastUtils';
 
 const ACTION_DEBOUNCE_MS = 800;
 
+/** 브라우저 로컬 달력 기준 YYYY-MM-DD (야근 시 근무일 배너용) */
+function formatLocalCalendarYmd(d) {
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, '0');
+	const day = String(d.getDate()).padStart(2, '0');
+	return `${y}-${m}-${day}`;
+}
+
 const AttendanceView = () => {
 	const { joinDate, loading: authLoading } = useAuth();
 	const [todayRecord, setTodayRecord] = useState(null);
+	const [daySessions, setDaySessions] = useState([]);
+	const [daySummary, setDaySummary] = useState(null);
 	const [clockCtx, setClockCtx] = useState(null);
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [locationName, setLocationName] = useState('');
@@ -38,6 +49,16 @@ const AttendanceView = () => {
 				workLocationReq,
 			]);
 			setTodayRecord(attRes.data);
+			const wd = attRes.data?.work_date || formatLocalCalendarYmd(new Date());
+			try {
+				const sRes = await attendanceApi.getAttendanceDaySessions(wd);
+				setDaySessions(Array.isArray(sRes.data?.items) ? sRes.data.items : []);
+				setDaySummary(sRes.data?.summary ?? null);
+			} catch (sessErr) {
+				console.error('당일 세션 로드 실패', sessErr);
+				setDaySessions([]);
+				setDaySummary(null);
+			}
 			setClockCtx(ctxRes.data);
 			const activeLocations = Array.isArray(workLocationRes?.data)
 				? workLocationRes.data.filter((row) => row?.is_active !== false && row?.location_value)
@@ -176,6 +197,14 @@ const AttendanceView = () => {
 	const isClockedIn = !!todayRecord?.clock_in_time;
 	const isClockedOut = !!todayRecord?.clock_out_time;
 
+	const localCalendarYmd = formatLocalCalendarYmd(currentTime);
+	const workDateStr = todayRecord?.work_date;
+	const showShiftWorkDateHint =
+		Boolean(workDateStr) &&
+		workDateStr !== localCalendarYmd &&
+		isClockedIn &&
+		!isClockedOut;
+
 	const isJoinDateMissing = !authLoading && joinDate == null;
 	const isWorkLocationMissing = !loading && locationOptions.length === 0;
 	const disabledReason = isJoinDateMissing
@@ -196,6 +225,13 @@ const AttendanceView = () => {
 						})} (${currentTime.toLocaleDateString('ko-KR', { weekday: 'short' })})`}
 					</p>
 					<h1 className="digital-clock">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</h1>
+					{showShiftWorkDateHint ? (
+						<p className="attendance-work-date-hint">
+							표시 중인 근무일: {workDateStr}
+							{' · '}
+							미종료 근무(야근)입니다. 퇴근 시 전일 기준으로 처리됩니다.
+						</p>
+					) : null}
 				</div>
 
 				<div className="attendance-body">
@@ -263,6 +299,39 @@ const AttendanceView = () => {
 								: '-'}
 						</span>
 					</div>
+					<div className="status-item">
+						<span className="label">야간 근로(현재 세션)</span>
+						<span className="value">{todayRecord?.night_work_minutes ?? 0}분</span>
+					</div>
+					{daySummary ? (
+						<div className="status-item attendance-day-totals">
+							<span className="label">일 합계</span>
+							<span className="value">
+								근무 {daySummary.total_work_minutes ?? 0}분 · 야간 {daySummary.total_night_minutes ?? 0}분 · 연장{' '}
+								{daySummary.overtime_minutes ?? 0}분
+							</span>
+						</div>
+					) : null}
+					{daySessions.length > 1 ? (
+						<div className="attendance-day-sessions">
+							<div className="attendance-day-sessions__title">당일 세션</div>
+							<ul className="attendance-day-sessions__list">
+								{daySessions.map((s, idx) => (
+									<li key={s.id ?? idx} className="attendance-day-sessions__item">
+										<span className="attendance-day-sessions__badge">
+											{s.shift_status === 'CLOSED' ? '종료' : '진행'}
+										</span>
+										<span className="attendance-day-sessions__times">
+											{formatTimeHms(s.clock_in_time)} — {formatTimeHms(s.clock_out_time)}
+										</span>
+										{s.night_work_minutes > 0 ? (
+											<span className="attendance-day-sessions__night">야간 {s.night_work_minutes}분</span>
+										) : null}
+									</li>
+								))}
+							</ul>
+						</div>
+					) : null}
 				</div>
 			</div>
 		</div>
