@@ -56,6 +56,27 @@ def test_hr_clock_context_requires_full_day_when_vacation_full_todo(
 	assert r.status_code == status.HTTP_200_OK, r.text
 	body = r.json()
 	assert body.get("requires_full_day_vacation_confirm") is True
+	assert "preferred_work_location" in body
+
+
+def test_hr_patch_preferred_work_location_invalid(integration_employee_client):
+	r = integration_employee_client.patch(
+		"/api/hr/attendance/preferred-work-location",
+		json={"location_name": "__no_such_active_location__"},
+	)
+	assert r.status_code == status.HTTP_400_BAD_REQUEST, r.text
+
+
+def test_hr_patch_preferred_work_location_then_clock_context(integration_employee_client):
+	r = integration_employee_client.patch(
+		"/api/hr/attendance/preferred-work-location",
+		json={"location_name": "회사"},
+	)
+	assert r.status_code == status.HTTP_200_OK, r.text
+	assert r.json().get("preferred_work_location") == "회사"
+	r2 = integration_employee_client.get("/api/hr/attendance/clock-context")
+	assert r2.status_code == status.HTTP_200_OK, r2.text
+	assert r2.json().get("preferred_work_location") == "회사"
 
 
 def test_hr_clock_in_409_without_confirm_when_vacation_full(

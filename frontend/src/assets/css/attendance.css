@@ -10,6 +10,8 @@
 .attendance-card {
 	width: 100%;
 	max-width: 500px;
+	min-width: 0; /* flex/grid 자식에서 가로 오버플로 방지 */
+	container-type: inline-size;
 	background: #fff;
 	border-radius: 16px;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
@@ -23,6 +25,7 @@
 	margin-bottom: 30px;
 	border-bottom: 1px solid var(--border-color, #e2dfd8);
 	padding-bottom: 20px;
+	min-width: 0;
 }
 
 .today-date {
@@ -39,12 +42,21 @@
 }
 
 .digital-clock {
-	font-size: 3.5rem;
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	margin-inline: auto;
+	/* 카드 너비 기준으로 줄여 한 줄이 박스 안에 들어가게 → 가운데 정렬이 무너지지 않음 */
+	font-size: clamp(1.35rem, 0.42rem + 6.2cqi, 3.5rem);
 	font-weight: 800;
 	color: var(--bq-primary);
 	font-family: 'Courier New', Courier, monospace;
-	letter-spacing: 2px;
+	letter-spacing: 0.03em;
+	text-align: center;
 	transition: all 0.3s ease;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 }
 
 /* 바디 스타일 */
@@ -233,26 +245,47 @@
 /* 1. 태블릿 및 작은 PC (768px 이하) */
 @media (max-width: 768px) {
 	.attendance-container {
-		padding: 10px 10px;
+		padding: 12px 12px;
 	}
 	.attendance-card {
-		padding: 10px 10px;
+		padding: 18px 16px;
 		box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 	}
+	.today-date {
+		font-size: 1.08rem;
+	}
+	.attendance-card .input-group label {
+		font-size: 1.05rem;
+	}
+	.bq-select {
+		font-size: 1.08rem;
+		padding: 14px 12px;
+	}
 	.digital-clock {
-		font-size: 2.8rem; /* 살짝 축소 */
+		/* 한글 시·분·초 한 줄 — 카드 안에 들어가면서 가능한 크게 */
+		font-size: clamp(1.4rem, 0.55rem + 5.8vw, 3.1rem);
+		letter-spacing: 0.02em;
 	}
 }
 
 /* 2. 스마트폰 (480px 이하 - 이미지 속 문제 해결 구간) */
 @media (max-width: 480px) {
 	.digital-clock {
-		font-size: 2.2rem; /* ✅ 한 줄에 쏙 들어오도록 대폭 축소 */
-		letter-spacing: 1px;
+		font-size: clamp(1.25rem, 0.42rem + 5.4vw, 2.1rem);
+		letter-spacing: 0;
 	}
 	
 	.today-date {
-		font-size: 0.95rem;
+		font-size: 1.1rem;
+	}
+
+	.attendance-card .input-group label {
+		font-size: 1.08rem;
+	}
+
+	.bq-select {
+		font-size: 1.1rem;
+		padding: 15px 12px;
 	}
 
 	.button-group {
@@ -261,8 +294,8 @@
 	}
 
 	.button-group button {
-		padding: 15px; /* 터치하기 적당한 높이 */
-		font-size: 1rem;
+		padding: 17px 16px;
+		font-size: 1.12rem;
 	}
 
 	.attendance-footer {
@@ -270,7 +303,7 @@
 	}
 
 	.status-item {
-		font-size: 0.85rem; /* 글자 크기 최적화 */
+		font-size: 0.92rem;
 	}
 
 	.total-work .value {
@@ -510,8 +543,11 @@
 /* Table */
 .uta-table-wrap {
 	flex: 1;
+	min-width: 0; /* flex 자식 가로 오버플로 방지 */
+	overflow-x: auto;
 	overflow-y: auto;
 	padding: 18px 28px 28px;
+	-webkit-overflow-scrolling: touch;
 }
 
 .uta-empty {
@@ -533,10 +569,33 @@
 	background: #fff;
 }
 
+/* 열 비율(합 100%) — 픽셀 고정 합이 드로어보다 커져 잘리던 문제 방지 */
+.uta-table col.uta-col-date {
+	width: 11%;
+}
+.uta-table col.uta-col-dow {
+	width: 8%;
+}
+.uta-table col.uta-col-schedule {
+	width: 21%;
+}
+.uta-table col.uta-col-time {
+	width: 11%;
+}
+.uta-table col.uta-col-status {
+	width: 12%;
+}
+.uta-table col.uta-col-work {
+	width: 13%;
+}
+.uta-table col.uta-col-manage {
+	width: 13%;
+}
+
 .uta-table th {
 	background: rgba(240, 238, 234, 0.75);
 	border-bottom: 1px solid var(--uta-border);
-	padding: 12px 8px;
+	padding: 10px 6px;
 	text-align: left;
 	font-weight: 950;
 	color: var(--uta-text);
@@ -546,8 +605,9 @@
 
 .uta-table td {
 	border-bottom: 1px solid rgba(20, 20, 20, 0.07);
-	padding: 12px 8px;
+	padding: 10px 6px;
 	vertical-align: middle;
+	min-width: 0;
 }
 
 .uta-table tbody tr:hover td {
@@ -561,22 +621,21 @@
 .uta-td-date {
 	font-weight: 950;
 	white-space: nowrap;
-	width: 90px;
 }
 
 .uta-td-dow {
 	font-weight: 900;
 	white-space: nowrap;
-	width: 70px;
 	color: var(--uta-text);
 }
 
 .uta-td-schedule {
-	min-width: 140px;
-	max-width: 220px;
 	vertical-align: top;
 	font-size: 0.88rem;
 	line-height: 1.35;
+	word-break: keep-all;
+	overflow-wrap: anywhere;
+	white-space: normal;
 }
 
 .uta-schedule-text {
@@ -597,7 +656,6 @@
 
 .uta-td-time {
 	white-space: nowrap;
-	width: 150px;
 }
 
 .uta-time-cell {
@@ -625,10 +683,13 @@
 
 .uta-time-input {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	box-sizing: border-box;
 	border: 1px solid var(--uta-border-strong);
 	border-radius: 12px;
-	padding: 10px 12px;
+	padding: 8px 6px;
+	font-size: 0.8125rem;
 	font-weight: 900;
 	background: #fff;
 	outline: none;
@@ -640,27 +701,41 @@
 }
 
 .uta-td-status {
-	width: 180px;
+	min-width: 0;
+}
+
+.uta-td-status .status-badge {
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: middle;
 }
 
 .uta-td-workminutes {
-	width: 160px;
 	font-weight: 900;
-	white-space: nowrap;
 	color: var(--uta-text);
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: keep-all;
+	min-width: 0;
 }
 
 .uta-td-manage {
-	width: 160px;
 	text-align: right;
+	vertical-align: middle;
+	min-width: 0;
 }
 
 .uta-status-select {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	box-sizing: border-box;
 	border: 1px solid var(--uta-border-strong);
 	border-radius: 12px;
-	padding: 10px 12px;
+	padding: 8px 6px;
+	font-size: 0.8125rem;
 	font-weight: 900;
 	background: #fff;
 	outline: none;
@@ -674,23 +749,28 @@
 .uta-edit-actions {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 8px;
 	align-items: stretch;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 }
 
 .uta-btn-edit {
 	border: 1px solid var(--uta-border);
 	background: var(--uta-surface);
 	border-radius: 12px;
-	padding: 10px 14px;
+	padding: 9px 8px;
 	cursor: pointer;
 	font-weight: 950;
 	color: var(--uta-text);
-	width: auto;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 96px;
 	transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
 }
 

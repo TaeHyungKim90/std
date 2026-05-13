@@ -67,6 +67,17 @@ def _ensure_attendance_night_work_minutes_column() -> None:
 		conn.execute(text("UPDATE attendance SET night_work_minutes = 0 WHERE night_work_minutes IS NULL"))
 
 
+def _ensure_users_preferred_work_location_column() -> None:
+	"""기존 DB에 users.preferred_work_location 보강."""
+	insp = inspect(engine)
+	if not insp.has_table("users"):
+		return
+	cols = {c["name"] for c in insp.get_columns("users")}
+	if "preferred_work_location" not in cols:
+		with engine.begin() as conn:
+			conn.execute(text("ALTER TABLE users ADD COLUMN preferred_work_location VARCHAR(120)"))
+
+
 def _ensure_attendance_daily_summary_table() -> None:
 	"""attendance_daily_summary 테이블이 없으면 생성."""
 	insp = inspect(engine)
@@ -105,6 +116,10 @@ def init_db():
 		_ensure_attendance_daily_summary_table()
 	except Exception as ex:
 		print(f"ℹ️ attendance_daily_summary 테이블 생성 실패(무시 가능): {ex}")
+	try:
+		_ensure_users_preferred_work_location_column()
+	except Exception as ex:
+		print(f"ℹ️ users.preferred_work_location 보강 실패(무시 가능): {ex}")
 
 	# 기존 SQLite DB에 신규 컬럼이 없을 경우, 런타임에서 안전하게 ALTER TABLE을 시도합니다.
 	# (운영에서는 마이그레이션(Alembic 등)을 권장합니다.)

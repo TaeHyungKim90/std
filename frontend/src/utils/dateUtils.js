@@ -161,15 +161,24 @@ export const formatWorkTime = formatWorkMinutes;
 
 export const normalizeStatus = (status) => (status ?? '').toString().trim().toUpperCase();
 
+/** 로컬 벽시계 — 24시간, 시·분·초 숫자는 2자리 패딩 + 한글 단위(시/분/초). */
+export const formatLocalTimeHms = (d) => {
+	if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '-';
+	const h = pad2(d.getHours());
+	const m = pad2(d.getMinutes());
+	const s = pad2(d.getSeconds());
+	return `${h}시 ${m}분 ${s}초`;
+};
+
 /**
- * Format datetime-ish value into HH:mm:ss (local time).
+ * Format datetime-ish value into local 시·분·초 (한글 단위, 숫자 2자리 패딩).
  * Used by HR Attendance page (clock-in/out timestamps).
  */
 export const formatTimeHms = (iso) => {
 	if (!iso) return '-';
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '-';
-	return d.toLocaleTimeString('ko-KR', { hour12: false });
+	return formatLocalTimeHms(d);
 };
 
 /**

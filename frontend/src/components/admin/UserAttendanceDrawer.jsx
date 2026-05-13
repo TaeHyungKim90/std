@@ -295,6 +295,16 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 						<div className="uta-empty">선택한 기간에 등록된 근태 기록이 없습니다.</div>
 					) : (
 						<table className="uta-table">
+							<colgroup>
+								<col className="uta-col-date" />
+								<col className="uta-col-dow" />
+								<col className="uta-col-schedule" />
+								<col className="uta-col-time" />
+								<col className="uta-col-time" />
+								<col className="uta-col-status" />
+								<col className="uta-col-work" />
+								<col className="uta-col-manage" />
+							</colgroup>
 							<thead>
 								<tr>
 									<th>일자</th>

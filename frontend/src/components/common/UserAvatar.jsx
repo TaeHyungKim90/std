@@ -80,7 +80,7 @@ const UserAvatar = ({
 			tx: normalizedAdjust.offsetX * size,
 			ty: normalizedAdjust.offsetY * size,
 		};
-	}, [natural.height, natural.width, normalizedAdjust.offsetX, normalizedAdjust.offsetY, normalizedAdjust.zoom, size, useCropLayout]);
+	}, [natural, normalizedAdjust.offsetX, normalizedAdjust.offsetY, normalizedAdjust.zoom, size, useCropLayout]);
 
 	return (
 		<div

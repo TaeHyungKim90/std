@@ -91,6 +91,38 @@ def get_active_work_locations(db: Session) -> list[WorkLocation]:
 	)
 
 
+def _active_work_location_values(db: Session) -> set[str]:
+	return {str(w.location_value).strip() for w in get_active_work_locations(db)}
+
+
+def _apply_user_preferred_work_location(db: Session, user_login_id: str, location: str) -> None:
+	"""활성 근무장소에 있을 때만 users.preferred_work_location 갱신(동일 트랜잭션 내)."""
+	name = (location or "").strip()
+	if not name or name not in _active_work_location_values(db):
+		return
+	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	if user:
+		user.preferred_work_location = name
+
+
+def set_user_preferred_work_location(db: Session, user_login_id: str, location_name: str) -> str:
+	"""선호 근무장소만 저장. 활성 목록에 없으면 400."""
+	name = (location_name or "").strip()
+	if not name:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="근무장소를 입력해 주세요.")
+	if name not in _active_work_location_values(db):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="등록되지 않았거나 비활성인 근무장소입니다.",
+		)
+	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	if not user:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	user.preferred_work_location = name
+	db.commit()
+	return name
+
+
 def _vacation_categories_for_day(db: Session, user_id: str, target_date: date) -> set[str]:
 	# 인스턴스 필드도 Column[T]로 오탐될 수 있어 런타임 값은 str로 취급
 	return {
@@ -208,6 +240,10 @@ def get_clock_context(db: Session, user_id: str, work_date: date) -> dict[str, A
 		.filter(Holiday.holiday_date == work_date)
 		.first()
 	)
+	user_row = db.query(User).filter(User.user_login_id == user_id).first()
+	pref_loc: str | None = None
+	if user_row is not None and getattr(user_row, "preferred_work_location", None):
+		pref_loc = str(user_row.preferred_work_location).strip() or None
 	return {
 		"work_date": work_date,
 		"requires_full_day_vacation_confirm": requires_full,
@@ -217,6 +253,7 @@ def get_clock_context(db: Session, user_id: str, work_date: date) -> dict[str, A
 		"is_weekend": work_date.weekday() >= 5,
 		"is_public_holiday": h is not None,
 		"holiday_name": h.holiday_name if h else None,
+		"preferred_work_location": pref_loc,
 	}
 
 
@@ -269,6 +306,7 @@ def create_clock_in(
 		if note:
 			rec.note = note
 		_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
+		_apply_user_preferred_work_location(db, user_id, location)
 		db.commit()
 		db.refresh(rec)
 		return rec
@@ -286,6 +324,7 @@ def create_clock_in(
 	)
 	db.add(new_record)
 	_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
+	_apply_user_preferred_work_location(db, user_id, location)
 	db.commit()
 	db.refresh(new_record)
 	return new_record
@@ -327,6 +366,8 @@ def update_clock_out(
 	_append_official_leave_time_note(db, str(rec.user_id), rec.work_date, current_time, clock_out=True)
 
 	refresh_attendance_daily_summary(db, str(rec.user_id), cast(date, rec.work_date))
+
+	_apply_user_preferred_work_location(db, str(rec.user_id), location)
 
 	db.commit()
 	db.refresh(rec)

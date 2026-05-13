@@ -125,9 +125,10 @@ describe('MyReports', () => {
 		await userEvent.clear(textarea);
 		await userEvent.type(textarea, '작성 중인 초안');
 
-		const overlay = document.querySelector('.rep-drawer-overlay');
-		expect(overlay).toBeTruthy();
-		await userEvent.click(overlay);
+		/* SideDrawer: 오버레이는 aria-label "닫기" 버튼(패널 헤더 닫기보다 DOM상 앞에 있음) */
+		const dismissButtons = screen.getAllByRole('button', { name: '닫기' });
+		expect(dismissButtons.length).toBeGreaterThanOrEqual(1);
+		await userEvent.click(dismissButtons[0]);
 
 		expect(await screen.findByText('저장되지 않은 내용')).toBeInTheDocument();
 		await userEvent.click(screen.getByRole('button', { name: '취소' }));

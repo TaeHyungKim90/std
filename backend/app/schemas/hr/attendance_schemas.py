@@ -17,6 +17,16 @@ class AttendanceRequest(BaseModel):
 		description="공가 일정이 있을 때 출근 기록 등록 확인에 동의한 경우 true",
 	)
 
+
+class PreferredWorkLocationPatch(BaseModel):
+	"""본인 선호 출퇴근 근무장소(활성 work_locations.location_value와 일치해야 함)."""
+
+	location_name: str = Field(..., min_length=1, max_length=120)
+
+
+class PreferredWorkLocationResponse(BaseModel):
+	preferred_work_location: str
+
 class AttendanceResponse(BaseModel):
 	id: int
 	user_id: str
@@ -60,3 +70,4 @@ class AttendanceClockContextResponse(BaseModel):
 	is_weekend: bool
 	is_public_holiday: bool
 	holiday_name: Optional[str] = None
+	preferred_work_location: Optional[str] = None

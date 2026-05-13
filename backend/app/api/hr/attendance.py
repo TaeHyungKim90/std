@@ -75,6 +75,21 @@ def read_clock_context(
 	return attendance_schemas.AttendanceClockContextResponse.model_validate(ctx)
 
 
+@router.patch(
+	"/preferred-work-location",
+	response_model=attendance_schemas.PreferredWorkLocationResponse,
+)
+def patch_preferred_work_location(
+	body: attendance_schemas.PreferredWorkLocationPatch,
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 출퇴근 화면 기본 근무장소(활성 목록에 있는 값만 저장)."""
+	user_id = _require_user_id(current_user)
+	name = service.set_user_preferred_work_location(db, user_id, body.location_name)
+	return attendance_schemas.PreferredWorkLocationResponse(preferred_work_location=name)
+
+
 @router.get("/work-locations", response_model=list[WorkLocationResponse])
 def read_active_work_locations(
 	db: Session = Depends(get_db),

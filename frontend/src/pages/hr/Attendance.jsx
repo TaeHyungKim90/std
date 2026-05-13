@@ -1,8 +1,13 @@
+import 'assets/css/attendance.css';
+
 import { attendanceApi } from 'api/attendanceApi';
 import { useAuth } from 'context/AuthContext';
-import React, { useEffect, useRef, useState } from 'react';
-import 'assets/css/attendance.css';
-import { formatTimeHms } from 'utils/dateUtils';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+	resolvePreferredAgainstOptions,
+	writePreferredWorkLocation,
+} from 'utils/attendanceLocationPreference';
+import { formatLocalTimeHms, formatTimeHms } from 'utils/dateUtils';
 import * as Notify from 'utils/toastUtils';
 
 const ACTION_DEBOUNCE_MS = 800;
@@ -16,7 +21,7 @@ function formatLocalCalendarYmd(d) {
 }
 
 const AttendanceView = () => {
-	const { joinDate, loading: authLoading } = useAuth();
+	const { joinDate, loading: authLoading, userId } = useAuth();
 	const [todayRecord, setTodayRecord] = useState(null);
 	const [daySessions, setDaySessions] = useState([]);
 	const [daySummary, setDaySummary] = useState(null);
@@ -27,15 +32,7 @@ const AttendanceView = () => {
 	const [loading, setLoading] = useState(false);
 	const lastActionAtRef = useRef(0);
 
-	useEffect(() => {
-		fetchTodayStatus();
-		const timer = setInterval(() => {
-			setCurrentTime(new Date());
-		}, 1000);
-		return () => clearInterval(timer);
-	}, []);
-
-	const fetchTodayStatus = async () => {
+	const fetchTodayStatus = useCallback(async () => {
 		setLoading(true);
 		try {
 			const workLocationReq = attendanceApi.getWorkLocations().catch((err) => {
@@ -72,20 +69,53 @@ const AttendanceView = () => {
 				nextOptions.unshift({ label: savedLocation, value: savedLocation });
 			}
 			setLocationOptions(nextOptions);
+			const optionValues = nextOptions.map((o) => o.value);
+			const ctxData = ctxRes.data || {};
+			const serverPreferred = (ctxData.preferred_work_location || '').trim();
+			const fromServerPreferred =
+				!savedLocation && serverPreferred && nextOptions.some((opt) => opt.value === serverPreferred)
+					? serverPreferred
+					: null;
+			const fromLocalPreference =
+				!savedLocation && !fromServerPreferred && userId
+					? resolvePreferredAgainstOptions(userId, optionValues)
+					: null;
+
+			let nextLocation = '';
 			if (savedLocation) {
-				setLocationName(savedLocation);
+				nextLocation = savedLocation;
+			} else if (fromServerPreferred) {
+				nextLocation = fromServerPreferred;
+			} else if (fromLocalPreference) {
+				nextLocation = fromLocalPreference;
 			} else if (nextOptions.length > 0) {
-				setLocationName((prev) => (nextOptions.some((opt) => opt.value === prev) ? prev : nextOptions[0].value));
-			} else {
-				setLocationName('');
+				nextLocation = nextOptions[0].value;
 			}
+			setLocationName(nextLocation);
 		} catch (err) {
 			console.error('출퇴근 기록 로드 실패', err);
 			Notify.toastApiFailure(err, '출퇴근 기록을 불러오지 못했습니다.');
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [userId]);
+
+	useEffect(() => {
+		fetchTodayStatus();
+		const timer = setInterval(() => {
+			setCurrentTime(new Date());
+		}, 1000);
+		return () => clearInterval(timer);
+	}, [fetchTodayStatus]);
+
+	const persistPreferredLocationToServer = useCallback(async (value) => {
+		if (!userId || !value) return;
+		try {
+			await attendanceApi.patchPreferredWorkLocation({ location_name: value });
+		} catch (err) {
+			Notify.toastApiFailure(err, '선호 근무장소를 서버에 저장하지 못했습니다.');
+		}
+	}, [userId]);
 
 	const guardDebounce = () => {
 		const t = Date.now();
@@ -142,6 +172,7 @@ const AttendanceView = () => {
 				success: '정상적으로 출근 처리되었습니다. 🏢',
 				error: (err) => err.message || '출근 처리 중 오류가 발생했습니다. 위치 권한을 확인해주세요.',
 			});
+			writePreferredWorkLocation(userId, locationName);
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('출근 처리 실패', err);
@@ -186,6 +217,7 @@ const AttendanceView = () => {
 				success: '오늘 하루도 고생하셨습니다! 🏃‍♂️',
 				error: (err) => err.message || '퇴근 처리 중 오류가 발생했습니다.',
 			});
+			writePreferredWorkLocation(userId, locationName);
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('퇴근 처리 실패', err);
@@ -224,7 +256,7 @@ const AttendanceView = () => {
 							day: 'numeric',
 						})} (${currentTime.toLocaleDateString('ko-KR', { weekday: 'short' })})`}
 					</p>
-					<h1 className="digital-clock">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</h1>
+					<h1 className="digital-clock">{formatLocalTimeHms(currentTime)}</h1>
 					{showShiftWorkDateHint ? (
 						<p className="attendance-work-date-hint">
 							표시 중인 근무일: {workDateStr}
@@ -240,7 +272,12 @@ const AttendanceView = () => {
 						<select
 							className="bq-select"
 							value={locationName}
-							onChange={(e) => setLocationName(e.target.value)}
+							onChange={(e) => {
+								const v = e.target.value;
+								setLocationName(v);
+								writePreferredWorkLocation(userId, v);
+								void persistPreferredLocationToServer(v);
+							}}
 							disabled={(isClockedIn && !isClockedOut) || locationOptions.length === 0}
 						>
 							{locationOptions.length === 0 ? <option value="">등록된 근무장소 없음</option> : null}

@@ -60,6 +60,12 @@ export const attendanceApi = {
 	getWorkLocations: () => client.get(`${PATH}/work-locations`),
 
 	/**
+	 * 선호 출퇴근 근무장소 저장(기기 간 동기화). 활성 목록 값만 허용.
+	 * PATCH /hr/attendance/preferred-work-location
+	 */
+	patchPreferredWorkLocation: (data) => client.patch(`${PATH}/preferred-work-location`, data),
+
+	/**
 	 * 출근하기
 	 * POST /hr/attendance/clock-in
 	 */

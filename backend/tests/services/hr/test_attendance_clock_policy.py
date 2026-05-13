@@ -258,3 +258,4 @@ def test_get_clock_context_flags(db_session, user_joined):
 	assert ctx["has_half_day_vacation"] is True
 	assert ctx["is_public_holiday"] is True
 	assert ctx["holiday_name"] == "테스트공휴일"
+	assert "preferred_work_location" in ctx
