@@ -84,7 +84,7 @@ def patch_preferred_work_location(
 	db: Session = Depends(get_db),
 	current_user: dict = Depends(get_current_user),
 ):
-	"""[유저] 출퇴근 화면 기본 근무장소(활성 목록에 있는 값만 저장)."""
+	"""[유저] 출퇴근 화면 기본 근무장소(활성 목록의 key 또는 표시명으로 저장 시 DB에는 key)."""
 	user_id = _require_user_id(current_user)
 	name = service.set_user_preferred_work_location(db, user_id, body.location_name)
 	return attendance_schemas.PreferredWorkLocationResponse(preferred_work_location=name)

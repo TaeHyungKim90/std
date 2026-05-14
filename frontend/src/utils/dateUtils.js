@@ -114,14 +114,38 @@ export const toTimeInputValue = (iso) => {
 };
 
 /**
- * Format datetime-ish value into HH:MM (local time).
- * Used by attendance UIs that show only time part.
+ * ISO(또는 parseable datetime) → `input[type=datetime-local]` 값 (로컬 YYYY-MM-DDTHH:mm, 분 단위).
+ */
+export const toDatetimeLocalInputValue = (iso) => {
+	if (!iso) return '';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '';
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+/**
+ * ISO(또는 parseable datetime) → 로컬 "YYYY-MM-DD HH:mm"
+ * 관리자·일일보고 출퇴근 시각 등
  */
 export const formatDt = (iso) => {
 	if (!iso) return '—';
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '—';
-	return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+/**
+ * ISO(또는 parseable datetime) → 로컬 날짜·시간 분리 (상세 UI 2줄 표시용)
+ * @returns {{ date: string, time: string } | null}
+ */
+export const splitYmdHm = (iso) => {
+	if (!iso) return null;
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return null;
+	return {
+		date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+		time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+	};
 };
 
 export const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];

@@ -4,6 +4,8 @@ from datetime import date, datetime
 
 
 class AttendanceRequest(BaseModel):
+	"""출퇴근 요청: location_name에는 location_key 또는 활성 location_value를 넣을 수 있음(저장은 key)."""
+
 	location_name: str
 	latitude: float
 	longitude: float
@@ -19,7 +21,7 @@ class AttendanceRequest(BaseModel):
 
 
 class PreferredWorkLocationPatch(BaseModel):
-	"""본인 선호 출퇴근 근무장소(활성 work_locations.location_value와 일치해야 함)."""
+	"""본인 선호 출퇴근 근무장소. 활성 work_locations의 location_key 또는 location_value."""
 
 	location_name: str = Field(..., min_length=1, max_length=120)
 

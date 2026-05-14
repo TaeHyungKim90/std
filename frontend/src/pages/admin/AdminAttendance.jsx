@@ -10,7 +10,7 @@ import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import React, { useCallback, useEffect, useMemo,useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
+import { formatDt, getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
 import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_ADMIN_PAGE_SIZE;
 const SUMMARY_PAGE_SIZE = DEFAULT_ADMIN_MAX_PAGE_SIZE; // backend limit <= 100
@@ -211,11 +211,6 @@ const AdminAttendance = () => {
 		[setSearchParams]
 	);
 
-	const formatTime = (timeStr) => {
-		if (!timeStr) return '-';
-		return timeStr.replace('T', ' ').split('.')[0];
-	};
-
 	const formatWorkTime = (minutes) => {
 		if (minutes === null || minutes === undefined) return '-';
 		const h = Math.floor(minutes / 60);
@@ -339,7 +334,7 @@ const AdminAttendance = () => {
 											<td>{record.work_date ? record.work_date : selectedDate}</td>
 											<td>
 												{record.clock_in_time ? (
-													formatTime(record.clock_in_time)
+													formatDt(record.clock_in_time)
 												) : (
 													<span
 														className="badge adm-attendance__clock-badge"
@@ -372,7 +367,7 @@ const AdminAttendance = () => {
 													</span>
 												)}
 											</td>
-											<td>{formatTime(record.clock_out_time) || '-'}</td>
+											<td>{record.clock_out_time ? formatDt(record.clock_out_time) : '-'}</td>
 											<td>
 												<span className="badge adm-attendance__location-badge">
 													{record.clock_in_location || '미지정'}

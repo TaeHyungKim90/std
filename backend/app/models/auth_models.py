@@ -29,7 +29,7 @@ class User(Base):
 	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 	join_date = Column[date](Date, nullable=True)
 	resignation_date = Column[date](Date, nullable=True)
-	# 출퇴근 UI 기본 근무장소(활성 work_locations.location_value 중 하나)
+	# 출퇴근 UI 기본 근무장소(활성 work_locations.location_key 저장)
 	preferred_work_location = Column[str](String(120), nullable=True)
 	vacation = relationship("UserVacation", back_populates="user", uselist=False, cascade="all, delete")
 	avatar_setting = relationship("UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan")

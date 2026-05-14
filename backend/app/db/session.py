@@ -275,3 +275,15 @@ def init_db():
 		db.rollback()
 	finally:
 		db.close()
+
+	# 레거시: attendance·users에 저장된 표시 문자열을 location_key로 치환
+	try:
+		from services.hr.attendance_service import backfill_legacy_work_location_values_to_keys
+
+		_bf = SessionLocal()
+		try:
+			backfill_legacy_work_location_values_to_keys(_bf)
+		finally:
+			_bf.close()
+	except Exception as ex:
+		print(f"ℹ️ 근무장소 value→key 백필 실패(무시 가능): {ex}")

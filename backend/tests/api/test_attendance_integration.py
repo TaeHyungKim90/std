@@ -73,10 +73,10 @@ def test_hr_patch_preferred_work_location_then_clock_context(integration_employe
 		json={"location_name": "회사"},
 	)
 	assert r.status_code == status.HTTP_200_OK, r.text
-	assert r.json().get("preferred_work_location") == "회사"
+	assert r.json().get("preferred_work_location") == "company"
 	r2 = integration_employee_client.get("/api/hr/attendance/clock-context")
 	assert r2.status_code == status.HTTP_200_OK, r2.text
-	assert r2.json().get("preferred_work_location") == "회사"
+	assert r2.json().get("preferred_work_location") == "company"
 
 
 def test_hr_clock_in_409_without_confirm_when_vacation_full(
@@ -85,7 +85,7 @@ def test_hr_clock_in_409_without_confirm_when_vacation_full(
 	r = integration_employee_client.post(
 		"/api/hr/attendance/clock-in",
 		json={
-			"location_name": "본사",
+			"location_name": "회사",
 			"latitude": 37.5665,
 			"longitude": 126.9780,
 			"note": "",
@@ -103,7 +103,7 @@ def test_hr_clock_in_ok_with_confirm_when_vacation_full(integration_employee_cli
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-in",
 			json={
-				"location_name": "본사",
+				"location_name": "회사",
 				"latitude": 37.5665,
 				"longitude": 126.9780,
 				"note": "",
@@ -175,7 +175,7 @@ def test_hr_clock_out_uses_open_shift_not_calendar_today(integration_employee_cl
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-out",
 			json={
-				"location_name": "본사",
+				"location_name": "회사",
 				"latitude": 37.5665,
 				"longitude": 126.9780,
 				"note": "",
@@ -214,7 +214,7 @@ def test_hr_clock_in_rejected_when_open_shift_exists(integration_employee_client
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-in",
 			json={
-				"location_name": "본사",
+				"location_name": "회사",
 				"latitude": 37.5665,
 				"longitude": 126.9780,
 				"note": "",
@@ -250,7 +250,7 @@ def test_hr_clock_out_response_includes_night_work_minutes(integration_employee_
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-out",
 			json={
-				"location_name": "본사",
+				"location_name": "회사",
 				"latitude": 37.5665,
 				"longitude": 126.9780,
 				"note": "",
@@ -269,7 +269,7 @@ def test_hr_two_sessions_same_day(integration_employee_client):
 	_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, today)
 	try:
 		body = {
-			"location_name": "본사",
+			"location_name": "회사",
 			"latitude": 37.5665,
 			"longitude": 126.9780,
 			"note": "",

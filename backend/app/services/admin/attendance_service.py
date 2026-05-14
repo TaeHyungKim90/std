@@ -14,7 +14,11 @@ from models.hr_models import Attendance
 from models.auth_models import User
 from models.holiday_models import Holiday
 from models.hr_models import Todo
-from services.hr.attendance_service import is_vacation_status, sync_shift_status_from_clock_times
+from services.hr.attendance_service import (
+	format_stored_work_location_for_display,
+	is_vacation_status,
+	sync_shift_status_from_clock_times,
+)
 from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
 from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
 from utils.seoul_time import today_seoul
@@ -99,8 +103,13 @@ def get_all_attendance(
 		.all()
 	)
 
-	# RowMapping -> dict 안전 변환
-	items = [dict(row._mapping) for row in results]
+	# RowMapping -> dict 안전 변환 (근무장소는 DB의 location_key를 표시용 value로 풀어줌)
+	items = []
+	for row in results:
+		m = dict(row._mapping)
+		m["clock_in_location"] = format_stored_work_location_for_display(db, m.get("clock_in_location"))
+		m["clock_out_location"] = format_stored_work_location_for_display(db, m.get("clock_out_location"))
+		items.append(m)
 	return {"items": items, "total": total}
 
 
@@ -303,8 +312,8 @@ def get_user_attendance_range(
 				"work_date": r.work_date,
 				"clock_in_time": r.clock_in_time,
 				"clock_out_time": r.clock_out_time,
-				"clock_in_location": r.clock_in_location,
-				"clock_out_location": r.clock_out_location,
+				"clock_in_location": format_stored_work_location_for_display(db, r.clock_in_location),
+				"clock_out_location": format_stored_work_location_for_display(db, r.clock_out_location),
 				"status": r.status,
 				"work_minutes": r.work_minutes,
 				"night_work_minutes": int(getattr(r, "night_work_minutes", None) or 0),
@@ -411,6 +420,72 @@ def get_user_attendance_range(
 
 	items.sort(key=lambda x: (x["work_date"], x["id"]))
 	return {"items": items}
+
+
+def _apply_admin_attendance_payload(rec: Any, work_day: date_type, updates: dict) -> None:
+	"""관리자 PATCH/POST 공통: 출·퇴근 시각·상태 반영."""
+	if "clock_in_time" in updates:
+		raw_in = updates["clock_in_time"]
+		if raw_in is None or (isinstance(raw_in, str) and not str(raw_in).strip()):
+			rec.clock_in_time = None
+		else:
+			rec.clock_in_time = _parse_clock_value(str(raw_in), work_day)
+	if "clock_out_time" in updates:
+		raw_out = updates["clock_out_time"]
+		if raw_out is None or (isinstance(raw_out, str) and not str(raw_out).strip()):
+			rec.clock_out_time = None
+		else:
+			rec.clock_out_time = _parse_clock_value(str(raw_out), work_day)
+	if "status" in updates and updates["status"] is not None:
+		s = str(updates["status"]).strip()
+		if s:
+			rec.status = s
+
+
+def create_attendance_record(
+	db: Session,
+	user_login_id: str,
+	work_day: date_type,
+	updates: dict,
+) -> Attendance:
+	"""해당 user·근무일에 실제 행이 없을 때 근태 1건 생성(가상 결근 → 실제 기록)."""
+	uid = (user_login_id or "").strip()
+	if not uid:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="사용자 ID가 필요합니다.")
+	if db.query(User).filter(User.user_login_id == uid).first() is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	if (
+		db.query(Attendance)
+		.filter(Attendance.user_id == uid, Attendance.work_date == work_day)
+		.first()
+		is not None
+	):
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT,
+			detail="해당 근무일에 이미 근태 기록이 있습니다. 해당 행을 수정해 주세요.",
+		)
+
+	new_rec: Any = Attendance(
+		user_id=uid,
+		work_date=work_day,
+		clock_in_time=None,
+		clock_out_time=None,
+		status="NORMAL",
+		work_minutes=0,
+		night_work_minutes=0,
+		note=None,
+		shift_status=None,
+	)
+	db.add(new_rec)
+	_apply_admin_attendance_payload(new_rec, work_day, updates)
+	sync_shift_status_from_clock_times(new_rec)
+	w, n = _recompute_work_and_night(new_rec.clock_in_time, new_rec.clock_out_time)
+	new_rec.work_minutes = w
+	new_rec.night_work_minutes = n
+	refresh_attendance_daily_summary(db, uid, work_day)
+	db.commit()
+	db.refresh(new_rec)
+	return new_rec
 
 
 def _parse_clock_value(value: str | None, work_day: date_type) -> datetime | None:
@@ -541,20 +616,7 @@ def update_attendance_record(
 	rec: Any = record
 	work_day = cast(date_type, rec.work_date)
 
-	if "clock_in_time" in updates:
-		raw_in = updates["clock_in_time"]
-		if raw_in is None or (isinstance(raw_in, str) and not str(raw_in).strip()):
-			rec.clock_in_time = None
-		else:
-			rec.clock_in_time = _parse_clock_value(str(raw_in), work_day)
-	if "clock_out_time" in updates:
-		raw_out = updates["clock_out_time"]
-		if raw_out is None or (isinstance(raw_out, str) and not str(raw_out).strip()):
-			rec.clock_out_time = None
-		else:
-			rec.clock_out_time = _parse_clock_value(str(raw_out), work_day)
-	if "status" in updates and updates["status"] is not None:
-		rec.status = str(updates["status"]).strip() or rec.status
+	_apply_admin_attendance_payload(rec, work_day, updates)
 
 	sync_shift_status_from_clock_times(record)
 

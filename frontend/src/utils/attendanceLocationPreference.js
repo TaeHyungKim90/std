@@ -1,6 +1,6 @@
 /**
- * 출퇴근 화면: 마지막으로 선택·출근한 근무장소 문자열을 브라우저에 보관 (계정별).
- * 민감도가 낮은 표시용 문자열이며, httpOnly 쿠키와 무관.
+ * 출퇴근 화면: 마지막으로 선택·출근한 근무장소 location_key를 브라우저에 보관 (계정별).
+ * 민감도가 낮은 값이며, httpOnly 쿠키와 무관.
  */
 
 const KEY_PREFIX = 'std:attendance:preferredWorkLocation:';
@@ -22,10 +22,10 @@ export const readPreferredWorkLocation = (userId) => {
 	}
 };
 
-export const writePreferredWorkLocation = (userId, locationValue) => {
+export const writePreferredWorkLocation = (userId, locationKey) => {
 	const key = preferredWorkLocationStorageKey(userId);
 	if (!key || typeof window === 'undefined' || !window.localStorage) return;
-	const v = locationValue == null ? '' : String(locationValue).trim();
+	const v = locationKey == null ? '' : String(locationKey).trim();
 	if (!v) return;
 	try {
 		window.localStorage.setItem(key, v);
@@ -45,12 +45,18 @@ export const clearPreferredWorkLocation = (userId) => {
 };
 
 /**
- * @param {string[]} allowedValues - 현재 API에서 내려온 활성 근무장소 value 목록
- * @returns {string|null} 저장값이 목록에 있으면 그 값, 아니면 null
+ * @param {string[]} allowedKeys - 현재 API에서 내려온 활성 근무장소 location_key 목록
+ * @param {Record<string, string> | undefined} legacyLabelToKey - 예전에 표시명만 localStorage에 둔 경우 복구용 (label → key)
+ * @returns {string|null} 저장된 key가 목록에 있으면 그 key, 아니면 null
  */
-export const resolvePreferredAgainstOptions = (userId, allowedValues) => {
+export const resolvePreferredAgainstOptions = (userId, allowedKeys, legacyLabelToKey) => {
 	const stored = readPreferredWorkLocation(userId);
 	if (!stored) return null;
-	const set = new Set((allowedValues || []).map((s) => String(s)));
-	return set.has(stored) ? stored : null;
+	const set = new Set((allowedKeys || []).map((s) => String(s)));
+	if (set.has(stored)) return stored;
+	if (legacyLabelToKey && typeof legacyLabelToKey === 'object') {
+		const mapped = legacyLabelToKey[String(stored)];
+		if (mapped && set.has(String(mapped))) return String(mapped);
+	}
+	return null;
 };

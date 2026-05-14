@@ -5,6 +5,7 @@ from db.session import get_db
 from services.auth_service import get_current_admin
 from services.admin import attendance_service as service
 from schemas.admin.attendance_schemas import (
+	AdminAttendanceCreate,
 	AdminAttendanceRangeResponse,
 	AdminAttendanceRecordOut,
 	AdminAttendanceRecomputeResponse,
@@ -12,6 +13,20 @@ from schemas.admin.attendance_schemas import (
 )
 
 router = APIRouter()
+
+
+@router.post("/records", response_model=AdminAttendanceRecordOut)
+def post_attendance_record(
+	body: AdminAttendanceCreate,
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	"""[관리자] 근태 1건 생성(해당 user·work_date에 행이 없을 때만). 가상 결근 행을 실제 기록으로 바꿀 때 사용."""
+	payload = body.model_dump(exclude_unset=True)
+	user_login_id = str(payload.pop("user_login_id", "")).strip()
+	work_date = payload.pop("work_date")
+	record = service.create_attendance_record(db, user_login_id, work_date, payload)
+	return AdminAttendanceRecordOut.model_validate(record)
 
 
 @router.patch("/records/{record_id}", response_model=AdminAttendanceRecordOut)

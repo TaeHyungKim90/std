@@ -33,9 +33,27 @@ class AdminAttendanceRangeResponse(BaseModel):
 class AdminAttendanceUpdate(BaseModel):
 	"""관리자 근태 수정. 전달된 필드만 갱신(부분 수정). clock_* 는 'HH:MM' 또는 ISO datetime 문자열."""
 
-	clock_in_time: Optional[str] = Field(None, description="출근 시각 (HH:MM 또는 ISO)")
-	clock_out_time: Optional[str] = Field(None, description="퇴근 시각 (HH:MM 또는 ISO)")
+	clock_in_time: Optional[str] = Field(
+		None, description="출근 일시: HH:MM(근무일 벽시계) 또는 ISO datetime (예: datetime-local)"
+	)
+	clock_out_time: Optional[str] = Field(
+		None, description="퇴근 일시: HH:MM 또는 ISO datetime (예: datetime-local)"
+	)
 	status: Optional[str] = Field(None, description="상태 코드 (NORMAL, LATE, ABSENT, VACATION 등)")
+
+
+class AdminAttendanceCreate(BaseModel):
+	"""관리자: 해당 근무일에 실제 행이 없을 때(가상 결근 등) 근태 1건 생성."""
+
+	user_login_id: str = Field(..., min_length=1, description="직원 로그인 ID")
+	work_date: date = Field(..., description="근무일 YYYY-MM-DD")
+	clock_in_time: Optional[str] = Field(
+		None, description="출근 일시: HH:MM 또는 ISO datetime (예: datetime-local)"
+	)
+	clock_out_time: Optional[str] = Field(
+		None, description="퇴근 일시: HH:MM 또는 ISO datetime (예: datetime-local)"
+	)
+	status: Optional[str] = Field(None, description="상태 코드 (미입력 시 NORMAL)")
 
 
 class AdminAttendanceRecomputeChange(BaseModel):

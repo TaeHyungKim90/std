@@ -19,6 +19,20 @@ def db_session():
 		yield s
 
 
+@pytest.fixture(autouse=True)
+def seed_active_work_locations(db_session):
+	from models.system_models import WorkLocation
+
+	if db_session.query(WorkLocation).count() == 0:
+		db_session.add_all(
+			[
+				WorkLocation(location_key="company", location_value="회사", is_active=True),
+				WorkLocation(location_key="hq", location_value="본사", is_active=True),
+			]
+		)
+		db_session.commit()
+
+
 @pytest.fixture()
 def user_joined(db_session):
 	u = User(
@@ -148,6 +162,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 	)
 	assert rec.clock_in_time is not None
 	assert rec.shift_status == SHIFT_STATUS_IN_PROGRESS
+	assert rec.clock_in_location == "hq"
 	t2 = db_session.query(Todo).filter(Todo.id == todo_id).one()
 	assert "출근처리" in (t2.description or "")
 	assert "원문" in (t2.description or "")
@@ -197,6 +212,7 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 	)
 	db_session.refresh(rec)
 	assert rec.shift_status == SHIFT_STATUS_CLOSED
+	assert rec.clock_out_location == "hq"
 	t2 = db_session.query(Todo).filter(Todo.id == todo_id).one()
 	assert "퇴근처리" in (t2.description or "")
 
@@ -236,6 +252,7 @@ def test_update_clock_out_sets_night_and_tiered_break(db_session, user_joined):
 	db_session.refresh(rec)
 	assert rec.night_work_minutes == 240
 	assert rec.work_minutes == 210
+	assert rec.clock_out_location == "hq"
 
 	db_session.query(Attendance).filter(Attendance.id == rec.id).delete()
 	db_session.commit()

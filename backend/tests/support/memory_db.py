@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 import db.base  # noqa: F401
 from db.session import Base
-from models.system_models import Department, Position  # noqa: F401
+from models.system_models import Department, Position, WorkLocation  # noqa: F401
 
 
 @contextmanager

@@ -20,24 +20,29 @@ describe('attendanceLocationPreference', () => {
 	});
 
 	test('write / read / clear round-trip', () => {
-		writePreferredWorkLocation(uid, '회사');
-		expect(readPreferredWorkLocation(uid)).toBe('회사');
+		writePreferredWorkLocation(uid, 'company');
+		expect(readPreferredWorkLocation(uid)).toBe('company');
 		clearPreferredWorkLocation(uid);
 		expect(readPreferredWorkLocation(uid)).toBeNull();
 	});
 
 	test('write trims value', () => {
-		writePreferredWorkLocation(uid, '  본사  ');
-		expect(readPreferredWorkLocation(uid)).toBe('본사');
+		writePreferredWorkLocation(uid, '  hq  ');
+		expect(readPreferredWorkLocation(uid)).toBe('hq');
 	});
 
 	test('resolvePreferredAgainstOptions returns null when not in list', () => {
-		writePreferredWorkLocation(uid, '삭제된장소');
-		expect(resolvePreferredAgainstOptions(uid, ['회사', '지점'])).toBeNull();
+		writePreferredWorkLocation(uid, 'unknown');
+		expect(resolvePreferredAgainstOptions(uid, ['company', 'hq'])).toBeNull();
 	});
 
 	test('resolvePreferredAgainstOptions returns stored when in list', () => {
-		writePreferredWorkLocation(uid, '지점');
-		expect(resolvePreferredAgainstOptions(uid, ['회사', '지점'])).toBe('지점');
+		writePreferredWorkLocation(uid, 'hq');
+		expect(resolvePreferredAgainstOptions(uid, ['company', 'hq'])).toBe('hq');
+	});
+
+	test('resolvePreferredAgainstOptions maps legacy label to key', () => {
+		writePreferredWorkLocation(uid, '회사');
+		expect(resolvePreferredAgainstOptions(uid, ['company'], { 회사: 'company' })).toBe('company');
 	});
 });

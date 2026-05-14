@@ -101,6 +101,12 @@ export const adminApi = {
 	}),
 
   /**
+   * 근태 1건 생성 (가상 결근일 등 DB에 행이 없을 때)
+   * POST /api/admin/attendance/records
+   */
+  createAttendance: (payload) => client.post(`${PATH}/attendance/records`, payload),
+
+  /**
    * ⏰ 근태 단건 수정 (관리자)
    * PATCH /api/admin/attendance/records/{recordId}
    */

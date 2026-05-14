@@ -30,10 +30,24 @@ const AttendanceView = () => {
 	const [daySummary, setDaySummary] = useState(null);
 	const [clockCtx, setClockCtx] = useState(null);
 	const [currentTime, setCurrentTime] = useState(new Date());
-	const [locationName, setLocationName] = useState('');
+	const [workLocationKey, setWorkLocationKey] = useState('');
 	const [locationOptions, setLocationOptions] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const lastActionAtRef = useRef(0);
+	/** 서버·셀렉트와 무관하게 최신 key→표시명 (확인창은 state보다 먼저 갱신되도록 ref 사용) */
+	const workLocationKeyToLabelRef = useRef(new Map());
+
+	const getWorkLocationDisplayLabel = useCallback((keyOrLegacy) => {
+		const k = String(keyOrLegacy || '').trim();
+		if (!k) return '';
+		const fromRef = workLocationKeyToLabelRef.current.get(k);
+		if (fromRef) return fromRef;
+		const byKey = locationOptions.find((o) => o.value === k);
+		if (byKey) return byKey.label;
+		const byLabel = locationOptions.find((o) => o.label === k);
+		if (byLabel) return byLabel.label;
+		return k;
+	}, [locationOptions]);
 
 	const fetchTodayStatus = useCallback(async () => {
 		setLoading(true);
@@ -63,40 +77,64 @@ const AttendanceView = () => {
 			const activeLocations = Array.isArray(workLocationRes?.data)
 				? workLocationRes.data.filter((row) => row?.is_active !== false && row?.location_value)
 				: [];
-			const savedLocation = attRes.data?.clock_in_location || '';
+			const keyToLabel = new Map();
+			for (const row of activeLocations) {
+				const lk = String(row.location_key || '').trim();
+				const lv = String(row.location_value || '').trim();
+				if (lk && lv) keyToLabel.set(lk, lv);
+			}
+			workLocationKeyToLabelRef.current = keyToLabel;
+
+			const labelToKey = Object.fromEntries(
+				activeLocations.map((row) => [String(row.location_value).trim(), String(row.location_key).trim()]),
+			);
+			const savedRaw = String(attRes.data?.clock_in_location || '').trim();
+			const matchSaved = activeLocations.find(
+				(row) =>
+					String(row.location_key || '').trim() === savedRaw ||
+					String(row.location_value || '').trim() === savedRaw,
+			);
+			const savedLocationKey = matchSaved ? String(matchSaved.location_key).trim() : savedRaw;
 			const nextOptions = activeLocations.map((row) => ({
 				label: row.location_value,
-				value: row.location_value,
-				location_key: row.location_key,
+				value: String(row.location_key).trim(),
 			}));
-			if (savedLocation && !nextOptions.some((opt) => opt.value === savedLocation)) {
-				nextOptions.unshift({ label: savedLocation, value: savedLocation });
+			if (
+				savedLocationKey &&
+				!nextOptions.some((opt) => opt.value === savedLocationKey || opt.label === savedLocationKey)
+			) {
+				const orphanLabel =
+					keyToLabel.get(savedLocationKey) ||
+					(matchSaved ? String(matchSaved.location_value || '').trim() : '') ||
+					String(savedRaw || '').trim() ||
+					savedLocationKey;
+				nextOptions.unshift({ label: orphanLabel, value: savedLocationKey });
 			}
 			setLocationOptions(nextOptions);
-			const optionValues = nextOptions.map((o) => o.value);
+			const optionKeys = nextOptions.map((o) => o.value);
 			const ctxData = ctxRes.data || {};
 			const serverPreferred = (ctxData.preferred_work_location || '').trim();
 			const fromServerPreferred =
-				!savedLocation && serverPreferred && nextOptions.some((opt) => opt.value === serverPreferred)
+				!savedLocationKey && serverPreferred && nextOptions.some((opt) => opt.value === serverPreferred)
 					? serverPreferred
 					: null;
 			const fromLocalPreference =
-				!savedLocation && !fromServerPreferred && userId
-					? resolvePreferredAgainstOptions(userId, optionValues)
+				!savedLocationKey && !fromServerPreferred && userId
+					? resolvePreferredAgainstOptions(userId, optionKeys, labelToKey)
 					: null;
 
-			let nextLocation = '';
-			if (savedLocation) {
-				nextLocation = savedLocation;
+			let nextLocationKey = '';
+			if (savedLocationKey) {
+				nextLocationKey = savedLocationKey;
 			} else if (fromServerPreferred) {
-				nextLocation = fromServerPreferred;
+				nextLocationKey = fromServerPreferred;
 			} else if (fromLocalPreference) {
-				nextLocation = fromLocalPreference;
+				nextLocationKey = fromLocalPreference;
 			} else if (nextOptions.length > 0) {
-				const byCompanyKey = nextOptions.find((o) => o.location_key === DEFAULT_WORK_LOCATION_KEY);
-				nextLocation = (byCompanyKey || nextOptions[0]).value;
+				const byCompanyKey = nextOptions.find((o) => o.value === DEFAULT_WORK_LOCATION_KEY);
+				nextLocationKey = (byCompanyKey || nextOptions[0]).value;
 			}
-			setLocationName(nextLocation);
+			setWorkLocationKey(nextLocationKey);
 		} catch (err) {
 			console.error('출퇴근 기록 로드 실패', err);
 			Notify.toastApiFailure(err, '출퇴근 기록을 불러오지 못했습니다.');
@@ -133,7 +171,7 @@ const AttendanceView = () => {
 
 	const handleClockIn = async () => {
 		if (!guardDebounce()) return;
-		if (!locationName) {
+		if (!workLocationKey) {
 			Notify.toastWarn('등록된 근무장소가 없습니다. 시스템 관리에서 근무장소를 먼저 등록해 주세요.');
 			return;
 		}
@@ -156,13 +194,13 @@ const AttendanceView = () => {
 		if (clockCtx?.is_weekend) {
 			if (!window.confirm('주말입니다. 출근 처리하시겠습니까?')) return;
 		}
-		if (!window.confirm(`${locationName}에서 출근 처리하시겠습니까?`)) return;
+		if (!window.confirm(`${getWorkLocationDisplayLabel(workLocationKey)}에서 출근 처리하시겠습니까?`)) return;
 
 		setLoading(true);
 		const clockInTask = async () => {
 			const coords = await attendanceApi.getCurrentLocation();
 			const data = {
-				location_name: locationName,
+				location_name: workLocationKey,
 				latitude: coords.latitude,
 				longitude: coords.longitude,
 				note: '',
@@ -177,7 +215,7 @@ const AttendanceView = () => {
 				success: '정상적으로 출근 처리되었습니다. 🏢',
 				error: (err) => err.message || '출근 처리 중 오류가 발생했습니다. 위치 권한을 확인해주세요.',
 			});
-			writePreferredWorkLocation(userId, locationName);
+			writePreferredWorkLocation(userId, workLocationKey);
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('출근 처리 실패', err);
@@ -188,7 +226,7 @@ const AttendanceView = () => {
 
 	const handleClockOut = async () => {
 		if (!guardDebounce()) return;
-		if (!locationName) {
+		if (!workLocationKey) {
 			Notify.toastWarn('퇴근 처리할 근무장소를 선택해 주세요.');
 			return;
 		}
@@ -203,13 +241,13 @@ const AttendanceView = () => {
 		if (clockCtx?.is_weekend) {
 			if (!window.confirm('주말입니다. 퇴근 처리하시겠습니까?')) return;
 		}
-		if (!window.confirm(`${locationName}에서 퇴근 처리하시겠습니까?`)) return;
+		if (!window.confirm(`${getWorkLocationDisplayLabel(workLocationKey)}에서 퇴근 처리하시겠습니까?`)) return;
 
 		setLoading(true);
 		const clockOutTask = async () => {
 			const coords = await attendanceApi.getCurrentLocation();
 			const data = {
-				location_name: locationName,
+				location_name: workLocationKey,
 				latitude: coords.latitude,
 				longitude: coords.longitude,
 				note: '',
@@ -222,7 +260,7 @@ const AttendanceView = () => {
 				success: '오늘 하루도 고생하셨습니다! 🏃‍♂️',
 				error: (err) => err.message || '퇴근 처리 중 오류가 발생했습니다.',
 			});
-			writePreferredWorkLocation(userId, locationName);
+			writePreferredWorkLocation(userId, workLocationKey);
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('퇴근 처리 실패', err);
@@ -276,10 +314,10 @@ const AttendanceView = () => {
 						<label>📍 현재 근무 장소</label>
 						<select
 							className="bq-select"
-							value={locationName}
+							value={workLocationKey}
 							onChange={(e) => {
 								const v = e.target.value;
-								setLocationName(v);
+								setWorkLocationKey(v);
 								writePreferredWorkLocation(userId, v);
 								void persistPreferredLocationToServer(v);
 							}}
@@ -308,7 +346,7 @@ const AttendanceView = () => {
 							type="button"
 							className={`btn-clock-out ${!isClockedIn || isClockedOut ? 'disabled' : ''}`}
 							onClick={handleClockOut}
-							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing || !locationName}
+							disabled={!isClockedIn || isClockedOut || loading || isJoinDateMissing || !workLocationKey}
 							title={disabledReason || ''}
 						>
 							{loading && isClockedIn && !isClockedOut ? '확인 중..' : isClockedOut ? '✅ 퇴근 완료' : '퇴근하기'}
@@ -323,14 +361,18 @@ const AttendanceView = () => {
 						<span className="label">출근 시간</span>
 						<span className="value">
 							{formatTimeHms(todayRecord?.clock_in_time)}{' '}
-							{todayRecord?.clock_in_location && <small>({todayRecord.clock_in_location})</small>}
+							{todayRecord?.clock_in_location && (
+								<small>({getWorkLocationDisplayLabel(todayRecord.clock_in_location)})</small>
+							)}
 						</span>
 					</div>
 					<div className="status-item">
 						<span className="label">퇴근 시간</span>
 						<span className="value">
 							{formatTimeHms(todayRecord?.clock_out_time)}{' '}
-							{todayRecord?.clock_out_location && <small>({todayRecord.clock_out_location})</small>}
+							{todayRecord?.clock_out_location && (
+								<small>({getWorkLocationDisplayLabel(todayRecord.clock_out_location)})</small>
+							)}
 						</span>
 					</div>
 					<div className="status-item total-work">

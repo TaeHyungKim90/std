@@ -579,7 +579,7 @@ const MyReports = () => {
 			const dateTone = isVacationDay ? 'holiday' : getDateTone(ymd, holidayDates);
 			lines.push({
 				ymd,
-				label: `${ymd.slice(5).replace('-', '/')} (${formatYmdToWeekKo(ymd)})`,
+				label: `${ymd.slice(5).replace('-', '/')} ${formatYmdToWeekKo(ymd)}`,
 				text: hit?.content
 					? String(hit.content)
 					: isVacationDay

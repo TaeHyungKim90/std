@@ -91,36 +91,103 @@ def get_active_work_locations(db: Session) -> list[WorkLocation]:
 	)
 
 
-def _active_work_location_values(db: Session) -> set[str]:
-	return {str(w.location_value).strip() for w in get_active_work_locations(db)}
+def _active_work_location_keys(db: Session) -> set[str]:
+	return {str(w.location_key).strip() for w in get_active_work_locations(db)}
 
 
-def _apply_user_preferred_work_location(db: Session, user_login_id: str, location: str) -> None:
-	"""활성 근무장소에 있을 때만 users.preferred_work_location 갱신(동일 트랜잭션 내)."""
-	name = (location or "").strip()
-	if not name or name not in _active_work_location_values(db):
+def resolve_work_location_token_to_key(db: Session, token: str) -> str:
+	"""활성 근무장소의 location_key 또는 location_value로 들어온 토큰을 location_key로 정규화."""
+	raw = (token or "").strip()
+	if not raw:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="근무장소를 입력해 주세요.")
+	for w in get_active_work_locations(db):
+		k = str(w.location_key).strip()
+		v = str(w.location_value).strip()
+		if raw == k or raw == v:
+			return k
+	raise HTTPException(
+		status_code=status.HTTP_400_BAD_REQUEST,
+		detail="등록되지 않았거나 비활성인 근무장소입니다.",
+	)
+
+
+def format_stored_work_location_for_display(db: Session, stored: str | None) -> str | None:
+	"""DB에 저장된 location_key(또는 레거시 value)를 화면 표시용 location_value로 바꿈. 없으면 원문 유지."""
+	if stored is None:
+		return None
+	s = str(stored).strip()
+	if not s:
+		return None
+	w = (
+		db.query(WorkLocation)
+		.filter(WorkLocation.location_key == s)
+		.order_by(WorkLocation.id.desc())
+		.first()
+	)
+	if w is not None:
+		return str(w.location_value).strip()
+	w = (
+		db.query(WorkLocation)
+		.filter(WorkLocation.location_value == s)
+		.order_by(WorkLocation.id.desc())
+		.first()
+	)
+	if w is not None:
+		return str(w.location_value).strip()
+	return s
+
+
+def backfill_legacy_work_location_values_to_keys(db: Session) -> None:
+	"""attendance·users에 남아 있는 활성 근무장소의 표시 문자열을 location_key로 치환."""
+	active = get_active_work_locations(db)
+	if not active:
+		return
+	value_to_key = {str(w.location_value).strip(): str(w.location_key).strip() for w in active}
+	keys = {str(w.location_key).strip() for w in active}
+	changed = False
+	for a in db.query(Attendance).all():
+		for attr in ("clock_in_location", "clock_out_location"):
+			val = getattr(a, attr)
+			if val is None:
+				continue
+			s = str(val).strip()
+			if s in keys:
+				continue
+			nk = value_to_key.get(s)
+			if nk and nk != s:
+				setattr(a, attr, nk)
+				changed = True
+	for u in db.query(User).filter(User.preferred_work_location.isnot(None)).all():
+		s = str(u.preferred_work_location).strip()
+		if s in keys:
+			continue
+		nk = value_to_key.get(s)
+		if nk and nk != s:
+			u.preferred_work_location = nk
+			changed = True
+	if changed:
+		db.commit()
+
+
+def _apply_user_preferred_work_location(db: Session, user_login_id: str, location_key: str) -> None:
+	"""활성 근무장소의 location_key일 때만 users.preferred_work_location 갱신(동일 트랜잭션 내)."""
+	key = (location_key or "").strip()
+	if not key or key not in _active_work_location_keys(db):
 		return
 	user = db.query(User).filter(User.user_login_id == user_login_id).first()
 	if user:
-		user.preferred_work_location = name
+		user.preferred_work_location = key
 
 
 def set_user_preferred_work_location(db: Session, user_login_id: str, location_name: str) -> str:
-	"""선호 근무장소만 저장. 활성 목록에 없으면 400."""
-	name = (location_name or "").strip()
-	if not name:
-		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="근무장소를 입력해 주세요.")
-	if name not in _active_work_location_values(db):
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="등록되지 않았거나 비활성인 근무장소입니다.",
-		)
+	"""선호 근무장소를 location_key로 저장. 요청은 key 또는 활성 location_value."""
+	key = resolve_work_location_token_to_key(db, location_name)
 	user = db.query(User).filter(User.user_login_id == user_login_id).first()
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
-	user.preferred_work_location = name
+	user.preferred_work_location = key
 	db.commit()
-	return name
+	return key
 
 
 def _vacation_categories_for_day(db: Session, user_id: str, target_date: date) -> set[str]:
@@ -294,11 +361,13 @@ def create_clock_in(
 			detail="미종료 근무가 있습니다. 먼저 퇴근 처리한 뒤 출근할 수 있습니다.",
 		)
 
+	location_key = resolve_work_location_token_to_key(db, location)
+
 	placeholder = next((r for r in day_rows if r.clock_in_time is None), None)
 	if placeholder is not None:
 		rec = placeholder
 		rec.clock_in_time = current_time
-		rec.clock_in_location = location
+		rec.clock_in_location = location_key
 		rec.clock_in_lat = lat
 		rec.clock_in_lng = lng
 		rec.status = record_status
@@ -306,7 +375,7 @@ def create_clock_in(
 		if note:
 			rec.note = note
 		_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
-		_apply_user_preferred_work_location(db, user_id, location)
+		_apply_user_preferred_work_location(db, user_id, location_key)
 		db.commit()
 		db.refresh(rec)
 		return rec
@@ -315,7 +384,7 @@ def create_clock_in(
 		user_id=user_id,
 		work_date=current_time.date(),
 		clock_in_time=current_time,
-		clock_in_location=location,
+		clock_in_location=location_key,
 		clock_in_lat=lat,
 		clock_in_lng=lng,
 		status=record_status,
@@ -324,7 +393,7 @@ def create_clock_in(
 	)
 	db.add(new_record)
 	_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
-	_apply_user_preferred_work_location(db, user_id, location)
+	_apply_user_preferred_work_location(db, user_id, location_key)
 	db.commit()
 	db.refresh(new_record)
 	return new_record
@@ -342,10 +411,11 @@ def update_clock_out(
 	note: str | None = None,
 ):
 	"""기존 레코드에 퇴근 정보를 업데이트하고 총 근무 시간을 계산합니다."""
+	location_key = resolve_work_location_token_to_key(db, location)
 	# Column[...] 인스턴스 필드 대입·조건 오탐 방지 (이 함수 범위만 Any)
 	rec: Any = record
 	rec.clock_out_time = current_time
-	rec.clock_out_location = location
+	rec.clock_out_location = location_key
 	rec.clock_out_lat = lat
 	rec.clock_out_lng = lng
 
@@ -367,7 +437,7 @@ def update_clock_out(
 
 	refresh_attendance_daily_summary(db, str(rec.user_id), cast(date, rec.work_date))
 
-	_apply_user_preferred_work_location(db, str(rec.user_id), location)
+	_apply_user_preferred_work_location(db, str(rec.user_id), location_key)
 
 	db.commit()
 	db.refresh(rec)
