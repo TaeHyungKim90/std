@@ -51,14 +51,35 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "static"))
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
 FRONTEND_STATIC_DIR = os.path.join(STATIC_DIR, "static")
+REPO_ROOT = os.path.normpath(os.path.join(BASE_DIR, "..", ".."))
 if not os.path.exists(UPLOAD_DIR):
 	os.makedirs(UPLOAD_DIR)
+
+
+@app.get("/assets/icon/favicon.png")
+async def read_cra_public_favicon_png():
+	"""CRA `index.html`의 `/assets/icon/favicon.png`. Mount보다 먼저 등록(start_production·static 배포)."""
+	for p in (
+		os.path.join(STATIC_DIR, "assets", "icon", "favicon.png"),
+		os.path.join(STATIC_DIR, "icon", "favicon.png"),
+		os.path.join(REPO_ROOT, "frontend", "public", "assets", "icon", "favicon.png"),
+	):
+		if os.path.isfile(p):
+			return FileResponse(p, media_type="image/png")
+	raise HTTPException(status_code=404, detail="favicon.png not found")
+
+
 if os.path.exists(STATIC_DIR):
 	# CRA 프로덕션 빌드는 /static/* 경로(JS/CSS 청크)를 사용합니다.
 	if os.path.isdir(FRONTEND_STATIC_DIR):
 		app.mount("/static", StaticFiles(directory=FRONTEND_STATIC_DIR), name="frontend_static")
-	# 기존 자산 경로 호환용(/assets/*)
-	app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
+	# CRA `public/` 산출물은 build/assets/ → 배포 시 static/assets/ (`/assets/icon/...` = static/assets/icon/...)
+	cra_public_assets_dir = os.path.join(STATIC_DIR, "assets")
+	if os.path.isdir(cra_public_assets_dir):
+		app.mount("/assets", StaticFiles(directory=cra_public_assets_dir), name="assets")
+	else:
+		# 예전 배포: favicon 등이 static 루트 바로 아래에만 있는 경우
+		app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 # 운영: SERVE_UPLOADS_STATIC=False 로 두고 /api/common/files/{file_id} 만 사용 (인증 필요)
 if settings.SERVE_UPLOADS_STATIC and os.path.isdir(UPLOAD_DIR):
 	app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
