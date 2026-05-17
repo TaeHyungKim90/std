@@ -17,6 +17,8 @@ function pickYmdFromDateLike(value) {
 	return toSeoulYmd(s) || s.slice(0, 10);
 }
 
+const ymdOk = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const { joinDate, resignationDate } = useAuth();
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
@@ -93,6 +95,9 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		const start = startYmd;
 		const end = isHalfVacation ? startYmd : endYmd;
 		if (!start || !end) return '시작일과 종료일을 입력하세요.';
+		if (!ymdOk(start) || !ymdOk(end)) {
+			return '시작일·종료일을 달력에서 올바르게 선택해 주세요.';
+		}
 		if (start > end) return '종료일이 시작일보다 빠를 수 없습니다.';
 
 		const empErr = getEmploymentRangeError(start, end, joinDate, resignationDate);
@@ -140,7 +145,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
 			<div className="modal-content dynamic-enter todo-edit-modal__content" onClick={(e) => e.stopPropagation()}>
-				<div className="color-indicator-bar todo-edit__color-bar" style={{ backgroundColor: selectedColor }}></div>
+				<div className="color-indicator-bar todo-edit__color-bar" style={{ backgroundColor: selectedColor }} />
 				<h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
 				<form action={submitAction}>
 					<div className="date-group">
