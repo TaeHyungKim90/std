@@ -35,3 +35,8 @@ Thumbs.db
 
 # 폴더 구조 유지를 위한 .gitkeep만 추적
 !/static/uploads/.gitkeep
+
+deploy_frontend.sh
+start_production.sh
+/static/index.html
+
