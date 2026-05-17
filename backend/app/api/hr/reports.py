@@ -66,3 +66,33 @@ def upsert_weekly(
 	user_id = require_user_login_id(current_user)
 	ws = service.monday_of(payload.week_start_date)
 	return service.upsert_weekly(db, user_id, ws, payload.summary)
+
+
+@router.get("/monthly", response_model=Optional[reports_schemas.MonthlyReportOut])
+def read_monthly(
+	month_start: date = Query(..., alias="month_start"),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	try:
+		validate_report_date_range(month_start, "month_start")
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+	user_id = require_user_login_id(current_user)
+	ms = service.first_of_month(month_start)
+	return service.get_monthly(db, user_id, ms)
+
+
+@router.put("/monthly", response_model=reports_schemas.MonthlyReportOut)
+def upsert_monthly(
+	payload: reports_schemas.MonthlyReportUpsert,
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	try:
+		validate_report_date_range(payload.month_start_date, "month_start_date")
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+	user_id = require_user_login_id(current_user)
+	ms = service.first_of_month(payload.month_start_date)
+	return service.upsert_monthly(db, user_id, ms, payload.summary)

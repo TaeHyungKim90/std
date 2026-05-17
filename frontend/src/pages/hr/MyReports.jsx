@@ -32,6 +32,7 @@ const NO_HIRE_DATE_MESSAGE =
 const REPORT_TABS = [
 	{ id: 'daily', label: '일일 보고' },
 	{ id: 'weekly', label: '주간 보고' },
+	{ id: 'monthly', label: '월간 보고' },
 ];
 
 function monthStartEndYmd(viewMonth) {
@@ -192,6 +193,11 @@ const MyReports = () => {
 	const [weekLoading, setWeekLoading] = useState(false);
 	const [weekClockContexts, setWeekClockContexts] = useState({});
 
+	const [monthDailies, setMonthDailies] = useState([]);
+	const [monthSummaryDraft, setMonthSummaryDraft] = useState('');
+	const [monthLoading, setMonthLoading] = useState(false);
+	const [monthClockContexts, setMonthClockContexts] = useState({});
+
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [drawerDate, setDrawerDate] = useState('');
 	const [drawerContent, setDrawerContent] = useState('');
@@ -216,7 +222,11 @@ const MyReports = () => {
 	const putWeeklyCall = useCallback((payload) => reportApi.putWeekly(payload), []);
 	const { request: saveWeeklyReq, loading: savingWeekly } = useApiRequest(putWeeklyCall);
 
+	const putMonthlyCall = useCallback((payload) => reportApi.putMonthly(payload), []);
+	const { request: saveMonthlyReq, loading: savingMonthly } = useApiRequest(putMonthlyCall);
+
 	const { dateFrom, dateTo } = useMemo(() => monthStartEndYmd(viewMonth), [viewMonth]);
+	const monthStartYmd = dateFrom;
 	const weekStartYmd = useMemo(() => toYmd(startOfWeekSunday(weekAnchor)), [weekAnchor]);
 
 	const drawerAttendanceSessions = useMemo(
@@ -314,6 +324,36 @@ const MyReports = () => {
 		}
 	}, [weekStartYmd, loadHolidayDates]);
 
+	const loadMonthBundle = useCallback(async () => {
+		const monthYmds = enumerateYmdInclusive(dateFrom, dateTo);
+		setMonthLoading(true);
+		try {
+			const [dRes, mRes, , ctxResponses] = await Promise.all([
+				reportApi.getDailyRange(dateFrom, dateTo),
+				reportApi.getMonthly(monthStartYmd),
+				loadHolidayDates(dateFrom, dateTo),
+				Promise.all(
+					monthYmds.map((ymd) =>
+						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
+					)
+				),
+			]);
+			setMonthDailies(Array.isArray(dRes.data) ? dRes.data : []);
+			setMonthClockContexts(
+				Object.fromEntries(monthYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
+			);
+			const m = mRes.data;
+			setMonthSummaryDraft(m?.summary ? String(m.summary) : '');
+		} catch (err) {
+			Notify.toastApiFailure(err, '월간 데이터를 불러오지 못했습니다.');
+			setMonthDailies([]);
+			setMonthClockContexts({});
+			setMonthSummaryDraft('');
+		} finally {
+			setMonthLoading(false);
+		}
+	}, [dateFrom, dateTo, monthStartYmd, loadHolidayDates]);
+
 	// 다른 메뉴를 갔다가 다시 들어올 때 입사일 등 최신 값을 DB와 맞춤 (페이지 내 탭 전환만으로는 호출되지 않음)
 	useEffect(() => {
 		if (!refreshAuth) return;
@@ -329,6 +369,11 @@ const MyReports = () => {
 		if (reportsBlockedNoHireDate) return;
 		if (mainTab === 'weekly') loadWeekBundle();
 	}, [mainTab, loadWeekBundle, reportsBlockedNoHireDate]);
+
+	useEffect(() => {
+		if (reportsBlockedNoHireDate) return;
+		if (mainTab === 'monthly') void loadMonthBundle();
+	}, [mainTab, loadMonthBundle, reportsBlockedNoHireDate]);
 
 	useEffect(() => {
 		if (reportsBlockedNoHireDate) {
@@ -555,9 +600,35 @@ const MyReports = () => {
 		}
 	};
 
+	const handleSubmitMonthly = async () => {
+		if (savingMonthly || monthLoading) return;
+		if (!hasHireDate || reportsBlockedNoHireDate) {
+			Notify.toastError(NO_HIRE_DATE_MESSAGE);
+			return;
+		}
+		const text = monthSummaryDraft.trim();
+		if (!text) {
+			Notify.toastError('월간 요약을 입력해 주세요.');
+			return;
+		}
+		try {
+			await saveMonthlyReq({ month_start_date: monthStartYmd, summary: text });
+			await loadMonthBundle();
+		} catch {
+			/* noop */
+		}
+	};
+
 	const shiftMonth = (dir) => setViewMonth((prev) => addMonths(prev, dir));
 	const shiftWeek = (dir) => setWeekAnchor((prev) => addDays(prev, dir * 7));
-	const pageBusy = dailyLoading || weekLoading || savingDaily || savingWeekly || dailyDrawerPreflight;
+	const pageBusy =
+		dailyLoading ||
+		weekLoading ||
+		monthLoading ||
+		savingDaily ||
+		savingWeekly ||
+		savingMonthly ||
+		dailyDrawerPreflight;
 
 	const weekReadonlyBlocks = useMemo(() => {
 		const start = normalizeToMidnight(new Date(weekStartYmd + 'T00:00:00'));
@@ -598,6 +669,48 @@ const MyReports = () => {
 		return lines;
 	}, [weekStartYmd, weekDailies, authLoading, hasHireDate, hireDate, holidayDates, holidayNames, weekClockContexts]);
 
+	const monthReadonlyBlocks = useMemo(() => {
+		const lines = [];
+		for (const ymd of enumerateYmdInclusive(dateFrom, dateTo)) {
+			const hit = monthDailies.find((x) => x.report_date === ymd);
+			const hasDailyReport = Boolean(hit);
+			const clockCtx = monthClockContexts[ymd] ?? null;
+			const isVacationDay = isVacationContext(clockCtx);
+			const isPublicHoliday = holidayDates.has(ymd) || clockCtx?.is_public_holiday;
+			const holidayLabel = holidayNames[ymd] || clockCtx?.holiday_name || '공휴일';
+			const dateTone = isVacationDay ? 'holiday' : getDateTone(ymd, holidayDates);
+			const beforeJoin =
+				!authLoading && hasHireDate && isYmdStrictlyBeforeJoinDate(ymd, hireDate);
+			lines.push({
+				ymd,
+				label: `${ymd.slice(5).replace('-', '/')} ${formatYmdToWeekKo(ymd)}`,
+				text: hit?.content
+					? String(hit.content)
+					: isVacationDay
+						? '— 휴가 —'
+						: isPublicHoliday
+							? `— ${holidayLabel} —`
+							: '— 등록된 일일 보고가 없습니다 —',
+				dateTone,
+				isVacationDay,
+				isPublicHoliday,
+				holidayLabel,
+				beforeJoin,
+			});
+		}
+		return lines;
+	}, [
+		dateFrom,
+		dateTo,
+		monthDailies,
+		authLoading,
+		hasHireDate,
+		hireDate,
+		holidayDates,
+		holidayNames,
+		monthClockContexts,
+	]);
+
 	useEffect(() => {
 		return () => {
 			closeDailyDrawer();
@@ -609,7 +722,9 @@ const MyReports = () => {
 		<div className="rep-page rep-page--wide rep-page--my-reports">
 			<div className="rep-my-reports-head">
 				<h1 className="rep-page__title">내 보고서</h1>
-				<p className="rep-page__sub">일일 업무 내역과 주간 요약을 등록합니다. (캘린더 일정과는 별도입니다.)</p>
+				<p className="rep-page__sub">
+					일일 업무 내역과 주간·월간 요약을 등록합니다. (캘린더 일정과는 별도입니다.)
+				</p>
 
 				<div className="rep-tabs" role="tablist">
 					{REPORT_TABS.map((t) => (
@@ -631,7 +746,7 @@ const MyReports = () => {
 					))}
 				</div>
 
-				{!reportsBlockedNoHireDate && mainTab === 'daily' ? (
+				{!reportsBlockedNoHireDate && (mainTab === 'daily' || mainTab === 'monthly') ? (
 					<div className="rep-toolbar">
 						<span className="rep-label">
 							{viewMonth.getFullYear()}년 {pad2(viewMonth.getMonth() + 1)}월
@@ -771,6 +886,62 @@ const MyReports = () => {
 									{savingWeekly ? '저장 중…' : '주간 보고 저장'}
 								</button>
 							</div>
+							</div>
+						)}
+					</>
+				)}
+
+				{!reportsBlockedNoHireDate && mainTab === 'monthly' && (
+					<>
+						{monthLoading ? (
+							<p className="rep-empty">불러오는 중…</p>
+						) : (
+							<div className="rep-split rep-split--monthly">
+								<div className="rep-split__col rep-split__col--readonly">
+									<h3 className="rep-split__col-title">이번 달 일일 보고 (읽기 전용)</h3>
+									<div className="rep-readonly-block">
+										{monthReadonlyBlocks.map((b) => (
+											<div
+												key={b.ymd}
+												className={`rep-daily-row${b.beforeJoin ? ' rep-daily-row--before-join' : ''}`}
+											>
+												<div
+													className={`rep-daily-row__title${b.dateTone ? ` rep-date-color--${b.dateTone}` : ''}`}
+												>
+													{b.label}
+												</div>
+												<div
+													className={`rep-daily-row__body${
+														(b.isVacationDay && b.text === '— 휴가 —') ||
+														(b.isPublicHoliday && b.text === `— ${b.holidayLabel} —`)
+															? ' rep-date-color--holiday'
+															: ''
+													}`}
+												>
+													{b.beforeJoin ? '입사일 이전 날짜입니다.' : b.text}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+								<div className="rep-split__col rep-split__col--monthly-form">
+									<h3 className="rep-split__col-title">월간 요약 · 제출</h3>
+									<textarea
+										className="rep-textarea rep-textarea--monthly"
+										value={monthSummaryDraft}
+										disabled={savingMonthly}
+										onChange={(e) => setMonthSummaryDraft(e.target.value)}
+										placeholder="해당 월 업무를 요약해 주세요. (일일·주간 보고를 바탕으로 정리)"
+									/>
+									<button
+										type="button"
+										className="rep-btn-primary"
+										disabled={savingMonthly}
+										onClick={handleSubmitMonthly}
+									>
+										{savingMonthly ? '저장 중…' : '월간 보고 저장'}
+									</button>
+								</div>
 							</div>
 						)}
 					</>

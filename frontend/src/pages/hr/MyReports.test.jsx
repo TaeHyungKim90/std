@@ -29,8 +29,10 @@ jest.mock('api/reportApi', () => ({
 	reportApi: {
 		getDailyRange: jest.fn(),
 		getWeekly: jest.fn(),
+		getMonthly: jest.fn(),
 		putDaily: jest.fn(),
 		putWeekly: jest.fn(),
+		putMonthly: jest.fn(),
 	},
 }));
 
@@ -66,8 +68,10 @@ describe('MyReports', () => {
 
 		reportApi.getDailyRange.mockResolvedValue({ data: [] });
 		reportApi.getWeekly.mockResolvedValue({ data: { summary: '' } });
+		reportApi.getMonthly.mockResolvedValue({ data: { summary: '' } });
 		reportApi.putDaily.mockResolvedValue({ data: {} });
 		reportApi.putWeekly.mockResolvedValue({ data: {} });
+		reportApi.putMonthly.mockResolvedValue({ data: {} });
 
 		attendanceApi.getAttendanceDaySessions.mockResolvedValue({
 			data: {
@@ -137,6 +141,28 @@ describe('MyReports', () => {
 			expect(screen.queryByText('저장되지 않은 내용')).not.toBeInTheDocument();
 		});
 		expect(screen.getByLabelText('업무 내역')).toHaveValue('작성 중인 초안');
+	});
+
+	test('월간 보고 탭 전환 시 getMonthly·getDailyRange가 호출되고 저장 시 putMonthly가 호출된다', async () => {
+		render(<MyReports />);
+
+		await userEvent.click(await screen.findByRole('tab', { name: '월간 보고' }));
+
+		await waitFor(() => {
+			expect(reportApi.getMonthly).toHaveBeenCalled();
+			expect(reportApi.getDailyRange).toHaveBeenCalled();
+		});
+
+		const textarea = await screen.findByPlaceholderText(/해당 월 업무를 요약/);
+		await userEvent.clear(textarea);
+		await userEvent.type(textarea, '월간 요약 테스트');
+
+		await userEvent.click(screen.getByRole('button', { name: '월간 보고 저장' }));
+
+		await waitFor(() => expect(reportApi.putMonthly).toHaveBeenCalled());
+		const payload = reportApi.putMonthly.mock.calls[0][0];
+		expect(payload.summary).toBe('월간 요약 테스트');
+		expect(payload.month_start_date).toMatch(/^\d{4}-\d{2}-01$/);
 	});
 });
 

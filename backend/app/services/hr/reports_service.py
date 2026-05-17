@@ -1,3 +1,4 @@
+import calendar
 from datetime import date, timedelta
 from typing import cast
 
@@ -5,11 +6,20 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from models.auth_models import User
-from models.hr_models import DailyReport, WeeklyReport
+from models.hr_models import DailyReport, MonthlyReport, WeeklyReport
 
 
 def monday_of(d: date) -> date:
 	return d - timedelta(days=d.weekday())
+
+
+def first_of_month(d: date) -> date:
+	return d.replace(day=1)
+
+
+def last_of_month(month_start: date) -> date:
+	last_day = calendar.monthrange(month_start.year, month_start.month)[1]
+	return month_start.replace(day=last_day)
 
 
 def list_daily_range(db: Session, user_id: str, date_from: date, date_to: date) -> list[DailyReport]:
@@ -89,6 +99,46 @@ def upsert_weekly(db: Session, user_id: str, week_start: date, summary: str) -> 
 		row.summary = text
 	else:
 		row = WeeklyReport(user_id=user_id, week_start_date=week_start, summary=text)
+		db.add(row)
+	db.commit()
+	db.refresh(row)
+	return row
+
+
+def get_monthly(db: Session, user_id: str, month_start: date) -> MonthlyReport | None:
+	month_start = first_of_month(month_start)
+	user = db.query(User).filter(User.user_login_id == user_id).first()
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and month_start > resign_d:
+		return None
+	return (
+		db.query(MonthlyReport)
+		.filter(MonthlyReport.user_id == user_id, MonthlyReport.month_start_date == month_start)
+		.first()
+	)
+
+
+def upsert_monthly(db: Session, user_id: str, month_start: date, summary: str) -> MonthlyReport:
+	month_start = first_of_month(month_start)
+	user = db.query(User).filter(User.user_login_id == user_id).first()
+	resign_d = cast(date | None, user.resignation_date) if user is not None else None
+	if resign_d is not None and month_start > resign_d:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="퇴사일 이후 월에는 월간 보고를 작성할 수 없습니다.",
+		)
+	text = (summary or "").strip()
+	if not text:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="월간 요약을 입력해 주세요.")
+	row = (
+		db.query(MonthlyReport)
+		.filter(MonthlyReport.user_id == user_id, MonthlyReport.month_start_date == month_start)
+		.first()
+	)
+	if row:
+		row.summary = text
+	else:
+		row = MonthlyReport(user_id=user_id, month_start_date=month_start, summary=text)
 		db.add(row)
 	db.commit()
 	db.refresh(row)

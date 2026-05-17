@@ -512,6 +512,43 @@ aside.rep-drawer-panel.dynamic-enter {
 	min-height: clamp(320px, 45vh, 680px);
 }
 
+/* 월간 탭: 주간과 동일 레이아웃 */
+.rep-split--monthly {
+	grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+	gap: 1.25rem;
+	min-height: clamp(380px, 52vh, 760px);
+	align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+	.rep-split--monthly {
+		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+		gap: 1rem;
+		min-height: clamp(340px, 48vh, 600px);
+	}
+}
+
+@media (max-width: 768px) {
+	.rep-split--monthly {
+		grid-template-columns: 1fr;
+		min-height: 0;
+	}
+}
+
+.rep-split--monthly > .rep-split__col {
+	min-height: 0;
+}
+
+.rep-split--monthly > .rep-split__col--monthly-form {
+	min-height: clamp(320px, 45vh, 680px);
+}
+
+.rep-textarea--monthly {
+	flex: 1;
+	min-height: 200px;
+	resize: vertical;
+}
+
 .rep-split__col--weekly-form .rep-btn-primary {
 	margin-top: 0.75rem;
 	flex-shrink: 0;

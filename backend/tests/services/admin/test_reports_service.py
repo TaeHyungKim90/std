@@ -6,8 +6,12 @@ from typing import Any
 import pytest
 from fastapi import HTTPException
 
+from models.auth_models import User
+from models.holiday_models import Holiday
+from models.hr_models import Attendance, MonthlyReport
 from services.admin import reports_service  # noqa: E402
 from api.admin import reports as admin_reports_api  # noqa: E402
+from support.memory_db import memory_db_session
 from utils.seoul_time import today_seoul
 
 
@@ -232,3 +236,89 @@ def test_invalid_date_range():
 		admin_reports_api.report_daily_status(work_date=too_old, db=db, _={})
 
 	assert e.value.status_code == 400
+
+
+@pytest.fixture()
+def admin_db_session():
+	with memory_db_session() as s:
+		yield s
+
+
+def _seed_user(db, *, login_id: str, name: str = "직원"):
+	u = User(
+		id=hash(login_id) % 10_000 + 1,
+		user_login_id=login_id,
+		user_password="x",
+		user_name=name,
+		join_date=date(2020, 1, 1),
+	)
+	db.add(u)
+	db.commit()
+	return u
+
+
+def test_list_month_status_submitted(admin_db_session):
+	month_start = date(2026, 4, 1)
+	_seed_user(admin_db_session, login_id="u1")
+	admin_db_session.add(
+		MonthlyReport(user_id="u1", month_start_date=month_start, summary="4월 요약")
+	)
+	admin_db_session.commit()
+
+	rows = reports_service.list_month_status(admin_db_session, month_start)
+	assert len(rows) == 1
+	assert rows[0]["monthly_status"] == "SUBMITTED"
+	assert rows[0]["monthly_submitted"] is True
+	assert "4월" in rows[0]["monthly_summary_preview"]
+
+
+def test_list_month_status_missing(admin_db_session):
+	month_start = date(2026, 5, 1)
+	_seed_user(admin_db_session, login_id="u2")
+
+	rows = reports_service.list_month_status(admin_db_session, month_start)
+	assert len(rows) == 1
+	assert rows[0]["monthly_status"] == "MISSING"
+	assert rows[0]["monthly_submitted"] is False
+
+
+def test_list_month_status_holiday_month(admin_db_session):
+	"""근무일이 없고 주말·공휴일만 있는 달은 HOLIDAY."""
+	month_start = date(2026, 2, 1)
+	month_end = date(2026, 2, 28)
+	_seed_user(admin_db_session, login_id="u3")
+	d = month_start
+	hid = 1
+	while d <= month_end:
+		if d.weekday() < 5:
+			admin_db_session.add(
+				Holiday(id=hid, holiday_date=d, holiday_name="테스트휴일", is_official=False)
+			)
+			hid += 1
+		d += timedelta(days=1)
+	admin_db_session.commit()
+
+	rows = reports_service.list_month_status(admin_db_session, month_start)
+	assert len(rows) == 1
+	assert rows[0]["monthly_status"] == "HOLIDAY"
+
+
+def test_list_month_status_vacation_month(admin_db_session):
+	"""실근무일 없이 휴가·휴일만 있으면 VACATION."""
+	month_start = date(2026, 6, 1)
+	month_end = date(2026, 6, 30)
+	_seed_user(admin_db_session, login_id="u4")
+	d = month_start
+	aid = 1
+	while d <= month_end:
+		if d.weekday() < 5:
+			admin_db_session.add(
+				Attendance(id=aid, user_id="u4", work_date=d, status="연차")
+			)
+			aid += 1
+		d += timedelta(days=1)
+	admin_db_session.commit()
+
+	rows = reports_service.list_month_status(admin_db_session, month_start)
+	assert len(rows) == 1
+	assert rows[0]["monthly_status"] == "VACATION"

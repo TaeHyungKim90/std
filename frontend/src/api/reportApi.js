@@ -15,11 +15,18 @@ export const reportApi = {
 
 	putWeekly: (payload) => client.put(`${HR}/weekly`, payload),
 
+	getMonthly: (monthStart) => client.get(`${HR}/monthly`, { params: { month_start: monthStart } }),
+
+	putMonthly: (payload) => client.put(`${HR}/monthly`, payload),
+
 	getAdminDailyStatus: (workDate) =>
 		client.get(`${ADMIN}/reports/daily-status`, { params: { work_date: workDate } }),
 
 	getAdminWeekStatus: (weekStart) =>
 		client.get(`${ADMIN}/reports/status`, { params: { week_start: weekStart } }),
+
+	getAdminMonthStatus: (monthStart) =>
+		client.get(`${ADMIN}/reports/monthly-status`, { params: { month_start: monthStart } }),
 
 	getAdminUserBundle: (userLoginId, weekStart) =>
 		client.get(`${ADMIN}/reports/users/${encodeURIComponent(userLoginId)}/bundle`, {

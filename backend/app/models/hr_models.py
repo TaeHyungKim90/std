@@ -117,3 +117,16 @@ class WeeklyReport(Base):
 	summary = Column[str](Text, nullable=False)
 	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
+
+
+class MonthlyReport(Base):
+	"""월간 요약 보고 (달력 월 1일 기준)."""
+	__tablename__ = "monthly_reports"
+	__table_args__ = (UniqueConstraint("user_id", "month_start_date", name="uq_monthly_reports_user_month"),)
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
+	month_start_date = Column[date](Date, nullable=False, index=True)
+	summary = Column[str](Text, nullable=False)
+	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)

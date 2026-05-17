@@ -42,6 +42,19 @@ def report_week_status(
 	return admin_reports.list_week_status(db, week_start)
 
 
+@router.get("/monthly-status", response_model=list[reports_schemas.AdminMonthReportStatusRow])
+def report_month_status(
+	month_start: date = Query(..., alias="month_start"),
+	db: Session = Depends(get_db),
+	_: dict = Depends(get_current_admin),
+):
+	try:
+		validate_report_date_range(month_start, "month_start")
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+	return admin_reports.list_month_status(db, month_start)
+
+
 @router.get("/users/{user_login_id}/bundle", response_model=reports_schemas.AdminReportBundleOut)
 def user_report_bundle(
 	request: Request,
@@ -79,4 +92,5 @@ def user_report_bundle(
 	return reports_schemas.AdminReportBundleOut(
 		dailies=data["dailies"],
 		weekly=data["weekly"],
+		monthly=data.get("monthly"),
 	)

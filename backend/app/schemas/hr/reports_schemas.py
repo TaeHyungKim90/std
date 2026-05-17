@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 AdminDailyReportStatusLiteral = Literal["HOLIDAY", "VACATION", "SUBMITTED", "MISSING"]
 AdminWeeklyReportStatusLiteral = Literal["HOLIDAY", "VACATION", "SUBMITTED", "MISSING"]
+AdminMonthlyReportStatusLiteral = Literal["HOLIDAY", "VACATION", "SUBMITTED", "MISSING"]
 
 
 class DailyReportOut(BaseModel):
@@ -39,6 +40,22 @@ class WeeklyReportUpsert(BaseModel):
 	summary: str = Field(..., min_length=1, max_length=50000)
 
 
+class MonthlyReportOut(BaseModel):
+	id: int
+	user_id: str
+	month_start_date: date
+	summary: str
+	created_at: datetime
+	updated_at: datetime
+
+	model_config = ConfigDict(from_attributes=True)
+
+
+class MonthlyReportUpsert(BaseModel):
+	month_start_date: date
+	summary: str = Field(..., min_length=1, max_length=50000)
+
+
 class AdminDailyStatusRow(BaseModel):
 	"""관리자 일일보고 현황(특정 근무일 1일 기준)."""
 
@@ -58,6 +75,18 @@ class AdminWeekReportStatusRow(BaseModel):
 	weekly_summary_preview: str = ""
 
 
+class AdminMonthReportStatusRow(BaseModel):
+	"""관리자 월간보고 현황(해당 월 1일 기준)."""
+
+	user_login_id: str
+	user_name: str
+	monthly_status: AdminMonthlyReportStatusLiteral = "MISSING"
+	monthly_submitted: bool
+	monthly_updated_at: Optional[datetime] = None
+	monthly_summary_preview: str = ""
+
+
 class AdminReportBundleOut(BaseModel):
 	dailies: list[DailyReportOut]
 	weekly: Optional[WeeklyReportOut] = None
+	monthly: Optional[MonthlyReportOut] = None

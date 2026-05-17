@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.auth_models import User
 from models.holiday_models import Holiday
-from models.hr_models import Attendance, DailyReport, Todo, WeeklyReport
+from models.hr_models import Attendance, DailyReport, MonthlyReport, Todo, WeeklyReport
 from services.hr import reports_service as hr_reports
 from services.hr.attendance_service import is_vacation_status
 
@@ -172,6 +172,104 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 	return out
 
 
+def list_month_status(db: Session, month_start: date) -> list[dict]:
+	month_start = hr_reports.first_of_month(month_start)
+	month_end = hr_reports.last_of_month(month_start)
+
+	users = (
+		db.query(User)
+		.filter(User.join_date.isnot(None))
+		.filter(User.join_date <= month_end)
+		.filter(or_(User.resignation_date.is_(None), User.resignation_date >= month_start))
+		.order_by(User.user_name.asc())
+		.all()
+	)
+	monthly_rows = {
+		cast(str, m.user_id): m
+		for m in db.query(MonthlyReport).filter(MonthlyReport.month_start_date == month_start).all()
+	}
+	attendance_rows = (
+		db.query(Attendance)
+		.filter(Attendance.work_date >= month_start, Attendance.work_date <= month_end)
+		.all()
+	)
+	vac_attendance_map = {
+		(cast(str, a.user_id), cast(date, a.work_date)): is_vacation_status(a.status)
+		for a in attendance_rows
+	}
+	holiday_map = {
+		cast(date, h.holiday_date): True
+		for h in db.query(Holiday).filter(
+			Holiday.holiday_date >= month_start, Holiday.holiday_date <= month_end
+		).all()
+	}
+	day_start = datetime.combine(month_start, time.min)
+	day_end = datetime.combine(month_end, time.max)
+	vac_todo_rows = (
+		db.query(Todo.user_id, Todo.start_date, Todo.end_date)
+		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
+		.filter(Todo.start_date <= day_end)
+		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
+		.all()
+	)
+	vac_todo_map: dict[str, list[tuple[datetime, datetime | None]]] = {}
+	for uid, start_dt, end_dt in vac_todo_rows:
+		vac_todo_map.setdefault(uid, []).append((start_dt, end_dt))
+
+	month_days: list[date] = []
+	d = month_start
+	while d <= month_end:
+		month_days.append(d)
+		d += timedelta(days=1)
+
+	out = []
+	for u in users:
+		uid = cast(str, u.user_login_id)
+		mr = monthly_rows.get(uid)
+		all_holiday = True
+		only_vacation_or_holiday = True
+		for day in month_days:
+			is_holiday = _is_weekend(day) or bool(holiday_map.get(day))
+			if not is_holiday:
+				all_holiday = False
+			if is_holiday:
+				continue
+			if vac_attendance_map.get((uid, day), False):
+				continue
+			day_start_dt = datetime.combine(day, time.min)
+			day_end_dt = datetime.combine(day, time.max)
+			has_vac_todo = False
+			for start_dt, end_dt in vac_todo_map.get(uid, []):
+				if start_dt <= day_end_dt and (end_dt is None or end_dt >= day_start_dt):
+					has_vac_todo = True
+					break
+			if not has_vac_todo:
+				only_vacation_or_holiday = False
+				break
+		if all_holiday:
+			monthly_status = "HOLIDAY"
+		elif only_vacation_or_holiday:
+			monthly_status = "VACATION"
+		else:
+			monthly_status = "SUBMITTED" if mr is not None else "MISSING"
+		preview = ""
+		if mr is not None and (mr.summary is not None) and str(mr.summary).strip():
+			s = str(mr.summary).strip()
+			if s:
+				preview = s[:200] + ("…" if len(s) > 200 else "")
+		out.append(
+			{
+				"user_login_id": uid,
+				"user_name": u.user_name,
+				"monthly_status": monthly_status,
+				"monthly_submitted": mr is not None,
+				"monthly_updated_at": mr.updated_at if mr else None,
+				"monthly_summary_preview": preview,
+			}
+		)
+	return out
+
+
 def get_user_bundle(db: Session, user_login_id: str, week_start: date) -> dict:
 	week_start = hr_reports.monday_of(week_start)
 	week_end = week_start + timedelta(days=6)
@@ -195,4 +293,13 @@ def get_user_bundle(db: Session, user_login_id: str, week_start: date) -> dict:
 		.filter(WeeklyReport.user_id == user_login_id, WeeklyReport.week_start_date == week_start)
 		.first()
 	)
-	return {"dailies": dailies, "weekly": weekly}
+	month_start = hr_reports.first_of_month(week_start)
+	monthly = (
+		db.query(MonthlyReport)
+		.filter(
+			MonthlyReport.user_id == user_login_id,
+			MonthlyReport.month_start_date == month_start,
+		)
+		.first()
+	)
+	return {"dailies": dailies, "weekly": weekly, "monthly": monthly}

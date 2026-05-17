@@ -7,10 +7,12 @@ import SideDrawer from 'components/common/SideDrawer';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
+	addMonths,
 	formatYmdToWeekKo,
 	getIsoMonthAndWeek,
 	getTodayYmd,
 	normalizeToMidnight,
+	pad2,
 	startOfWeekMonday,
 	toYmd,
 } from 'utils/dateUtils';
@@ -19,6 +21,7 @@ import * as Notify from 'utils/toastUtils';
 const MONITOR_TABS = [
 	{ id: 'daily', label: '일일보고 작성 현황' },
 	{ id: 'weekly', label: '주간보고 제출 현황' },
+	{ id: 'monthly', label: '월간보고 제출 현황' },
 ];
 
 const STATUS_LABELS = {
@@ -42,6 +45,14 @@ const WEEKLY_FILTER_OPTIONS = [
 	{ value: 'W_SUBMITTED', label: '제출완료' },
 	{ value: 'W_VACATION', label: '휴가 주차' },
 	{ value: 'W_HOLIDAY', label: '휴일 주차' },
+];
+
+const MONTHLY_FILTER_OPTIONS = [
+	{ value: 'ALL', label: '전체' },
+	{ value: 'M_MISSING', label: '미제출' },
+	{ value: 'M_SUBMITTED', label: '제출완료' },
+	{ value: 'M_VACATION', label: '휴가 월' },
+	{ value: 'M_HOLIDAY', label: '휴일 월' },
 ];
 
 function weekEndYmd(mondayYmd) {
@@ -68,8 +79,14 @@ const AdminDailyReport = () => {
 
 	const [dailyRows, setDailyRows] = useState([]);
 	const [weeklyRows, setWeeklyRows] = useState([]);
+	const [monthlyRows, setMonthlyRows] = useState([]);
 	const [dailyLoading, setDailyLoading] = useState(false);
 	const [weeklyLoading, setWeeklyLoading] = useState(false);
+	const [monthlyLoading, setMonthlyLoading] = useState(false);
+	const [monthAnchor, setMonthAnchor] = useState(() => {
+		const n = new Date();
+		return new Date(n.getFullYear(), n.getMonth(), 1);
+	});
 
 	const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -80,8 +97,10 @@ const AdminDailyReport = () => {
 	const [bundleLoading, setBundleLoading] = useState(false);
 	const [bundleDailies, setBundleDailies] = useState([]);
 	const [bundleWeekly, setBundleWeekly] = useState(null);
+	const [bundleMonthly, setBundleMonthly] = useState(null);
 
 	const mondayYmd = useMemo(() => toYmd(weekAnchor), [weekAnchor]);
+	const monthStartYmd = useMemo(() => toYmd(monthAnchor), [monthAnchor]);
 	const bundleWeekFromDaily = useMemo(
 		() => toYmd(startOfWeekMonday(normalizeToMidnight(new Date(`${dailyWorkYmd}T12:00:00`)))),
 		[dailyWorkYmd]
@@ -113,6 +132,19 @@ const AdminDailyReport = () => {
 		}
 	}, [mondayYmd]);
 
+	const loadMonthly = useCallback(async () => {
+		setMonthlyLoading(true);
+		try {
+			const res = await reportApi.getAdminMonthStatus(monthStartYmd);
+			setMonthlyRows(Array.isArray(res.data) ? res.data : []);
+		} catch (err) {
+			Notify.toastApiFailure(err, '월간 현황을 불러오지 못했습니다.');
+			setMonthlyRows([]);
+		} finally {
+			setMonthlyLoading(false);
+		}
+	}, [monthStartYmd]);
+
 	useEffect(() => {
 		if (monitorTab === 'daily') loadDaily();
 	}, [monitorTab, loadDaily]);
@@ -120,6 +152,10 @@ const AdminDailyReport = () => {
 	useEffect(() => {
 		if (monitorTab === 'weekly') loadWeekly();
 	}, [monitorTab, loadWeekly]);
+
+	useEffect(() => {
+		if (monitorTab === 'monthly') loadMonthly();
+	}, [monitorTab, loadMonthly]);
 
 	useEffect(() => {
 		setStatusFilter('ALL');
@@ -149,7 +185,22 @@ const AdminDailyReport = () => {
 		return list;
 	}, [weeklyRows, statusFilter]);
 
-	const filterOptions = monitorTab === 'daily' ? DAILY_FILTER_OPTIONS : WEEKLY_FILTER_OPTIONS;
+	const filteredMonthlyRows = useMemo(() => {
+		let list = [...monthlyRows];
+		if (statusFilter === 'M_MISSING') list = list.filter((r) => !r.monthly_submitted);
+		else if (statusFilter === 'M_SUBMITTED') list = list.filter((r) => r.monthly_submitted);
+		else if (statusFilter === 'M_VACATION') list = list.filter((r) => r.monthly_status === 'VACATION');
+		else if (statusFilter === 'M_HOLIDAY') list = list.filter((r) => r.monthly_status === 'HOLIDAY');
+		list.sort((a, b) => String(a.user_name || '').localeCompare(String(b.user_name || ''), 'ko'));
+		return list;
+	}, [monthlyRows, statusFilter]);
+
+	const filterOptions =
+		monitorTab === 'daily'
+			? DAILY_FILTER_OPTIONS
+			: monitorTab === 'weekly'
+				? WEEKLY_FILTER_OPTIONS
+				: MONTHLY_FILTER_OPTIONS;
 
 	const closeDrawer = useCallback(() => {
 		setDrawerOpen(false);
@@ -158,11 +209,12 @@ const AdminDailyReport = () => {
 		setDrawerFocusDateYmd('');
 		setBundleDailies([]);
 		setBundleWeekly(null);
+		setBundleMonthly(null);
 		setBundleLoading(false);
 	}, []);
 
 	const openDrawer = async (row, bundleWeekYmd, focusDateYmd = '') => {
-		if (bundleLoading || dailyLoading || weeklyLoading) return;
+		if (bundleLoading || dailyLoading || weeklyLoading || monthlyLoading) return;
 		setDrawerUser(row);
 		setDrawerBundleWeekYmd(bundleWeekYmd);
 		setDrawerFocusDateYmd(focusDateYmd || '');
@@ -170,10 +222,12 @@ const AdminDailyReport = () => {
 		setBundleLoading(true);
 		setBundleDailies([]);
 		setBundleWeekly(null);
+		setBundleMonthly(null);
 		try {
 			const res = await reportApi.getAdminUserBundle(row.user_login_id, bundleWeekYmd);
 			setBundleDailies(Array.isArray(res.data?.dailies) ? res.data.dailies : []);
 			setBundleWeekly(res.data?.weekly ?? null);
+			setBundleMonthly(res.data?.monthly ?? null);
 		} catch (err) {
 			Notify.toastApiFailure(err, '상세를 불러오지 못했습니다.');
 		} finally {
@@ -182,10 +236,21 @@ const AdminDailyReport = () => {
 	};
 
 	const shiftWeek = (dir) => setWeekAnchor((prev) => addDays(prev, dir * 7));
+	const shiftMonth = (dir) => setMonthAnchor((prev) => addMonths(prev, dir));
 
-	const loading = monitorTab === 'daily' ? dailyLoading : weeklyLoading;
-	const tableRows = monitorTab === 'daily' ? filteredDailyRows : filteredWeeklyRows;
+	const loading =
+		monitorTab === 'daily' ? dailyLoading : monitorTab === 'weekly' ? weeklyLoading : monthlyLoading;
+	const tableRows =
+		monitorTab === 'daily'
+			? filteredDailyRows
+			: monitorTab === 'weekly'
+				? filteredWeeklyRows
+				: filteredMonthlyRows;
 	const pageBusy = loading || bundleLoading;
+	const bundleWeekFromMonth = useMemo(
+		() => toYmd(startOfWeekMonday(normalizeToMidnight(new Date(`${monthStartYmd}T12:00:00`)))),
+		[monthStartYmd]
+	);
 
 	useEffect(() => {
 		return () => {
@@ -199,9 +264,7 @@ const AdminDailyReport = () => {
 				<div className="rep-admin-daily-top-row__intro">
 					<h1 className="rep-page__title">보고서 모니터링</h1>
 					<p className="rep-page__sub">
-						일일 탭은 선택한 근무일 기준 직원별 작성 상태(휴일·휴가·작성·미작성)를, 주간 탭은 해당 주의 주간보고 제출·요약을 확인합니다.
-						<br />
-						행을 클릭하면 해당 주의 상세 Drawer가 열립니다.
+						일일·주간·월간 보고 제출 현황을 확인합니다. 행을 클릭하면 해당 주·월의 상세 Drawer가 열립니다.
 					</p>
 				</div>
 				{monitorTab === 'daily' ? (
@@ -231,7 +294,7 @@ const AdminDailyReport = () => {
 							{formatYmdToWeekKo(dailyWorkYmd)} · 선택한 날짜 기준으로 상태를 표시합니다.
 						</p>
 					</div>
-				) : (
+				) : monitorTab === 'weekly' ? (
 					<div className="rep-admin-weekly-top-row__nav-wrap">
 						<p className="rep-admin-weekly-nav__week">{weekLabelText}</p>
 						<div className="rep-admin-weekly-nav__btns" aria-label="주차 이동">
@@ -244,6 +307,23 @@ const AdminDailyReport = () => {
 						</div>
 						<p className="rep-admin-daily-date-toolbar__hint rep-admin-weekly-nav__hint">
 							선택한 주차 기준으로 제출·요약을 표시합니다.
+						</p>
+					</div>
+				) : (
+					<div className="rep-admin-weekly-top-row__nav-wrap">
+						<p className="rep-admin-weekly-nav__week">
+							{monthAnchor.getFullYear()}년 {pad2(monthAnchor.getMonth() + 1)}월 ({monthStartYmd})
+						</p>
+						<div className="rep-admin-weekly-nav__btns" aria-label="월 이동">
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftMonth(-1)}>
+								이전 달
+							</button>
+							<button type="button" className="rep-nav-btn" disabled={pageBusy} onClick={() => shiftMonth(1)}>
+								다음 달
+							</button>
+						</div>
+						<p className="rep-admin-daily-date-toolbar__hint rep-admin-weekly-nav__hint">
+							선택한 달 기준으로 월간보고 제출·요약을 표시합니다.
 						</p>
 					</div>
 				)}
@@ -314,10 +394,15 @@ const AdminDailyReport = () => {
 							<th>로그인 ID</th>
 							{monitorTab === 'daily' ? (
 								<th>일일 상태</th>
-							) : (
+							) : monitorTab === 'weekly' ? (
 								<>
 									<th>주간 제출</th>
 									<th className="rep-admin-th-summary">주간 요약</th>
+								</>
+							) : (
+								<>
+									<th>월간 제출</th>
+									<th className="rep-admin-th-summary">월간 요약</th>
 								</>
 							)}
 						</tr>
@@ -343,7 +428,7 @@ const AdminDailyReport = () => {
 									</td>
 								</tr>
 							))
-						) : (
+						) : monitorTab === 'weekly' ? (
 							tableRows.map((row) => (
 								<tr key={row.user_login_id} onClick={() => (!pageBusy ? openDrawer(row, mondayYmd) : undefined)}>
 									<td>{row.user_name}</td>
@@ -365,6 +450,37 @@ const AdminDailyReport = () => {
 									<td className="rep-admin-td-summary" title={row.weekly_summary_preview || ''}>
 										{row.weekly_summary_preview ? (
 											<span className="rep-admin-summary-preview">{row.weekly_summary_preview}</span>
+										) : (
+											<span className="rep-empty rep-empty--table">—</span>
+										)}
+									</td>
+								</tr>
+							))
+						) : (
+							tableRows.map((row) => (
+								<tr
+									key={row.user_login_id}
+									onClick={() => (!pageBusy ? openDrawer(row, bundleWeekFromMonth) : undefined)}
+								>
+									<td>{row.user_name}</td>
+									<td className="rep-admin-td-login">
+										<IdCopyChip value={row.user_login_id} compact isolateRowClick />
+									</td>
+									<td>
+										{row.monthly_status === 'VACATION' ? (
+											<span className="rep-status-badge rep-status-badge--vacation">휴가</span>
+										) : row.monthly_status === 'HOLIDAY' ? (
+											<span className="rep-status-badge rep-status-badge--holiday">휴일</span>
+										) : null}{' '}
+										{row.monthly_submitted ? (
+											<span className="rep-status-badge rep-status-badge--submitted">제출</span>
+										) : (
+											<span className="rep-status-badge rep-status-badge--missing">미제출</span>
+										)}
+									</td>
+									<td className="rep-admin-td-summary" title={row.monthly_summary_preview || ''}>
+										{row.monthly_summary_preview ? (
+											<span className="rep-admin-summary-preview">{row.monthly_summary_preview}</span>
 										) : (
 											<span className="rep-empty rep-empty--table">—</span>
 										)}
@@ -435,6 +551,14 @@ const AdminDailyReport = () => {
 									<div className="rep-readonly-block">{bundleWeekly.summary}</div>
 								) : (
 									<p className="rep-empty">제출된 주간 보고가 없습니다.</p>
+								)}
+							</section>
+							<section className="rep-admin-section">
+								<h3 className="rep-admin-section__title">월간 요약</h3>
+								{bundleMonthly?.summary ? (
+									<div className="rep-readonly-block">{bundleMonthly.summary}</div>
+								) : (
+									<p className="rep-empty">제출된 월간 보고가 없습니다.</p>
 								)}
 							</section>
 						</>

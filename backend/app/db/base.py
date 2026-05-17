@@ -13,6 +13,7 @@ from models.hr_models import (
 	AttendanceDailySummary,
 	DailyReport,
 	WeeklyReport,
+	MonthlyReport,
 )
 from models.recruitment_models import Applicant, Application, Interview, JobPosting, ResumeTemplate
 from models.message_models import Message, MessageAttachment, MessageReadReceipt
