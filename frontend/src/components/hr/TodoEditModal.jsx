@@ -56,17 +56,24 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		setEndYmd(end);
 		setTitle('');
 		setDescription('');
-		if (categories.length > 0) {
-			setCategory(categories[0].category_key);
-			setSelectedColor(categories[0].color || '#4a90e2');
-		}
-	}, [isOpen, mode, event?.id, selectedDate?.start, selectedDate?.end, categories]);
+	}, [isOpen, mode, event?.id, selectedDate?.start, selectedDate?.end]);
 
 	useEffect(() => {
-		if (isHalfVacation && startYmd) {
-			setEndYmd(startYmd);
-		}
-	}, [isHalfVacation, startYmd]);
+		if (!isOpen || mode !== 'create' || category) return;
+		if (categories.length === 0) return;
+		const start = pickYmdFromDateLike(selectedDate?.start);
+		const end = pickYmdFromDateLike(selectedDate?.end) || start;
+		const multiDay = ymdOk(start) && ymdOk(end) && end > start;
+		const defaultCat = multiDay
+			? categories.find((c) => c.category_key === 'vacation_full') ??
+				categories.find(
+					(c) => c.category_key !== 'vacation_am' && c.category_key !== 'vacation_pm'
+				) ??
+				categories[0]
+			: categories[0];
+		setCategory(defaultCat.category_key);
+		setSelectedColor(defaultCat.color || '#4a90e2');
+	}, [isOpen, mode, category, categories, selectedDate?.start, selectedDate?.end]);
 
 	const handleCategoryChange = (e) => {
 		const selectedKey = e.target.value;

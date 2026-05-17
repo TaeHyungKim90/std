@@ -85,22 +85,19 @@ const TodoListView = () => {
 			const name = todo.author?.user_name || '';
 			const eventTextColor = getContrastColor(todo.color);
 
-			/* DB: 종료일 당일 23:59:59(포함). FC 종일: 배타적 end = 포함 종료일 +1일 00:00(날짜만). 서울 달력 기준. */
-			const range = todoDbToFullCalendarAllDayRange(todo.start_date, todo.end_date);
-			let start = todo.start_date;
-			let end;
-			if (range) {
-				start = range.start;
-				end = range.end;
-			} else {
-				const endDate = new Date(todo.end_date);
-				endDate.setSeconds(endDate.getSeconds() + 1);
-				end = endDate;
-			}
+			/* DB: 종료일 당일 23:59:59(포함). FC 종일: 배타적 end = 포함 종료일 +1일 (날짜만, floating). */
+			const range =
+				todoDbToFullCalendarAllDayRange(todo.start_date, todo.end_date) ?? {
+					start: toSeoulYmd(todo.start_date),
+					end: seoulYmdAddDays(toSeoulYmd(todo.end_date ?? todo.start_date), 1),
+				};
 
 			return {
 				id: todo.id.toString(), title: `[${nickname}(${name})] ${todo.title}`,
-				start, end, allDay: true, backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
+				start: range.start,
+				end: range.end,
+				allDay: true,
+				display: 'block', backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
 				startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
 			};
 		});
@@ -340,7 +337,6 @@ const TodoListView = () => {
 					initialView="dayGridMonth"
 					headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
 					locale="ko"
-					timeZone="Asia/Seoul"
 					validRange={employmentValidRange}
 					events={events}
 					editable={true}
