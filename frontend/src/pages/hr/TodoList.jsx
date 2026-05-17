@@ -116,19 +116,24 @@ const TodoListView = () => {
 		});
 	}, [fetchCategoriesAndConfigs]);
 
-	const hasVacationOnDate = useCallback((ymd) => {
-		if (!ymd) return false;
-		return events.some((event) => {
-			const props = event.extendedProps || {};
-			if (!VACATION_DEDUCTIBLE_CATEGORIES.has(props.category)) return false;
-			const startYmd = toSeoulYmd(props.start_date || event.start);
-			const endYmd = toSeoulYmd(props.end_date || event.end || props.start_date || event.start);
-			if (!startYmd || !endYmd) return false;
-			const from = startYmd <= endYmd ? startYmd : endYmd;
-			const to = startYmd <= endYmd ? endYmd : startYmd;
-			return from <= ymd && ymd <= to;
-		});
-	}, [events]);
+	/** 본인 연차/반차만 검사 — 타인 일정은 서버도 중복으로 보지 않음(todos_service._assert_no_vacation_date_overlap) */
+	const hasVacationOnDate = useCallback(
+		(ymd) => {
+			if (!ymd) return false;
+			return events.some((event) => {
+				const props = event.extendedProps || {};
+				if (String(props.user_id ?? '') !== String(userId ?? '')) return false;
+				if (!VACATION_DEDUCTIBLE_CATEGORIES.has(props.category)) return false;
+				const startYmd = toSeoulYmd(props.start_date || event.start);
+				const endYmd = toSeoulYmd(props.end_date || event.end || props.start_date || event.start);
+				if (!startYmd || !endYmd) return false;
+				const from = startYmd <= endYmd ? startYmd : endYmd;
+				const to = startYmd <= endYmd ? endYmd : startYmd;
+				return from <= ymd && ymd <= to;
+			});
+		},
+		[events, userId]
+	);
 
 	const handleSwitchToEdit = () => {
 		setIsDetailOpen(false);

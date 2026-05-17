@@ -83,6 +83,8 @@
 	border-radius: 16px;
 	padding: 20px;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+	/* timeGrid(주간) 뷰: 오늘 열 전체에 깔리는 FC 기본 노란 배경을 월 뷰와 같은 연녹색으로 통일 */
+	--fc-today-bg-color: rgba(61, 175, 122, 0.08);
 }
 
 .fc .fc-button-primary {

@@ -15,6 +15,9 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');
 	const [description, setDescription] = useState(''); // 에디터 내용을 관리할 새로운 State
+	const [title, setTitle] = useState('');
+	const [startDate, setStartDate] = useState('');
+	const [endDate, setEndDate] = useState('');
 	const [isCompactEditor, setIsCompactEditor] = useState(false);
 
 	const isHalfVacation = category === 'vacation_am' || category === 'vacation_pm';
@@ -28,18 +31,33 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 	}, []);
 
 	useEffect(() => {
-		if (isOpen) {
-			if (mode === 'edit' && event) {
-				setSelectedColor(event.color || '#4a90e2');
-				setCategory(event.category || '');
-				setDescription(event.description || '');
-			} else if (categories.length > 0) {
+		if (!isOpen) return;
+		if (mode === 'edit' && event) {
+			setSelectedColor(event.color || '#4a90e2');
+			setCategory(event.category || '');
+			setDescription(event.description || '');
+			setTitle(event.title || '');
+			setStartDate(event.start?.split('T')[0] || '');
+			setEndDate(event.end?.split('T')[0] || '');
+		} else {
+			if (categories.length > 0) {
 				setCategory(categories[0].category_key);
 				setSelectedColor(categories[0].color || '#4a90e2');
-				setDescription('');
 			}
+			setDescription('');
+			setTitle('');
+			const s = selectedDate?.start?.split?.('T')?.[0] ?? selectedDate?.start ?? '';
+			const e = selectedDate?.end?.split?.('T')?.[0] ?? selectedDate?.end ?? '';
+			setStartDate(s);
+			setEndDate(e || s);
 		}
-	}, [isOpen, mode, event, categories]);
+	}, [isOpen, mode, event, categories, selectedDate]);
+
+	/** 오전/오후 반차일 때 종료일은 시작일과 동일하게 유지 */
+	useEffect(() => {
+		if (!isOpen || !isHalfVacation) return;
+		setEndDate(startDate);
+	}, [isOpen, isHalfVacation, startDate]);
 
 	const handleCategoryChange = (e) => {
 		const selectedKey = e.target.value;
@@ -54,6 +72,11 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		const title = formData.get("title");
 		const start = formData.get("start_date");
 		const end = isHalfVacation ? start : formData.get("end_date");
+
+		const ymdOk = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+		if (!ymdOk(String(start)) || !ymdOk(String(end))) {
+			return '시작일·종료일을 달력에서 올바르게 선택해 주세요.';
+		}
 
 		if (new Date(start) > new Date(end)) return "종료일이 시작일보다 빠를 수 없습니다.";
 
@@ -104,8 +127,6 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 
 	if (!isOpen) return null;
 
-	const defaultStart = mode === 'edit' ? event?.start?.split('T')[0] : selectedDate?.start;
-	const defaultEnd = mode === 'edit' ? event?.end?.split('T')[0] : selectedDate?.end;
 	const hireMin = joinDate ? toSeoulYmd(joinDate) : undefined;
 	const resignMax = resignationDate ? toSeoulYmd(resignationDate) : undefined;
 
@@ -119,7 +140,8 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 						<input
 							type="date"
 							name="start_date"
-							defaultValue={defaultStart}
+							value={startDate}
+							onChange={(e) => setStartDate(e.target.value)}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							required
@@ -128,7 +150,8 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 						<input
 							type="date"
 							name="end_date"
-							defaultValue={isHalfVacation ? defaultStart : defaultEnd}
+							value={isHalfVacation ? startDate : endDate}
+							onChange={(e) => !isHalfVacation && setEndDate(e.target.value)}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							disabled={isHalfVacation}
@@ -170,7 +193,15 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 							</label>
 						</div>
 					</div>
-					<input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
+					<input
+						type="text"
+						name="title"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						placeholder="제목을 입력하세요"
+						required
+						className="bq-input-title"
+					/>
 
 					<div className="todo-edit__editor-shell">
 						<SunEditor
