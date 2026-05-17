@@ -114,14 +114,38 @@ export const toTimeInputValue = (iso) => {
 };
 
 /**
- * Format datetime-ish value into HH:MM (local time).
- * Used by attendance UIs that show only time part.
+ * ISO(또는 parseable datetime) → `input[type=datetime-local]` 값 (로컬 YYYY-MM-DDTHH:mm, 분 단위).
+ */
+export const toDatetimeLocalInputValue = (iso) => {
+	if (!iso) return '';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '';
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+/**
+ * ISO(또는 parseable datetime) → 로컬 "YYYY-MM-DD HH:mm"
+ * 관리자·일일보고 출퇴근 시각 등
  */
 export const formatDt = (iso) => {
 	if (!iso) return '—';
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '—';
-	return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+/**
+ * ISO(또는 parseable datetime) → 로컬 날짜·시간 분리 (상세 UI 2줄 표시용)
+ * @returns {{ date: string, time: string } | null}
+ */
+export const splitYmdHm = (iso) => {
+	if (!iso) return null;
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return null;
+	return {
+		date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+		time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+	};
 };
 
 export const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];
@@ -161,15 +185,24 @@ export const formatWorkTime = formatWorkMinutes;
 
 export const normalizeStatus = (status) => (status ?? '').toString().trim().toUpperCase();
 
+/** 로컬 벽시계 — 24시간, 시·분·초 숫자는 2자리 패딩 + 한글 단위(시/분/초). */
+export const formatLocalTimeHms = (d) => {
+	if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '-';
+	const h = pad2(d.getHours());
+	const m = pad2(d.getMinutes());
+	const s = pad2(d.getSeconds());
+	return `${h}시 ${m}분 ${s}초`;
+};
+
 /**
- * Format datetime-ish value into HH:mm:ss (local time).
+ * Format datetime-ish value into local 시·분·초 (한글 단위, 숫자 2자리 패딩).
  * Used by HR Attendance page (clock-in/out timestamps).
  */
 export const formatTimeHms = (iso) => {
 	if (!iso) return '-';
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '-';
-	return d.toLocaleTimeString('ko-KR', { hour12: false });
+	return formatLocalTimeHms(d);
 };
 
 /**

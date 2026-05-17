@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
 import { clearCachedApplicantUser,syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { formatApiDetail } from 'utils/formatApiError';
-import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 import * as Notify from 'utils/toastUtils';
+import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 
 const ApplicantLoginPage = () => {
 	const navigate = useNavigate();

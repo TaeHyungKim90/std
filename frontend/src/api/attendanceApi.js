@@ -40,6 +40,13 @@ export const attendanceApi = {
 		}),
 
 	/**
+	 * 특정 근무일 세션 목록 + 일별 합산
+	 * GET /hr/attendance/day/sessions?work_date=YYYY-MM-DD
+	 */
+	getAttendanceDaySessions: (workDate) =>
+		client.get(`${PATH}/day/sessions`, { params: { work_date: workDate } }),
+
+	/**
 	 * 특정 근무일의 본인 출퇴근 기록 (없으면 data null)
 	 * GET /hr/attendance/day?work_date=YYYY-MM-DD
 	 */
@@ -51,6 +58,12 @@ export const attendanceApi = {
 	 * GET /hr/attendance/work-locations
 	 */
 	getWorkLocations: () => client.get(`${PATH}/work-locations`),
+
+	/**
+	 * 선호 출퇴근 근무장소 저장(기기 간 동기화). 활성 목록 값만 허용.
+	 * PATCH /hr/attendance/preferred-work-location
+	 */
+	patchPreferredWorkLocation: (data) => client.patch(`${PATH}/preferred-work-location`, data),
 
 	/**
 	 * 출근하기

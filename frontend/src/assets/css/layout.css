@@ -209,7 +209,14 @@
 	gap: 15px; 
 	margin-bottom: 5px; 
 }
-.date-group > input { flex: 1; }
+/* 가로 배치: .bq-input의 width:100%와 충돌하지 않도록 균등 분할 · 최소 너비 0으로 플렉스 오버플로 방지 */
+.date-group > input {
+	flex: 1 1 0;
+	min-width: 0;
+	width: auto;
+	max-width: 100%;
+	box-sizing: border-box;
+}
 
 /* ==========================================
    4. 버튼 및 정보 표시 배지
@@ -333,6 +340,12 @@
 	
 	.modal-content h2 { font-size: 1.3rem; margin-top: 10px; }
 	.date-group { flex-direction: column; gap: 0; margin-bottom: 0; }
+	/* 세로 스택일 때 flex:1이 남아 입력칸이 세로로 과도하게 늘어나는 현상 방지 */
+	.date-group > input {
+		flex: 0 0 auto;
+		width: 100%;
+		max-width: 100%;
+	}
 	
 	.form-actions { flex-direction: column; gap: 10px; margin-top: 20px;}
 	.form-actions button { width: 100%; padding: 14px; margin: 0; }

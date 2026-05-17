@@ -1,6 +1,7 @@
 # session.py
 import os
-from sqlalchemy import create_engine, text
+
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from core.config import settings
@@ -16,6 +17,76 @@ _connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswi
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+
+def _ensure_attendance_shift_status_column() -> None:
+	"""기존 DB에 attendance.shift_status 컬럼·백필·인덱스 보강(SQLite/PostgreSQL 등 공통 ALTER)."""
+	insp = inspect(engine)
+	if not insp.has_table("attendance"):
+		return
+	cols = {c["name"] for c in insp.get_columns("attendance")}
+	if "shift_status" not in cols:
+		with engine.begin() as conn:
+			conn.execute(text("ALTER TABLE attendance ADD COLUMN shift_status VARCHAR(20)"))
+	# 신규 create_all 로 생긴 컬럼은 전부 NULL일 수 있어 매 기동 시 NULL 행만 백필
+	with engine.begin() as conn:
+		conn.execute(
+			text(
+				"UPDATE attendance SET shift_status = :closed WHERE clock_out_time IS NOT NULL AND shift_status IS NULL"
+			),
+			{"closed": "CLOSED"},
+		)
+		conn.execute(
+			text(
+				"UPDATE attendance SET shift_status = :prog WHERE clock_in_time IS NOT NULL AND clock_out_time IS NULL AND shift_status IS NULL"
+			),
+			{"prog": "IN_PROGRESS"},
+		)
+		conn.execute(
+			text("UPDATE attendance SET shift_status = :closed WHERE shift_status IS NULL"),
+			{"closed": "CLOSED"},
+		)
+	with engine.begin() as conn:
+		conn.execute(
+			text(
+				"CREATE INDEX IF NOT EXISTS ix_attendance_user_shift_status ON attendance (user_id, shift_status)"
+			)
+		)
+
+
+def _ensure_attendance_night_work_minutes_column() -> None:
+	"""기존 DB에 attendance.night_work_minutes 보강."""
+	insp = inspect(engine)
+	if not insp.has_table("attendance"):
+		return
+	cols = {c["name"] for c in insp.get_columns("attendance")}
+	if "night_work_minutes" not in cols:
+		with engine.begin() as conn:
+			conn.execute(text("ALTER TABLE attendance ADD COLUMN night_work_minutes INTEGER NOT NULL DEFAULT 0"))
+	with engine.begin() as conn:
+		conn.execute(text("UPDATE attendance SET night_work_minutes = 0 WHERE night_work_minutes IS NULL"))
+
+
+def _ensure_users_preferred_work_location_column() -> None:
+	"""기존 DB에 users.preferred_work_location 보강."""
+	insp = inspect(engine)
+	if not insp.has_table("users"):
+		return
+	cols = {c["name"] for c in insp.get_columns("users")}
+	if "preferred_work_location" not in cols:
+		with engine.begin() as conn:
+			conn.execute(text("ALTER TABLE users ADD COLUMN preferred_work_location VARCHAR(120)"))
+
+
+def _ensure_attendance_daily_summary_table() -> None:
+	"""attendance_daily_summary 테이블이 없으면 생성."""
+	insp = inspect(engine)
+	if insp.has_table("attendance_daily_summary"):
+		return
+	from models.hr_models import AttendanceDailySummary
+
+	AttendanceDailySummary.__table__.create(bind=engine, checkfirst=True)
+
 
 def get_db():
 	db = SessionLocal()
@@ -33,6 +104,22 @@ def init_db():
 	# 테이블 생성 (이미 있으면 무시됨)
 	print("🚀 테이블 생성 시도 중...")
 	Base.metadata.create_all(bind=engine)
+	try:
+		_ensure_attendance_shift_status_column()
+	except Exception as ex:
+		print(f"ℹ️ attendance.shift_status 보강 실패(무시 가능): {ex}")
+	try:
+		_ensure_attendance_night_work_minutes_column()
+	except Exception as ex:
+		print(f"ℹ️ attendance.night_work_minutes 보강 실패(무시 가능): {ex}")
+	try:
+		_ensure_attendance_daily_summary_table()
+	except Exception as ex:
+		print(f"ℹ️ attendance_daily_summary 테이블 생성 실패(무시 가능): {ex}")
+	try:
+		_ensure_users_preferred_work_location_column()
+	except Exception as ex:
+		print(f"ℹ️ users.preferred_work_location 보강 실패(무시 가능): {ex}")
 
 	# 기존 SQLite DB에 신규 컬럼이 없을 경우, 런타임에서 안전하게 ALTER TABLE을 시도합니다.
 	# (운영에서는 마이그레이션(Alembic 등)을 권장합니다.)
@@ -188,3 +275,15 @@ def init_db():
 		db.rollback()
 	finally:
 		db.close()
+
+	# 레거시: attendance·users에 저장된 표시 문자열을 location_key로 치환
+	try:
+		from services.hr.attendance_service import backfill_legacy_work_location_values_to_keys
+
+		_bf = SessionLocal()
+		try:
+			backfill_legacy_work_location_values_to_keys(_bf)
+		finally:
+			_bf.close()
+	except Exception as ex:
+		print(f"ℹ️ 근무장소 value→key 백필 실패(무시 가능): {ex}")

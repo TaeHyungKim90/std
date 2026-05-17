@@ -10,6 +10,8 @@
 .attendance-card {
 	width: 100%;
 	max-width: 500px;
+	min-width: 0; /* flex/grid 자식에서 가로 오버플로 방지 */
+	container-type: inline-size;
 	background: #fff;
 	border-radius: 16px;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
@@ -23,6 +25,7 @@
 	margin-bottom: 30px;
 	border-bottom: 1px solid var(--border-color, #e2dfd8);
 	padding-bottom: 20px;
+	min-width: 0;
 }
 
 .today-date {
@@ -31,13 +34,29 @@
 	margin-bottom: 10px;
 }
 
+.attendance-work-date-hint {
+	font-size: 0.88rem;
+	color: var(--bq-text-dim, #6b6b6b);
+	margin-top: 12px;
+	line-height: 1.45;
+}
+
 .digital-clock {
-	font-size: 3.5rem;
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	margin-inline: auto;
+	/* 카드 너비 기준으로 줄여 한 줄이 박스 안에 들어가게 → 가운데 정렬이 무너지지 않음 */
+	font-size: clamp(1.35rem, 0.42rem + 6.2cqi, 3.5rem);
 	font-weight: 800;
 	color: var(--bq-primary);
 	font-family: 'Courier New', Courier, monospace;
-	letter-spacing: 2px;
+	letter-spacing: 0.03em;
+	text-align: center;
 	transition: all 0.3s ease;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 }
 
 /* 바디 스타일 */
@@ -164,6 +183,60 @@
 	font-size: 0.9rem;
 }
 
+.attendance-day-totals .value {
+	font-size: 0.88rem;
+	font-weight: 600;
+}
+
+.attendance-day-sessions {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px dashed var(--border-color, #e2dfd8);
+}
+
+.attendance-day-sessions__title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--bq-text-dim, #8a8a8a);
+	margin-bottom: 8px;
+}
+
+.attendance-day-sessions__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.attendance-day-sessions__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	font-size: 0.85rem;
+}
+
+.attendance-day-sessions__badge {
+	font-size: 0.72rem;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(20, 20, 20, 0.06);
+}
+
+.attendance-day-sessions__times {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.attendance-day-sessions__night {
+	font-size: 0.78rem;
+	color: var(--bq-primary);
+	font-weight: 700;
+}
+
 /* 모바일 최적화 */
 /* ==========================================
    📱 모바일 & 태블릿 최적화 (2단계 대응)
@@ -172,26 +245,47 @@
 /* 1. 태블릿 및 작은 PC (768px 이하) */
 @media (max-width: 768px) {
 	.attendance-container {
-		padding: 10px 10px;
+		padding: 12px 12px;
 	}
 	.attendance-card {
-		padding: 10px 10px;
+		padding: 18px 16px;
 		box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 	}
+	.today-date {
+		font-size: 1.08rem;
+	}
+	.attendance-card .input-group label {
+		font-size: 1.05rem;
+	}
+	.bq-select {
+		font-size: 1.08rem;
+		padding: 14px 12px;
+	}
 	.digital-clock {
-		font-size: 2.8rem; /* 살짝 축소 */
+		/* 한글 시·분·초 한 줄 — 카드 안에 들어가면서 가능한 크게 */
+		font-size: clamp(1.4rem, 0.55rem + 5.8vw, 3.1rem);
+		letter-spacing: 0.02em;
 	}
 }
 
 /* 2. 스마트폰 (480px 이하 - 이미지 속 문제 해결 구간) */
 @media (max-width: 480px) {
 	.digital-clock {
-		font-size: 2.2rem; /* ✅ 한 줄에 쏙 들어오도록 대폭 축소 */
-		letter-spacing: 1px;
+		font-size: clamp(1.25rem, 0.42rem + 5.4vw, 2.1rem);
+		letter-spacing: 0;
 	}
 	
 	.today-date {
-		font-size: 0.95rem;
+		font-size: 1.1rem;
+	}
+
+	.attendance-card .input-group label {
+		font-size: 1.08rem;
+	}
+
+	.bq-select {
+		font-size: 1.1rem;
+		padding: 15px 12px;
 	}
 
 	.button-group {
@@ -200,8 +294,8 @@
 	}
 
 	.button-group button {
-		padding: 15px; /* 터치하기 적당한 높이 */
-		font-size: 1rem;
+		padding: 17px 16px;
+		font-size: 1.12rem;
 	}
 
 	.attendance-footer {
@@ -209,7 +303,7 @@
 	}
 
 	.status-item {
-		font-size: 0.85rem; /* 글자 크기 최적화 */
+		font-size: 0.92rem;
 	}
 
 	.total-work .value {
@@ -256,9 +350,9 @@
 	right: 0;
 	top: 0;
 	bottom: 0;
-	width: 45vw;
-	min-width: 550px;
-	max-width: 800px;
+	width: min(94vw, 1320px);
+	min-width: 900px;
+	max-width: 1320px;
 	max-height: 100vh;
 	z-index: 1050;
 	background: var(--uta-surface);
@@ -267,6 +361,18 @@
 	flex-direction: column;
 	overflow: hidden;
 	border-left: 1px solid var(--uta-border);
+}
+
+@media (max-width: 920px) {
+	.uta-drawer-panel {
+		width: 100vw;
+		min-width: 0;
+		max-width: none;
+	}
+
+	.uta-table-wrap {
+		overflow-x: auto;
+	}
 }
 
 /* Header */
@@ -449,8 +555,11 @@
 /* Table */
 .uta-table-wrap {
 	flex: 1;
+	min-width: 0;
+	overflow-x: hidden;
 	overflow-y: auto;
 	padding: 18px 28px 28px;
+	-webkit-overflow-scrolling: touch;
 }
 
 .uta-empty {
@@ -472,10 +581,33 @@
 	background: #fff;
 }
 
+/* 열 비율(합 100%) — 넓은 드로어 기준으로 출·퇴근(datetime) 열 비중 확대 */
+.uta-table col.uta-col-date {
+	width: 7%;
+}
+.uta-table col.uta-col-dow {
+	width: 5%;
+}
+.uta-table col.uta-col-schedule {
+	width: 16%;
+}
+.uta-table col.uta-col-time {
+	width: 21%;
+}
+.uta-table col.uta-col-status {
+	width: 11%;
+}
+.uta-table col.uta-col-work {
+	width: 9%;
+}
+.uta-table col.uta-col-manage {
+	width: 10%;
+}
+
 .uta-table th {
 	background: rgba(240, 238, 234, 0.75);
 	border-bottom: 1px solid var(--uta-border);
-	padding: 12px 8px;
+	padding: 10px 6px;
 	text-align: left;
 	font-weight: 950;
 	color: var(--uta-text);
@@ -485,8 +617,9 @@
 
 .uta-table td {
 	border-bottom: 1px solid rgba(20, 20, 20, 0.07);
-	padding: 12px 8px;
+	padding: 10px 6px;
 	vertical-align: middle;
+	min-width: 0;
 }
 
 .uta-table tbody tr:hover td {
@@ -497,25 +630,78 @@
 	background: #f8f9fa;
 }
 
+/* 편집 중 행: datetime 컨트롤·버튼 여백 */
+.uta-tr--editing td {
+	vertical-align: top;
+	padding-top: 12px;
+	padding-bottom: 12px;
+}
+
+.uta-tr--editing .uta-td-manage {
+	vertical-align: top;
+}
+
+.uta-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.uta-datetime-edit {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+	width: 100%;
+	min-width: 0;
+}
+
+.uta-datetime-local-input {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	min-width: 0;
+	min-height: 44px;
+	border: 1px solid var(--uta-border-strong);
+	border-radius: 12px;
+	padding: 8px 10px;
+	font-size: 0.875rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	background: #fff;
+	color: var(--uta-text);
+	outline: none;
+}
+
+.uta-datetime-local-input:focus {
+	border-color: rgb(var(--primary-rgb) / 0.75);
+	box-shadow: 0 0 0 4px rgb(var(--primary-rgb) / 0.18);
+}
+
 .uta-td-date {
 	font-weight: 950;
 	white-space: nowrap;
-	width: 90px;
 }
 
 .uta-td-dow {
 	font-weight: 900;
 	white-space: nowrap;
-	width: 70px;
 	color: var(--uta-text);
 }
 
 .uta-td-schedule {
-	min-width: 140px;
-	max-width: 220px;
 	vertical-align: top;
 	font-size: 0.88rem;
 	line-height: 1.35;
+	word-break: keep-all;
+	overflow-wrap: anywhere;
+	white-space: normal;
 }
 
 .uta-schedule-text {
@@ -535,8 +721,39 @@
 }
 
 .uta-td-time {
+	white-space: normal;
+	vertical-align: top;
+	min-width: 0;
+}
+
+.uta-datetime-stack {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	min-width: 0;
+	line-height: 1.25;
+}
+
+.uta-datetime-stack__date {
+	font-size: 0.78rem;
+	font-weight: 750;
+	color: var(--uta-muted);
+	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
-	width: 150px;
+}
+
+.uta-datetime-stack__time {
+	font-size: 0.9rem;
+	font-weight: 950;
+	color: var(--uta-text);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.uta-datetime-stack--empty {
+	font-weight: 800;
+	color: var(--uta-muted);
 }
 
 .uta-time-cell {
@@ -544,6 +761,7 @@
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 4px;
+	min-width: 0;
 }
 
 .uta-time-text {
@@ -558,16 +776,22 @@
 	font-weight: 800;
 	color: rgb(var(--primary-rgb) / 0.88);
 	line-height: 1.25;
-	max-width: 200px;
+	max-width: 100%;
+	min-width: 0;
 	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: keep-all;
 }
 
 .uta-time-input {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	box-sizing: border-box;
 	border: 1px solid var(--uta-border-strong);
 	border-radius: 12px;
-	padding: 10px 12px;
+	padding: 8px 6px;
+	font-size: 0.8125rem;
 	font-weight: 900;
 	background: #fff;
 	outline: none;
@@ -579,27 +803,41 @@
 }
 
 .uta-td-status {
-	width: 180px;
+	min-width: 0;
+}
+
+.uta-td-status .status-badge {
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: middle;
 }
 
 .uta-td-workminutes {
-	width: 160px;
 	font-weight: 900;
-	white-space: nowrap;
 	color: var(--uta-text);
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: keep-all;
+	min-width: 0;
 }
 
 .uta-td-manage {
-	width: 160px;
 	text-align: right;
+	vertical-align: middle;
+	min-width: 0;
 }
 
 .uta-status-select {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	box-sizing: border-box;
 	border: 1px solid var(--uta-border-strong);
 	border-radius: 12px;
-	padding: 10px 12px;
+	padding: 8px 6px;
+	font-size: 0.8125rem;
 	font-weight: 900;
 	background: #fff;
 	outline: none;
@@ -612,24 +850,39 @@
 
 .uta-edit-actions {
 	display: flex;
-	flex-direction: column;
-	gap: 10px;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 8px;
 	align-items: stretch;
+	justify-content: flex-end;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+}
+
+.uta-edit-actions .uta-btn-save,
+.uta-edit-actions .uta-btn-cancel {
+	flex: 1 1 calc(50% - 4px);
+	min-width: 5.5rem;
+	width: auto;
+	max-width: 100%;
 }
 
 .uta-btn-edit {
 	border: 1px solid var(--uta-border);
 	background: var(--uta-surface);
 	border-radius: 12px;
-	padding: 10px 14px;
+	padding: 9px 8px;
 	cursor: pointer;
 	font-weight: 950;
 	color: var(--uta-text);
-	width: auto;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 96px;
 	transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
 }
 

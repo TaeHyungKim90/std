@@ -20,9 +20,13 @@ import {
 	toSeoulYmd,
 } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
+import {
+	hasOwnVacationOnDate,
+	hasOwnVacationOverlappingRange,
+	MY_VACATION_OVERLAP_MESSAGE,
+	VACATION_DEDUCTIBLE_CATEGORIES,
+} from 'utils/todoVacationUtils';
 import * as Notify from 'utils/toastUtils';
-
-const VACATION_DEDUCTIBLE_CATEGORIES = new Set(['vacation_full', 'vacation_am', 'vacation_pm']);
 
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
@@ -116,19 +120,19 @@ const TodoListView = () => {
 		});
 	}, [fetchCategoriesAndConfigs]);
 
-	const hasVacationOnDate = useCallback((ymd) => {
-		if (!ymd) return false;
-		return events.some((event) => {
-			const props = event.extendedProps || {};
-			if (!VACATION_DEDUCTIBLE_CATEGORIES.has(props.category)) return false;
-			const startYmd = toSeoulYmd(props.start_date || event.start);
-			const endYmd = toSeoulYmd(props.end_date || event.end || props.start_date || event.start);
-			if (!startYmd || !endYmd) return false;
-			const from = startYmd <= endYmd ? startYmd : endYmd;
-			const to = startYmd <= endYmd ? endYmd : startYmd;
-			return from <= ymd && ymd <= to;
-		});
-	}, [events]);
+	const hasMyVacationOnDate = useCallback(
+		(ymd) => hasOwnVacationOnDate(events, ymd, userId),
+		[events, userId]
+	);
+
+	const hasMyVacationInRange = useCallback(
+		(startYmd, endYmd) => hasOwnVacationOverlappingRange(events, startYmd, endYmd, userId),
+		[events, userId]
+	);
+
+	const warnMyVacationOverlap = useCallback(() => {
+		Notify.toastWarn(MY_VACATION_OVERLAP_MESSAGE);
+	}, []);
 
 	const handleSwitchToEdit = () => {
 		setIsDetailOpen(false);
@@ -143,11 +147,11 @@ const TodoListView = () => {
 			Notify.toastWarn(err);
 			return;
 		}
-		if (hasVacationOnDate(ymd)) {
-			Notify.toastWarn('이미 해당 날짜에 연차 일정이 등록되어 있어 추가 등록할 수 없습니다.');
+		if (hasMyVacationOnDate(ymd)) {
+			warnMyVacationOverlap();
 			return;
 		}
-		setSelectedDate({ start: info.dateStr, end: info.dateStr });
+		setSelectedDate({ start: ymd, end: ymd });
 		setSelectedEvent(null);
 		setModalMode('create');
 		setEditModalKey((prev) => prev + 1);
@@ -225,6 +229,27 @@ const TodoListView = () => {
 		});
 	};
 
+	const handleSelect = (info) => {
+		const span = fcAllDaySpanToInclusiveYmd(info.start, info.end);
+		const empErr = getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate);
+		if (empErr) {
+			Notify.toastWarn(empErr);
+			info.view.calendar.unselect();
+			return;
+		}
+		if (hasMyVacationInRange(span.startYmd, span.endYmd)) {
+			warnMyVacationOverlap();
+			info.view.calendar.unselect();
+			return;
+		}
+		setSelectedDate({ start: span.startYmd, end: span.endYmd });
+		setSelectedEvent(null);
+		setModalMode('create');
+		setEditModalKey((prev) => prev + 1);
+		setIsEditOpen(true);
+		info.view.calendar.unselect();
+	};
+
 	const handleEventReceive = async (info) => {
 		const { event } = info;
 		const fallbackCat = defaultCategoryKey;
@@ -240,12 +265,21 @@ const TodoListView = () => {
 			Notify.toastWarn(empErr);
 			return;
 		}
+		const dropCategory = event.extendedProps?.category || fallbackCat;
+		if (
+			VACATION_DEDUCTIBLE_CATEGORIES.has(dropCategory) &&
+			hasMyVacationOnDate(dropYmd)
+		) {
+			info.revert();
+			warnMyVacationOverlap();
+			return;
+		}
 		const newTodo = {
 			title: event.title,
 			start_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T00:00:00`,
 			end_date: event.startStr.includes('T') ? event.startStr : `${event.startStr}T23:59:59`,
 			color: event.backgroundColor, 
-			category: event.extendedProps?.category || fallbackCat, 
+			category: dropCategory,
 			description: event.extendedProps?.description || '',
 			status: "CREATED"
 		};
@@ -336,11 +370,17 @@ const TodoListView = () => {
 							</div>
 						);
 					}}
+					selectable
+					selectMirror
+					select={handleSelect}
 					selectAllow={(selectInfo) => {
 						const span = fcAllDaySpanToInclusiveYmd(selectInfo.start, selectInfo.end);
-						return (
-							getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate) == null
-						);
+						if (
+							getEmploymentRangeError(span.startYmd, span.endYmd, joinDate, resignationDate) != null
+						) {
+							return false;
+						}
+						return !hasMyVacationInRange(span.startYmd, span.endYmd);
 					}}
 					eventAllow={(dropInfo, draggedEvent) => {
 						const span = fcAllDaySpanToInclusiveYmd(dropInfo.start, dropInfo.end);

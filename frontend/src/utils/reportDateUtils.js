@@ -29,20 +29,35 @@ export function isYmdStrictlyBeforeJoinDate(ymd, joinDate) {
 
 /**
  * 출근 기록이 없거나 결근으로 보이는 경우 → 작성 전 확인(confirm) 대상.
- * @param {object | null | undefined} record AttendanceResponse
+ * @param {object | null | undefined} record AttendanceResponse 또는 { items, summary } (day/sessions)
  */
 export function shouldConfirmNoAttendanceRecord(record) {
 	if (!record) return true;
+	if (Array.isArray(record.items)) {
+		if (record.items.length === 0) return true;
+		return !record.items.some((s) => hasUsableClockIn(s));
+	}
 	if (!record.clock_in_time) return true;
 	const s = (record.status ?? '').toString().trim().toUpperCase();
 	if (s.includes('ABSENT') || s.includes('결근')) return true;
 	return false;
 }
 
+function hasUsableClockIn(sessionLike) {
+	if (!sessionLike?.clock_in_time) return false;
+	const s = (sessionLike.status ?? '').toString().trim().toUpperCase();
+	if (s.includes('ABSENT') || s.includes('결근')) return false;
+	return true;
+}
+
 /**
  * Drawer 상단에 출·퇴근 시각 참고 표시 여부 (출근 시각 있고 결근 등이 아님).
+ * @param {object | null | undefined} record 단일 근태 또는 day/sessions 응답
  */
 export function canShowAttendanceReference(record) {
-	if (!record?.clock_in_time) return false;
+	if (!record) return false;
+	if (Array.isArray(record.items)) {
+		return record.items.some((s) => hasUsableClockIn(s));
+	}
 	return !shouldConfirmNoAttendanceRecord(record);
 }

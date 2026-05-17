@@ -10,11 +10,23 @@ import * as Notify from 'utils/toastUtils';
 
 const COLOR_PRESETS = ['#3FAF7A', '#FF6A3D', '#4A90E2', '#F39C12', '#9B59B6', '#141414'];
 
+function pickYmdFromDateLike(value) {
+	if (value == null || value === '') return '';
+	const s = String(value);
+	if (s.includes('T')) return s.split('T')[0];
+	return toSeoulYmd(s) || s.slice(0, 10);
+}
+
+const ymdOk = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
 const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, fetchTodos, categories = [] }) => {
 	const { joinDate, resignationDate } = useAuth();
 	const [selectedColor, setSelectedColor] = useState('#4a90e2');
 	const [category, setCategory] = useState('');
-	const [description, setDescription] = useState(''); // 에디터 내용을 관리할 새로운 State
+	const [description, setDescription] = useState('');
+	const [title, setTitle] = useState('');
+	const [startYmd, setStartYmd] = useState('');
+	const [endYmd, setEndYmd] = useState('');
 	const [isCompactEditor, setIsCompactEditor] = useState(false);
 
 	const isHalfVacation = category === 'vacation_am' || category === 'vacation_pm';
@@ -28,98 +40,120 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 	}, []);
 
 	useEffect(() => {
-		if (isOpen) {
-			if (mode === 'edit' && event) {
-				setSelectedColor(event.color || '#4a90e2');
-				setCategory(event.category || '');
-				setDescription(event.description || '');
-			} else if (categories.length > 0) {
-				setCategory(categories[0].category_key);
-				setSelectedColor(categories[0].color || '#4a90e2');
-				setDescription('');
-			}
+		if (!isOpen) return;
+		if (mode === 'edit' && event) {
+			setTitle(event.title || '');
+			setStartYmd(pickYmdFromDateLike(event.start));
+			setEndYmd(pickYmdFromDateLike(event.end));
+			setSelectedColor(event.color || '#4a90e2');
+			setCategory(event.category || '');
+			setDescription(event.description || '');
+			return;
 		}
-	}, [isOpen, mode, event, categories]);
+		const start = pickYmdFromDateLike(selectedDate?.start);
+		const end = pickYmdFromDateLike(selectedDate?.end) || start;
+		setStartYmd(start);
+		setEndYmd(end);
+		setTitle('');
+		setDescription('');
+		if (categories.length > 0) {
+			setCategory(categories[0].category_key);
+			setSelectedColor(categories[0].color || '#4a90e2');
+		}
+	}, [isOpen, mode, event?.id, selectedDate?.start, selectedDate?.end, categories]);
+
+	useEffect(() => {
+		if (isHalfVacation && startYmd) {
+			setEndYmd(startYmd);
+		}
+	}, [isHalfVacation, startYmd]);
 
 	const handleCategoryChange = (e) => {
 		const selectedKey = e.target.value;
 		setCategory(selectedKey);
-		const targetCat = categories.find(cat => cat.category_key === selectedKey);
-		if (targetCat && targetCat.color) {
+		const targetCat = categories.find((cat) => cat.category_key === selectedKey);
+		if (targetCat?.color) {
 			setSelectedColor(targetCat.color);
+		}
+		if (selectedKey === 'vacation_am' || selectedKey === 'vacation_pm') {
+			setEndYmd(startYmd);
 		}
 	};
 
-	const [formError, submitAction, isPending] = useActionState(async (prevState, formData) => {
-		const title = formData.get("title");
-		const start = formData.get("start_date");
-		const end = isHalfVacation ? start : formData.get("end_date");
+	const handleStartYmdChange = (e) => {
+		const next = e.target.value;
+		setStartYmd(next);
+		if (category === 'vacation_am' || category === 'vacation_pm') {
+			setEndYmd(next);
+		}
+	};
 
-		if (new Date(start) > new Date(end)) return "종료일이 시작일보다 빠를 수 없습니다.";
+	const [formError, submitAction, isPending] = useActionState(async (prevState, _formData) => {
+		const trimmedTitle = String(title).trim();
+		if (!trimmedTitle) return '제목을 입력하세요.';
 
-		const startY = String(start).slice(0, 10);
-		const endY = String(end).slice(0, 10);
-		const empErr = getEmploymentRangeError(startY, endY, joinDate, resignationDate);
+		const start = startYmd;
+		const end = isHalfVacation ? startYmd : endYmd;
+		if (!start || !end) return '시작일과 종료일을 입력하세요.';
+		if (!ymdOk(start) || !ymdOk(end)) {
+			return '시작일·종료일을 달력에서 올바르게 선택해 주세요.';
+		}
+		if (start > end) return '종료일이 시작일보다 빠를 수 없습니다.';
+
+		const empErr = getEmploymentRangeError(start, end, joinDate, resignationDate);
 		if (empErr) return empErr;
 
 		const todoData = {
-			title,
+			title: trimmedTitle,
 			start_date: `${start}T00:00:00`,
 			end_date: `${end}T23:59:59`,
 			color: selectedColor,
 			category,
-			description: description, // State에서 직접 가져옴
-			status: "CREATED"
+			description,
+			status: 'CREATED',
 		};
 
-		const apiRequest = mode === 'edit'
-			? todoService.updateTodo(event.id, todoData)
-			: todoService.createTodo(todoData);
+		const apiRequest =
+			mode === 'edit' ? todoService.updateTodo(event.id, todoData) : todoService.createTodo(todoData);
 		let submitErrorMsg = null;
 
-		// 🌟 2. 지저분한 try-catch를 지우고 toastPromise로 리턴!
-		return Notify.toastPromise(
-			apiRequest,
-			{
-				loading: mode === 'edit' ? '일정을 수정하고 있습니다...' : '새 일정을 등록하고 있습니다...',
-				success: mode === 'edit' ? '일정이 수정되었습니다. 📝' : '새 일정이 등록되었습니다. 📅',
-				error: (e) => {
-					submitErrorMsg =
-						formatApiDetail(e) ||
-						`${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
-					return submitErrorMsg;
-				}
-			}
-		).then(async () => {
-			// 통신 성공 시 목록 갱신 및 모달 닫기
-			await fetchTodos();
-			onClose();
-			return null; // 에러 메시지 없음 (성공)
-		}).catch((e) => {
-			console.error("일정 저장 실패:", e);
-		}).then((result) => {
-			return result ?? submitErrorMsg;
-		});
+		return Notify.toastPromise(apiRequest, {
+			loading: mode === 'edit' ? '일정을 수정하고 있습니다...' : '새 일정을 등록하고 있습니다...',
+			success: mode === 'edit' ? '일정이 수정되었습니다. 📝' : '새 일정이 등록되었습니다. 📅',
+			error: (e) => {
+				submitErrorMsg =
+					formatApiDetail(e) || `${mode === 'edit' ? '수정' : '저장'}에 실패했습니다.`;
+				return submitErrorMsg;
+			},
+		})
+			.then(async () => {
+				await fetchTodos();
+				onClose();
+				return null;
+			})
+			.catch((e) => {
+				console.error('일정 저장 실패:', e);
+			})
+			.then((result) => result ?? submitErrorMsg);
 	}, null);
 
 	if (!isOpen) return null;
 
-	const defaultStart = mode === 'edit' ? event?.start?.split('T')[0] : selectedDate?.start;
-	const defaultEnd = mode === 'edit' ? event?.end?.split('T')[0] : selectedDate?.end;
 	const hireMin = joinDate ? toSeoulYmd(joinDate) : undefined;
 	const resignMax = resignationDate ? toSeoulYmd(resignationDate) : undefined;
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal-content dynamic-enter todo-edit-modal__content" onClick={e => e.stopPropagation()}>
-				<div className="color-indicator-bar todo-edit__color-bar" style={{ backgroundColor: selectedColor }}></div>
+			<div className="modal-content dynamic-enter todo-edit-modal__content" onClick={(e) => e.stopPropagation()}>
+				<div className="color-indicator-bar todo-edit__color-bar" style={{ backgroundColor: selectedColor }} />
 				<h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
 				<form action={submitAction}>
 					<div className="date-group">
 						<input
 							type="date"
 							name="start_date"
-							defaultValue={defaultStart}
+							value={startYmd}
+							onChange={handleStartYmdChange}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							required
@@ -128,7 +162,8 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 						<input
 							type="date"
 							name="end_date"
-							defaultValue={isHalfVacation ? defaultStart : defaultEnd}
+							value={isHalfVacation ? startYmd : endYmd}
+							onChange={(e) => setEndYmd(e.target.value)}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							disabled={isHalfVacation}
@@ -136,10 +171,18 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 							style={isHalfVacation ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
 						/>
 					</div>
-					<select name="category" value={category} onChange={handleCategoryChange} className="bq-select" style={{ borderLeft: `5px solid ${selectedColor}` }}>
+					<select
+						name="category"
+						value={category}
+						onChange={handleCategoryChange}
+						className="bq-select"
+						style={{ borderLeft: `5px solid ${selectedColor}` }}
+					>
 						{categories.length > 0 ? (
-							categories.map(cat => (
-								<option key={cat.id} value={cat.category_key}>{cat.icon} {cat.category_name}</option>
+							categories.map((cat) => (
+								<option key={cat.id} value={cat.category_key}>
+									{cat.icon} {cat.category_name}
+								</option>
 							))
 						) : (
 							<option value="">카테고리 불러오는 중...</option>
@@ -170,7 +213,15 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 							</label>
 						</div>
 					</div>
-					<input type="text" name="title" defaultValue={mode === 'edit' ? event?.title : ''} placeholder="제목을 입력하세요" required className="bq-input-title" />
+					<input
+						type="text"
+						name="title"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						placeholder="제목을 입력하세요"
+						required
+						className="bq-input-title"
+					/>
 
 					<div className="todo-edit__editor-shell">
 						<SunEditor
@@ -182,15 +233,19 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 									...(isCompactEditor ? [] : [['undo', 'redo']]),
 									...(isCompactEditor ? [] : [['font', 'fontSize', 'formatBlock']]),
 									['bold', 'underline', 'italic', 'fontColor'],
-									['list', 'link']
-								]
+									['list', 'link'],
+								],
 							}}
 						/>
 					</div>
 
 					<div className="form-actions">
-						<button type="button" onClick={onClose} className="btn-cancel">취소</button>
-						<button type="submit" disabled={isPending} className="btn-save">{isPending ? '처리 중...' : mode === 'edit' ? '수정 완료' : '저장하기'}</button>
+						<button type="button" onClick={onClose} className="btn-cancel">
+							취소
+						</button>
+						<button type="submit" disabled={isPending} className="btn-save">
+							{isPending ? '처리 중...' : mode === 'edit' ? '수정 완료' : '저장하기'}
+						</button>
 					</div>
 					{formError && <p className="error-msg">{formError}</p>}
 				</form>

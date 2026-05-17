@@ -55,6 +55,13 @@ class Settings(BaseSettings):
 	ATTENDANCE_WORKDAY_END: str = "18:00"
 	ATTENDANCE_LUNCH_START: str = "13:00"
 	ATTENDANCE_LUNCH_END: str = "14:00"
+	# 근무 raw 분(출퇴근 간격) 기준 단계 휴게 차감 — 취업규칙에 맞게 조정
+	ATTENDANCE_BREAK_TIER1_THRESHOLD: int = 240
+	ATTENDANCE_BREAK_TIER1_MINUTES: int = 30
+	ATTENDANCE_BREAK_TIER2_THRESHOLD: int = 480
+	ATTENDANCE_BREAK_TIER2_MINUTES: int = 60
+	# 일별 연장 산정용 소정근로(분)
+	ATTENDANCE_STANDARD_WORKDAY_MINUTES: int = 480
 
 	model_config = SettingsConfigDict(env_file=ENV_PATH)
 

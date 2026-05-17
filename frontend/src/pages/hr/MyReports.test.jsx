@@ -14,7 +14,7 @@ jest.mock('context/AuthContext', () => ({
 
 jest.mock('api/attendanceApi', () => ({
 	attendanceApi: {
-		getAttendanceForDay: jest.fn(),
+		getAttendanceDaySessions: jest.fn(),
 		getClockContext: jest.fn(),
 	},
 }));
@@ -69,11 +69,19 @@ describe('MyReports', () => {
 		reportApi.putDaily.mockResolvedValue({ data: {} });
 		reportApi.putWeekly.mockResolvedValue({ data: {} });
 
-		attendanceApi.getAttendanceForDay.mockResolvedValue({
+		attendanceApi.getAttendanceDaySessions.mockResolvedValue({
 			data: {
-				clock_in_time: '2026-04-01T09:00:00',
-				clock_out_time: '2026-04-01T18:00:00',
-				status: 'NORMAL',
+				items: [
+					{
+						id: 1,
+						clock_in_time: '2026-04-01T09:00:00',
+						clock_out_time: '2026-04-01T18:00:00',
+						status: 'NORMAL',
+						night_work_minutes: 0,
+						shift_status: 'CLOSED',
+					},
+				],
+				summary: { total_work_minutes: 480, overtime_minutes: 0, total_night_minutes: 0 },
 			},
 		});
 	});
@@ -117,9 +125,10 @@ describe('MyReports', () => {
 		await userEvent.clear(textarea);
 		await userEvent.type(textarea, '작성 중인 초안');
 
-		const overlay = document.querySelector('.rep-drawer-overlay');
-		expect(overlay).toBeTruthy();
-		await userEvent.click(overlay);
+		/* SideDrawer: 오버레이는 aria-label "닫기" 버튼(패널 헤더 닫기보다 DOM상 앞에 있음) */
+		const dismissButtons = screen.getAllByRole('button', { name: '닫기' });
+		expect(dismissButtons.length).toBeGreaterThanOrEqual(1);
+		await userEvent.click(dismissButtons[0]);
 
 		expect(await screen.findByText('저장되지 않은 내용')).toBeInTheDocument();
 		await userEvent.click(screen.getByRole('button', { name: '취소' }));

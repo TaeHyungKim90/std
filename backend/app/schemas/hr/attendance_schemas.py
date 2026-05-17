@@ -4,6 +4,8 @@ from datetime import date, datetime
 
 
 class AttendanceRequest(BaseModel):
+	"""출퇴근 요청: location_name에는 location_key 또는 활성 location_value를 넣을 수 있음(저장은 key)."""
+
 	location_name: str
 	latitude: float
 	longitude: float
@@ -17,6 +19,16 @@ class AttendanceRequest(BaseModel):
 		description="공가 일정이 있을 때 출근 기록 등록 확인에 동의한 경우 true",
 	)
 
+
+class PreferredWorkLocationPatch(BaseModel):
+	"""본인 선호 출퇴근 근무장소. 활성 work_locations의 location_key 또는 location_value."""
+
+	location_name: str = Field(..., min_length=1, max_length=120)
+
+
+class PreferredWorkLocationResponse(BaseModel):
+	preferred_work_location: str
+
 class AttendanceResponse(BaseModel):
 	id: int
 	user_id: str
@@ -27,9 +39,26 @@ class AttendanceResponse(BaseModel):
 	clock_out_location: Optional[str]
 	status: str
 	work_minutes: int
+	night_work_minutes: int = 0
 	note: Optional[str]
+	shift_status: Optional[str] = None
 
 	model_config = ConfigDict(from_attributes=True)
+
+
+class AttendanceDailySummaryOut(BaseModel):
+	"""동일 근무일 CLOSED 세션 합산."""
+
+	total_work_minutes: int
+	overtime_minutes: int
+	total_night_minutes: int
+
+
+class AttendanceDaySessionsResponse(BaseModel):
+	"""당일 다회 출근 세션 목록 + 일별 합계."""
+
+	items: list[AttendanceResponse]
+	summary: Optional[AttendanceDailySummaryOut] = None
 
 
 class AttendanceClockContextResponse(BaseModel):
@@ -43,3 +72,4 @@ class AttendanceClockContextResponse(BaseModel):
 	is_weekend: bool
 	is_public_holiday: bool
 	holiday_name: Optional[str] = None
+	preferred_work_location: Optional[str] = None

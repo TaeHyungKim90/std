@@ -5,6 +5,7 @@ from datetime import date, datetime, time, timedelta
 import pytest
 from fastapi import status
 
+from constants.attendance_shift import SHIFT_STATUS_IN_PROGRESS
 from db.session import SessionLocal
 from integration_constants import INTEGRATION_EMPLOYEE_LOGIN_ID
 from models.hr_models import Attendance, Todo
@@ -55,6 +56,27 @@ def test_hr_clock_context_requires_full_day_when_vacation_full_todo(
 	assert r.status_code == status.HTTP_200_OK, r.text
 	body = r.json()
 	assert body.get("requires_full_day_vacation_confirm") is True
+	assert "preferred_work_location" in body
+
+
+def test_hr_patch_preferred_work_location_invalid(integration_employee_client):
+	r = integration_employee_client.patch(
+		"/api/hr/attendance/preferred-work-location",
+		json={"location_name": "__no_such_active_location__"},
+	)
+	assert r.status_code == status.HTTP_400_BAD_REQUEST, r.text
+
+
+def test_hr_patch_preferred_work_location_then_clock_context(integration_employee_client):
+	r = integration_employee_client.patch(
+		"/api/hr/attendance/preferred-work-location",
+		json={"location_name": "회사"},
+	)
+	assert r.status_code == status.HTTP_200_OK, r.text
+	assert r.json().get("preferred_work_location") == "company"
+	r2 = integration_employee_client.get("/api/hr/attendance/clock-context")
+	assert r2.status_code == status.HTTP_200_OK, r2.text
+	assert r2.json().get("preferred_work_location") == "company"
 
 
 def test_hr_clock_in_409_without_confirm_when_vacation_full(
@@ -63,7 +85,7 @@ def test_hr_clock_in_409_without_confirm_when_vacation_full(
 	r = integration_employee_client.post(
 		"/api/hr/attendance/clock-in",
 		json={
-			"location_name": "본사",
+			"location_name": "회사",
 			"latitude": 37.5665,
 			"longitude": 126.9780,
 			"note": "",
@@ -81,7 +103,7 @@ def test_hr_clock_in_ok_with_confirm_when_vacation_full(integration_employee_cli
 		r = integration_employee_client.post(
 			"/api/hr/attendance/clock-in",
 			json={
-				"location_name": "본사",
+				"location_name": "회사",
 				"latitude": 37.5665,
 				"longitude": 126.9780,
 				"note": "",
@@ -115,3 +137,158 @@ def test_admin_user_attendance_range_includes_meta_keys(integration_admin_client
 		"holiday_name",
 	):
 		assert key in row, f"missing key {key}"
+
+
+def _delete_user_attendances_on_date(user_login_id: str, work_date: date) -> None:
+	db = SessionLocal()
+	try:
+		db.query(Attendance).filter(
+			Attendance.user_id == user_login_id,
+			Attendance.work_date == work_date,
+		).delete()
+		db.commit()
+	finally:
+		db.close()
+
+
+def test_hr_clock_out_uses_open_shift_not_calendar_today(integration_employee_client):
+	"""전일 출근만 있고 퇴근이 없을 때(야근) 달력이 바뀌어도 퇴근 API가 동작해야 한다."""
+	yesterday = today_seoul() - timedelta(days=1)
+	_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, yesterday)
+	try:
+		db = SessionLocal()
+		try:
+			a = Attendance(
+				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
+				work_date=yesterday,
+				clock_in_time=datetime.combine(yesterday, time(20, 0)),
+				clock_out_time=None,
+				status="NORMAL",
+				work_minutes=0,
+				shift_status=SHIFT_STATUS_IN_PROGRESS,
+			)
+			db.add(a)
+			db.commit()
+		finally:
+			db.close()
+
+		r = integration_employee_client.post(
+			"/api/hr/attendance/clock-out",
+			json={
+				"location_name": "회사",
+				"latitude": 37.5665,
+				"longitude": 126.9780,
+				"note": "",
+			},
+		)
+		assert r.status_code == status.HTTP_200_OK, r.text
+		data = r.json()
+		assert data.get("clock_out_time") is not None
+		assert data.get("shift_status") == "CLOSED"
+		assert data.get("work_date") == str(yesterday)
+	finally:
+		_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, yesterday)
+
+
+def test_hr_clock_in_rejected_when_open_shift_exists(integration_employee_client):
+	"""전일 미종료 근무가 있으면 당일 출근을 막는다."""
+	yesterday = today_seoul() - timedelta(days=1)
+	_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, yesterday)
+	try:
+		db = SessionLocal()
+		try:
+			a = Attendance(
+				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
+				work_date=yesterday,
+				clock_in_time=datetime.combine(yesterday, time(9, 0)),
+				clock_out_time=None,
+				status="NORMAL",
+				work_minutes=0,
+				shift_status=SHIFT_STATUS_IN_PROGRESS,
+			)
+			db.add(a)
+			db.commit()
+		finally:
+			db.close()
+
+		r = integration_employee_client.post(
+			"/api/hr/attendance/clock-in",
+			json={
+				"location_name": "회사",
+				"latitude": 37.5665,
+				"longitude": 126.9780,
+				"note": "",
+			},
+		)
+		assert r.status_code == status.HTTP_400_BAD_REQUEST, r.text
+		assert "미종료" in (r.json().get("detail") or "")
+	finally:
+		_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, yesterday)
+
+
+def test_hr_clock_out_response_includes_night_work_minutes(integration_employee_client):
+	today = today_seoul()
+	_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, today)
+	try:
+		db = SessionLocal()
+		try:
+			a = Attendance(
+				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
+				work_date=today,
+				clock_in_time=datetime.combine(today, time(9, 0)),
+				clock_out_time=None,
+				status="NORMAL",
+				work_minutes=0,
+				night_work_minutes=0,
+				shift_status=SHIFT_STATUS_IN_PROGRESS,
+			)
+			db.add(a)
+			db.commit()
+		finally:
+			db.close()
+
+		r = integration_employee_client.post(
+			"/api/hr/attendance/clock-out",
+			json={
+				"location_name": "회사",
+				"latitude": 37.5665,
+				"longitude": 126.9780,
+				"note": "",
+			},
+		)
+		assert r.status_code == status.HTTP_200_OK, r.text
+		data = r.json()
+		assert "night_work_minutes" in data
+		assert isinstance(data["night_work_minutes"], int)
+	finally:
+		_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, today)
+
+
+def test_hr_two_sessions_same_day(integration_employee_client):
+	today = today_seoul()
+	_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, today)
+	try:
+		body = {
+			"location_name": "회사",
+			"latitude": 37.5665,
+			"longitude": 126.9780,
+			"note": "",
+		}
+		r_in = integration_employee_client.post("/api/hr/attendance/clock-in", json=body)
+		assert r_in.status_code == status.HTTP_200_OK, r_in.text
+		r_out = integration_employee_client.post("/api/hr/attendance/clock-out", json=body)
+		assert r_out.status_code == status.HTTP_200_OK, r_out.text
+		r_in2 = integration_employee_client.post("/api/hr/attendance/clock-in", json=body)
+		assert r_in2.status_code == status.HTTP_200_OK, r_in2.text
+
+		r_sess = integration_employee_client.get(
+			"/api/hr/attendance/day/sessions",
+			params={"work_date": today.isoformat()},
+		)
+		assert r_sess.status_code == status.HTTP_200_OK, r_sess.text
+		items = r_sess.json().get("items") or []
+		assert len(items) == 2
+		assert items[0].get("shift_status") == "CLOSED"
+		assert items[1].get("shift_status") == "IN_PROGRESS"
+	finally:
+		_delete_user_attendances_on_date(INTEGRATION_EMPLOYEE_LOGIN_ID, today)

@@ -4,6 +4,15 @@ from models.auth_models import User, UserVacation, UserAvatarSetting
 from models.common_models import UploadedFile, AuditLog
 from models.holiday_models import Holiday
 from models.system_models import Department, Position, WorkLocation
-from models.hr_models import Todo, TodoCategoryType, TodoConfig, OfficeLocation, Attendance, DailyReport, WeeklyReport
+from models.hr_models import (
+	Todo,
+	TodoCategoryType,
+	TodoConfig,
+	OfficeLocation,
+	Attendance,
+	AttendanceDailySummary,
+	DailyReport,
+	WeeklyReport,
+)
 from models.recruitment_models import Applicant, Application, Interview, JobPosting, ResumeTemplate
 from models.message_models import Message, MessageAttachment, MessageReadReceipt

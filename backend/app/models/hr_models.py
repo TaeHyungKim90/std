@@ -4,7 +4,7 @@ from typing import Any
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer,Float, String, Date,DateTime, ForeignKey, Text, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, Float, String, Date, DateTime, ForeignKey, Text, Boolean, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from db.session import Base # 상위 폴더의 database.py를 참조하도록 설정
 from utils.seoul_time import now_seoul_naive
@@ -58,6 +58,7 @@ class OfficeLocation(Base):
 # 🌟 2. 기존 Attendance 테이블에 좌표 컬럼 추가
 class Attendance(Base):
 	__tablename__ = "attendance"
+	__table_args__ = (Index("ix_attendance_user_shift_status", "user_id", "shift_status"),)
 	id = Column[int](Integer, primary_key=True, index=True)
 	user_id = Column[str](String, index=True)
 	work_date = Column[date](Date, index=True)
@@ -72,7 +73,24 @@ class Attendance(Base):
 	location_name = Column[str](String, nullable=True)
 	status = Column[str](String, default="NORMAL")
 	work_minutes = Column[int](Integer, default=0)
+	night_work_minutes = Column[int](Integer, default=0, nullable=False)
 	note = Column[str](String, nullable=True)
+	# 진행 중(IN_PROGRESS) / 마감(CLOSED) — 자정 이후 퇴근 시 달력일이 아닌 미종료 근무 조회용
+	shift_status = Column[str](String(20), nullable=True, index=True)
+
+
+class AttendanceDailySummary(Base):
+	"""동일 user·work_date CLOSED 세션 합산(연장·야간 합)."""
+
+	__tablename__ = "attendance_daily_summary"
+	__table_args__ = (UniqueConstraint("user_id", "work_date", name="uq_attendance_daily_summary_user_date"),)
+
+	id = Column[int](Integer, primary_key=True, index=True)
+	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
+	work_date = Column[date](Date, index=True, nullable=False)
+	total_work_minutes = Column[int](Integer, default=0, nullable=False)
+	overtime_minutes = Column[int](Integer, default=0, nullable=False)
+	total_night_minutes = Column[int](Integer, default=0, nullable=False)
 
 
 class DailyReport(Base):

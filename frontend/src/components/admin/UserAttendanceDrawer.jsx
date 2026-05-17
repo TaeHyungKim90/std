@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	addMonths,
-	formatDt,
 	formatWorkMinutes,
 	formatYmdToMd,
 	formatYmdToWeekKo,
@@ -15,8 +14,9 @@ import {
 	normalizeStatus,
 	normalizeToMidnight,
 	pad2,
+	splitYmdHm,
 	startOfWeekMonday,
-	toTimeInputValue,
+	toDatetimeLocalInputValue,
 	toYmd,
 } from 'utils/dateUtils';
 import * as Notify from 'utils/toastUtils';
@@ -28,6 +28,32 @@ const STATUS_OPTIONS = [
 	{ value: 'VACATION', label: '휴가' },
 	{ value: 'SICK', label: '병가' },
 ];
+
+/** 출근·퇴근 셀: 날짜 / 시간 2줄 */
+const UtaDateTimeCell = ({ iso }) => {
+	const p = splitYmdHm(iso);
+	if (!p) {
+		return <span className="uta-datetime-stack uta-datetime-stack--empty">—</span>;
+	}
+	return (
+		<span className="uta-datetime-stack">
+			<span className="uta-datetime-stack__date">{p.date}</span>
+			<span className="uta-datetime-stack__time">{p.time}</span>
+		</span>
+	);
+};
+
+const fmtCaptionTs = (iso) => {
+	const p = splitYmdHm(iso);
+	return p ? `${p.date} ${p.time}` : '—';
+};
+
+/** API work_date → YYYY-MM-DD */
+const workDateToYmd = (v) => {
+	if (v == null || v === '') return '';
+	const s = typeof v === 'string' ? v : String(v);
+	return s.length >= 10 ? s.slice(0, 10) : s;
+};
 
 const getStatusBadge = (status) => {
 	const st = normalizeStatus(status);
@@ -179,23 +205,37 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 	const openEdit = (row) => {
 		setEditingId(row.id);
 		setDraft({
-			clock_in_time: toTimeInputValue(row.clock_in_time),
-			clock_out_time: toTimeInputValue(row.clock_out_time),
+			clock_in_time: toDatetimeLocalInputValue(row.clock_in_time),
+			clock_out_time: toDatetimeLocalInputValue(row.clock_out_time),
 			status: row.status || 'NORMAL',
 		});
 	};
 
 	const cancelEdit = () => setEditingId(null);
 
-	const saveRow = async (recordId) => {
-		setSavingId(recordId);
+	const saveRow = async (row) => {
+		setSavingId(row.id);
 		try {
+			const cin = String(draft.clock_in_time || '').trim();
+			const cout = String(draft.clock_out_time || '').trim();
 			const payload = {
-				clock_in_time: draft.clock_in_time || null,
-				clock_out_time: draft.clock_out_time || null,
+				clock_in_time: cin || null,
+				clock_out_time: cout || null,
 				status: draft.status,
 			};
-			await adminApi.updateAttendance(recordId, payload);
+			const isVirtualAbsent =
+				typeof row.id === 'number' &&
+				row.id < 0 &&
+				String(row.status || '').toUpperCase().includes('ABSENT');
+			if (isVirtualAbsent) {
+				await adminApi.createAttendance({
+					user_login_id: userId,
+					work_date: workDateToYmd(row.work_date),
+					...payload,
+				});
+			} else {
+				await adminApi.updateAttendance(row.id, payload);
+			}
 			Notify.toastSuccess('저장되었습니다.');
 			setEditingId(null);
 			await loadRange();
@@ -295,6 +335,16 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 						<div className="uta-empty">선택한 기간에 등록된 근태 기록이 없습니다.</div>
 					) : (
 						<table className="uta-table">
+							<colgroup>
+								<col className="uta-col-date" />
+								<col className="uta-col-dow" />
+								<col className="uta-col-schedule" />
+								<col className="uta-col-time" />
+								<col className="uta-col-time" />
+								<col className="uta-col-status" />
+								<col className="uta-col-work" />
+								<col className="uta-col-manage" />
+							</colgroup>
 							<thead>
 								<tr>
 									<th>일자</th>
@@ -313,7 +363,7 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 									const holiday = row.is_public_holiday;
 									const badge = getStatusBadge(row.status);
 									const isSynthetic = typeof row.id === 'number' && row.id < 0;
-									const isSyntheticAbsent = isSynthetic && row.status === 'ABSENT';
+									const isSyntheticMissing = isSynthetic && row.status === 'MISSING_EXPLANATION';
 									const scheduleLine = [
 										row.vacation_todo_summary,
 										holiday ? row.holiday_name || '공휴일' : null,
@@ -334,19 +384,23 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 										const cin = row.clock_in_time;
 										const cout = row.clock_out_time;
 										if (cin && cout) {
-											return `[${s}] ${formatDt(cin)} 출근 · ${formatDt(cout)} 퇴근`;
+											return `[${s}] ${fmtCaptionTs(cin)} 출근 · ${fmtCaptionTs(cout)} 퇴근`;
 										}
 										if (cin) {
-											return `[${s}] ${formatDt(cin)} 출근`;
+											return `[${s}] ${fmtCaptionTs(cin)} 출근`;
 										}
 										return `[${s}]`;
 									};
 									const vacCap = vacationClockCaption();
 
+									const isEditingRow = editingId === row.id;
+
 									return (
 										<tr
 											key={row.id}
-											className={`stagger-item${weekend || holiday ? ' uta-tr-weekend' : ''}`}
+											className={`stagger-item${weekend || holiday ? ' uta-tr-weekend' : ''}${
+												isEditingRow ? ' uta-tr--editing' : ''
+											}`}
 											style={{ animationDelay: `${index * 0.04}s` }}
 										>
 											<td className="uta-td-date">{formatYmdToMd(row.work_date)}</td>
@@ -363,36 +417,56 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 											</td>
 
 											<td className="uta-td-time">
-												{editingId === row.id ? (
-													<input
-														type="time"
-														value={draft.clock_in_time}
-														onChange={(e) => setDraft((d) => ({ ...d, clock_in_time: e.target.value }))}
-														className="uta-time-input"
-													/>
+												{isEditingRow ? (
+													<div className="uta-datetime-edit">
+														<label className="uta-sr-only" htmlFor={`uta-cin-${row.id}`}>
+															출근 일시
+														</label>
+														<input
+															id={`uta-cin-${row.id}`}
+															type="datetime-local"
+															step={60}
+															value={draft.clock_in_time}
+															onChange={(e) =>
+																setDraft((d) => ({ ...d, clock_in_time: e.target.value }))
+															}
+															className="uta-datetime-local-input"
+														/>
+													</div>
 												) : (
 													<span className="uta-time-cell">
-														<span className="uta-time-text">{formatDt(row.clock_in_time)}</span>
+														<UtaDateTimeCell iso={row.clock_in_time} />
 														{vacCap ? <div className="uta-vacation-caption">{vacCap}</div> : null}
 													</span>
 												)}
 											</td>
 
 											<td className="uta-td-time">
-												{editingId === row.id ? (
-													<input
-														type="time"
-														value={draft.clock_out_time}
-														onChange={(e) => setDraft((d) => ({ ...d, clock_out_time: e.target.value }))}
-														className="uta-time-input"
-													/>
+												{isEditingRow ? (
+													<div className="uta-datetime-edit">
+														<label className="uta-sr-only" htmlFor={`uta-cout-${row.id}`}>
+															퇴근 일시
+														</label>
+														<input
+															id={`uta-cout-${row.id}`}
+															type="datetime-local"
+															step={60}
+															value={draft.clock_out_time}
+															onChange={(e) =>
+																setDraft((d) => ({ ...d, clock_out_time: e.target.value }))
+															}
+															className="uta-datetime-local-input"
+														/>
+													</div>
 												) : (
-													<span className="uta-time-text">{formatDt(row.clock_out_time)}</span>
+													<span className="uta-time-cell">
+														<UtaDateTimeCell iso={row.clock_out_time} />
+													</span>
 												)}
 											</td>
 
 											<td className="uta-td-status">
-												{editingId === row.id ? (
+												{isEditingRow ? (
 													<select
 														value={draft.status}
 														onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
@@ -412,16 +486,14 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 											<td className="uta-td-workminutes">{formatWorkMinutes(row.work_minutes)}</td>
 
 											<td className="uta-td-manage">
-												{isSyntheticAbsent ? (
-													<span className="rep-empty rep-empty--table">자동결근</span>
-												) : isSynthetic && row.status === 'MISSING_EXPLANATION' ? (
+												{isSyntheticMissing ? (
 													<span className="rep-empty rep-empty--table">소명 요망</span>
-												) : editingId === row.id ? (
+												) : isEditingRow ? (
 													<div className="uta-edit-actions">
 														<button
 															type="button"
 															disabled={savingId === row.id}
-															onClick={() => saveRow(row.id)}
+															onClick={() => saveRow(row)}
 															className="uta-btn-save"
 														>
 															{savingId === row.id ? '저장…' : '저장'}

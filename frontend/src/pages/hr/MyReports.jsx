@@ -83,6 +83,14 @@ function getYearsInRange(startYmd, endYmd) {
 	return years;
 }
 
+/** 일일보고 drawer: 단일 근태 레거시 또는 GET day/sessions 응답 */
+function attendanceSessionsFromDrawerPayload(payload) {
+	if (!payload) return [];
+	if (Array.isArray(payload.items)) return payload.items;
+	if (payload.clock_in_time) return [payload];
+	return [];
+}
+
 function getDateTone(ymd, holidayDates) {
 	if (!ymd) return '';
 	const d = new Date(`${ymd}T00:00:00`);
@@ -210,6 +218,11 @@ const MyReports = () => {
 
 	const { dateFrom, dateTo } = useMemo(() => monthStartEndYmd(viewMonth), [viewMonth]);
 	const weekStartYmd = useMemo(() => toYmd(startOfWeekSunday(weekAnchor)), [weekAnchor]);
+
+	const drawerAttendanceSessions = useMemo(
+		() => attendanceSessionsFromDrawerPayload(drawerAttendance),
+		[drawerAttendance]
+	);
 
 	const loadHolidayDates = useCallback(async (startYmd, endYmd) => {
 		const years = getYearsInRange(startYmd, endYmd);
@@ -455,21 +468,21 @@ const MyReports = () => {
 			setDailyDrawerPreflight(true);
 			try {
 				const [res, ctxRes] = await Promise.all([
-					attendanceApi.getAttendanceForDay(ymd),
+					attendanceApi.getAttendanceDaySessions(ymd),
 					attendanceApi.getClockContext(ymd),
 				]);
-				const rec = res.data ?? null;
+				const bundle = res.data ?? null;
 				const clockCtx = ctxRes.data ?? null;
 
-				if (shouldConfirmNoAttendanceRecord(rec)) {
+				if (shouldConfirmNoAttendanceRecord(bundle)) {
 					setConfirmTargetYmd(ymd);
-					setConfirmTargetAttendance(rec);
+					setConfirmTargetAttendance(bundle);
 					setConfirmMessage(getDailyConfirmMessage(ymd, clockCtx));
 					setConfirmOpen(true);
 					return;
 				}
 
-				applyDailyDrawerOpen(ymd, rec);
+				applyDailyDrawerOpen(ymd, bundle);
 			} catch (err) {
 				Notify.toastApiFailure(err, '출퇴근 정보를 확인하지 못했습니다.');
 			} finally {
@@ -566,7 +579,7 @@ const MyReports = () => {
 			const dateTone = isVacationDay ? 'holiday' : getDateTone(ymd, holidayDates);
 			lines.push({
 				ymd,
-				label: `${ymd.slice(5).replace('-', '/')} (${formatYmdToWeekKo(ymd)})`,
+				label: `${ymd.slice(5).replace('-', '/')} ${formatYmdToWeekKo(ymd)}`,
 				text: hit?.content
 					? String(hit.content)
 					: isVacationDay
@@ -781,20 +794,45 @@ const MyReports = () => {
 						<div className="rep-drawer-attendance-ref" role="region" aria-label="출퇴근 참고">
 							<div className="rep-drawer-attendance-ref__head">
 								<span className="rep-drawer-attendance-ref__badge">출퇴근 기록 (참고)</span>
-								{normalizeStatus(drawerAttendance?.status).includes('LATE') ||
-								normalizeStatus(drawerAttendance?.status).includes('지각') ? (
+								{drawerAttendanceSessions.some(
+									(s) =>
+										normalizeStatus(s?.status).includes('LATE') ||
+										normalizeStatus(s?.status).includes('지각')
+								) ? (
 									<span className="rep-drawer-attendance-ref__hint">지각 처리된 날일 수 있습니다.</span>
 								) : null}
 							</div>
+							{drawerAttendance?.summary ? (
+								<div className="rep-drawer-attendance-ref__summary">
+									<span>
+										합계 근무 {drawerAttendance.summary.total_work_minutes ?? 0}분 · 야간{' '}
+										{drawerAttendance.summary.total_night_minutes ?? 0}분 · 연장{' '}
+										{drawerAttendance.summary.overtime_minutes ?? 0}분
+									</span>
+								</div>
+							) : null}
 							<dl className="rep-drawer-attendance-ref__times">
-								<div className="rep-drawer-attendance-ref__row">
-									<dt>출근</dt>
-									<dd>{formatDt(drawerAttendance.clock_in_time)}</dd>
-								</div>
-								<div className="rep-drawer-attendance-ref__row">
-									<dt>퇴근</dt>
-									<dd>{formatDt(drawerAttendance.clock_out_time)}</dd>
-								</div>
+								{drawerAttendanceSessions.map((s, idx) => (
+									<div key={s.id ?? idx} className="rep-drawer-attendance-ref__session">
+										{drawerAttendanceSessions.length > 1 ? (
+											<div className="rep-drawer-attendance-ref__session-label">세션 {idx + 1}</div>
+										) : null}
+										<div className="rep-drawer-attendance-ref__row">
+											<dt>출근</dt>
+											<dd>{formatDt(s.clock_in_time)}</dd>
+										</div>
+										<div className="rep-drawer-attendance-ref__row">
+											<dt>퇴근</dt>
+											<dd>{formatDt(s.clock_out_time)}</dd>
+										</div>
+										{s.night_work_minutes > 0 ? (
+											<div className="rep-drawer-attendance-ref__row">
+												<dt>야간</dt>
+												<dd>{s.night_work_minutes}분</dd>
+											</div>
+										) : null}
+									</div>
+								))}
 							</dl>
 						</div>
 					) : null}

@@ -24,9 +24,9 @@ def _require_user_id(current_user: dict) -> str:
 
 @router.get("/today", response_model=attendance_schemas.AttendanceResponse | None)
 def read_today_attendance(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-	"""[유저] 오늘의 출퇴근 기록을 조회합니다."""
+	"""[유저] 오늘 근무일 행 또는 미종료 야근 행(전일 출근만 한 경우) 조회."""
 	user_id = _require_user_id(current_user)
-	return service.get_today_attendance(db, user_id, today_seoul())
+	return service.get_today_or_open_attendance(db, user_id, today_seoul())
 
 
 @router.get("/day", response_model=Optional[attendance_schemas.AttendanceResponse])
@@ -38,6 +38,29 @@ def read_attendance_for_day(
 	"""[유저] 특정 근무일(YYYY-MM-DD)의 본인 출퇴근 기록을 조회합니다. 없으면 null."""
 	user_id = _require_user_id(current_user)
 	return service.get_today_attendance(db, user_id, work_date)
+
+
+@router.get("/day/sessions", response_model=attendance_schemas.AttendanceDaySessionsResponse)
+def read_attendance_sessions_for_day(
+	work_date: date_type = Query(..., alias="work_date"),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 특정 근무일의 세션 전부 + 일별 합산(다회 출근)."""
+	from services.hr.attendance_daily_summary_service import summary_dict_for_work_date
+
+	user_id = _require_user_id(current_user)
+	items = service.list_attendance_sessions_for_work_date(db, user_id, work_date)
+	summary_raw = summary_dict_for_work_date(db, user_id, work_date)
+	summary = (
+		attendance_schemas.AttendanceDailySummaryOut.model_validate(summary_raw)
+		if summary_raw is not None
+		else None
+	)
+	return attendance_schemas.AttendanceDaySessionsResponse(
+		items=[attendance_schemas.AttendanceResponse.model_validate(r) for r in items],
+		summary=summary,
+	)
 
 @router.get("/clock-context", response_model=attendance_schemas.AttendanceClockContextResponse)
 def read_clock_context(
@@ -52,6 +75,21 @@ def read_clock_context(
 	return attendance_schemas.AttendanceClockContextResponse.model_validate(ctx)
 
 
+@router.patch(
+	"/preferred-work-location",
+	response_model=attendance_schemas.PreferredWorkLocationResponse,
+)
+def patch_preferred_work_location(
+	body: attendance_schemas.PreferredWorkLocationPatch,
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 출퇴근 화면 기본 근무장소(활성 목록의 key 또는 표시명으로 저장 시 DB에는 key)."""
+	user_id = _require_user_id(current_user)
+	name = service.set_user_preferred_work_location(db, user_id, body.location_name)
+	return attendance_schemas.PreferredWorkLocationResponse(preferred_work_location=name)
+
+
 @router.get("/work-locations", response_model=list[WorkLocationResponse])
 def read_active_work_locations(
 	db: Session = Depends(get_db),
@@ -64,19 +102,15 @@ def read_active_work_locations(
 
 @router.post("/clock-in", response_model=attendance_schemas.AttendanceResponse)
 def clock_in(req: attendance_schemas.AttendanceRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-	"""[유저] 출근 처리 (중복 출근 방지 로직 포함)"""
+	"""[유저] 출근 처리 (미종료 근무·당일 중복 출근 방지)"""
 	user_id = _require_user_id(current_user)
 	now = now_seoul_naive()
-
-	record = service.get_today_attendance(db, user_id, now.date())
-	if record and record.clock_in_time is not None:
-		raise HTTPException(status_code=400, detail="이미 출근 기록이 존재합니다.")
 
 	return service.create_clock_in(
 		db,
 		user_id,
 		now,
-		status="NORMAL",
+		record_status="NORMAL",
 		location=req.location_name,
 		lat=req.latitude,
 		lng=req.longitude,
@@ -91,7 +125,7 @@ def clock_out(req: attendance_schemas.AttendanceRequest, db: Session = Depends(g
 	user_id = _require_user_id(current_user)
 	now = now_seoul_naive()
 	
-	record = service.get_today_attendance(db, user_id, now.date())
+	record = service.get_open_shift(db, user_id)
 	if not record:
 		raise HTTPException(status_code=400, detail="출근 기록을 찾을 수 없습니다. 먼저 출근을 해주세요.")
 	rec: Any = record
