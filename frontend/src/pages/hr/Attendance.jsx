@@ -176,6 +176,9 @@ const AttendanceView = () => {
 			return;
 		}
 
+		/* iOS: 클릭 직후 위치 요청을 시작해야 권한 팝업·GPS가 동작함(confirm·toast 이후면 실패하는 경우 많음) */
+		const locationPromise = attendanceApi.getCurrentLocation();
+
 		let confirmFullDayVacation = false;
 		let confirmOfficialLeave = false;
 
@@ -197,8 +200,8 @@ const AttendanceView = () => {
 		if (!window.confirm(`${getWorkLocationDisplayLabel(workLocationKey)}에서 출근 처리하시겠습니까?`)) return;
 
 		setLoading(true);
-		const clockInTask = async () => {
-			const coords = await attendanceApi.getCurrentLocation();
+		try {
+			const coords = await locationPromise;
 			const data = {
 				location_name: workLocationKey,
 				latitude: coords.latitude,
@@ -207,10 +210,7 @@ const AttendanceView = () => {
 				confirm_full_day_vacation: confirmFullDayVacation,
 				confirm_official_leave: confirmOfficialLeave,
 			};
-			return await attendanceApi.clockIn(data);
-		};
-		try {
-			await Notify.toastPromise(clockInTask(), {
+			await Notify.toastPromise(attendanceApi.clockIn(data), {
 				loading: '위치를 확인하고 출근 처리 중입니다... 📍',
 				success: '정상적으로 출근 처리되었습니다. 🏢',
 				error: (err) => err.message || '출근 처리 중 오류가 발생했습니다. 위치 권한을 확인해주세요.',
@@ -219,6 +219,8 @@ const AttendanceView = () => {
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('출근 처리 실패', err);
+			const msg = err?.message || '출근 처리 중 오류가 발생했습니다.';
+			if (msg) Notify.toastError(msg);
 		} finally {
 			setLoading(false);
 		}
@@ -230,6 +232,8 @@ const AttendanceView = () => {
 			Notify.toastWarn('퇴근 처리할 근무장소를 선택해 주세요.');
 			return;
 		}
+
+		const locationPromise = attendanceApi.getCurrentLocation();
 
 		if (clockCtx?.requires_official_leave_confirm) {
 			if (!window.confirm('공가 일정이 있습니다. 퇴근 기록을 등록하시겠습니까?')) return;
@@ -244,18 +248,15 @@ const AttendanceView = () => {
 		if (!window.confirm(`${getWorkLocationDisplayLabel(workLocationKey)}에서 퇴근 처리하시겠습니까?`)) return;
 
 		setLoading(true);
-		const clockOutTask = async () => {
-			const coords = await attendanceApi.getCurrentLocation();
+		try {
+			const coords = await locationPromise;
 			const data = {
 				location_name: workLocationKey,
 				latitude: coords.latitude,
 				longitude: coords.longitude,
 				note: '',
 			};
-			return await attendanceApi.clockOut(data);
-		};
-		try {
-			await Notify.toastPromise(clockOutTask(), {
+			await Notify.toastPromise(attendanceApi.clockOut(data), {
 				loading: '위치를 확인하고 퇴근 처리 중입니다... 📍',
 				success: '오늘 하루도 고생하셨습니다! 🏃‍♂️',
 				error: (err) => err.message || '퇴근 처리 중 오류가 발생했습니다.',
@@ -264,6 +265,8 @@ const AttendanceView = () => {
 			await fetchTodayStatus();
 		} catch (err) {
 			console.error('퇴근 처리 실패', err);
+			const msg = err?.message || '퇴근 처리 중 오류가 발생했습니다.';
+			if (msg) Notify.toastError(msg);
 		} finally {
 			setLoading(false);
 		}

@@ -4,23 +4,63 @@ import { client } from './axiosInstance.js'; // api.js에서 만든 공통 clien
 
 const PATH = API_ENDPOINTS.ATTENDANCE;
 
-/** 브라우저 위치 권한 팝업에서 사용자가 응답할 때까지 기다릴 수 있도록 여유 있게 둡니다. */
-const GEOLOCATION_TIMEOUT_MS = 90000;
+const GEOLOCATION_TIMEOUT_FAST_MS = 28000;
+const GEOLOCATION_TIMEOUT_ACCURATE_MS = 60000;
+
+/** iOS Safari 등: Permissions API의 geolocation 상태가 실제와 어긋나는 경우가 많아 선차단하지 않음 */
+const GEOLOCATION_ATTEMPTS = [
+	{ enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT_FAST_MS, maximumAge: 120000 },
+	{ enableHighAccuracy: true, timeout: GEOLOCATION_TIMEOUT_ACCURATE_MS, maximumAge: 0 },
+];
 
 function geolocationErrorMessage(error) {
 	if (!error || typeof error.code !== 'number') {
 		return '위치 정보를 가져오지 못했습니다.';
 	}
+	const appleHint =
+		' (Mac/iPhone: 시스템 설정 → 개인정보 보호 및 보안 → 위치 서비스 켜기 → Safari(또는 Chrome)에서 이 사이트 위치 「허용」 후 페이지 새로고침)';
 	switch (error.code) {
 		case 1:
-			return '위치 권한이 거부되었습니다. 브라우저 또는 기기 설정에서 위치 권한을 허용해 주세요.';
+			return `위치 권한이 거부되었습니다. 브라우저·기기 설정에서 이 사이트의 위치를 허용해 주세요.${appleHint}`;
 		case 2:
-			return '현재 위치를 확인할 수 없습니다. GPS·네트워크 상태를 확인한 뒤 다시 시도해 주세요.';
+			return '현재 위치를 확인할 수 없습니다. Wi‑Fi·셀룰러를 켠 뒤 실외 또는 창가에서 다시 시도해 주세요.';
 		case 3:
-			return '위치 확인 시간이 초과되었습니다. 권한 요청 창에서 허용을 누른 뒤 다시 시도해 주세요.';
+			return `위치 확인 시간이 초과되었습니다. 잠시 후 다시 시도하거나, Wi‑Fi를 켠 뒤 재시도해 주세요.${appleHint}`;
 		default:
 			return '위치 정보를 가져오지 못했습니다.';
 	}
+}
+
+function getCurrentPositionWithOptions(options) {
+	return new Promise((resolve, reject) => {
+		navigator.geolocation.getCurrentPosition(
+			(position) => {
+				resolve({
+					latitude: position.coords.latitude,
+					longitude: position.coords.longitude,
+				});
+			},
+			(error) => {
+				console.error('GPS 획득 실패:', error);
+				reject(error);
+			},
+			options
+		);
+	});
+}
+
+async function getCurrentLocationWithFallback() {
+	let lastError = null;
+	for (let i = 0; i < GEOLOCATION_ATTEMPTS.length; i += 1) {
+		try {
+			return await getCurrentPositionWithOptions(GEOLOCATION_ATTEMPTS[i]);
+		} catch (error) {
+			lastError = error;
+			if (error?.code === 1) break;
+			if (i < GEOLOCATION_ATTEMPTS.length - 1) continue;
+		}
+	}
+	throw new Error(geolocationErrorMessage(lastError));
 }
 
 export const attendanceApi = {
@@ -80,44 +120,18 @@ export const attendanceApi = {
 	/**
 	 * 🌐 브라우저 GPS 좌표 가져오기 (Helper)
 	 */
-	getCurrentLocation: async () => {
+	/**
+	 * GPS 좌표 (클릭 핸들러에서 즉시 호출해 Promise를 시작하는 것을 권장 — iOS 사용자 제스처 유지)
+	 */
+	getCurrentLocation: () => {
 		if (!navigator.geolocation) {
-			throw new Error('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
+			return Promise.reject(new Error('이 브라우저에서는 위치 정보를 지원하지 않습니다.'));
 		}
-
-		let deniedBeforePrompt = false;
-		if (navigator.permissions?.query) {
-			try {
-				const status = await navigator.permissions.query({ name: 'geolocation' });
-				if (status.state === 'denied') {
-					deniedBeforePrompt = true;
-				}
-			} catch (_) {
-				/* Permissions API 미지원 등은 무시하고 getCurrentPosition 사용 */
-			}
-		}
-		if (deniedBeforePrompt) {
-			throw new Error(geolocationErrorMessage({ code: 1 }));
-		}
-
-		return new Promise((resolve, reject) => {
-			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					resolve({
-						latitude: position.coords.latitude,
-						longitude: position.coords.longitude,
-					});
-				},
-				(error) => {
-					console.error('GPS 획득 실패:', error);
-					reject(new Error(geolocationErrorMessage(error)));
-				},
-				{
-					enableHighAccuracy: true,
-					timeout: GEOLOCATION_TIMEOUT_MS,
-					maximumAge: 0,
-				}
+		if (typeof window !== 'undefined' && !window.isSecureContext) {
+			return Promise.reject(
+				new Error('위치 정보는 HTTPS(보안 연결)에서만 사용할 수 있습니다. 주소가 https:// 인지 확인해 주세요.')
 			);
-		});
+		}
+		return getCurrentLocationWithFallback();
 	},
 };
