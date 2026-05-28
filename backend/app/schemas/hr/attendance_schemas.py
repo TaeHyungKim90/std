@@ -61,6 +61,27 @@ class AttendanceDaySessionsResponse(BaseModel):
 	summary: Optional[AttendanceDailySummaryOut] = None
 
 
+class AttendanceCalendarStampOut(BaseModel):
+	"""직원 캘린더 표시용 도장 상태. 점수·순위 정보는 포함하지 않습니다."""
+
+	work_date: date
+	stamp_type: str
+	label: str
+	image_key: str
+	has_clock_in: bool
+	has_clock_out: bool
+	is_vacation: bool
+	vacation_label: Optional[str] = None
+	clock_in_time: Optional[datetime] = None
+	clock_out_time: Optional[datetime] = None
+
+
+class AttendanceCalendarStampsResponse(BaseModel):
+	year: int
+	month: int
+	items: list[AttendanceCalendarStampOut]
+
+
 class AttendanceClockContextResponse(BaseModel):
 	"""출퇴근 버튼·확인 팝업 분기용(당일 또는 지정일)."""
 

@@ -101,6 +101,12 @@ export const adminApi = {
 	}),
 
   /**
+   * 월간 출퇴근 가산점/쿠폰 대상자 조회 (관리자)
+   */
+  getMonthlyAttendanceRewards: ({ year, month }) =>
+	client.get(`${PATH}/attendance/monthly-rewards`, { params: { year, month } }),
+
+  /**
    * 근태 1건 생성 (가상 결근일 등 DB에 행이 없을 때)
    * POST /api/admin/attendance/records
    */

@@ -94,6 +94,13 @@ export const attendanceApi = {
 		client.get(`${PATH}/day`, { params: { work_date: workDate } }),
 
 	/**
+	 * 월간 캘린더 도장 상태 (점수/순위 제외)
+	 * GET /hr/attendance/calendar-stamps?year=&month=
+	 */
+	getCalendarStamps: ({ year, month }) =>
+		client.get(`${PATH}/calendar-stamps`, { params: { year, month } }),
+
+	/**
 	 * 출퇴근 선택용 활성 근무장소 목록
 	 * GET /hr/attendance/work-locations
 	 */

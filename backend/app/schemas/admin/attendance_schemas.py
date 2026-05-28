@@ -72,3 +72,31 @@ class AdminAttendanceRecomputeResponse(BaseModel):
 	updated: int
 	unchanged: int
 	changes: List[AdminAttendanceRecomputeChange] = Field(default_factory=list)
+
+
+class AdminAttendanceRewardPointsPolicy(BaseModel):
+	attendance_complete: int
+	on_time: int
+	vacation: int
+
+
+class AdminAttendanceRewardItem(BaseModel):
+	rank: int
+	user_id: str
+	user_name: str
+	score: int
+	attendance_completed_days: int
+	vacation_days: int
+	on_time_days: int
+	longest_streak_days: int
+	eligible_days: int
+	coupon_target: bool
+
+
+class AdminAttendanceMonthlyRewardsResponse(BaseModel):
+	year: int
+	month: int
+	generated_at: datetime
+	points_policy: AdminAttendanceRewardPointsPolicy
+	winner: Optional[AdminAttendanceRewardItem] = None
+	items: List[AdminAttendanceRewardItem] = Field(default_factory=list)

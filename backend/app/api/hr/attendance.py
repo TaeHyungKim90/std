@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from db.session import get_db
 from services.auth_service import get_current_user
+from services.hr import attendance_calendar_service
 from services.hr import attendance_service as service
 from schemas.hr import attendance_schemas
 from schemas.system_schemas import WorkLocationResponse
@@ -61,6 +62,19 @@ def read_attendance_sessions_for_day(
 		items=[attendance_schemas.AttendanceResponse.model_validate(r) for r in items],
 		summary=summary,
 	)
+
+
+@router.get("/calendar-stamps", response_model=attendance_schemas.AttendanceCalendarStampsResponse)
+def read_monthly_calendar_stamps(
+	year: int = Query(..., ge=2000, le=2100),
+	month: int = Query(..., ge=1, le=12),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user),
+):
+	"""[유저] 캘린더에 표시할 본인 월간 출근·퇴근·휴가 도장 상태."""
+	user_id = _require_user_id(current_user)
+	return attendance_calendar_service.get_user_monthly_stamps(db, user_id, year, month)
+
 
 @router.get("/clock-context", response_model=attendance_schemas.AttendanceClockContextResponse)
 def read_clock_context(

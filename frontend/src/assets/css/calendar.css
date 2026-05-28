@@ -230,6 +230,58 @@
 	white-space: nowrap;
 }
 
+.fc .attendance-stamp-event {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	cursor: default;
+	text-align: center;
+}
+
+.fc .attendance-stamp-event:hover {
+	transform: none;
+	box-shadow: none;
+}
+
+.attendance-stamp-event__stamp {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2.6rem;
+	min-height: 2.6rem;
+	padding: 0.3rem;
+	border-radius: 50%;
+	border: 2px solid currentColor;
+	background: rgba(255, 255, 255, 0.86);
+	font-size: 0.72rem;
+	font-weight: 900;
+	line-height: 1;
+	letter-spacing: -0.08em;
+	transform: rotate(-10deg);
+	box-shadow: 0 3px 8px rgba(20, 20, 20, 0.12);
+}
+
+.attendance-stamp-event--attendance_complete .attendance-stamp-event__stamp {
+	color: #1a6b48;
+	background: rgba(61, 175, 122, 0.12);
+}
+
+.attendance-stamp-event--clock_in .attendance-stamp-event__stamp {
+	color: #1d4ed8;
+	background: rgba(46, 138, 246, 0.12);
+}
+
+.attendance-stamp-event--clock_out .attendance-stamp-event__stamp {
+	color: #7c3aed;
+	background: rgba(124, 58, 237, 0.12);
+}
+
+.attendance-stamp-event--vacation .attendance-stamp-event__stamp {
+	color: #c2410c;
+	background: rgba(251, 146, 60, 0.14);
+}
+
 .color-palette-container {
 	display: flex; 
 	justify-content: center; 

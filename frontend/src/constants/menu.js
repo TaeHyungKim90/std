@@ -15,6 +15,7 @@ export const MENU_ITEMS = [
 		  items: [
 			  { id: 'admin-users', label: '사용자 관리', path: PATHS.ADMIN_USERS },
 			  { id: 'admin-attendance', label: '출퇴근 기록', path: PATHS.ADMIN_ATTENDANCE },
+			  { id: 'admin-attendance-rewards', label: '출퇴근 가산점', path: PATHS.ADMIN_ATTENDANCE_REWARDS },
 			  { id: 'admin-todos', label: '일정 로그', path: PATHS.ADMIN_TODOS },
 			  { id: 'admin-reports', label: '보고서 모니터링', path: PATHS.ADMIN_REPORTS },
 			  { id: 'admin-messages', label: '메시지 관리', path: PATHS.ADMIN_MESSAGES }, 

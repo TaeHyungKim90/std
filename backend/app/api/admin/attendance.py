@@ -3,9 +3,11 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from db.session import get_db
 from services.auth_service import get_current_admin
+from services.admin import attendance_reward_service
 from services.admin import attendance_service as service
 from schemas.admin.attendance_schemas import (
 	AdminAttendanceCreate,
+	AdminAttendanceMonthlyRewardsResponse,
 	AdminAttendanceRangeResponse,
 	AdminAttendanceRecordOut,
 	AdminAttendanceRecomputeResponse,
@@ -65,6 +67,17 @@ def get_all_attendance(
 ):
 	"""[관리자] 전체 직원 근태 기록 조회·필터·페이징."""
 	return service.get_all_attendance(db, user_name, work_date, skip=skip, limit=limit)
+
+
+@router.get("/monthly-rewards", response_model=AdminAttendanceMonthlyRewardsResponse)
+def get_monthly_attendance_rewards(
+	year: int = Query(..., ge=2000, le=2100),
+	month: int = Query(..., ge=1, le=12),
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin),
+):
+	"""[관리자] 월간 출퇴근 가산점·1등·쿠폰 대상자 조회."""
+	return attendance_reward_service.get_monthly_attendance_rewards(db, year, month)
 
 
 @router.post("/recompute-work-minutes", response_model=AdminAttendanceRecomputeResponse)

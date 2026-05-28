@@ -2,6 +2,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { attendanceApi } from 'api/attendanceApi';
 import { holidayApi } from 'api/holidayApi';
 import { todoService } from 'api/todoApi';
 import TodoDetailModal from 'components/common/TodoDetailModal';
@@ -20,16 +21,17 @@ import {
 	toSeoulYmd,
 } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
+import * as Notify from 'utils/toastUtils';
 import {
 	hasOwnVacationOnDate,
 	hasOwnVacationOverlappingRange,
 	MY_VACATION_OVERLAP_MESSAGE,
 	VACATION_DEDUCTIBLE_CATEGORIES,
 } from 'utils/todoVacationUtils';
-import * as Notify from 'utils/toastUtils';
 
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
+	const [stampEvents, setStampEvents] = useState([]);
 	const holidaysRef = useRef([]);
 	const [categories, setCategories] = useState([]);
 	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3FAF7A', selectedDescription: ''});
@@ -57,6 +59,8 @@ const TodoListView = () => {
 	const [modalMode, setModalMode] = useState('create');
 	const [editModalKey, setEditModalKey] = useState(0);
 	const defaultCategoryKey = categories[0]?.category_key || null;
+
+	const calendarEvents = useMemo(() => [...events, ...stampEvents], [events, stampEvents]);
 
 	const fetchCategoriesAndConfigs = useCallback(async () => {
 		const [catRes, configRes] = await Promise.all([todoService.getCategories(), todoService.getTodoConfigs()]);
@@ -104,6 +108,37 @@ const TodoListView = () => {
 		holidaysRef.current = holidayRes.data || [];
 		setEvents(formattedTodos);
 	}, [userId]);
+
+	const fetchAttendanceStamps = useCallback(async (year, month) => {
+		try {
+			const res = await attendanceApi.getCalendarStamps({ year, month });
+			const stamps = Array.isArray(res.data?.items) ? res.data.items : [];
+			setStampEvents(
+				stamps.map((stamp) => ({
+					id: `attendance-stamp-${stamp.work_date}-${stamp.stamp_type}`,
+					title: stamp.label,
+					start: stamp.work_date,
+					allDay: true,
+					editable: false,
+					startEditable: false,
+					durationEditable: false,
+					display: 'block',
+					className: `attendance-stamp-event attendance-stamp-event--${stamp.image_key}`,
+					extendedProps: {
+						...stamp,
+						isAttendanceStamp: true,
+					},
+				}))
+			);
+		} catch (err) {
+			Notify.toastApiFailure(err, '출퇴근 도장을 불러오지 못했습니다.');
+		}
+	}, []);
+
+	const handleCalendarDatesSet = useCallback((arg) => {
+		const baseDate = arg.view.currentStart || arg.start || new Date();
+		void fetchAttendanceStamps(baseDate.getFullYear(), baseDate.getMonth() + 1);
+	}, [fetchAttendanceStamps]);
 
 	const refreshTodosAfterMutation = useCallback(() => {
 		return fetchTodos().catch((err) => {
@@ -157,7 +192,7 @@ const TodoListView = () => {
 	const handleEventClick = (info) => { 
 		const event = info.event.toPlainObject(); 
 		const props = event.extendedProps; 
-		if (props.isHoliday) return; 
+		if (props.isHoliday || props.isAttendanceStamp) return; 
 		const fallbackCat = defaultCategoryKey;
 		setSelectedEvent({ id: event.id, title: props.title || '제목 없음', start: props.start_date.split('T')[0], end: props.end_date.split('T')[0], category: props.category || fallbackCat, color: event.backgroundColor, description: props.description || '', user_id: props.user_id, author: props.author }); 
 		setIsDetailOpen(true); 
@@ -339,7 +374,7 @@ const TodoListView = () => {
 					locale="ko"
 					timeZone="Asia/Seoul"
 					validRange={employmentValidRange}
-					events={events}
+					events={calendarEvents}
 					editable={true}
 					droppable={true}
 					dayCellContent={(arg) => {
@@ -403,9 +438,28 @@ const TodoListView = () => {
 					eventDurationEditable={true}
 					dateClick={handleDateClick}
 					eventClick={handleEventClick}
+					datesSet={handleCalendarDatesSet}
 					eventDrop={handleEventUpdate}
 					eventResize={handleEventUpdate}
 					eventReceive={handleEventReceive}
+					eventContent={(arg) => {
+						if (!arg.event.extendedProps?.isAttendanceStamp) return undefined;
+						const imageKey = arg.event.extendedProps.image_key;
+						const label = arg.event.extendedProps.label || arg.event.title;
+						const text =
+							imageKey === 'vacation'
+								? '휴가'
+								: imageKey === 'clock_in'
+									? '출근'
+									: imageKey === 'clock_out'
+										? '퇴근'
+										: '완료';
+						return (
+							<span className="attendance-stamp-event__stamp" title={label} aria-label={label}>
+								{text}
+							</span>
+						);
+					}}
 				/>
 			</section>
 			

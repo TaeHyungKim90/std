@@ -7,6 +7,7 @@ const AdminTodoView = lazy(() => import('pages/admin/AdminTodo'));
 const CategoryMgmtView = lazy(() => import('pages/admin/CategoryMgmt'));
 const DepartmentMgmtView = lazy(() => import('pages/admin/DepartmentMgmt'));
 const AdminAttendanceView = lazy(() => import('pages/admin/AdminAttendance'));
+const AdminAttendanceRewardsView = lazy(() => import('pages/admin/AdminAttendanceRewards'));
 const AdminUserView = lazy(() => import('pages/admin/AdminUser'));
 const HolidayMgmtView = lazy(() => import('pages/admin/HolidayMgmt'));
 const PositionMgmtView = lazy(() => import('pages/admin/PositionMgmt'));
@@ -27,6 +28,7 @@ const adminRoutes = (
 		<Route path={ROUTE_SEGMENTS.ADMIN.POSITIONS} element={<PositionMgmtView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.WORK_LOCATIONS} element={<WorkLocationMgmtView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.ATTENDANCE} element={<AdminAttendanceView />} />
+		<Route path={ROUTE_SEGMENTS.ADMIN.ATTENDANCE_REWARDS} element={<AdminAttendanceRewardsView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.USERS} element={<AdminUserView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.REPORTS} element={<AdminDailyReport />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.RECRUITMENT} element={<RecruitmentAdminView />} />
