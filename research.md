@@ -29,7 +29,8 @@ std/
 │   ├── public/
 │   ├── src/
 │   └── package.json
-├── requirements.txt         # 백엔드 의존성 (루트)
+├── backend/pyproject.toml   # 백엔드 의존성 정의
+├── backend/uv.lock          # 백엔드 의존성 잠금 파일
 ├── update.md                # 출퇴근·휴가 정책 계획안(별도 문서)
 ├── research.md              # 본 문서
 └── manual.md                # 직원(일반 사용자) 화면 안내 — 지원자·관리자 메뉴 제외
@@ -79,7 +80,7 @@ backend/app/
         └── default_resume_template.docx   # init_db 시 기본 이력서 템플릿 시드 원본
 ```
 
-**의존성**: 루트 `requirements.txt` (FastAPI, SQLAlchemy, uvicorn, slowapi, python-jose, passlib[bcrypt], pytest 등).
+**의존성**: `backend/pyproject.toml` + `backend/uv.lock` (FastAPI, SQLAlchemy, uvicorn, slowapi, python-jose, passlib[bcrypt], pytest 등).
 
 ---
 

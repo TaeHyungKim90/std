@@ -97,7 +97,7 @@ const TodoListView = () => {
 				start: range.start,
 				end: range.end,
 				allDay: true,
-				display: 'block', backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
+				backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
 				startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
 			};
 		});
@@ -337,6 +337,7 @@ const TodoListView = () => {
 					initialView="dayGridMonth"
 					headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
 					locale="ko"
+					timeZone="Asia/Seoul"
 					validRange={employmentValidRange}
 					events={events}
 					editable={true}

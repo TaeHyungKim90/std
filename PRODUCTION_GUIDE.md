@@ -4,7 +4,7 @@
 
 ## 1) 사전 준비
 
-- 프로젝트 루트에 `venv`가 있어야 합니다.
+- 서버에 `uv`가 설치되어 있어야 합니다.
 - Node.js / npm이 설치되어 있어야 합니다.
 - 루트 `.env`와 `frontend/.env.production` 값이 운영값으로 설정되어 있어야 합니다.
 - 백엔드는 `backend/.env.production` 파일을 자동 로드하지 않습니다. 백엔드 운영값은 **루트 `.env` 또는 서버 환경 변수**로 설정하세요.
@@ -16,7 +16,7 @@
 REACT_APP_API_BASE_URL=https://api.example.com/api
 ```
 
-## 2) 초기 1회 세팅 (가상환경 + 패키지 설치)
+## 2) 초기 1회 세팅 (`uv` + 패키지 설치)
 
 처음 서버를 올리기 전(또는 새 PC/새 서버)에는 아래를 1회 수행하세요.
 
@@ -24,9 +24,7 @@ Windows (PowerShell):
 
 ```powershell
 cd C:\project\hr
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+uv sync --project backend --group dev
 cd frontend
 npm ci
 cd ..
@@ -36,9 +34,7 @@ Linux / macOS:
 
 ```bash
 cd /path/to/hr
-python3 -m venv venv
-source ./venv/bin/activate
-pip install -r requirements.txt
+uv sync --project backend --group dev
 cd frontend
 npm ci
 cd ..
@@ -52,7 +48,7 @@ cd ..
 
 이 스크립트는 내부에서 다음을 순서대로 수행합니다.
 
-1. 가상환경 활성화
+1. `uv` 프로젝트 환경 확인/동기화
 2. `deploy_frontend.bat` 또는 `deploy_frontend.sh` 실행
    - `frontend`에서 `npm run build`
    - 빌드 결과를 루트 `static`에 복사
@@ -91,7 +87,7 @@ APP_PORT=9000 bash ./start_production.sh
 
 - `REACT_APP_API_BASE_URL` 누락: 프론트 빌드가 실패합니다.
 - npm 미설치/경로 미등록: `deploy_frontend.bat` / `deploy_frontend.sh`가 실패합니다.
-- `venv` 없음: `start_production.bat` / `start_production.sh` 시작 단계에서 중단됩니다.
+- `uv` 미설치: `start_production.bat` / `start_production.sh` 시작 단계에서 중단됩니다.
 
 ## 7) 수동 프론트 배포만 먼저 하고 싶을 때
 

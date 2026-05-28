@@ -3,13 +3,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-if [[ ! -f "venv/bin/python" ]]; then
-  echo "[ERROR] venv not found: $(pwd)/venv"
-  echo "Create it first: python3 -m venv venv"
-  exit 1
+if ! command -v uv >/dev/null 2>&1; then
+  echo "[INFO] uv not found. Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+  if ! command -v uv >/dev/null 2>&1; then
+    echo "[ERROR] uv was installed but is not available in this shell."
+    echo "Restart your shell or source your profile, then run this script again."
+    exit 1
+  fi
 fi
-
-source "venv/bin/activate"
 
 export ENVIRONMENT=development
 
@@ -24,5 +27,5 @@ else
   echo "[INFO] Mode: backend + react"
 fi
 
-echo "[INFO] Starting local server: python ./backend/app/main.py"
-python "./backend/app/main.py"
+echo "[INFO] Starting local server: uv run --project backend python ./backend/app/main.py"
+uv run --project backend python "./backend/app/main.py"

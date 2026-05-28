@@ -7,14 +7,14 @@ Windows 운영 실행 절차는 [`PRODUCTION_GUIDE.md`](PRODUCTION_GUIDE.md)를 
 
 ## 로컬 기동 순서
 
-1. **저장소 클론** 후 프로젝트 루트에서 Python 가상환경을 쓰는 경우 활성화합니다.
+1. **저장소 클론** 후 `uv`를 설치합니다.
 2. **환경 파일**
    - 루트: `.env.example` → `.env` 로 복사 후 값 입력 (백엔드가 **프로젝트 루트**의 `.env`를 읽습니다).
    - 프론트: `frontend/.env.example` → `frontend/.env` 로 복사 (`REACT_APP_API_BASE_URL` 등).
-3. **백엔드 의존성** (루트의 `requirements.txt`):
+3. **백엔드 의존성** (`backend/pyproject.toml` + `backend/uv.lock`):
 
    ```bash
-   pip install -r requirements.txt
+   uv sync --project backend --group dev
    ```
 
 4. **프론트 의존성**
@@ -25,11 +25,10 @@ Windows 운영 실행 절차는 [`PRODUCTION_GUIDE.md`](PRODUCTION_GUIDE.md)를 
    ```
 
 5. **서버 실행** (터미널 2개 권장)
-   - **API (FastAPI)** — 작업 디렉터리는 `backend/app` 이어야 합니다.
+   - **API (FastAPI)** — 프로젝트 루트에서 실행합니다.
 
 	 ```bash
-	 cd backend/app
-	 python main.py
+	 uv run --project backend python backend/app/main.py
 	 ```
 
 	 기본 포트: **8000** (`APP_PORT`로 변경 가능).  

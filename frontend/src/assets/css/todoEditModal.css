@@ -1,7 +1,10 @@
 /* TodoEditModal.jsx */
 
+/* layout.css .modal-content(450px)와 동일 — 800px이면 기간 입력 레이아웃 수정 후 모달이 과도하게 넓어짐 */
 .todo-edit-modal__content {
-	max-width: 800px;
+	max-width: 450px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .todo-edit__color-bar {

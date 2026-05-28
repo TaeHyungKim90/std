@@ -36,18 +36,27 @@ const btnBase = {
  * 세션 만료(401) 안내 — 즉시 리다이렉트 대신 토스트로 작성 중 폼 보호.
  * 연속 401은 짧은 시간 내 한 번만 표시합니다.
  * @param {string} loginHref 로그인(또는 지원자 로그인) 절대 경로
+ * @param {Function} onBeforeRedirect 로그인 화면 이동 전 실행할 정리 작업
  */
-export function showSessionExpiredToast(loginHref) {
+export function showSessionExpiredToast(loginHref, onBeforeRedirect) {
 	const now = Date.now();
 	if (now - lastShownAt < DEDUP_MS) return;
 	lastShownAt = now;
+
+	const redirectToLogin = (toastId) => {
+		toast.dismiss(toastId);
+		if (typeof onBeforeRedirect === 'function') {
+			onBeforeRedirect();
+		}
+		window.location.href = loginHref;
+	};
 
 	toast.custom(
 		(t) => (
 			<div style={boxStyle} role="alert">
 				<strong style={{ display: 'block', marginBottom: 6 }}>세션이 만료되었습니다</strong>
 				<span>
-					저장하지 않은 내용이 있으면 메모해 두세요. 준비되면 로그인 화면으로 이동할 수 있습니다.
+					저장하지 않은 내용이 있으면 메모해 두세요. 닫으면 로그인 화면으로 이동합니다.
 				</span>
 				<div style={actionsStyle}>
 					<button
@@ -58,7 +67,7 @@ export function showSessionExpiredToast(loginHref) {
 							color: '#ccc',
 							border: '1px solid #555',
 						}}
-						onClick={() => toast.dismiss(t.id)}
+						onClick={() => redirectToLogin(t.id)}
 					>
 						닫기
 					</button>
@@ -69,12 +78,9 @@ export function showSessionExpiredToast(loginHref) {
 							background: '#28a745',
 							color: '#fff',
 						}}
-						onClick={() => {
-							toast.dismiss(t.id);
-							window.location.href = loginHref;
-						}}
+						onClick={() => redirectToLogin(t.id)}
 					>
-						로그인으로
+						로그인으로 이동
 					</button>
 				</div>
 			</div>

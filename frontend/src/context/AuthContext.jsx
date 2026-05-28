@@ -1,5 +1,5 @@
 import { authApi } from 'api/authApi';
-import { AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
+import { AUTH_SESSION_EXPIRED_EVENT, isSessionExpiredApiError } from 'constants/authEvents';
 import { PATH_PREFIX,PATHS } from 'constants/paths';
 import React, { createContext, useCallback, useContext, useEffect, useRef,useState } from 'react';
 import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
@@ -110,6 +110,9 @@ export const AuthProvider = ({ children }) => {
 			return applyAuthCheckResult(res);
 		} catch (err) {
 			console.error("인증 확인 실패:", err);
+			if (isSessionExpiredApiError(err)) {
+				return false;
+			}
 			resetAuthState();
 			return false;
 		} finally {
@@ -125,6 +128,9 @@ export const AuthProvider = ({ children }) => {
 			return applyAuthCheckResult(res);
 		} catch (err) {
 			console.error("인증 갱신 실패:", err);
+			if (isSessionExpiredApiError(err)) {
+				return false;
+			}
 			resetAuthState();
 			return false;
 		}
@@ -134,7 +140,7 @@ export const AuthProvider = ({ children }) => {
 		checkAuth();
 	}, [checkAuth]);
 
-	// API 401(비로그인 요청 아님) — axios가 토스트만 띄우고, 여기서 직원 UI 상태만 즉시 동기화
+	// API 401(비로그인 요청 아님) — 사용자가 세션 만료 토스트를 닫은 뒤 직원 UI 상태 동기화
 	useEffect(() => {
 		const onSessionExpired = () => {
 			resetAuthState();

@@ -4,13 +4,22 @@ setlocal
 REM Run from this script's directory (project root)
 cd /d "%~dp0"
 
-if not exist "venv\Scripts\python.exe" (
-	echo [ERROR] venv not found: "%cd%\venv"
-	echo Create it first: python -m venv venv
-	exit /b 1
+where uv >nul 2>nul
+if errorlevel 1 (
+	echo [INFO] uv not found. Installing uv...
+	powershell -NoProfile -ExecutionPolicy ByPass -Command "irm https://astral.sh/uv/install.ps1 | iex"
+	if errorlevel 1 (
+		echo [ERROR] uv install failed.
+		exit /b 1
+	)
+	set "PATH=%USERPROFILE%\.local\bin;%USERPROFILE%\.cargo\bin;%PATH%"
+	where uv >nul 2>nul
+	if errorlevel 1 (
+		echo [ERROR] uv was installed but is not available in this terminal.
+		echo Restart PowerShell/CMD and run this script again.
+		exit /b 1
+	)
 )
-
-call "venv\Scripts\activate.bat"
 
 REM Local profile overrides
 set ENVIRONMENT=development
@@ -26,7 +35,7 @@ if /I "%~1"=="backend" (
 	echo [INFO] Mode: backend + react
 )
 
-echo [INFO] Starting local server: python .\backend\app\main.py
-python ".\backend\app\main.py"
+echo [INFO] Starting local server: uv run --project backend python .\backend\app\main.py
+uv run --project backend python ".\backend\app\main.py"
 
 endlocal

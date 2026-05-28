@@ -14,8 +14,8 @@ import { showSessionExpiredToast } from 'utils/showSessionExpiredToast';
  * `catch (err) { Notify.toastApiFailure(err, '…'); }` 권장 — 세션 만료 시 중복 토스트 방지.
  * React 훅은 `hooks/useApiRequest.js` 참고.
  *
- * 401(로그인 요청 제외): 즉시 location 이동하지 않고 토스트(닫기 / 로그인으로)만 띄움.
- * `AUTH_SESSION_EXPIRED_EVENT`로 AuthContext가 직원 상태를 비웁니다.
+ * 401(로그인 요청 제외): 토스트를 띄우고 사용자가 닫으면 로그인 화면으로 이동합니다.
+ * 이동 직전에 `AUTH_SESSION_EXPIRED_EVENT`로 AuthContext가 직원 상태를 비웁니다.
  */
 const baseURL = process.env.REACT_APP_API_BASE_URL ?? '';
 
@@ -93,16 +93,16 @@ client.interceptors.response.use(
 
 			console.warn('세션이 만료되어 로그인이 필요합니다.');
 
-			window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT));
+			showSessionExpiredToast(loginHref, () => {
+				window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT));
 
-			if (onCareers) {
-				sessionStorage.removeItem(APPLICANT_USER_STORAGE_KEY);
-				window.dispatchEvent(
-					new CustomEvent(APPLICANT_SESSION_UPDATED_EVENT, { detail: { user: null } })
-				);
-			}
-
-			showSessionExpiredToast(loginHref);
+				if (onCareers) {
+					sessionStorage.removeItem(APPLICANT_USER_STORAGE_KEY);
+					window.dispatchEvent(
+						new CustomEvent(APPLICANT_SESSION_UPDATED_EVENT, { detail: { user: null } })
+					);
+				}
+			});
 
 			const expiredErr = new Error('세션이 만료되어 로그인이 필요합니다.');
 			expiredErr.code = API_SESSION_EXPIRED_CODE;

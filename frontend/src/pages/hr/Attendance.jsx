@@ -24,7 +24,7 @@ function formatLocalCalendarYmd(d) {
 }
 
 const AttendanceView = () => {
-	const { joinDate, loading: authLoading, userId } = useAuth();
+	const { joinDate, loading: authLoading, userId, refreshAuth } = useAuth();
 	const [todayRecord, setTodayRecord] = useState(null);
 	const [daySessions, setDaySessions] = useState([]);
 	const [daySummary, setDaySummary] = useState(null);
@@ -169,14 +169,24 @@ const AttendanceView = () => {
 		return true;
 	};
 
+	const ensureActiveSession = useCallback(async () => {
+		setLoading(true);
+		try {
+			return await refreshAuth();
+		} finally {
+			setLoading(false);
+		}
+	}, [refreshAuth]);
+
 	const handleClockIn = async () => {
 		if (!guardDebounce()) return;
 		if (!workLocationKey) {
 			Notify.toastWarn('등록된 근무장소가 없습니다. 시스템 관리에서 근무장소를 먼저 등록해 주세요.');
 			return;
 		}
+		if (!(await ensureActiveSession())) return;
 
-		/* iOS: 클릭 직후 위치 요청을 시작해야 권한 팝업·GPS가 동작함(confirm·toast 이후면 실패하는 경우 많음) */
+		/* iOS: 세션 확인 직후 위치 요청을 시작해 확인창 전에 권한 팝업·GPS를 먼저 동작시킴 */
 		const locationPromise = attendanceApi.getCurrentLocation();
 
 		let confirmFullDayVacation = false;
@@ -232,6 +242,7 @@ const AttendanceView = () => {
 			Notify.toastWarn('퇴근 처리할 근무장소를 선택해 주세요.');
 			return;
 		}
+		if (!(await ensureActiveSession())) return;
 
 		const locationPromise = attendanceApi.getCurrentLocation();
 
