@@ -40,3 +40,7 @@ deploy_frontend.sh
 start_production.sh
 /static/index.html
 
+#그외
+.tmp_driveupload/
+.tmp_drivedownload/
+.cursor/
