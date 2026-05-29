@@ -29,13 +29,38 @@ import {
 	VACATION_DEDUCTIBLE_CATEGORIES,
 } from 'utils/todoVacationUtils';
 
+function formatAttendanceStampTitle(stamp, userNickname, userName) {
+	const nick = userNickname || userName || '직원';
+	const name = userName || nick;
+	const prefix = `[${nick}(${name})]`;
+	if (stamp.image_key === 'vacation') {
+		return `${prefix} ${stamp.vacation_label || '휴가'}`;
+	}
+	const short =
+		stamp.image_key === 'attendance_complete'
+			? '출근 완료'
+			: stamp.image_key === 'clock_in'
+				? '출근'
+				: stamp.image_key === 'clock_out'
+					? '퇴근'
+					: stamp.label;
+	return `${prefix} ${short}`;
+}
+
+function attendanceStampShortText(imageKey) {
+	if (imageKey === 'vacation') return '휴가';
+	if (imageKey === 'clock_in') return '출근';
+	if (imageKey === 'clock_out') return '퇴근';
+	return '완료';
+}
+
 const TodoListView = () => {
 	const [events, setEvents] = useState([]);
 	const [stampEvents, setStampEvents] = useState([]);
 	const holidaysRef = useRef([]);
 	const [categories, setCategories] = useState([]);
 	const [colorModal, setColorModal] = useState({isOpen: false, targetCat: null, selectedColor: '#3FAF7A', selectedDescription: ''});
-	const { userId, joinDate, resignationDate } = useAuth();
+	const { userId, userName, userNickname, joinDate, resignationDate } = useAuth();
 
 	const employmentValidRange = useMemo(() => {
 		const o = {};
@@ -52,6 +77,10 @@ const TodoListView = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const calendarRef = useRef(null);
 	const externalEventsRef = useRef(null);
+	const calendarViewRef = useRef({
+		year: new Date().getFullYear(),
+		month: new Date().getMonth() + 1,
+	});
 	const [isEditOpen, setIsEditOpen] = useState(false);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
 	const [selectedDate, setSelectedDate] = useState(null);
@@ -101,6 +130,7 @@ const TodoListView = () => {
 				start: range.start,
 				end: range.end,
 				allDay: true,
+				display: 'block',
 				backgroundColor: todo.color, borderColor: todo.color, textColor: eventTextColor,
 				startEditable: isOwner, durationEditable: isOwner, extendedProps: { ...todo, isHoliday: false }, className: todo.category === 'vacation' ? 'event-vacation' : ''
 			};
@@ -116,7 +146,7 @@ const TodoListView = () => {
 			setStampEvents(
 				stamps.map((stamp) => ({
 					id: `attendance-stamp-${stamp.work_date}-${stamp.stamp_type}`,
-					title: stamp.label,
+					title: formatAttendanceStampTitle(stamp, userNickname, userName),
 					start: stamp.work_date,
 					allDay: true,
 					editable: false,
@@ -133,18 +163,23 @@ const TodoListView = () => {
 		} catch (err) {
 			Notify.toastApiFailure(err, '출퇴근 도장을 불러오지 못했습니다.');
 		}
-	}, []);
+	}, [userName, userNickname]);
 
 	const handleCalendarDatesSet = useCallback((arg) => {
 		const baseDate = arg.view.currentStart || arg.start || new Date();
-		void fetchAttendanceStamps(baseDate.getFullYear(), baseDate.getMonth() + 1);
+		calendarViewRef.current = {
+			year: baseDate.getFullYear(),
+			month: baseDate.getMonth() + 1,
+		};
+		void fetchAttendanceStamps(calendarViewRef.current.year, calendarViewRef.current.month);
 	}, [fetchAttendanceStamps]);
 
-	const refreshTodosAfterMutation = useCallback(() => {
-		return fetchTodos().catch((err) => {
-			Notify.toastApiFailure(err, "일정 목록을 새로고침하지 못했습니다.");
+	const refreshCalendarAfterMutation = useCallback(() => {
+		const { year, month } = calendarViewRef.current;
+		return Promise.all([fetchTodos(), fetchAttendanceStamps(year, month)]).catch((err) => {
+			Notify.toastApiFailure(err, '캘린더를 새로고침하지 못했습니다.');
 		});
-	}, [fetchTodos]);
+	}, [fetchTodos, fetchAttendanceStamps]);
 
 	const refreshCategoriesAfterSave = useCallback(() => {
 		return fetchCategoriesAndConfigs().catch((err) => {
@@ -255,7 +290,7 @@ const TodoListView = () => {
 				}
 			}
 		).then(() => {
-			refreshTodosAfterMutation();
+			refreshCalendarAfterMutation();
 		}).catch((err) => {
 			console.error("일정 수정 실패:", err);
 		});
@@ -326,7 +361,7 @@ const TodoListView = () => {
 					"일정 등록 중 오류가 발생했습니다."
 			}
 		).then(() => {
-			refreshTodosAfterMutation();
+			refreshCalendarAfterMutation();
 		}).catch((err) => {
 			console.error("일정 등록 실패:", err);
 		});
@@ -442,18 +477,29 @@ const TodoListView = () => {
 					eventDrop={handleEventUpdate}
 					eventResize={handleEventUpdate}
 					eventReceive={handleEventReceive}
+					eventOrder={(a, b) => {
+						const aStamp = a.extendedProps?.isAttendanceStamp ? 1 : 0;
+						const bStamp = b.extendedProps?.isAttendanceStamp ? 1 : 0;
+						return aStamp - bStamp;
+					}}
 					eventContent={(arg) => {
-						if (!arg.event.extendedProps?.isAttendanceStamp) return undefined;
+						/* undefined면 FC v6에서 제목이 안 그려짐 → 일정 바는 true로 기본 렌더 */
+						if (!arg.event.extendedProps?.isAttendanceStamp) return true;
 						const imageKey = arg.event.extendedProps.image_key;
-						const label = arg.event.extendedProps.label || arg.event.title;
-						const text =
-							imageKey === 'vacation'
-								? '휴가'
-								: imageKey === 'clock_in'
-									? '출근'
-									: imageKey === 'clock_out'
-										? '퇴근'
-										: '완료';
+						const label = arg.event.title || arg.event.extendedProps.label;
+						if (imageKey === 'attendance_complete') {
+							return (
+								<span
+									className="attendance-stamp-event__stamp attendance-stamp-event__stamp--stacked"
+									title={label}
+									aria-label={label}
+								>
+									<span className="attendance-stamp-event__line">출근</span>
+									<span className="attendance-stamp-event__line">완료</span>
+								</span>
+							);
+						}
+						const text = attendanceStampShortText(imageKey);
 						return (
 							<span className="attendance-stamp-event__stamp" title={label} aria-label={label}>
 								{text}
@@ -466,8 +512,8 @@ const TodoListView = () => {
 			{/* 🌟 지저분했던 인라인 모달이 컴포넌트 한 줄로 깔끔해졌습니다! */}
 			<TodoTemplateModal isOpen={colorModal.isOpen} onClose={() => setColorModal({...colorModal, isOpen: false})} colorModal={colorModal} setColorModal={setColorModal} fetchCategoriesAndConfigs={refreshCategoriesAfterSave} />
 
-			<TodoEditModal key={editModalKey} isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} categories={categories} />
-			<TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={refreshTodosAfterMutation} onEditClick={handleSwitchToEdit} categories={categories} />
+			<TodoEditModal key={editModalKey} isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} mode={modalMode} selectedDate={selectedDate} event={selectedEvent} fetchTodos={refreshCalendarAfterMutation} categories={categories} />
+			<TodoDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} fetchTodos={refreshCalendarAfterMutation} onEditClick={handleSwitchToEdit} categories={categories} />
 		</div>
 	);
 };

@@ -48,6 +48,20 @@ const fmtCaptionTs = (iso) => {
 	return p ? `${p.date} ${p.time}` : '—';
 };
 
+/** 출퇴근 시각 없을 때 수정 입력 기본값: 해당 근무일 + 기본 시각 */
+const defaultDatetimeLocalForWorkDate = (workDateYmd, kind) => {
+	const ymd = String(workDateYmd || '').slice(0, 10);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
+	if (kind === 'out') return `${ymd}T18:00`;
+	return `${ymd}T09:00`;
+};
+
+const datetimeLocalForEdit = (iso, workDateYmd, kind) => {
+	const existing = toDatetimeLocalInputValue(iso);
+	if (existing) return existing;
+	return defaultDatetimeLocalForWorkDate(workDateYmd, kind);
+};
+
 /** API work_date → YYYY-MM-DD */
 const workDateToYmd = (v) => {
 	if (v == null || v === '') return '';
@@ -205,8 +219,8 @@ const UserAttendanceDrawer = ({ userId, userName, onClose }) => {
 	const openEdit = (row) => {
 		setEditingId(row.id);
 		setDraft({
-			clock_in_time: toDatetimeLocalInputValue(row.clock_in_time),
-			clock_out_time: toDatetimeLocalInputValue(row.clock_out_time),
+			clock_in_time: datetimeLocalForEdit(row.clock_in_time, row.work_date, 'in'),
+			clock_out_time: datetimeLocalForEdit(row.clock_out_time, row.work_date, 'out'),
 			status: row.status || 'NORMAL',
 		});
 	};
