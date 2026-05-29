@@ -148,10 +148,8 @@ describe('MyReports', () => {
 
 		await userEvent.click(await screen.findByRole('tab', { name: '월간 보고' }));
 
-		await waitFor(() => {
-			expect(reportApi.getMonthly).toHaveBeenCalled();
-			expect(reportApi.getDailyRange).toHaveBeenCalled();
-		});
+		await waitFor(() => expect(reportApi.getMonthly).toHaveBeenCalled());
+		await waitFor(() => expect(reportApi.getDailyRange).toHaveBeenCalled());
 
 		const textarea = await screen.findByPlaceholderText(/해당 월 업무를 요약/);
 		await userEvent.clear(textarea);

@@ -56,7 +56,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		setEndYmd(end);
 		setTitle('');
 		setDescription('');
-	}, [isOpen, mode, event?.id, selectedDate?.start, selectedDate?.end]);
+	}, [isOpen, mode, event, selectedDate?.start, selectedDate?.end]);
 
 	useEffect(() => {
 		if (!isOpen || mode !== 'create' || category) return;
@@ -95,7 +95,7 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 		}
 	};
 
-	const [formError, submitAction, isPending] = useActionState(async (prevState, _formData) => {
+	const [formError, submitAction, isPending] = useActionState(async (_prevState, _formData) => {
 		const trimmedTitle = String(title).trim();
 		if (!trimmedTitle) return '제목을 입력하세요.';
 

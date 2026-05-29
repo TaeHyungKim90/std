@@ -673,7 +673,6 @@ const MyReports = () => {
 		const lines = [];
 		for (const ymd of enumerateYmdInclusive(dateFrom, dateTo)) {
 			const hit = monthDailies.find((x) => x.report_date === ymd);
-			const hasDailyReport = Boolean(hit);
 			const clockCtx = monthClockContexts[ymd] ?? null;
 			const isVacationDay = isVacationContext(clockCtx);
 			const isPublicHoliday = holidayDates.has(ymd) || clockCtx?.is_public_holiday;
