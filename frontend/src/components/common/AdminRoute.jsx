@@ -1,7 +1,7 @@
 import 'assets/css/admin.css';
 
-import { PATHS } from 'constants/paths';
 import { AuthContext } from 'context/AuthContext';
+import { useAppPaths } from 'context/TenantContext';
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
@@ -9,6 +9,7 @@ import * as Notify from 'utils/toastUtils';
 import LoadingBar from './LoadingBar';
 
 const AdminRoute = () => {
+	const paths = useAppPaths();
 	const { isLoggedIn, userRole, loading } = useContext(AuthContext);
 
 	// 1. 로딩 중 대기
@@ -23,13 +24,13 @@ const AdminRoute = () => {
 
 	// 2. 로그인이 안 되어 있으면 로그인 창으로
 	if (!isLoggedIn) {
-		return <Navigate to={PATHS.LOGIN} replace />;
+		return <Navigate to={paths.LOGIN} replace />;
 	}
 
 	// 🚨 3. 로그인은 했지만 관리자가 아니라면 튕겨냄 (핵심!)
 	if (userRole !== 'admin') {
 		Notify.toastWarn("관리자 권한이 필요합니다.");
-		return <Navigate to={PATHS.MY_TODOS} replace />;
+		return <Navigate to={paths.MY_TODOS} replace />;
 	}
 
 	// 4. 관리자가 맞으면 통과!

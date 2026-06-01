@@ -25,6 +25,7 @@ from utils.seoul_time import today_seoul
 
 def get_all_attendance(
 	db: Session,
+	tenant_id: int,
 	user_name: str | None = None,
 	work_date: str | None = None,
 	skip: int = 0,
@@ -78,6 +79,7 @@ def get_all_attendance(
 			(Attendance.user_id == User.user_login_id) & (Attendance.work_date == parsed_work_date),
 		)
 		.filter(
+			User.tenant_id == tenant_id,
 			User.join_date.isnot(None),  # 입사일 미등록자 제외
 			User.join_date <= parsed_work_date,
 			or_(User.resignation_date == None, User.resignation_date >= parsed_work_date),  # noqa: E711
@@ -237,8 +239,12 @@ def _calendar_row_enrichment(
 	}
 
 
+from services.tenant_scope import require_user_by_login_id
+
+
 def get_user_attendance_range(
 	db: Session,
+	tenant_id: int,
 	user_login_id: str,
 	start_date: str | None,
 	end_date: str | None,
@@ -251,9 +257,7 @@ def get_user_attendance_range(
 	"""
 	start_d, end_d = _parse_range_dates(start_date, end_date)
 	today = today_seoul()
-	user = db.query(User).filter(User.user_login_id == user_login_id).first()
-	if not user:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	user = require_user_by_login_id(db, tenant_id, user_login_id)
 
 	join_date = cast(date_type | None, user.join_date)
 	resignation_date = cast(date_type | None, user.resignation_date)
@@ -280,6 +284,7 @@ def get_user_attendance_range(
 
 	holiday_rows = (
 		db.query(Holiday.holiday_date, Holiday.holiday_name)
+		.filter(Holiday.tenant_id == tenant_id)
 		.filter(Holiday.holiday_date >= start_d, Holiday.holiday_date <= end_d)
 		.all()
 	)
@@ -312,8 +317,8 @@ def get_user_attendance_range(
 				"work_date": r.work_date,
 				"clock_in_time": r.clock_in_time,
 				"clock_out_time": r.clock_out_time,
-				"clock_in_location": format_stored_work_location_for_display(db, r.clock_in_location),
-				"clock_out_location": format_stored_work_location_for_display(db, r.clock_out_location),
+				"clock_in_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_in_location)),
+				"clock_out_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_out_location)),
 				"status": r.status,
 				"work_minutes": r.work_minutes,
 				"night_work_minutes": int(getattr(r, "night_work_minutes", None) or 0),

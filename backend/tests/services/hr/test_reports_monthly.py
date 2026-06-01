@@ -23,6 +23,7 @@ def user_joined(db_session):
 	u = User(
 		id=1,
 		user_login_id="monthly_user",
+		tenant_id=1,
 		user_password="x",
 		user_name="Monthly User",
 		join_date=date(2020, 1, 1),
@@ -38,15 +39,15 @@ def test_first_of_month_normalizes():
 
 def test_upsert_and_get_monthly(db_session, user_joined):
 	ms = date(2025, 8, 1)
-	row = reports_service.upsert_monthly(db_session, "monthly_user", ms, "8월 요약")
+	row = reports_service.upsert_monthly(db_session, 1, "monthly_user", ms, "8월 요약")
 	assert row.summary == "8월 요약"
-	got = reports_service.get_monthly(db_session, "monthly_user", date(2025, 8, 15))
+	got = reports_service.get_monthly(db_session, 1, "monthly_user", date(2025, 8, 15))
 	assert got is not None
 	assert cast(str, got.summary) == "8월 요약"
 
 
 def test_upsert_normalizes_mid_month_to_first(db_session, user_joined):
-	row = reports_service.upsert_monthly(db_session, "monthly_user", date(2025, 9, 20), "9월")
+	row = reports_service.upsert_monthly(db_session, 1, "monthly_user", date(2025, 9, 20), "9월")
 	assert cast(date, row.month_start_date) == date(2025, 9, 1)
 
 
@@ -54,6 +55,7 @@ def test_upsert_rejects_after_resignation(db_session):
 	u = User(
 		id=2,
 		user_login_id="resigned",
+		tenant_id=1,
 		user_password="x",
 		user_name="Resigned",
 		join_date=date(2020, 1, 1),
@@ -64,6 +66,7 @@ def test_upsert_rejects_after_resignation(db_session):
 	with pytest.raises(HTTPException) as exc:
 		reports_service.upsert_monthly(
 			db_session,
+			1,
 			"resigned",
 			date(2025, 7, 1),
 			"too late",
@@ -75,6 +78,7 @@ def test_get_monthly_none_when_month_after_resignation(db_session):
 	u = User(
 		id=3,
 		user_login_id="resigned2",
+		tenant_id=1,
 		user_password="x",
 		user_name="Resigned2",
 		join_date=date(2020, 1, 1),
@@ -90,5 +94,5 @@ def test_get_monthly_none_when_month_after_resignation(db_session):
 		)
 	)
 	db_session.commit()
-	assert reports_service.get_monthly(db_session, "resigned2", date(2025, 7, 1)) is None
-	assert reports_service.get_monthly(db_session, "resigned2", date(2025, 6, 1)) is not None
+	assert reports_service.get_monthly(db_session, 1, "resigned2", date(2025, 7, 1)) is None
+	assert reports_service.get_monthly(db_session, 1, "resigned2", date(2025, 6, 1)) is not None

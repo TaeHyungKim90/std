@@ -180,7 +180,7 @@ def test_exclude_resigned_user():
 	db.set_context_work_date(work_date)
 
 	# When: 보고서 일일 현황 조회 실행
-	rows = reports_service.list_daily_status(db, work_date)
+	rows = reports_service.list_daily_status(db, 1, work_date)
 
 	# Then: 퇴사자가 결과에서 제외됨을 검증
 	ids = {r["user_login_id"] for r in rows}
@@ -214,11 +214,11 @@ def test_report_status_vacation_or_holiday(monkeypatch, case: str):
 	monkeypatch.setattr(
 		reports_service,
 		"_is_public_holiday",
-		lambda _db, d: d in holiday_dates,
+		lambda _db, _tid, d: d in holiday_dates,
 	)
 
 	# When: 상태 판별 로직 실행
-	rows = reports_service.list_daily_status(db, work_date)
+	rows = reports_service.list_daily_status(db, 1, work_date)
 
 	# Then: MISSING이 아니라 VACATION 또는 HOLIDAY로 반환되는지 검증
 	assert len(rows) == 1
@@ -248,6 +248,7 @@ def _seed_user(db, *, login_id: str, name: str = "직원"):
 	u = User(
 		id=hash(login_id) % 10_000 + 1,
 		user_login_id=login_id,
+		tenant_id=1,
 		user_password="x",
 		user_name=name,
 		join_date=date(2020, 1, 1),
@@ -265,7 +266,7 @@ def test_list_month_status_submitted(admin_db_session):
 	)
 	admin_db_session.commit()
 
-	rows = reports_service.list_month_status(admin_db_session, month_start)
+	rows = reports_service.list_month_status(admin_db_session, 1, month_start)
 	assert len(rows) == 1
 	assert rows[0]["monthly_status"] == "SUBMITTED"
 	assert rows[0]["monthly_submitted"] is True
@@ -276,7 +277,7 @@ def test_list_month_status_missing(admin_db_session):
 	month_start = date(2026, 5, 1)
 	_seed_user(admin_db_session, login_id="u2")
 
-	rows = reports_service.list_month_status(admin_db_session, month_start)
+	rows = reports_service.list_month_status(admin_db_session, 1, month_start)
 	assert len(rows) == 1
 	assert rows[0]["monthly_status"] == "MISSING"
 	assert rows[0]["monthly_submitted"] is False
@@ -292,13 +293,13 @@ def test_list_month_status_holiday_month(admin_db_session):
 	while d <= month_end:
 		if d.weekday() < 5:
 			admin_db_session.add(
-				Holiday(id=hid, holiday_date=d, holiday_name="테스트휴일", is_official=False)
+				Holiday(id=hid, tenant_id=1, holiday_date=d, holiday_name="테스트휴일", is_official=False)
 			)
 			hid += 1
 		d += timedelta(days=1)
 	admin_db_session.commit()
 
-	rows = reports_service.list_month_status(admin_db_session, month_start)
+	rows = reports_service.list_month_status(admin_db_session, 1, month_start)
 	assert len(rows) == 1
 	assert rows[0]["monthly_status"] == "HOLIDAY"
 
@@ -319,6 +320,6 @@ def test_list_month_status_vacation_month(admin_db_session):
 		d += timedelta(days=1)
 	admin_db_session.commit()
 
-	rows = reports_service.list_month_status(admin_db_session, month_start)
+	rows = reports_service.list_month_status(admin_db_session, 1, month_start)
 	assert len(rows) == 1
 	assert rows[0]["monthly_status"] == "VACATION"

@@ -4,42 +4,56 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from fastapi import HTTPException
-from constants.vacation_categories import (
-	VACATION_TODO_CATEGORIES,
-)
+from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.hr_models import Todo
 from models.auth_models import User
 from services.admin.user_service import sync_user_vacation
-
-def get_all_todos_with_author(db: Session, skip: int = 0, limit: int = 100):
-	return db.query(Todo).options(joinedload(Todo.author)).order_by(Todo.created_at.desc()).offset(skip).limit(limit).all()
+from services.tenant_scope import get_user_by_login_id
 
 
-def count_all_todos(db: Session) -> int:
-	return db.query(Todo).count()
+def get_all_todos_with_author(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
+	return (
+		db.query(Todo)
+		.join(User, Todo.user_id == User.user_login_id)
+		.filter(User.tenant_id == tenant_id)
+		.options(joinedload(Todo.author))
+		.order_by(Todo.created_at.desc())
+		.offset(skip)
+		.limit(limit)
+		.all()
+	)
 
-def delete_todo_by_admin(db: Session, todo_id: int):
-	todo = db.query(Todo).filter(Todo.id == todo_id).first()
+
+def count_all_todos(db: Session, tenant_id: int) -> int:
+	return (
+		db.query(Todo)
+		.join(User, Todo.user_id == User.user_login_id)
+		.filter(User.tenant_id == tenant_id)
+		.count()
+	)
+
+
+def delete_todo_by_admin(db: Session, tenant_id: int, todo_id: int):
+	todo = (
+		db.query(Todo)
+		.join(User, Todo.user_id == User.user_login_id)
+		.filter(Todo.id == todo_id, User.tenant_id == tenant_id)
+		.first()
+	)
 	if not todo:
-		raise HTTPException( status_code=404, detail="삭제하려는 일정을 찾을 수 없습니다." )
+		raise HTTPException(status_code=404, detail="삭제하려는 일정을 찾을 수 없습니다.")
 
 	user_id = str(todo.user_id)
-	user = db.query(User).filter(User.user_login_id == user_id).first()
+	user = get_user_by_login_id(db, tenant_id, user_id)
 	db.delete(todo)
 	db.flush()
 	if user:
 		sync_user_vacation(db, user)
 	db.commit()
-	return {"status": "success", "message": f"일정이 관리자에 의해 삭제되었습니다."}
+	return {"status": "success", "message": "일정이 관리자에 의해 삭제되었습니다."}
 
 
-def get_vacation_todos_for_date(db: Session, work_date: str | date):
-	"""
-	특정 날짜(work_date)에 걸쳐있는 '연차/휴가' todo 목록 조회.
-	- overlap 기준: start_date <= day_end AND (end_date IS NULL OR end_date >= day_start)
-	- 조회 카테고리: 연차/휴가로 정의된 todo category_key들
-	"""
-
+def get_vacation_todos_for_date(db: Session, tenant_id: int, work_date: str | date):
 	if isinstance(work_date, str):
 		parsed = datetime.strptime(work_date, "%Y-%m-%d").date()
 	else:
@@ -50,6 +64,8 @@ def get_vacation_todos_for_date(db: Session, work_date: str | date):
 
 	q = (
 		db.query(Todo)
+		.join(User, Todo.user_id == User.user_login_id)
+		.filter(User.tenant_id == tenant_id)
 		.options(joinedload(Todo.author))
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(

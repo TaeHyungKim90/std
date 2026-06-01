@@ -26,8 +26,8 @@ def seed_active_work_locations(db_session):
 	if db_session.query(WorkLocation).count() == 0:
 		db_session.add_all(
 			[
-				WorkLocation(location_key="company", location_value="회사", is_active=True),
-				WorkLocation(location_key="hq", location_value="본사", is_active=True),
+				WorkLocation(tenant_id=1, location_key="company", location_value="회사", is_active=True),
+				WorkLocation(tenant_id=1, location_key="hq", location_value="본사", is_active=True),
 			]
 		)
 		db_session.commit()
@@ -38,6 +38,7 @@ def user_joined(db_session):
 	u = User(
 		id=1,
 		user_login_id="clock_user",
+		tenant_id=1,
 		user_password="x",
 		user_name="Clock User",
 		join_date=date(2020, 1, 1),
@@ -71,7 +72,7 @@ def test_vacation_full_requires_confirm(db_session, user_joined):
 	_add_vacation_todo(db_session, "clock_user", "vacation_full", d)
 	with pytest.raises(HTTPException) as ei:
 		hr_att.check_clock_in_allowed(
-			db_session,
+			db_session, 1,
 			"clock_user",
 			_dt(d),
 			confirm_full_day_vacation=False,
@@ -86,7 +87,7 @@ def test_vacation_full_allowed_with_confirm(db_session, user_joined):
 	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_full", d)
 	hr_att.check_clock_in_allowed(
-		db_session,
+			db_session, 1,
 		"clock_user",
 		_dt(d),
 		confirm_full_day_vacation=True,
@@ -99,7 +100,7 @@ def test_official_leave_requires_confirm(db_session, user_joined):
 	_add_vacation_todo(db_session, "clock_user", "official_leave", d)
 	with pytest.raises(HTTPException) as ei:
 		hr_att.check_clock_in_allowed(
-			db_session,
+			db_session, 1,
 			"clock_user",
 			_dt(d),
 			confirm_full_day_vacation=False,
@@ -114,7 +115,7 @@ def test_vacation_sick_does_not_require_confirm(db_session, user_joined):
 	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_sick", d)
 	hr_att.check_clock_in_allowed(
-		db_session,
+			db_session, 1,
 		"clock_user",
 		_dt(d),
 		confirm_full_day_vacation=False,
@@ -126,7 +127,7 @@ def test_half_day_todo_does_not_require_confirm(db_session, user_joined):
 	d = today_seoul()
 	_add_vacation_todo(db_session, "clock_user", "vacation_am", d)
 	hr_att.check_clock_in_allowed(
-		db_session,
+			db_session, 1,
 		"clock_user",
 		_dt(d),
 		confirm_full_day_vacation=False,
@@ -150,7 +151,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 
 	now = _dt(d, 10, 30)
 	rec = hr_att.create_clock_in(
-		db_session,
+			db_session, 1,
 		"clock_user",
 		now,
 		record_status="NORMAL",
@@ -202,7 +203,7 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 	db_session.refresh(rec)
 
 	hr_att.update_clock_out(
-		db_session,
+			db_session, 1,
 		rec,
 		cout,
 		record_status="NORMAL",
@@ -241,7 +242,7 @@ def test_update_clock_out_sets_night_and_tiered_break(db_session, user_joined):
 	db_session.refresh(rec)
 
 	hr_att.update_clock_out(
-		db_session,
+			db_session, 1,
 		rec,
 		cout,
 		record_status="NORMAL",
@@ -266,11 +267,11 @@ def test_get_clock_context_flags(db_session, user_joined):
 	_add_vacation_todo(db_session, "clock_user", "vacation_am", d)
 
 	db_session.add(
-		Holiday(holiday_date=d, holiday_name="테스트공휴일", is_official=True)
+		Holiday(tenant_id=1, holiday_date=d, holiday_name="테스트공휴일", is_official=True)
 	)
 	db_session.commit()
 
-	ctx = hr_att.get_clock_context(db_session, "clock_user", d)
+	ctx = hr_att.get_clock_context(db_session, 1, "clock_user", d)
 	assert ctx["requires_full_day_vacation_confirm"] is True
 	assert ctx["has_half_day_vacation"] is True
 	assert ctx["is_public_holiday"] is True

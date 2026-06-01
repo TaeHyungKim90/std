@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from models.auth_models import User
+from models.tenant_models import Tenant
 from schemas import auth_schemas
 from core.security import verify_password, get_password_hash, decode_auth_token # 👈 분리된 보안 로직 임포트
+from core.tenant import assert_token_tenant_matches, require_tenant
 
 # 💡 핵심: auto_error=False로 설정하여 헤더에 토큰이 없어도 바로 터지지 않고 쿠키를 검사할 기회를 줍니다.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
@@ -61,11 +63,31 @@ def get_current_admin(current_user: dict = Depends(get_current_user)):
 	return current_user
 
 
+async def get_current_user_for_tenant(
+	current_user: dict = Depends(get_current_user),
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""JWT 테넌트와 요청 헤더(X-Tenant-Slug) 테넌트 일치 검증."""
+	assert_token_tenant_matches(current_user, tenant)
+	return current_user
+
+
+async def get_current_admin_for_tenant(
+	current_user: dict = Depends(get_current_user_for_tenant),
+):
+	if current_user.get("role") != "admin":
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="관리자 권한이 없습니다.",
+		)
+	return current_user
+
+
 # ==========================================
 # 🧑‍💻 3. 비즈니스 로직 (DB 조작 - 로그인, 가입)
 # ==========================================
-def authenticate_user(db: Session, login_id: str, pw: str):
-	"""일반 로그인 유저 검증"""
+def authenticate_user(db: Session, login_id: str, pw: str, tenant_id: int):
+	"""일반 로그인 유저 검증 (테넌트 스코프)"""
 	# 👈 수정된 부분: 소셜 계정은 일반 로그인 폼으로 접근 불가하도록 차단 (이중 보안)
 	if login_id.startswith(("kakao_", "naver_")):
 		raise HTTPException(
@@ -73,7 +95,11 @@ def authenticate_user(db: Session, login_id: str, pw: str):
 			detail="소셜 가입 계정입니다. 해당하는 소셜 로그인 버튼을 이용해주세요."
 		)
 	
-	user = db.query(User).filter(User.user_login_id == login_id).first()
+	user = (
+		db.query(User)
+		.filter(User.user_login_id == login_id, User.tenant_id == tenant_id)
+		.first()
+	)
 	if not user or not verify_password(pw, user.user_password):
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -81,17 +107,23 @@ def authenticate_user(db: Session, login_id: str, pw: str):
 		)
 	return user
 
-def check_user_exists(db: Session, login_id: str):
-	"""아이디 중복 체크"""
-	return db.query(User).filter(User.user_login_id == login_id).first() is not None
+def check_user_exists(db: Session, login_id: str, tenant_id: int):
+	"""아이디 중복 체크 (테넌트 내)"""
+	return (
+		db.query(User)
+		.filter(User.user_login_id == login_id, User.tenant_id == tenant_id)
+		.first()
+		is not None
+	)
 
-def create_new_user(db: Session, user_data: auth_schemas.UserCreate):
+def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: int):
 	"""일반 회원가입 (신규 유저 DB 등록)"""
-	if check_user_exists(db, user_data.user_login_id):
+	if check_user_exists(db, user_data.user_login_id, tenant_id):
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 사용 중인 아이디입니다.")
 	
 	hashed_password = get_password_hash(user_data.user_password)
 	new_user = User(
+		tenant_id=tenant_id,
 		user_login_id=user_data.user_login_id,
 		user_password=hashed_password,
 		user_name=user_data.user_name,
@@ -119,11 +151,16 @@ def process_social_login(
 	nickname: str,
 	phone: str | None = None,
 	*,
+	tenant_id: int,
 	allow_create: bool = True,
 ) -> tuple[User, bool]:
-	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통)"""
+	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통) — 테넌트별 계정"""
 	user_login_id = f"{provider}_{provider_id}"
-	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	user = (
+		db.query(User)
+		.filter(User.user_login_id == user_login_id, User.tenant_id == tenant_id)
+		.first()
+	)
 	created = False
 
 	clean_phone = None
@@ -144,6 +181,7 @@ def process_social_login(
 		secure_random_password = secrets.token_urlsafe(32)
 		hashed_password = get_password_hash(secure_random_password)
 		user = User(
+			tenant_id=tenant_id,
 			user_login_id=user_login_id,
 			user_password=hashed_password, 
 			user_name=name,

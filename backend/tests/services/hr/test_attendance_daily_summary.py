@@ -16,6 +16,7 @@ def test_refresh_daily_summary_two_sessions_overtime():
 			User(
 				id=1,
 				user_login_id="sum_user",
+		tenant_id=1,
 				user_password="x",
 				user_name="Sum User",
 				join_date=date(2020, 1, 1),
@@ -51,6 +52,7 @@ def test_refresh_ignores_open_session():
 			User(
 				id=1,
 				user_login_id="open_user",
+		tenant_id=1,
 				user_password="x",
 				user_name="Open User",
 				join_date=date(2020, 1, 1),

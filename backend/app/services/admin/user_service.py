@@ -21,9 +21,10 @@ class VacationUsageItem:
 	end_date: datetime | None = None
 
 # 1. 전체 사용자 목록 조회
-def get_all_users(db: Session):
+def get_all_users(db: Session, tenant_id: int):
 	return (
 		db.query(User)
+		.filter(User.tenant_id == tenant_id)
 		.options(
 			joinedload(User.vacation),
 			joinedload(User.avatar_setting),
@@ -35,17 +36,27 @@ def get_all_users(db: Session):
 	)
 
 
-def _resolve_department_position(db: Session, payload) -> tuple[int | None, int | None]:
+def _resolve_department_position(
+	db: Session, payload, tenant_id: int
+) -> tuple[int | None, int | None]:
 	department_id = getattr(payload, "department_id", None)
 	position_id = getattr(payload, "position_id", None)
 
 	if department_id is not None:
-		department = db.query(Department).filter(Department.id == department_id).first()
+		department = (
+			db.query(Department)
+			.filter(Department.id == department_id, Department.tenant_id == tenant_id)
+			.first()
+		)
 		if not department:
 			raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
 
 	if position_id is not None:
-		position = db.query(Position).filter(Position.id == position_id).first()
+		position = (
+			db.query(Position)
+			.filter(Position.id == position_id, Position.tenant_id == tenant_id)
+			.first()
+		)
 		if not position:
 			raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
 
@@ -173,14 +184,19 @@ def sync_user_vacation(db: Session, user: User, today: date | None = None) -> Us
 	return vacation_record
 
 # 2. 신규 사용자 등록 (관리자용)
-def create_user_by_admin(db: Session, payload: UserCreate):
-	existing_user = db.query(User).filter(User.user_login_id == payload.user_login_id).first()
+def create_user_by_admin(db: Session, payload: UserCreate, tenant_id: int):
+	existing_user = (
+		db.query(User)
+		.filter(User.user_login_id == payload.user_login_id, User.tenant_id == tenant_id)
+		.first()
+	)
 	if existing_user:
 		raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
 	hashed_pw = get_password_hash(payload.user_password)
-	department_id, position_id = _resolve_department_position(db, payload)
+	department_id, position_id = _resolve_department_position(db, payload, tenant_id)
 	new_user = User(
+		tenant_id=tenant_id,
 		user_login_id=payload.user_login_id,
 		user_password=hashed_pw,
 		user_name=payload.user_name,
@@ -214,8 +230,8 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 	return new_user
 
 # 3. 사용자 정보 수정
-def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
-	user = db.query(User).filter(User.id == user_id).first()
+def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate, tenant_id: int):
+	user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
 	if not user:
 		raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
@@ -239,7 +255,11 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 		if department_id is None:
 			user.department_id = None
 		else:
-			department = db.query(Department).filter(Department.id == department_id).first()
+			department = (
+				db.query(Department)
+				.filter(Department.id == department_id, Department.tenant_id == tenant_id)
+				.first()
+			)
 			if not department:
 				raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
 			user.department_id = department_id
@@ -248,7 +268,11 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 		if position_id is None:
 			user.position_id = None
 		else:
-			position = db.query(Position).filter(Position.id == position_id).first()
+			position = (
+				db.query(Position)
+				.filter(Position.id == position_id, Position.tenant_id == tenant_id)
+				.first()
+			)
 			if not position:
 				raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
 			user.position_id = position_id
@@ -282,9 +306,9 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 	)
 	return updated_user or user
 
-def delete_user_by_admin(db: Session, user_id: int):
+def delete_user_by_admin(db: Session, user_id: int, tenant_id: int):
 	# 1. 대상 사용자 조회
-	user = db.query(User).filter(User.id == user_id).first()
+	user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
 	if not user:
 		raise HTTPException(status_code=404, detail="삭제하려는 사용자를 찾을 수 없습니다.")
 	db.delete(user)
@@ -292,12 +316,13 @@ def delete_user_by_admin(db: Session, user_id: int):
 	
 	return {"status": "success", "message": f"사용자 '{user.user_login_id}'가 성공적으로 삭제되었습니다."}
 
-def sync_all_users_vacation(db: Session):
+def sync_all_users_vacation(db: Session, tenant_id: int):
 	"""모든 재직자의 입사일을 기준으로 연차를 자동 정산하여 테이블에 저장합니다."""
 	# 입사일이 있고, 퇴사하지 않은(재직중인) 유저만 가져옵니다.
 	users = db.query(User).filter(
+		User.tenant_id == tenant_id,
 		User.join_date.isnot(None),
-		User.resignation_date.is_(None)
+		User.resignation_date.is_(None),
 	).all()
 	
 	today = today_seoul()

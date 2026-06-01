@@ -86,10 +86,11 @@ def summary_dict_for_work_date(db: Session, user_id: str, work_date: date) -> di
 		)
 		if stored is None:
 			return None
+		st: Any = stored
 		return {
-			"total_work_minutes": int(stored.total_work_minutes or 0),
-			"overtime_minutes": int(stored.overtime_minutes or 0),
-			"total_night_minutes": int(stored.total_night_minutes or 0),
+			"total_work_minutes": int(st.total_work_minutes or 0),
+			"overtime_minutes": int(st.overtime_minutes or 0),
+			"total_night_minutes": int(st.total_night_minutes or 0),
 		}
 	total_work = 0
 	total_night = 0

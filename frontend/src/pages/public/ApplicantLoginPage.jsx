@@ -1,5 +1,5 @@
 import { recruitmentApi } from 'api/recruitmentApi';
-import { PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
 import { clearCachedApplicantUser,syncApplicantSessionFromServer } from 'utils/applicantSession';
@@ -8,6 +8,7 @@ import * as Notify from 'utils/toastUtils';
 import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 
 const ApplicantLoginPage = () => {
+	const paths = useAppPaths();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [loginForm, setLoginForm] = useState({ email_id: '', password: '' });
@@ -32,7 +33,7 @@ const ApplicantLoginPage = () => {
 		).then(() =>
 			syncApplicantSessionFromServer().then((me) => {
 				if (!me?.isLoggedIn) throw new Error('지원자 세션 확인에 실패했습니다.');
-				const returnUrl = location.state?.returnUrl || PATHS.CAREERS;
+				const returnUrl = location.state?.returnUrl || paths.CAREERS;
 				navigate(returnUrl, { replace: true, state: location.state });
 			})
 		).catch((error) => {
@@ -76,7 +77,7 @@ const ApplicantLoginPage = () => {
 				
 				<div className="applicant-login__footer">
 					아직 계정이 없으신가요? &nbsp;
-					<Link to={PATHS.CAREERS_SIGNUP} className="applicant-login__footer-link">회원가입</Link>
+					<Link to={paths.CAREERS_SIGNUP} className="applicant-login__footer-link">회원가입</Link>
 				</div>
 			</div>
 		</div>

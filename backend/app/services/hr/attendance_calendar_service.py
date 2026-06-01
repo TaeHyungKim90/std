@@ -48,6 +48,7 @@ def vacation_summary(day_todos: list[Todo]) -> str | None:
 
 def build_month_context(
 	db: Session,
+	tenant_id: int,
 	user_ids: list[str],
 	start_d: date,
 	end_d: date,
@@ -92,6 +93,7 @@ def build_month_context(
 
 	holiday_rows = (
 		db.query(Holiday.holiday_date, Holiday.holiday_name)
+		.filter(Holiday.tenant_id == tenant_id)
 		.filter(Holiday.holiday_date >= start_d, Holiday.holiday_date <= end_d)
 		.all()
 	)
@@ -118,9 +120,9 @@ def summarize_attendance_records(records: list[Attendance]) -> dict[str, Any]:
 	}
 
 
-def get_user_monthly_stamps(db: Session, user_id: str, year: int, month: int) -> dict[str, Any]:
+def get_user_monthly_stamps(db: Session, tenant_id: int, user_id: str, year: int, month: int) -> dict[str, Any]:
 	start_d, end_d = month_bounds(year, month)
-	ctx = build_month_context(db, [user_id], start_d, end_d)
+	ctx = build_month_context(db, tenant_id, [user_id], start_d, end_d)
 	records_by_day = ctx["records_by_user_day"].get(user_id, {})
 	todos_by_day = ctx["todos_by_user_day"].get(user_id, {})
 

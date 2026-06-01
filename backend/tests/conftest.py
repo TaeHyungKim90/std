@@ -27,6 +27,8 @@ _env.setdefault("NAVER_CLIENT_ID", "pytest")
 _env.setdefault("NAVER_CLIENT_SECRET", "pytest")
 _env.setdefault("PUBLIC_DATA_API_KEY", "pytest")
 _env.setdefault("ENVIRONMENT", "development")
+_env.setdefault("BOOTSTRAP_DEFAULT_ADMIN", "true")
+_env.setdefault("DEFAULT_TENANT_SLUG", "valuesplay")
 
 _BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 _APP_DIR = os.path.join(_BACKEND_DIR, "app")
@@ -43,6 +45,9 @@ from integration_constants import (
 	INTEGRATION_LOGIN_PASSWORD,
 )
 
+DEFAULT_TENANT_SLUG = "valuesplay"
+TENANT_HEADERS = {"X-Tenant-Slug": DEFAULT_TENANT_SLUG}
+
 
 def pytest_sessionfinish(session, exitstatus):
 	try:
@@ -52,7 +57,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def _signup_or_exists(client: TestClient, payload: dict) -> None:
-	r = client.post("/api/auth/signup", json=payload)
+	r = client.post("/api/auth/signup", json=payload, headers=TENANT_HEADERS)
 	if r.status_code == status.HTTP_200_OK:
 		return
 	detail = ""
@@ -69,7 +74,7 @@ def _signup_or_exists(client: TestClient, payload: dict) -> None:
 def ensure_integration_users():
 	import main as app_main
 
-	with TestClient(app_main.app) as client:
+	with TestClient(app_main.app, headers=TENANT_HEADERS) as client:
 		base = {
 			"user_password": INTEGRATION_LOGIN_PASSWORD,
 			"user_name": "통합테스트",
@@ -91,10 +96,11 @@ def ensure_integration_users():
 def integration_admin_client(ensure_integration_users):
 	import main as app_main
 
-	with TestClient(app_main.app) as c:
+	with TestClient(app_main.app, headers=TENANT_HEADERS) as c:
 		r = c.post(
 			"/api/auth/login",
 			json={"id": INTEGRATION_ADMIN_LOGIN_ID, "pw": INTEGRATION_LOGIN_PASSWORD},
+			headers=TENANT_HEADERS,
 		)
 		assert r.status_code == status.HTTP_200_OK, r.text
 		yield c
@@ -104,10 +110,11 @@ def integration_admin_client(ensure_integration_users):
 def integration_employee_client(ensure_integration_users):
 	import main as app_main
 
-	with TestClient(app_main.app) as c:
+	with TestClient(app_main.app, headers=TENANT_HEADERS) as c:
 		r = c.post(
 			"/api/auth/login",
 			json={"id": INTEGRATION_EMPLOYEE_LOGIN_ID, "pw": INTEGRATION_LOGIN_PASSWORD},
+			headers=TENANT_HEADERS,
 		)
 		assert r.status_code == status.HTTP_200_OK, r.text
 		yield c

@@ -2,7 +2,7 @@
 // 웹 브릿지(WebView ↔ 네이티브) 연결 테스트: 상위 페이지 `pages/auth/LoginPage.jsx`의
 // 「앱 브릿지 연결 테스트」 버튼에서 `window.ReactNativeWebView.postMessage` 호출로 검증합니다.
 import { authApi } from 'api/authApi';
-import { PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
 import React, { useEffect, useRef,useState } from 'react';
@@ -14,6 +14,7 @@ import { warnApiBaseMismatchOnLogin } from 'utils/warnApiBaseMismatch';
 import SocialButtons from './SocialButtons';
 
 const LoginForm = () => {
+	const paths = useAppPaths();
 	const [id, setId] = useState('');
 	const [pw, setPw] = useState('');
 	const [error, setError] = useState('');
@@ -30,7 +31,7 @@ const LoginForm = () => {
 	useEffect(() => {
 		// 로딩이 끝났고(false), 로그인 상태(true)라면 '/my/todos' 로 이동 (이미 로그인된 채 로그인 페이지 진입)
 		if (!loading && isLoggedIn) {
-			navigate(PATHS.MY_TODOS);
+			navigate(paths.MY_TODOS);
 		}
 
 		// 컴포넌트가 사라질 때(unmount) 실행 중인 타이머가 있다면 제거
@@ -75,7 +76,7 @@ const LoginForm = () => {
 			if (res?.data?.success) {
 				// 쿠키(Set-Cookie) 반영 후 /check로 입사일 등 전역 상태 동기화
 				await checkAuth();
-				navigate(PATHS.MY_TODOS);
+				navigate(paths.MY_TODOS);
 			}
 		} catch (err) {
 			Notify.toastApiFailure(err, "로그인 실패");
@@ -124,7 +125,7 @@ const LoginForm = () => {
 				<SocialButtons mode="login" />
 				<div className="signup-prompt">
 					계정이 없으신가요?
-					<button type="button" onClick={() => navigate(PATHS.SIGNUP)} className="signup-link-btn">
+					<button type="button" onClick={() => navigate(paths.SIGNUP)} className="signup-link-btn">
 						회원가입
 					</button>
 				</div>

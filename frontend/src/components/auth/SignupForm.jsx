@@ -1,6 +1,6 @@
 import { authApi } from 'api/authApi';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
-import { PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import { useLoading } from 'context/LoadingContext';
 import React, { useCallback,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import * as Notify from 'utils/toastUtils';
 import SocialButtons from './SocialButtons';
 
 const SignupForm = () => {
+	const paths = useAppPaths();
 	const navigate = useNavigate();
 	const { showLoading, hideLoading } = useLoading();
 
@@ -91,7 +92,7 @@ const SignupForm = () => {
 				return errMsg;
 			}
 		}).then(() => {
-			navigate(PATHS.LOGIN);
+			navigate(paths.LOGIN);
 		}).catch((err) => {
 			Notify.toastApiFailure(err, "회원가입 실패");
 		}).finally(() => {
@@ -120,7 +121,7 @@ const SignupForm = () => {
 					</button>
 					<div className="signup-prompt">
 						이미 계정이 있으신가요?
-						<button type="button" onClick={() => navigate(PATHS.LOGIN)} className="signup-link-btn">로그인하기</button>
+						<button type="button" onClick={() => navigate(paths.LOGIN)} className="signup-link-btn">로그인하기</button>
 					</div>
 				</div>
 			</div>
@@ -165,7 +166,7 @@ const SignupForm = () => {
 
 				<div className="signup-prompt">
 					이미 계정이 있으신가요?
-					<button type="button" onClick={() => navigate(PATHS.LOGIN)} className="signup-link-btn">로그인하기</button>
+					<button type="button" onClick={() => navigate(paths.LOGIN)} className="signup-link-btn">로그인하기</button>
 				</div>
 			</form>
 		</div>

@@ -7,7 +7,7 @@ import atexit
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -114,7 +114,16 @@ async def read_favicon():
 
 @app.get("/")
 async def read_root():
-	index_path = os.path.join(STATIC_DIR, 'index.html')
+	"""루트 접속 시 기본 테넌트 로그인으로 이동."""
+	return RedirectResponse(
+		url=f"/{settings.DEFAULT_TENANT_SLUG}/login",
+		status_code=302,
+	)
+
+
+@app.get("/index.html")
+async def read_index_html():
+	index_path = os.path.join(STATIC_DIR, "index.html")
 	if os.path.exists(index_path):
 		return FileResponse(index_path, headers={"Cache-Control": "no-store"})
 	return {"message": "Server is running. Frontend static files not found."}
@@ -134,14 +143,37 @@ def _serve_spa_index_or_404():
 	raise HTTPException(status_code=404, detail="Not Found")
 
 
+@app.get("/platform/login")
+@app.get("/platform/{path:path}")
+async def spa_fallback_platform():
+	"""플랫폼 관리 SPA 새로고침 대응 (/platform/*)."""
+	return _serve_spa_index_or_404()
+
+
 @app.get("/login")
 @app.get("/signup")
 @app.get("/oauth/callback")
 @app.get("/admin/{path:path}")
 @app.get("/my/{path:path}")
 @app.get("/careers/{path:path}")
-async def spa_fallback():
-	"""SPA 라우트 새로고침 대응: 프론트 라우트만 index.html로 폴백."""
+async def spa_fallback_legacy():
+	"""레거시(테넌트 prefix 없음) SPA 경로 — 기본 테넌트로 리다이렉트."""
+	return RedirectResponse(url=f"/{settings.DEFAULT_TENANT_SLUG}/login", status_code=302)
+
+
+@app.get("/{tenant_slug}/login")
+@app.get("/{tenant_slug}/signup")
+@app.get("/{tenant_slug}/oauth/callback")
+@app.get("/{tenant_slug}/admin/{path:path}")
+@app.get("/{tenant_slug}/my/{path:path}")
+@app.get("/{tenant_slug}/careers/{path:path}")
+async def spa_fallback_tenant(tenant_slug: str):
+	"""테넌트 경로 SPA 새로고침 대응."""
+	from core.tenant import RESERVED_TENANT_SLUGS, normalize_tenant_slug
+
+	slug = normalize_tenant_slug(tenant_slug)
+	if not slug or slug in RESERVED_TENANT_SLUGS:
+		raise HTTPException(status_code=404, detail="Not Found")
 	return _serve_spa_index_or_404()
 
 # 5. 리액트 자동 실행 함수 (개발 편의용)

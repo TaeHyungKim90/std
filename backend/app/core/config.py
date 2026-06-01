@@ -36,10 +36,14 @@ class Settings(BaseSettings):
 	APP_PORT: int = 8001
 	CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 	FRONTEND_URL: str = "http://localhost:3000"
+	# 루트(/) 접속 시 리다이렉트할 기본 테넌트 slug (예: valuesplay)
+	DEFAULT_TENANT_SLUG: str = "valuesplay"
 	# 비어 있으면 SQLite 기본 경로(db/session.py). 예: postgresql+psycopg2://user:pass@localhost/todo
 	DATABASE_URL: Optional[str] = None
 	# True일 때만 admin/1234 기본 계정 자동 생성. 운영(ENVIRONMENT=production)에서는 반드시 False 권장.
 	BOOTSTRAP_DEFAULT_ADMIN: bool = False
+	# True일 때만 platform/platform 기본 플랫폼 관리자 자동 생성. 운영에서는 False 권장.
+	BOOTSTRAP_PLATFORM_ADMIN: bool = False
 	# True일 때만 /uploads 를 정적 파일로 직접 노출. 운영에서는 False + /api/common/files/{id} 사용 권장.
 	SERVE_UPLOADS_STATIC: bool = False
 	# True일 때만 `python main.py` 실행 시 프론트 npm start를 함께 띄움. 운영·CI에서는 False.

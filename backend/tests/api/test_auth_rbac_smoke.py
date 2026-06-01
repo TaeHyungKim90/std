@@ -8,12 +8,13 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 import main as app_main
-from services.auth_service import get_current_user
+from conftest import TENANT_HEADERS
+from services.auth_service import get_current_user_for_tenant
 from utils.seoul_time import today_seoul
 
 
 def _client():
-	return TestClient(app_main.app)
+	return TestClient(app_main.app, headers=TENANT_HEADERS)
 
 
 def test_auth_check_unauthenticated_is_not_logged_in():
@@ -65,10 +66,11 @@ def test_admin_attendance_patch_record_requires_authentication():
 
 
 def test_admin_reports_forbidden_for_non_admin_role():
-	app_main.app.dependency_overrides[get_current_user] = lambda: {
+	app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
 		"id": 1,
 		"userId": "user1",
 		"role": "user",
+		"tenantId": 1,
 	}
 	try:
 		wd = today_seoul().isoformat()

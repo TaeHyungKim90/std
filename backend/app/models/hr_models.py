@@ -29,9 +29,13 @@ class Todo(Base):
 #일정 카테고리
 class TodoCategoryType(Base):
 	__tablename__ = "todo_category_type"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "category_key", name="uq_todo_category_tenant_key"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
-	category_key = Column[str](String(20), unique=True, nullable=False) # 'report', 'vacation'
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+	category_key = Column[str](String(20), nullable=False) # 'report', 'vacation'
 	category_name = Column[str](String(50), nullable=False)			 	# '주간보고', '휴가'
 	icon = Column[str](String(10))										# '📝', '✈️'
 	is_active = Column[bool](Boolean, default=True)
@@ -48,8 +52,12 @@ class TodoConfig(Base):
 # 🌟 1. 회사 지정 장소 마스터 테이블 (어드민에서 관리)
 class OfficeLocation(Base):
 	__tablename__ = "office_location"
-	
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "name", name="uq_office_location_tenant_name"),
+	)
+
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	name = Column[str](String)			# 예: "본사", "강남지사"
 	latitude = Column[Any](Float)		 # 위도 (예: 37.4979)
 	longitude = Column[Any](Float)		# 경도 (예: 127.0276)

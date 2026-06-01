@@ -7,6 +7,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 import main as app_main
+from conftest import TENANT_HEADERS
 
 
 def test_recruitment_job_create_public_list_apply_me_and_my_applications(integration_admin_client):
@@ -21,7 +22,7 @@ def test_recruitment_job_create_public_list_apply_me_and_my_applications(integra
 	assert r_job.status_code == status.HTTP_200_OK, r_job.text
 	job_id = r_job.json()["id"]
 
-	with TestClient(app_main.app) as public_client:
+	with TestClient(app_main.app, headers=TENANT_HEADERS) as public_client:
 		r_list = public_client.get("/api/public/recruitment/jobs")
 		assert r_list.status_code == status.HTTP_200_OK, r_list.text
 		job_ids = {item["id"] for item in r_list.json().get("items", [])}

@@ -1,12 +1,14 @@
 import 'assets/css/notFound.css';
 
-import { PATHS } from 'constants/paths';
-import { ArrowLeft,Home } from 'lucide-react'; // lucide-react 아이콘 활용
+import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
+import { ArrowLeft,Home } from 'lucide-react';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const NotFoundPage = () => {
 	const navigate = useNavigate();
+	const { tenantSlug } = useParams();
+	const paths = pathsForTenant((tenantSlug || DEFAULT_TENANT_SLUG).toLowerCase());
 
 	return (
 		<div className="notfound-container">
@@ -23,7 +25,7 @@ const NotFoundPage = () => {
 						<ArrowLeft size={18} strokeWidth={2} aria-hidden />
 						이전으로
 					</button>
-					<button type="button" className="btn-home" onClick={() => navigate(PATHS.HOME)}>
+					<button type="button" className="btn-home" onClick={() => navigate(paths.HOME)}>
 						<Home size={18} strokeWidth={2} aria-hidden />
 						홈으로 이동
 					</button>

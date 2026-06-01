@@ -6,15 +6,16 @@ from fastapi.testclient import TestClient
 
 import main as app_main
 from api.public import recruitment as recruitment_api
+from conftest import TENANT_HEADERS
 
 
 def test_public_jobs_returns_paginated_shape(monkeypatch):
-	def _fake_jobs(db, skip=0, limit=20, applicant_id=None):
+	def _fake_jobs(db, tenant_id, skip=0, limit=20, applicant_id=None):
 		return {"items": [], "total": 0}
 
 	monkeypatch.setattr(recruitment_api.service, "get_public_jobs", _fake_jobs)
 
-	client = TestClient(app_main.app)
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
 	res = client.get("/api/public/recruitment/jobs")
 	assert res.status_code == status.HTTP_200_OK
 	data = res.json()
@@ -23,11 +24,11 @@ def test_public_jobs_returns_paginated_shape(monkeypatch):
 
 
 def test_public_jobs_wraps_unexpected_errors_as_500(monkeypatch):
-	def _boom(db, skip=0, limit=20, applicant_id=None):
+	def _boom(db, tenant_id, skip=0, limit=20, applicant_id=None):
 		raise RuntimeError("simulated db failure")
 
 	monkeypatch.setattr(recruitment_api.service, "get_public_jobs", _boom)
 
-	client = TestClient(app_main.app)
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
 	res = client.get("/api/public/recruitment/jobs")
 	assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -1,13 +1,14 @@
 import 'assets/css/privateRoute.css';
 
-import { PATHS } from 'constants/paths';
 import { AuthContext } from 'context/AuthContext';
+import { useAppPaths } from 'context/TenantContext';
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 
 import LoadingBar from './LoadingBar';
 const PrivateRoute = () => {
   const { isLoggedIn, loading } = useContext(AuthContext);
+  const paths = useAppPaths();
 
   // 1. 인증 정보 확인 중일 때는 아무것도 하지 않고 대기 (화면 깜빡임 방지)
   if (loading) {
@@ -20,6 +21,6 @@ const PrivateRoute = () => {
   }
 
   // 2. 로그인 상태면 해당 컴포넌트를 보여주고, 아니면 로그인 페이지(/)로 튕겨냄
-  return isLoggedIn ? <Outlet /> : <Navigate to={PATHS.LOGIN} replace />;
+  return isLoggedIn ? <Outlet /> : <Navigate to={paths.LOGIN} replace />;
 };
 export default PrivateRoute;

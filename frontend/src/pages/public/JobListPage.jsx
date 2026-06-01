@@ -1,7 +1,7 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
 import { DEFAULT_PUBLIC_JOBS_PAGE_SIZE } from 'constants/apiConfig';
-import { pathCareersJob } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import React, { useCallback,useEffect, useState } from 'react';
@@ -11,6 +11,7 @@ import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_PUBLIC_JOBS_PAGE_SIZE;
 
 const JobListPage = () => {
+	const paths = useAppPaths();
 	const { showLoading, hideLoading } = useLoading();
 	const [jobs, setJobs] = useState([]);
 	const [total, setTotal] = useState(null);
@@ -55,11 +56,11 @@ const JobListPage = () => {
 									key={job.id}
 									className="job-card stagger-item"
 									style={{ animationDelay: `${index * 0.04}s` }}
-									onClick={() => navigate(pathCareersJob(job.id), { state: { job } })}
+									onClick={() => navigate(`${paths.CAREERS}/${job.id}`, { state: { job } })}
 									onKeyDown={(e) => {
 										if (e.key === 'Enter' || e.key === ' ') {
 											e.preventDefault();
-											navigate(pathCareersJob(job.id), { state: { job } });
+											navigate(`${paths.CAREERS}/${job.id}`, { state: { job } });
 										}
 									}}
 									role="button"

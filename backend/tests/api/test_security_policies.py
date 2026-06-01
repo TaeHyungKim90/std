@@ -4,12 +4,13 @@ from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 
 import main as app_main  # noqa: E402
+from conftest import TENANT_HEADERS  # noqa: E402
 from core.config import settings  # noqa: E402
 from db.session import get_db  # noqa: E402
 from models.auth_models import User  # noqa: E402
 from models.common_models import UploadedFile  # noqa: E402
-from services.auth_service import get_current_user  # noqa: E402
-from services.public.applicant_auth import get_current_applicant  # noqa: E402
+from services.auth_service import get_current_user_for_tenant  # noqa: E402
+from services.public.applicant_auth import get_current_applicant_for_tenant  # noqa: E402
 from support.memory_db import memory_db_session  # noqa: E402
 
 
@@ -33,7 +34,7 @@ class _FakeDB:
 
 
 def test_common_upload_requires_authentication():
-	client = TestClient(app_main.app)
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
 	res = client.post(
 		"/api/common/upload",
 		files=[("files", ("sample.pdf", b"dummy", "application/pdf"))],
@@ -43,7 +44,11 @@ def test_common_upload_requires_authentication():
 
 def test_common_download_returns_403_when_authorized_user_has_no_permission(monkeypatch):
 	# 인증은 통과시키고, 파일 권한 체크에서 403 강제
-	app_main.app.dependency_overrides[get_current_user] = lambda: {"id": 101, "role": "user"}
+	app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+		"id": 101,
+		"role": "user",
+		"tenantId": 1,
+	}
 	app_main.app.dependency_overrides[get_db] = lambda: _FakeDB(
 		SimpleNamespace(id=1, saved_name="dummy.pdf", original_name="dummy.pdf", content_type="application/pdf")
 	)
@@ -55,7 +60,7 @@ def test_common_download_returns_403_when_authorized_user_has_no_permission(monk
 
 	monkeypatch.setattr(common_service, "assert_user_may_download_uploaded_file", _deny)
 
-	client = TestClient(app_main.app)
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
 	res = client.get("/api/common/files/1")
 	assert res.status_code == status.HTTP_403_FORBIDDEN
 
@@ -71,6 +76,7 @@ def test_common_download_allows_own_profile_image(monkeypatch, tmp_path):
 
 	with memory_db_session() as db:
 		user = User(
+			tenant_id=1,
 			user_login_id="profile-owner",
 			user_password="hashed",
 			user_name="Profile Owner",
@@ -91,11 +97,15 @@ def test_common_download_allows_own_profile_image(monkeypatch, tmp_path):
 		def _override_db():
 			yield db
 
-		app_main.app.dependency_overrides[get_current_user] = lambda: {"id": user.id, "role": "user"}
+		app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+			"id": user.id,
+			"role": "user",
+			"tenantId": 1,
+		}
 		app_main.app.dependency_overrides[get_db] = _override_db
 
 		try:
-			client = TestClient(app_main.app)
+			client = TestClient(app_main.app, headers=TENANT_HEADERS)
 			res = client.get(f"/api/common/files/by-saved-name/{saved_name}")
 			assert res.status_code == status.HTTP_200_OK
 			assert res.content == b"fake png"
@@ -112,6 +122,7 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 
 	with memory_db_session() as db:
 		owner = User(
+			tenant_id=1,
 			user_login_id="profile-owner",
 			user_password="hashed",
 			user_name="Profile Owner",
@@ -119,6 +130,7 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 			user_profile_image_url=f"/uploads/{saved_name}",
 		)
 		other = User(
+			tenant_id=1,
 			user_login_id="profile-viewer",
 			user_password="hashed",
 			user_name="Profile Viewer",
@@ -138,11 +150,15 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 		def _override_db():
 			yield db
 
-		app_main.app.dependency_overrides[get_current_user] = lambda: {"id": other.id, "role": "user"}
+		app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+			"id": other.id,
+			"role": "user",
+			"tenantId": 1,
+		}
 		app_main.app.dependency_overrides[get_db] = _override_db
 
 		try:
-			client = TestClient(app_main.app)
+			client = TestClient(app_main.app, headers=TENANT_HEADERS)
 			res = client.get(f"/api/common/files/by-saved-name/{saved_name}")
 			assert res.status_code == status.HTTP_403_FORBIDDEN
 		finally:
@@ -150,12 +166,15 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 
 
 def test_legacy_applicant_endpoint_returns_410_when_disabled():
-	app_main.app.dependency_overrides[get_current_applicant] = lambda: {"applicantId": 1}
+	app_main.app.dependency_overrides[get_current_applicant_for_tenant] = lambda: {
+		"applicantId": 1,
+		"tenantId": 1,
+	}
 	prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
 	settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
 
 	try:
-		client = TestClient(app_main.app)
+		client = TestClient(app_main.app, headers=TENANT_HEADERS)
 		res = client.get("/api/public/recruitment/my-applications/1")
 		assert res.status_code == status.HTTP_410_GONE
 	finally:

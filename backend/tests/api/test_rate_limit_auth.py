@@ -5,12 +5,13 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 import main as app_main
+from conftest import TENANT_HEADERS
 from core.limiter import limiter
 
 
 def test_login_burst_triggers_rate_limit_429():
 	limiter._storage.reset()
-	client = TestClient(app_main.app)
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
 	payload = {"id": "__rate_limit_probe__", "pw": "wrong-password"}
 	last = None
 	for i in range(6):

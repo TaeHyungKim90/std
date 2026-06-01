@@ -28,6 +28,7 @@ def _user(db, login_id: str) -> User:
 	u = User(
 		id=_user_id_seq,
 		user_login_id=login_id,
+		tenant_id=1,
 		user_password="x",
 		user_name=login_id,
 		join_date=date(2020, 1, 1),
@@ -60,7 +61,7 @@ def test_overlap_blocks_same_user_same_day(db_session):
 
 	with pytest.raises(HTTPException) as exc:
 		todos_service.create_todo(
-			db_session,
+			db_session, 1,
 			TodoCreate(
 				title="dup",
 				start_date=datetime.combine(d, time.min),
@@ -80,7 +81,7 @@ def test_overlap_allows_other_user_same_day(db_session):
 	_vacation_todo(db_session, "user_a", d)
 
 	created = todos_service.create_todo(
-		db_session,
+			db_session, 1,
 		TodoCreate(
 			title="b leave",
 			start_date=datetime.combine(d, time.min),
@@ -100,7 +101,7 @@ def test_overlap_update_excludes_self(db_session):
 	from schemas.hr.todos_schemas import TodoUpdate
 
 	updated = todos_service.update_todo(
-		db_session,
+			db_session, 1,
 		cast(int, t.id),
 		TodoUpdate(title="am updated"),
 		"user_a",

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 
-from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Date, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -11,10 +11,14 @@ from utils.seoul_time import now_seoul_naive
 # --- 0. 이력서 양식 템플릿 (관리자 업로드 + 시드) ---
 class ResumeTemplate(Base):
 	__tablename__ = "resume_templates"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "saved_name", name="uq_resume_templates_tenant_saved"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	name = Column[str](String(200), nullable=False)
-	saved_name = Column[str](String(255), nullable=False, unique=True)
+	saved_name = Column[str](String(255), nullable=False)
 	file_path = Column[str](String(500), nullable=False)
 	is_default = Column[bool](Boolean, nullable=False, default=False)
 	is_deleted = Column[bool](Boolean, nullable=False, default=False)
@@ -26,9 +30,13 @@ class ResumeTemplate(Base):
 # --- 1. 외부 지원자용 테이블 (Applicants) ---
 class Applicant(Base):
 	__tablename__ = "applicants"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "email_id", name="uq_applicants_tenant_email"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
-	email_id = Column[str](String(100), unique=True, nullable=False, index=True) # 지원자 로그인용 아이디 (이메일)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+	email_id = Column[str](String(100), nullable=False, index=True) # 지원자 로그인용 아이디 (이메일)
 	password = Column[str](String(255), nullable=False) # 해싱된 비밀번호
 	name = Column[str](String(50), nullable=False)
 	phone = Column[str](String(20), nullable=True)
@@ -43,6 +51,7 @@ class JobPosting(Base):
 	__tablename__ = "job_postings"
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	title = Column[str](String(100), nullable=False)
 	description = Column[str](Text, nullable=False)
 	status = Column[str](String(20), default="open") # open(진행중), closed(마감), draft(임시저장)

@@ -12,6 +12,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
 import { LoadingProvider } from './context/LoadingContext';
+import { PlatformAuthProvider } from './context/PlatformAuthContext';
 import AppRoutes from './routes';
 
 
@@ -19,7 +20,8 @@ function App() {
 	return (
 		<LoadingProvider>
 			<AuthProvider>
-				<BrowserRouter>
+				<PlatformAuthProvider>
+					<BrowserRouter>
 					<ErrorBoundary>
 						<Suspense fallback={<LoadingBar text="페이지를 불러오는 중..." />}>
 							<AppRoutes />
@@ -40,7 +42,8 @@ function App() {
 							error: { style: { background: '#dc3545' } },
 						}} 
 					/>
-				</BrowserRouter>
+					</BrowserRouter>
+				</PlatformAuthProvider>
 			</AuthProvider>
 		</LoadingProvider>
 	);

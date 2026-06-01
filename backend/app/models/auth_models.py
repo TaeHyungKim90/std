@@ -4,7 +4,7 @@ from typing import Any
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer, String, DateTime, Date, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Date, Float, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -12,9 +12,13 @@ from utils.seoul_time import now_seoul_naive
 
 class User(Base):
 	__tablename__ = "users"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_login_id", name="uq_users_tenant_login"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
-	user_login_id = Column[str](String(50), unique=True, nullable=False) 	# id
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True)
+	user_login_id = Column[str](String(50), nullable=False) 	# id (테넌트 내 unique)
 	user_password = Column[str](String(255), nullable=False)				# 해싱된 pw
 	user_name = Column[str](String(50), nullable=False)				 		# 실명
 	user_nickname = Column[str](String(50))							 		# 닉네임
@@ -33,6 +37,7 @@ class User(Base):
 	preferred_work_location = Column[str](String(120), nullable=True)
 	vacation = relationship("UserVacation", back_populates="user", uselist=False, cascade="all, delete")
 	avatar_setting = relationship("UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan")
+	tenant = relationship("Tenant", foreign_keys=[tenant_id])
 	department = relationship("Department", foreign_keys=[department_id])
 	position = relationship("Position", foreign_keys=[position_id])
 

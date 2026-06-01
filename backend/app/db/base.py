@@ -1,5 +1,7 @@
 from db.session import Base
 
+from models.tenant_models import Tenant
+from models.platform_models import PlatformAdmin
 from models.auth_models import User, UserVacation, UserAvatarSetting
 from models.common_models import UploadedFile, AuditLog
 from models.holiday_models import Holiday

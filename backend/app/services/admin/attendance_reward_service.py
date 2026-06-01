@@ -38,10 +38,11 @@ def _is_on_time(first_clock_in: datetime | None) -> bool:
 	return _time_to_minutes(first_clock_in) <= _workday_start_minutes()
 
 
-def _active_users_for_month(db: Session, start_d: date, end_d: date) -> list[User]:
+def _active_users_for_month(db: Session, tenant_id: int, start_d: date, end_d: date) -> list[User]:
 	return (
 		db.query(User)
 		.filter(
+			User.tenant_id == tenant_id,
 			User.join_date.isnot(None),
 			User.join_date <= end_d,
 			or_(User.resignation_date == None, User.resignation_date >= start_d),  # noqa: E711
@@ -51,13 +52,13 @@ def _active_users_for_month(db: Session, start_d: date, end_d: date) -> list[Use
 	)
 
 
-def get_monthly_attendance_rewards(db: Session, year: int, month: int) -> dict[str, Any]:
+def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month: int) -> dict[str, Any]:
 	month_start, month_end = month_bounds(year, month)
 	today = today_seoul()
 	score_end = min(month_end, today)
-	users = _active_users_for_month(db, month_start, month_end)
+	users = _active_users_for_month(db, tenant_id, month_start, month_end)
 	user_ids = [str(u.user_login_id) for u in users]
-	ctx = build_month_context(db, user_ids, month_start, score_end)
+	ctx = build_month_context(db, tenant_id, user_ids, month_start, score_end)
 	records_by_user_day = ctx["records_by_user_day"]
 	todos_by_user_day = ctx["todos_by_user_day"]
 	holiday_by_date = ctx["holiday_by_date"]
