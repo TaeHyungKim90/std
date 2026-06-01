@@ -17,6 +17,7 @@ export const PATHS = {
 	MY_MESSAGES: `${MY}/messages`,
 	MY_REPORTS: `${MY}/reports`,
 	MY_PROFILE: `${MY}/profile`,
+	MY_PDF_VIEWER: `${MY}/pdf-viewer`,
 	CAREERS,
 	CAREERS_LOGIN: `${CAREERS}/login`,
 	CAREERS_SIGNUP: `${CAREERS}/signup`,
@@ -96,5 +97,6 @@ export const ROUTE_SEGMENTS = {
 		MESSAGES: PATHS.MY_MESSAGES.slice(MY.length + 1),
 		REPORTS: PATHS.MY_REPORTS.slice(MY.length + 1),
 		PROFILE: PATHS.MY_PROFILE.slice(MY.length + 1),
+		PDF_VIEWER: PATHS.MY_PDF_VIEWER.slice(MY.length + 1),
 	},
 };

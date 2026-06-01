@@ -11,6 +11,7 @@ import hrRoutes from './hrRoutes';
 import publicRoutes from './publicRoutes';
 
 const NotFoundPage = lazy(() => import('pages/public/NotFoundPage'));
+const PdfViewerPage = lazy(() => import('pages/hr/PdfViewerPage'));
 
 const AppRoutes = () => {
 	return (
@@ -18,6 +19,7 @@ const AppRoutes = () => {
 			{authRoutes}
 			{publicRoutes}
 			<Route element={<PrivateRoute />}>
+				<Route path={PATHS.MY_PDF_VIEWER} element={<PdfViewerPage />} />
 				<Route element={<Layout />}>
 					<Route path={PATHS.HOME} element={<Navigate to={PATHS.MY_TODOS} replace />} />
 					{hrRoutes}
