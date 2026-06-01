@@ -8,6 +8,9 @@ import { useSearchParams } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const PDF_RENDER_SCALE_LIMIT = 2;
+const PDF_WORKER_SRC = `${process.env.PUBLIC_URL || ''}/pdf.worker.min.mjs`.replace(/\/+/g, '/');
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 function getApiFileUrl(fileId) {
 	return `/common/files/${encodeURIComponent(fileId)}`;
@@ -30,6 +33,14 @@ function parseFilename(contentDisposition, fallbackName) {
 
 	const plainMatch = contentDisposition.match(/filename=([^;]+)/i);
 	return plainMatch?.[1]?.trim() || fallbackName;
+}
+
+function isPdfFile(contentType, ...names) {
+	const normalizedType = String(contentType || '').toLowerCase();
+	return (
+		normalizedType.includes('pdf') ||
+		names.some((name) => String(name || '').toLowerCase().endsWith('.pdf'))
+	);
 }
 
 function downloadBlob(blob, filename) {
@@ -127,7 +138,6 @@ export default function PdfViewerPage() {
 	}, [blob, filename]);
 
 	useEffect(() => {
-		let objectUrl = null;
 		let pdfTask = null;
 		let isCancelled = false;
 
@@ -152,22 +162,21 @@ export default function PdfViewerPage() {
 					response.headers['content-disposition'],
 					fallbackName
 				);
+				const isPdf = isPdfFile(contentType, downloadedName, fallbackName);
 				const fileBlob = new Blob([response.data], {
-					type: contentType || 'application/pdf',
+					type: isPdf ? 'application/pdf' : contentType || 'application/octet-stream',
 				});
 				setBlob(fileBlob);
 				setFilename(downloadedName);
 
-				if (!contentType.toLowerCase().includes('pdf')) {
+				if (!isPdf) {
 					setErrorMessage('PDF 파일만 뷰어에서 미리볼 수 있습니다. 다운로드 버튼으로 저장해 주세요.');
 					setLoading(false);
 					return;
 				}
 
-				objectUrl = URL.createObjectURL(fileBlob);
 				pdfTask = pdfjsLib.getDocument({
-					url: objectUrl,
-					disableWorker: true,
+					data: new Uint8Array(response.data),
 				});
 				const loadedPdf = await pdfTask.promise;
 				if (isCancelled) {
@@ -179,7 +188,12 @@ export default function PdfViewerPage() {
 				setPageCount(loadedPdf.numPages);
 			} catch (err) {
 				console.error('PDF 뷰어 로드 실패:', err);
-				setErrorMessage('PDF를 불러올 수 없습니다. 다시 로그인했거나 파일 권한을 확인해 주세요.');
+				const status = err?.response?.status;
+				setErrorMessage(
+					status === 403
+						? '이 PDF를 열람할 권한이 없습니다.'
+						: 'PDF 미리보기를 표시할 수 없습니다. 다운로드 버튼으로 저장해 확인해 주세요.'
+				);
 				Notify.toastApiFailure(err, 'PDF를 불러올 수 없습니다.');
 			} finally {
 				if (!isCancelled) {
@@ -194,9 +208,6 @@ export default function PdfViewerPage() {
 			isCancelled = true;
 			if (pdfTask) {
 				pdfTask.destroy();
-			}
-			if (objectUrl) {
-				URL.revokeObjectURL(objectUrl);
 			}
 		};
 	}, [fallbackName, fileId]);

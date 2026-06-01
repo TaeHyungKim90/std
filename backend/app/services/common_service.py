@@ -62,6 +62,11 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 
 	uid = current_user.get("id")
 	if uid is None:
+		login_id = current_user.get("userId")
+		if login_id:
+			user = db.query(User).filter(User.user_login_id == login_id).first()
+			uid = user.id if user else None
+	if uid is None:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
 
 	saved_name = str(uploaded_row.saved_name or "")

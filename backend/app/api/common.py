@@ -26,10 +26,12 @@ def _file_response_for_row(row: UploadedFile):
 	if not os.path.isfile(full_path):
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="저장소에 파일이 없습니다.")
 	raw_ct = cast(Optional[str], row.content_type)
-	media = raw_ct or "application/octet-stream"
+	original_name = str(row.original_name)
+	is_pdf = saved_name.lower().endswith(".pdf") or original_name.lower().endswith(".pdf")
+	media = "application/pdf" if is_pdf else raw_ct or "application/octet-stream"
 	return FileResponse(
 		full_path,
-		filename=str(row.original_name),
+		filename=original_name,
 		media_type=media,
 		content_disposition_type="inline",
 	)

@@ -105,6 +105,16 @@ async def read_robots():
 		return FileResponse(robots_path)
 	return {"message": "robots.txt not found."}
 
+
+@app.get("/pdf.worker.min.mjs")
+async def read_pdf_worker():
+	"""PDF.js worker (CRA public/ → static/ 배포). SPA 폴백 전에 등록."""
+	worker_path = os.path.join(STATIC_DIR, "pdf.worker.min.mjs")
+	if os.path.isfile(worker_path):
+		return FileResponse(worker_path, media_type="application/javascript")
+	raise HTTPException(status_code=404, detail="pdf.worker.min.mjs not found")
+
+
 @app.get("/favicon.ico")
 async def read_favicon():
 	favicon_path = os.path.join(STATIC_DIR, "favicon.ico")

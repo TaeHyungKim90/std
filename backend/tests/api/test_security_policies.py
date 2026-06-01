@@ -188,6 +188,11 @@ def test_common_download_allows_pdf_only_for_message_receiver():
 		)
 		common_service.assert_user_may_download_uploaded_file(
 			db,
+			{"userId": receiver.user_login_id, "role": "user"},
+			pdf,
+		)
+		common_service.assert_user_may_download_uploaded_file(
+			db,
 			{"id": admin.id, "role": "admin"},
 			pdf,
 		)
