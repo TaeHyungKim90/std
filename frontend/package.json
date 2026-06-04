@@ -18,6 +18,7 @@
 		"emoji-picker-react": "^4.18.0",
 		"html-react-parser": "^5.2.17",
 		"lucide-react": "^0.577.0",
+		"pdfjs-dist": "^6.0.227",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
 		"react-hot-toast": "^2.6.0",
@@ -28,8 +29,9 @@
 		"web-vitals": "^2.1.4"
 	},
 	"scripts": {
+		"prestart": "node scripts/copy-pdf-worker.js",
 		"start": "react-scripts start",
-		"prebuild": "node scripts/verify-production-env.js",
+		"prebuild": "node scripts/copy-pdf-worker.js && node scripts/verify-production-env.js",
 		"build": "react-scripts build",
 		"test": "react-scripts test",
 		"test:ci": "react-scripts test --watchAll=false",

@@ -29,6 +29,7 @@ export function pathsForTenant(tenantSlug) {
 		MY_MESSAGES: `${my}/messages`,
 		MY_REPORTS: `${my}/reports`,
 		MY_PROFILE: `${my}/profile`,
+		MY_PDF_VIEWER: `${my}/pdf-viewer`,
 		CAREERS: careers,
 		CAREERS_LOGIN: `${careers}/login`,
 		CAREERS_SIGNUP: `${careers}/signup`,
@@ -114,6 +115,7 @@ export function routeSegmentsForTenant(tenantSlug) {
 			MESSAGES: P.MY_MESSAGES.slice(my.length + 1),
 			REPORTS: P.MY_REPORTS.slice(my.length + 1),
 			PROFILE: P.MY_PROFILE.slice(my.length + 1),
+			PDF_VIEWER: P.MY_PDF_VIEWER.slice(my.length + 1),
 		},
 	};
 }

@@ -9,6 +9,7 @@ from core.config import settings  # noqa: E402
 from db.session import get_db  # noqa: E402
 from models.auth_models import User  # noqa: E402
 from models.common_models import UploadedFile  # noqa: E402
+from models.message_models import Message, MessageAttachment  # noqa: E402
 from services.auth_service import get_current_user_for_tenant  # noqa: E402
 from services.public.applicant_auth import get_current_applicant_for_tenant  # noqa: E402
 from support.memory_db import memory_db_session  # noqa: E402
@@ -165,19 +166,139 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 			app_main.app.dependency_overrides.clear()
 
 
-def test_legacy_applicant_endpoint_returns_410_when_disabled():
-	app_main.app.dependency_overrides[get_current_applicant_for_tenant] = lambda: {
-		"applicantId": 1,
-		"tenantId": 1,
-	}
-	prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
-	settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
+def test_common_download_allows_pdf_only_for_message_receiver():
+	from services import common_service
 
-	try:
-		client = TestClient(app_main.app, headers=TENANT_HEADERS)
-		res = client.get("/api/public/recruitment/my-applications/1")
-		assert res.status_code == status.HTTP_410_GONE
-	finally:
-		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
-		app_main.app.dependency_overrides.clear()
+	with memory_db_session() as db:
+		admin = User(tenant_id=1, user_login_id="admin", user_password="hashed", user_name="Admin", role="admin")
+		receiver = User(tenant_id=1, user_login_id="receiver", user_password="hashed", user_name="Receiver", role="user")
+		sender = User(tenant_id=1, user_login_id="sender", user_password="hashed", user_name="Sender", role="user")
+		pdf = UploadedFile(
+			original_name="salary.pdf",
+			saved_name="salary.pdf",
+			file_path="/uploads/salary.pdf",
+			file_size=8,
+			content_type="application/pdf",
+		)
+		db.add_all([admin, receiver, sender, pdf])
+		db.commit()
+		for row in (admin, receiver, sender, pdf):
+			db.refresh(row)
+
+		message = Message(
+			title="급여명세서",
+			content="",
+			sender_id=sender.id,
+			receiver_id=receiver.id,
+			is_global=False,
+		)
+		db.add(message)
+		db.flush()
+		db.add(MessageAttachment(message_id=message.id, file_id=pdf.id))
+		db.commit()
+
+		common_service.assert_user_may_download_uploaded_file(
+			db,
+			{"id": receiver.id, "role": "user"},
+			pdf,
+		)
+		common_service.assert_user_may_download_uploaded_file(
+			db,
+			{"userId": receiver.user_login_id, "role": "user"},
+			pdf,
+		)
+		common_service.assert_user_may_download_uploaded_file(
+			db,
+			{"id": admin.id, "role": "admin"},
+			pdf,
+		)
+
+
+def test_common_download_blocks_individual_pdf_for_sender_and_allows_global_pdf_for_user():
+	from services import common_service
+
+	with memory_db_session() as db:
+		receiver = User(tenant_id=1, user_login_id="receiver", user_password="hashed", user_name="Receiver", role="user")
+		sender = User(tenant_id=1, user_login_id="sender", user_password="hashed", user_name="Sender", role="user")
+		global_viewer = User(tenant_id=1, user_login_id="viewer", user_password="hashed", user_name="Viewer", role="user")
+		individual_pdf = UploadedFile(
+			original_name="salary.pdf",
+			saved_name="salary.pdf",
+			file_path="/uploads/salary.pdf",
+			file_size=8,
+			content_type="application/pdf",
+		)
+		global_pdf = UploadedFile(
+			original_name="notice.pdf",
+			saved_name="notice.pdf",
+			file_path="/uploads/notice.pdf",
+			file_size=8,
+			content_type="application/pdf",
+		)
+		db.add_all([receiver, sender, global_viewer, individual_pdf, global_pdf])
+		db.commit()
+		for row in (receiver, sender, global_viewer, individual_pdf, global_pdf):
+			db.refresh(row)
+
+		individual_message = Message(
+			title="급여명세서",
+			content="",
+			sender_id=sender.id,
+			receiver_id=receiver.id,
+			is_global=False,
+		)
+		global_message = Message(
+			title="전체공지",
+			content="",
+			sender_id=sender.id,
+			receiver_id=None,
+			is_global=True,
+		)
+		db.add_all([individual_message, global_message])
+		db.flush()
+		db.add_all([
+			MessageAttachment(message_id=individual_message.id, file_id=individual_pdf.id),
+			MessageAttachment(message_id=global_message.id, file_id=global_pdf.id),
+		])
+		db.commit()
+
+		try:
+			common_service.assert_user_may_download_uploaded_file(
+				db,
+				{"id": sender.id, "role": "user"},
+				individual_pdf,
+			)
+		except HTTPException as exc:
+			assert exc.status_code == status.HTTP_403_FORBIDDEN
+		else:
+			raise AssertionError("개별 PDF 접근 권한이 없는 발신자가 허용되었습니다.")
+
+		common_service.assert_user_may_download_uploaded_file(
+			db,
+			{"id": global_viewer.id, "role": "user"},
+			global_pdf,
+		)
+
+
+def test_legacy_applicant_endpoint_returns_410_when_disabled():
+	with memory_db_session() as db:
+
+		def _override_db():
+			yield db
+
+		app_main.app.dependency_overrides[get_db] = _override_db
+		app_main.app.dependency_overrides[get_current_applicant_for_tenant] = lambda: {
+			"applicantId": 1,
+			"tenantId": 1,
+		}
+		prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
+		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
+
+		try:
+			client = TestClient(app_main.app, headers=TENANT_HEADERS)
+			res = client.get("/api/public/recruitment/my-applications/1")
+			assert res.status_code == status.HTTP_410_GONE
+		finally:
+			settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
+			app_main.app.dependency_overrides.clear()
 

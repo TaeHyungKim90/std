@@ -53,7 +53,7 @@ async def save_files_to_db_and_disk(db: Session, files: List[UploadFile]):
 
 
 def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uploaded_row: UploadedFile) -> None:
-	"""관리자는 전체, 프로필 이미지는 본인, 메시지 첨부는 발신/수신 또는 전체 공지만 허용."""
+	"""관리자는 전체, 프로필 이미지는 본인, 메시지 첨부는 권한 있는 사용자만 허용."""
 	from models.auth_models import User
 	from models.message_models import MessageAttachment, Message
 
@@ -61,6 +61,11 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 		return
 
 	uid = current_user.get("id")
+	if uid is None:
+		login_id = current_user.get("userId")
+		if login_id:
+			user = db.query(User).filter(User.user_login_id == login_id).first()
+			uid = user.id if user else None
 	if uid is None:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
 
@@ -83,9 +88,19 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 			detail="이 파일에 접근할 권한이 없습니다.",
 		)
 
+	is_pdf = str(uploaded_row.content_type or "").lower().startswith("application/pdf") or str(
+		uploaded_row.original_name or ""
+	).lower().endswith(".pdf")
+
 	for link in links:
 		msg = db.query(Message).filter(Message.id == link.message_id).first()
 		if not msg:
+			continue
+		if is_pdf:
+			if getattr(msg, "is_global", False):
+				return
+			if msg.receiver_id == uid:
+				return
 			continue
 		if getattr(msg, "is_global", False):
 			return

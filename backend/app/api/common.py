@@ -35,10 +35,12 @@ def _file_response_for_row(row: UploadedFile):
 			detail=MSG_FILE_NOT_ON_DISK,
 		)
 	raw_ct = cast(Optional[str], row.content_type)
-	media = raw_ct or "application/octet-stream"
+	original_name = str(row.original_name)
+	is_pdf = saved_name.lower().endswith(".pdf") or original_name.lower().endswith(".pdf")
+	media = "application/pdf" if is_pdf else raw_ct or "application/octet-stream"
 	return FileResponse(
 		full_path,
-		filename=str(row.original_name),
+		filename=original_name,
 		media_type=media,
 		content_disposition_type="inline",
 	)

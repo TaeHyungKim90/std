@@ -105,6 +105,16 @@ async def read_robots():
 		return FileResponse(robots_path)
 	return {"message": "robots.txt not found."}
 
+
+@app.get("/pdf.worker.min.mjs")
+async def read_pdf_worker():
+	"""PDF.js worker (CRA public/ → static/ 배포). SPA 폴백 전에 등록."""
+	worker_path = os.path.join(STATIC_DIR, "pdf.worker.min.mjs")
+	if os.path.isfile(worker_path):
+		return FileResponse(worker_path, media_type="application/javascript")
+	raise HTTPException(status_code=404, detail="pdf.worker.min.mjs not found")
+
+
 @app.get("/favicon.ico")
 async def read_favicon():
 	favicon_path = os.path.join(STATIC_DIR, "favicon.ico")
@@ -181,7 +191,15 @@ def run_react():
 	frontend_dir = os.path.join(BASE_DIR, "../..", "frontend")
 	if not os.path.exists(frontend_dir):
 		return
+	node_modules = os.path.join(frontend_dir, "node_modules")
+	if not os.path.isdir(node_modules):
+		print(
+			"--- [WARN] frontend/node_modules 없음 — React 미기동. "
+			"프로젝트 루트에서 `cd frontend && npm ci` 후 다시 실행하세요. ---"
+		)
+		return
 	print(f"--- Starting React Dev Server in {frontend_dir} ---")
+	print("--- UI: http://localhost:3000 (CRA) | API: http://127.0.0.1:%s ---" % settings.APP_PORT)
 	env = os.environ.copy()
 	env["HOST"] = "0.0.0.0"
 	# 윈도우 환경 대응

@@ -11,6 +11,7 @@ env/
 *.sqlite3
 
 # Node.js / React 관련
+frontend/.env.production
 node_modules/
 **/node_modules/.cache/
 .eslintcache

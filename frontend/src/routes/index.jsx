@@ -1,7 +1,7 @@
 import AdminRoute from 'components/common/AdminRoute';
 import Layout from 'components/common/Layout';
 import PrivateRoute from 'components/common/PrivateRoute';
-import { DEFAULT_TENANT_SLUG, TENANT_PARAM } from 'constants/paths';
+import { DEFAULT_TENANT_SLUG, ROUTE_SEGMENTS, TENANT_PARAM } from 'constants/paths';
 import { TenantLayout } from 'context/TenantContext';
 import { useAppPaths } from 'context/TenantContext';
 import React, { lazy } from 'react';
@@ -15,6 +15,7 @@ import publicRoutes from './publicRoutes';
 import { PLATFORM_ROOT } from 'constants/platformPaths';
 
 const NotFoundPage = lazy(() => import('pages/public/NotFoundPage'));
+const PdfViewerPage = lazy(() => import('pages/hr/PdfViewerPage'));
 
 function TenantHomeRedirect() {
 	const paths = useAppPaths();
@@ -33,6 +34,10 @@ const AppRoutes = () => {
 				{authRoutes}
 				{publicRoutes}
 				<Route element={<PrivateRoute />}>
+					<Route
+						path={`my/${ROUTE_SEGMENTS.MY.PDF_VIEWER}`}
+						element={<PdfViewerPage />}
+					/>
 					<Route element={<Layout />}>
 						<Route index element={<TenantHomeRedirect />} />
 						{hrRoutes}

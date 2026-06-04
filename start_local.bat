@@ -35,6 +35,23 @@ if /I "%~1"=="backend" (
 	echo [INFO] Mode: backend + react
 )
 
+if /I not "%DEV_AUTO_START_REACT%"=="false" (
+	if not exist "frontend\node_modules\" (
+		echo [INFO] frontend\node_modules 없음 — npm ci 실행 중...
+		pushd frontend
+		call npm ci
+		if errorlevel 1 (
+			echo [ERROR] npm ci failed. React dev server will not start.
+			popd
+			exit /b 1
+		)
+		popd
+	)
+	echo [INFO] UI  ^(React dev^): http://localhost:3000
+	echo [INFO] API ^(FastAPI^)  : http://localhost:8000  ^(.env APP_PORT 확인^)
+	echo [INFO] 브라우저는 3000 포트로 여세요. 8000은 API/빌드 정적 파일용입니다.
+)
+
 echo [INFO] Starting local server: uv run --project backend python .\backend\app\main.py
 uv run --project backend python ".\backend\app\main.py"
 

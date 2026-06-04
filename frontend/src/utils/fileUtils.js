@@ -1,5 +1,5 @@
-import { client } from 'api/axiosInstance';
 import { BASE_URL } from 'constants/apiConfig';
+import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
 import * as Notify from 'utils/toastUtils';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
@@ -30,32 +30,25 @@ export function getFilePreviewUrl(fileUrl) {
 }
 
 /**
- * 서버에 저장된 파일을 브라우저 새 창에서 엽니다.
- * - `SERVE_UPLOADS_STATIC=false` 인 경우: httpOnly 쿠키가 전달되도록 같은 API 호스트의
- *   `GET /api/common/files/by-saved-name/...` 로 엽니다 (직원 로그인 필요).
- * - `REACT_APP_FILE_DOWNLOAD_VIA_API=false` 이면 예전처럼 `/uploads/...` 직접 URL (정적 마운트 필요).
- *
- * @param {string} fileUrl - DB 경로 (예: /uploads/uuid.pdf) 또는 http(s) URL
- */
-/**
- * 인증이 필요한 `GET /api/common/download/{fileId}` 를 Axios로 받아 새 탭에서 엽니다.
- * (직접 `<a href="/api/...">` 는 브라우저 전체가 JSON 에러 페이지로 바뀌므로 사용하지 않습니다.)
+ * 인증이 필요한 첨부파일을 앱 내부 PDF 뷰어 탭으로 엽니다.
+ * 인앱 브라우저에서 기본 PDF 뷰어가 검은 화면이 되는 경우를 피하기 위한 경로입니다.
  * @param {number} fileId - uploaded_files.id
  * @param {string} [fallbackName] - 표시·다운로드용 파일명 힌트
  */
 export async function openAuthenticatedDownloadByFileId(fileId, _fallbackName) {
 	try {
-		const res = await client.get(`/common/download/${fileId}`, {
-			responseType: 'blob',
-		});
-		const blob = res.data;
-		if (!(blob instanceof Blob) || blob.size === 0) {
-			Notify.toastError('파일을 불러오지 못했습니다.');
-			return;
+		const params = new URLSearchParams({ fileId: String(fileId) });
+		if (_fallbackName) {
+			params.set('name', _fallbackName);
 		}
-		const url = URL.createObjectURL(blob);
+		const segment = window.location.pathname.split('/').filter(Boolean)[0];
+		const slug =
+			segment && segment !== 'platform'
+				? segment.toLowerCase()
+				: DEFAULT_TENANT_SLUG;
+		const paths = pathsForTenant(slug);
+		const url = `${window.location.origin}${paths.MY_PDF_VIEWER}?${params.toString()}`;
 		window.open(url, '_blank', 'noopener,noreferrer');
-		setTimeout(() => URL.revokeObjectURL(url), 120_000);
 	} catch (err) {
 		Notify.toastApiFailure(err, '파일을 열 수 없습니다.');
 	}
