@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { getApiBaseUrl } from 'constants/apiBaseUrl';
 import { formatApiDetail } from 'utils/formatApiError';
 
 import { PLATFORM_PATHS } from '../constants/platformPaths';
 
-const baseURL = process.env.REACT_APP_API_BASE_URL ?? '';
+const baseURL = getApiBaseUrl();
 
 export const platformClient = axios.create({
 	baseURL,
@@ -43,6 +44,18 @@ platformClient.interceptors.response.use(
 			return Promise.reject(new Error('플랫폼 세션이 만료되었습니다.'));
 		}
 
+		if (!error.response) {
+			const hint =
+				baseURL || process.env.NODE_ENV === 'development'
+					? ` (API: ${baseURL || 'http://localhost:8000/api'})`
+					: '';
+			return Promise.reject(
+				new Error(
+					`백엔드에 연결할 수 없습니다.${hint} 서버 실행 및 REACT_APP_API_BASE_URL을 확인해 주세요.`
+				)
+			);
+		}
+
 		const msg = formatApiDetail(error).trim() || '서버와 통신 중 오류가 발생했습니다.';
 		return Promise.reject(new Error(msg));
 	},
@@ -55,4 +68,10 @@ export const platformApi = {
 	listTenants: () => platformClient.get('/platform/tenants'),
 	createTenant: (payload) => platformClient.post('/platform/tenants', payload),
 	updateTenant: (id, payload) => platformClient.patch(`/platform/tenants/${id}`, payload),
+	deleteTenant: (id) => platformClient.delete(`/platform/tenants/${id}`),
+	getTenantBranding: (id) => platformClient.get(`/platform/tenants/${id}/branding`),
+	uploadTenantLogo: (id, formData) =>
+		platformClient.post(`/platform/tenants/${id}/branding/logo`, formData),
+	uploadTenantIcon: (id, formData) =>
+		platformClient.post(`/platform/tenants/${id}/branding/icon`, formData),
 };

@@ -1,5 +1,5 @@
-import { PlatformAuthContext } from 'context/PlatformAuthContext';
 import { PLATFORM_PATHS } from 'constants/platformPaths';
+import { PlatformAuthContext } from 'context/PlatformAuthContext';
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 

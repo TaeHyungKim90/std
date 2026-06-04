@@ -1,5 +1,8 @@
-import { PlatformAuthContext } from 'context/PlatformAuthContext';
+import 'assets/css/loginView.css';
+import 'assets/css/platform.css';
+
 import { PLATFORM_PATHS } from 'constants/platformPaths';
+import { PlatformAuthContext } from 'context/PlatformAuthContext';
 import React, { useContext, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
@@ -38,30 +41,29 @@ const PlatformLogin = () => {
 
 	return (
 		<div className="bq-login-view-container">
-			<div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-				<h2 style={{ textAlign: 'center', marginBottom: 8 }}>플랫폼 관리자 로그인</h2>
-				<p style={{ textAlign: 'center', color: '#6b7280', marginBottom: 24, fontSize: '0.95rem' }}>
-					테넌트 HR 경로와 별도 (/platform)
-				</p>
-				<form onSubmit={handleSubmit} className="category-add-box" style={{ flexDirection: 'column', gap: 12 }}>
+			<div className="login-container login-container--platform">
+				<form onSubmit={handleSubmit} className="login-form-stack">
+					<h2 className="login-title">플랫폼 로그인</h2>
 					<input
 						type="text"
-						className="cat-input"
+						className="login-input"
 						placeholder="플랫폼 관리자 ID"
 						value={loginId}
 						onChange={(e) => setLoginId(e.target.value)}
 						autoComplete="username"
+						required
 					/>
 					<input
 						type="password"
-						className="cat-input"
+						className="login-input"
 						placeholder="비밀번호"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						autoComplete="current-password"
+						required
 					/>
-					<button type="submit" className="btn-add" disabled={submitting}>
-						로그인
+					<button type="submit" className="login-button" disabled={submitting}>
+						{submitting ? '로그인 중...' : '로그인'}
 					</button>
 				</form>
 			</div>

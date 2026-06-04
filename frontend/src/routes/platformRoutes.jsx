@@ -6,6 +6,7 @@ import { Navigate, Route } from 'react-router-dom';
 
 const PlatformLogin = lazy(() => import('pages/platform/PlatformLogin'));
 const TenantMgmt = lazy(() => import('pages/platform/TenantMgmt'));
+const TenantBrandingMgmt = lazy(() => import('pages/platform/TenantBrandingMgmt'));
 
 const platformRoutes = (
 	<>
@@ -14,6 +15,7 @@ const platformRoutes = (
 			<Route element={<PlatformLayout />}>
 				<Route index element={<Navigate to={PLATFORM_ROUTE_SEGMENTS.TENANTS} replace />} />
 				<Route path={PLATFORM_ROUTE_SEGMENTS.TENANTS} element={<TenantMgmt />} />
+				<Route path={PLATFORM_ROUTE_SEGMENTS.BRANDING} element={<TenantBrandingMgmt />} />
 			</Route>
 		</Route>
 	</>

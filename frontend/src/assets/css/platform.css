@@ -1,0 +1,455 @@
+/* 플랫폼 운영 콘솔 — HR admin(.bq-admin-view) 구조 + 프리미엄 톤 */
+
+:root {
+	--platform-primary: #2d5f52;
+	--platform-primary-hover: #244d43;
+	--platform-primary-rgb: 45 95 82;
+	--platform-accent: #9b4d42;
+	--platform-accent-rgb: 155 77 66;
+	--platform-slate: #1e293b;
+	--platform-slate-muted: #64748b;
+	--platform-bg: #e8ecf0;
+	--platform-surface: #ffffff;
+	--platform-border: #c8d0da;
+	--platform-radius: 10px;
+	--platform-radius-sm: 8px;
+}
+
+.bq-platform-shell {
+	--primary: var(--platform-primary);
+	--primary-color: var(--platform-primary);
+	--primary-hover-color: var(--platform-primary-hover);
+	--primary-rgb: var(--platform-primary-rgb);
+	--accent: var(--platform-accent);
+	--bg-main: var(--platform-bg);
+	--text-main: #1a2332;
+	--text-dim: var(--platform-slate-muted);
+	--white-glass: var(--platform-surface);
+	--shadow-soft: 0 4px 20px rgba(30, 41, 59, 0.08);
+	--radius-card: 12px;
+	--radius-pill: var(--platform-radius);
+
+	min-height: 100vh;
+	background: linear-gradient(165deg, #e4e9ee 0%, var(--platform-bg) 42%, #dfe5eb 100%);
+	color: var(--text-main);
+}
+
+/* 상단 바 */
+.platform-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 18px 28px;
+	background: var(--platform-slate);
+	color: #f1f5f9;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+}
+
+.platform-topbar__brand h1 {
+	margin: 0;
+	font-size: 1.2rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: #f8fafc;
+}
+
+.platform-topbar__brand p {
+	margin: 4px 0 0;
+	font-size: 0.8125rem;
+	color: #94a3b8;
+	line-height: 1.4;
+}
+
+.platform-topbar__nav {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.platform-topbar__link {
+	color: #cbd5e1;
+	text-decoration: none;
+	font-size: 0.9rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: var(--platform-radius-sm);
+	transition: background 0.2s, color 0.2s;
+}
+
+.platform-topbar__link:hover,
+.platform-topbar__link--active {
+	color: #f8fafc;
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.platform-topbar__user {
+	font-size: 0.875rem;
+	color: #94a3b8;
+}
+
+.platform-topbar__logout {
+	background: rgba(255, 255, 255, 0.08);
+	color: #e2e8f0;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	padding: 8px 16px;
+	border-radius: var(--platform-radius-sm);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.platform-topbar__logout:hover {
+	background: rgba(255, 255, 255, 0.14);
+}
+
+.platform-main {
+	padding: 24px 28px 40px;
+	max-width: 1280px;
+	margin: 0 auto;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* HR admin 뷰 — 플랫폼 톤 오버라이드 */
+.bq-platform-shell .bq-admin-view {
+	gap: 18px;
+}
+
+.bq-platform-shell .admin-header h2 {
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.bq-platform-shell .admin-header h2 span {
+	color: var(--platform-primary);
+}
+
+.bq-platform-shell .admin-header__hint {
+	margin: 0;
+	color: var(--platform-slate-muted);
+	font-size: 0.875rem;
+	line-height: 1.45;
+	max-width: 520px;
+}
+
+.bq-platform-shell .category-add-box {
+	background: var(--platform-surface);
+	border: 1px solid var(--platform-border);
+	border-radius: var(--platform-radius);
+	box-shadow: var(--shadow-soft);
+	padding: 18px 20px;
+	margin-bottom: 0;
+}
+
+.bq-platform-shell .category-add-box > input.cat-input,
+.bq-platform-shell .category-add-box > input[type='text'],
+.bq-platform-shell .category-add-box > input[type='password'] {
+	border: 1px solid var(--platform-border);
+	border-radius: var(--platform-radius-sm);
+	background: #fafbfc;
+}
+
+.bq-platform-shell .category-add-box > input.cat-input:focus,
+.bq-platform-shell .category-add-box > input:focus {
+	border-color: var(--platform-primary);
+	box-shadow: 0 0 0 3px rgb(var(--platform-primary-rgb) / 0.15);
+	background: #fff;
+}
+
+.bq-platform-shell .cat-input--readonly {
+	background: #f1f5f4 !important;
+	color: var(--platform-slate-muted);
+	max-width: 100px;
+	flex: 0 0 100px;
+}
+
+.bq-platform-shell .tenant-mgmt-add-form {
+	display: grid;
+	grid-template-columns: minmax(120px, 1fr) minmax(140px, 1.2fr) 100px minmax(140px, 1fr) auto;
+	align-items: center;
+	gap: 12px;
+}
+
+.bq-platform-shell .admin-table-wrapper {
+	border: 1px solid var(--platform-border);
+	border-radius: var(--platform-radius);
+	background: var(--platform-surface);
+}
+
+.bq-platform-shell .admin-table th {
+	background: #f4f6f8;
+	color: var(--platform-slate);
+	border-bottom: 1px solid var(--platform-border);
+	font-weight: 700;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.bq-platform-shell .admin-table tbody tr:nth-child(even) {
+	background-color: #f8faf9;
+}
+
+.bq-platform-shell .admin-table tbody tr:hover td {
+	background-color: rgb(var(--platform-primary-rgb) / 0.06) !important;
+}
+
+.bq-platform-shell .admin-table-wrapper::-webkit-scrollbar-thumb {
+	background-color: rgb(var(--platform-primary-rgb) / 0.35);
+}
+
+.bq-platform-shell .admin-table code {
+	font-size: 0.8125rem;
+	padding: 2px 8px;
+	background: #f1f5f4;
+	border: 1px solid #dce5e2;
+	border-radius: 6px;
+	color: #334155;
+}
+
+.bq-platform-shell .tenant-status {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.bq-platform-shell .tenant-status--active {
+	background: rgb(var(--platform-primary-rgb) / 0.12);
+	color: var(--platform-primary);
+	border: 1px solid rgb(var(--platform-primary-rgb) / 0.25);
+}
+
+.bq-platform-shell .tenant-status--inactive {
+	background: #f1f3f5;
+	color: #64748b;
+	border: 1px solid #dee2e6;
+}
+
+/* 버튼 — HR 패턴, 라운드 완화 */
+.bq-platform-shell .bq-admin-view .btn-primary,
+.bq-platform-shell .bq-admin-view .btn-save,
+.bq-platform-shell .bq-admin-view .btn-add {
+	border-radius: var(--platform-radius-sm);
+	background: var(--platform-primary);
+}
+
+.bq-platform-shell .bq-admin-view .btn-primary:hover,
+.bq-platform-shell .bq-admin-view .btn-save:hover,
+.bq-platform-shell .bq-admin-view .btn-add:hover {
+	background: var(--platform-primary-hover);
+}
+
+.bq-platform-shell .bq-admin-view .btn-edit {
+	border-radius: var(--platform-radius-sm);
+	color: var(--platform-primary);
+	border-color: var(--platform-primary);
+}
+
+.bq-platform-shell .bq-admin-view .btn-edit:hover {
+	background: var(--platform-primary);
+}
+
+.bq-platform-shell .bq-admin-view .admin-table .btn-delete {
+	border-radius: var(--platform-radius-sm);
+	color: var(--platform-accent);
+	border-color: var(--platform-accent);
+}
+
+.bq-platform-shell .bq-admin-view .admin-table .btn-delete:hover {
+	background: var(--platform-accent);
+}
+
+.bq-platform-shell .bq-admin-view .admin-table .btn-cancel {
+	border-radius: var(--platform-radius-sm);
+}
+
+.bq-platform-shell .tenant-mgmt-add-form .btn-add {
+	white-space: nowrap;
+	padding: 12px 22px;
+}
+
+/* 모달 */
+.modal-content.platform-modal {
+	border: 1px solid var(--platform-border);
+	border-radius: 12px;
+	box-shadow: 0 20px 48px rgba(30, 41, 59, 0.18);
+}
+
+.modal-content.platform-modal h3 {
+	color: var(--platform-slate);
+	font-weight: 700;
+}
+
+.modal-content.platform-modal .form-group input {
+	border-radius: var(--platform-radius-sm);
+	border-color: var(--platform-border);
+}
+
+.modal-content.platform-modal .form-group input:focus {
+	border-color: var(--platform-primary);
+}
+
+.modal-content.platform-modal .btn-save {
+	background: var(--platform-primary);
+	border-radius: var(--platform-radius-sm);
+}
+
+.modal-content.platform-modal .btn-save:hover {
+	background: var(--platform-primary-hover);
+}
+
+.modal-content.platform-modal .btn-cancel {
+	border-radius: var(--platform-radius-sm);
+}
+
+/* 로그인 — HR loginView.css 와 동일 레이아웃, 플랫폼 포인트 색만 조정 */
+.login-container--platform .login-button {
+	background-color: var(--platform-primary);
+}
+
+.login-container--platform .login-button:hover:not(:disabled) {
+	background-color: var(--platform-primary-hover);
+}
+
+.login-container--platform .login-input:focus {
+	border-color: var(--platform-primary);
+	box-shadow: 0 0 0 3px rgb(var(--platform-primary-rgb) / 0.18);
+}
+
+/* 로고·아이콘 브랜딩 */
+.tenant-branding-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+}
+
+.tenant-branding-toolbar label {
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var(--platform-slate);
+}
+
+.tenant-branding-select {
+	min-width: 280px;
+	max-width: 100%;
+}
+
+.tenant-branding-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+}
+
+.tenant-branding-card {
+	background: var(--platform-surface);
+	border: 1px solid var(--platform-border);
+	border-radius: var(--platform-radius);
+	padding: 20px;
+	box-shadow: var(--shadow-soft);
+}
+
+.tenant-branding-card h3 {
+	margin: 0 0 8px;
+	font-size: 1rem;
+	color: var(--platform-slate);
+}
+
+.tenant-branding-card__hint {
+	margin: 0 0 16px;
+	font-size: 0.8125rem;
+	color: var(--platform-slate-muted);
+	line-height: 1.5;
+}
+
+.tenant-branding-badge {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 2px 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--platform-primary);
+	background: rgb(var(--platform-primary-rgb) / 0.12);
+	border-radius: 999px;
+}
+
+.tenant-branding-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 120px;
+	margin-bottom: 16px;
+	padding: 16px;
+	background: #f8fafc;
+	border: 1px dashed var(--platform-border);
+	border-radius: var(--platform-radius-sm);
+}
+
+.tenant-branding-preview--logo img {
+	max-height: 64px;
+	max-width: 100%;
+	object-fit: contain;
+}
+
+.tenant-branding-preview--icon img {
+	width: 48px;
+	height: 48px;
+	object-fit: contain;
+}
+
+.tenant-branding-file {
+	display: none;
+}
+
+.tenant-branding-empty {
+	color: var(--platform-slate-muted);
+	font-size: 0.9rem;
+}
+
+.public-header__logo-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.public-header__logo-img {
+	border-radius: 6px;
+	object-fit: contain;
+}
+
+@media (max-width: 900px) {
+	.tenant-branding-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.bq-platform-shell .tenant-mgmt-add-form {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.platform-topbar {
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 16px 20px;
+	}
+
+	.platform-main {
+		padding: 16px;
+	}
+
+	.bq-platform-shell .tenant-mgmt-add-form {
+		grid-template-columns: 1fr;
+	}
+
+	.bq-platform-shell .tenant-mgmt-add-form .btn-add {
+		width: 100%;
+	}
+}
