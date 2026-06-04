@@ -26,6 +26,7 @@ def test_refresh_daily_summary_two_sessions_overtime():
 		for i, (cin_h, cout_h, wm) in enumerate([(9, 13, 240), (14, 22, 360)]):
 			db.add(
 				Attendance(
+					tenant_id=1,
 					user_id="sum_user",
 					work_date=d,
 					clock_in_time=datetime.combine(d, time(cin_h, 0)),
@@ -38,7 +39,7 @@ def test_refresh_daily_summary_two_sessions_overtime():
 			)
 		db.commit()
 
-		refresh_attendance_daily_summary(db, "sum_user", d)
+		refresh_attendance_daily_summary(db, 1, "sum_user", d)
 		row = db.query(AttendanceDailySummary).filter_by(user_id="sum_user", work_date=d).one()
 		assert row.total_work_minutes == 600
 		assert row.overtime_minutes == 120
@@ -61,6 +62,7 @@ def test_refresh_ignores_open_session():
 		db.commit()
 		db.add(
 			Attendance(
+				tenant_id=1,
 				user_id="open_user",
 				work_date=d,
 				clock_in_time=datetime.combine(d, time(9, 0)),
@@ -72,6 +74,6 @@ def test_refresh_ignores_open_session():
 			)
 		)
 		db.commit()
-		refresh_attendance_daily_summary(db, "open_user", d)
+		refresh_attendance_daily_summary(db, 1, "open_user", d)
 		row = db.query(AttendanceDailySummary).filter_by(user_id="open_user", work_date=d).one()
 		assert row.total_work_minutes == 0

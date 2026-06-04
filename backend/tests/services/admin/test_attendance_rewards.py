@@ -29,6 +29,7 @@ def _user(user_id: str, name: str) -> User:
 def _attendance(db, user_id: str, work_date: date, start: time, end: time | None) -> None:
 	db.add(
 		Attendance(
+			tenant_id=1,
 			user_id=user_id,
 			work_date=work_date,
 			clock_in_time=datetime.combine(work_date, start),
@@ -43,6 +44,7 @@ def _attendance(db, user_id: str, work_date: date, start: time, end: time | None
 def _vacation(db, user_id: str, work_date: date, category: str = "vacation_full") -> None:
 	db.add(
 		Todo(
+			tenant_id=1,
 			user_id=user_id,
 			title="휴가",
 			start_date=datetime.combine(work_date, time.min),

@@ -40,7 +40,16 @@ def _monday_on_or_before(d: date) -> date:
 def _todo(db, uid: str, cat: str, d: date) -> None:
 	st = datetime.combine(d, time.min)
 	en = datetime.combine(d, time.max)
-	db.add(Todo(user_id=uid, title="일정", start_date=st, end_date=en, category=cat))
+	db.add(
+		Todo(
+			tenant_id=1,
+			user_id=uid,
+			title="일정",
+			start_date=st,
+			end_date=en,
+			category=cat,
+		)
+	)
 	db.commit()
 
 
@@ -121,6 +130,7 @@ def test_real_row_merged_with_vacation_summary(db_session, range_user):
 	ci = datetime.combine(fri, time(9, 0))
 	db_session.add(
 		Attendance(
+			tenant_id=1,
 			user_id="range_user",
 			work_date=fri,
 			clock_in_time=ci,
@@ -167,6 +177,7 @@ def test_public_holiday_row_has_name(db_session, range_user):
 	ci = datetime.combine(wed, time(10, 0))
 	db_session.add(
 		Attendance(
+			tenant_id=1,
 			user_id="range_user",
 			work_date=wed,
 			clock_in_time=ci,

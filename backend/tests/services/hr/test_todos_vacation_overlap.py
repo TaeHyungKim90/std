@@ -42,6 +42,7 @@ def _vacation_todo(db, user_id: str, d: date, category: str = "vacation_full") -
 	st = datetime.combine(d, time.min)
 	en = datetime.combine(d, time.max)
 	t = Todo(
+		tenant_id=1,
 		user_id=user_id,
 		title="vac",
 		start_date=st,

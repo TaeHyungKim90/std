@@ -38,6 +38,9 @@ class _QueryBase:
 	def distinct(self):
 		return self
 
+	def with_entities(self, *_args: Any, **_kwargs: Any):
+		return self
+
 
 class _UserQuery(_QueryBase):
 	def __init__(self, session: "FakeSession"):
@@ -157,6 +160,12 @@ class FakeSession:
 			return _AttendanceQuery(self)
 		if model_name == "DailyReport":
 			return _DailyReportQuery(self)
+		if model_name == "Todo":
+			return _TodoUserIdQuery(self)
+		if model_name == "WeeklyReport":
+			return _QueryBase()
+		if model_name == "MonthlyReport":
+			return _QueryBase()
 
 		raise AssertionError(f"Unsupported query entity in FakeSession: {entity}")
 
@@ -262,7 +271,9 @@ def test_list_month_status_submitted(admin_db_session):
 	month_start = date(2026, 4, 1)
 	_seed_user(admin_db_session, login_id="u1")
 	admin_db_session.add(
-		MonthlyReport(user_id="u1", month_start_date=month_start, summary="4월 요약")
+		MonthlyReport(
+			tenant_id=1, user_id="u1", month_start_date=month_start, summary="4월 요약"
+		)
 	)
 	admin_db_session.commit()
 
@@ -314,7 +325,9 @@ def test_list_month_status_vacation_month(admin_db_session):
 	while d <= month_end:
 		if d.weekday() < 5:
 			admin_db_session.add(
-				Attendance(id=aid, user_id="u4", work_date=d, status="연차")
+				Attendance(
+					tenant_id=1, id=aid, user_id="u4", work_date=d, status="연차"
+				)
 			)
 			aid += 1
 		d += timedelta(days=1)

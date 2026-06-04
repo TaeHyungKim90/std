@@ -53,6 +53,7 @@ def _add_vacation_todo(db, user_id: str, category: str, d: date) -> None:
 	en = datetime.combine(d, time.max)
 	db.add(
 		Todo(
+			tenant_id=1,
 			user_id=user_id,
 			title="pytest",
 			start_date=st,
@@ -138,6 +139,7 @@ def test_half_day_todo_does_not_require_confirm(db_session, user_joined):
 def test_clock_in_appends_official_leave_note(db_session, user_joined):
 	d = today_seoul()
 	t = Todo(
+		tenant_id=1,
 		user_id="clock_user",
 		title="공가",
 		start_date=datetime.combine(d, time.min),
@@ -176,6 +178,7 @@ def test_clock_in_appends_official_leave_note(db_session, user_joined):
 def test_clock_out_appends_official_leave_note(db_session, user_joined):
 	d = today_seoul()
 	t = Todo(
+		tenant_id=1,
 		user_id="clock_user",
 		title="공가",
 		start_date=datetime.combine(d, time.min),
@@ -189,6 +192,7 @@ def test_clock_out_appends_official_leave_note(db_session, user_joined):
 	cin = datetime.combine(d, time(9, 0))
 	cout = datetime.combine(d, time(18, 0))
 	rec = Attendance(
+		tenant_id=1,
 		user_id="clock_user",
 		work_date=d,
 		clock_in_time=cin,
@@ -228,6 +232,7 @@ def test_update_clock_out_sets_night_and_tiered_break(db_session, user_joined):
 	cin = datetime.combine(d, time(23, 55))
 	cout = datetime.combine(d2, time(3, 55))
 	rec = Attendance(
+		tenant_id=1,
 		user_id="clock_user",
 		work_date=d,
 		clock_in_time=cin,

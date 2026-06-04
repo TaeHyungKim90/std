@@ -88,6 +88,7 @@ def test_get_monthly_none_when_month_after_resignation(db_session):
 	db_session.commit()
 	db_session.add(
 		MonthlyReport(
+			tenant_id=1,
 			user_id="resigned2",
 			month_start_date=date(2025, 6, 1),
 			summary="6월",
