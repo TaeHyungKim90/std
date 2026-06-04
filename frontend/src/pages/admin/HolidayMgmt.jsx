@@ -69,7 +69,13 @@ const HolidayMgmt = () => {
 	}, [yearFilter, fetchListForYear, showLoading, hideLoading]);
 
 	const handleSync = async () => {
-		if (!window.confirm(`정말 ${yearFilter}년도 공휴일을 공공데이터에서 가져오시겠습니까?\n(이미 등록된 휴일은 건너뜁니다)`)) return;
+		if (
+			!window.confirm(
+				`정말 ${yearFilter}년도 법정 공휴일을 공공데이터에서 가져오시겠습니까?\n` +
+					`(API는 1회만 호출하며, 모든 기업(테넌트)에 동일하게 반영됩니다. 이미 있는 날짜는 건너뜁니다.)`
+			)
+		)
+			return;
 		setIsSyncing(true);
 		Notify.toastPromise(holidayApi.syncHolidays(yearFilter), {
 			loading: '공공데이터 공휴일을 동기화하는 중입니다...',
