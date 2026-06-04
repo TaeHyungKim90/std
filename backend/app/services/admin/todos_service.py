@@ -8,14 +8,12 @@ from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.hr_models import Todo
 from models.auth_models import User
 from services.admin.user_service import sync_user_vacation
-from services.tenant_scope import get_user_by_login_id
+from services.tenant_scope import get_user_by_login_id, todos_in_tenant
 
 
 def get_all_todos_with_author(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
 	return (
-		db.query(Todo)
-		.join(User, Todo.user_id == User.user_login_id)
-		.filter(User.tenant_id == tenant_id)
+		todos_in_tenant(db, tenant_id)
 		.options(joinedload(Todo.author))
 		.order_by(Todo.created_at.desc())
 		.offset(skip)
@@ -25,21 +23,11 @@ def get_all_todos_with_author(db: Session, tenant_id: int, skip: int = 0, limit:
 
 
 def count_all_todos(db: Session, tenant_id: int) -> int:
-	return (
-		db.query(Todo)
-		.join(User, Todo.user_id == User.user_login_id)
-		.filter(User.tenant_id == tenant_id)
-		.count()
-	)
+	return todos_in_tenant(db, tenant_id).count()
 
 
 def delete_todo_by_admin(db: Session, tenant_id: int, todo_id: int):
-	todo = (
-		db.query(Todo)
-		.join(User, Todo.user_id == User.user_login_id)
-		.filter(Todo.id == todo_id, User.tenant_id == tenant_id)
-		.first()
-	)
+	todo = todos_in_tenant(db, tenant_id).filter(Todo.id == todo_id).first()
 	if not todo:
 		raise HTTPException(status_code=404, detail="삭제하려는 일정을 찾을 수 없습니다.")
 
@@ -63,9 +51,7 @@ def get_vacation_todos_for_date(db: Session, tenant_id: int, work_date: str | da
 	day_end = datetime.combine(parsed, time.max)
 
 	q = (
-		db.query(Todo)
-		.join(User, Todo.user_id == User.user_login_id)
-		.filter(User.tenant_id == tenant_id)
+		todos_in_tenant(db, tenant_id)
 		.options(joinedload(Todo.author))
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(

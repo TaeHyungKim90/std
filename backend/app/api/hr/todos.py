@@ -25,7 +25,7 @@ def read_todo_configs(
 	current_user: dict = Depends(get_current_user_for_tenant),
 ):
 	user_id = require_user_login_id(current_user)
-	return service.get_todo_configs(db, user_id)
+	return service.get_todo_configs(db, tenant_id_from_user(current_user), user_id)
 
 
 @router.put("/config")
@@ -35,7 +35,7 @@ def update_todo_config(
 	current_user: dict = Depends(get_current_user_for_tenant),
 ):
 	user_id = require_user_login_id(current_user)
-	return service.upsert_todo_config(db, user_id, config_in)
+	return service.upsert_todo_config(db, tenant_id_from_user(current_user), user_id, config_in)
 
 
 @router.get("/", response_model=List[todos_schemas.Todo])

@@ -9,13 +9,16 @@ from constants.attendance_shift import SHIFT_STATUS_CLOSED
 from core.config import settings
 from models.hr_models import Attendance, AttendanceDailySummary
 from services.hr.attendance_time_math import day_overtime_from_total_work
+from services.tenant_scope import attendance_daily_summaries_in_tenant, attendance_in_tenant
 
 
-def refresh_attendance_daily_summary(db: Session, user_id: str, work_date: date) -> AttendanceDailySummary | None:
+def refresh_attendance_daily_summary(
+	db: Session, tenant_id: int, user_id: str, work_date: date
+) -> AttendanceDailySummary | None:
 	"""해당일 CLOSED 세션만 합산해 요약 행을 갱신합니다. 세션이 없으면 기존 요약을 0으로 두거나 삭제하지 않고 0 갱신."""
 	standard = int(settings.ATTENDANCE_STANDARD_WORKDAY_MINUTES)
 	rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(
 			Attendance.user_id == user_id,
 			Attendance.work_date == work_date,
@@ -34,7 +37,7 @@ def refresh_attendance_daily_summary(db: Session, user_id: str, work_date: date)
 	overtime = day_overtime_from_total_work(total_work, standard)
 
 	existing = (
-		db.query(AttendanceDailySummary)
+		attendance_daily_summaries_in_tenant(db, tenant_id)
 		.filter(
 			AttendanceDailySummary.user_id == user_id,
 			AttendanceDailySummary.work_date == work_date,
@@ -43,6 +46,7 @@ def refresh_attendance_daily_summary(db: Session, user_id: str, work_date: date)
 	)
 	if existing is None:
 		row = AttendanceDailySummary(
+			tenant_id=tenant_id,
 			user_id=user_id,
 			work_date=work_date,
 			total_work_minutes=total_work,
@@ -61,11 +65,13 @@ def refresh_attendance_daily_summary(db: Session, user_id: str, work_date: date)
 	return cast(AttendanceDailySummary, existing)
 
 
-def summary_dict_for_work_date(db: Session, user_id: str, work_date: date) -> dict[str, int] | None:
+def summary_dict_for_work_date(
+	db: Session, tenant_id: int, user_id: str, work_date: date
+) -> dict[str, int] | None:
 	"""GET 응답용: DB 요약이 없어도 CLOSED 세션으로 즉시 합산."""
 	standard = int(settings.ATTENDANCE_STANDARD_WORKDAY_MINUTES)
 	rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(
 			Attendance.user_id == user_id,
 			Attendance.work_date == work_date,
@@ -77,7 +83,7 @@ def summary_dict_for_work_date(db: Session, user_id: str, work_date: date) -> di
 	)
 	if not rows:
 		stored = (
-			db.query(AttendanceDailySummary)
+			attendance_daily_summaries_in_tenant(db, tenant_id)
 			.filter(
 				AttendanceDailySummary.user_id == user_id,
 				AttendanceDailySummary.work_date == work_date,

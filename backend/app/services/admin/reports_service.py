@@ -7,7 +7,14 @@ from sqlalchemy.orm import Session
 
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.auth_models import User
-from services.tenant_scope import directory_users_in_tenant
+from services.tenant_scope import (
+	attendance_in_tenant,
+	daily_reports_in_tenant,
+	directory_users_in_tenant,
+	monthly_reports_in_tenant,
+	todos_in_tenant,
+	weekly_reports_in_tenant,
+)
 from models.holiday_models import Holiday
 from models.hr_models import Attendance, DailyReport, MonthlyReport, Todo, WeeklyReport
 from services.hr import reports_service as hr_reports
@@ -44,24 +51,29 @@ def list_daily_status(db: Session, tenant_id: int, work_date: date) -> list[dict
 
 	att_by_user = {
 		a.user_id: a
-		for a in db.query(Attendance).filter(Attendance.work_date == work_date).all()
+		for a in attendance_in_tenant(db, tenant_id)
+		.filter(Attendance.work_date == work_date)
+		.all()
 	}
 	report_by_user = {
 		r.user_id: r
-		for r in db.query(DailyReport).filter(DailyReport.report_date == work_date).all()
+		for r in daily_reports_in_tenant(db, tenant_id)
+		.filter(DailyReport.report_date == work_date)
+		.all()
 	}
 
 	day_start = datetime.combine(work_date, time.min)
 	day_end = datetime.combine(work_date, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
 		.distinct()
 		.all()
 	)
-	vacation_todo_users = {row[0] for row in vac_todo_rows}
+	vacation_todo_users = {cast(str, row[0]) for row in vac_todo_rows}
 
 	out = []
 	for u in users:
@@ -103,10 +115,12 @@ def list_week_status(db: Session, tenant_id: int, week_start: date) -> list[dict
 	)
 	weekly_rows = {
 		cast(str, w.user_id): w
-		for w in db.query(WeeklyReport).filter(WeeklyReport.week_start_date == week_start).all()
+		for w in weekly_reports_in_tenant(db, tenant_id)
+		.filter(WeeklyReport.week_start_date == week_start)
+		.all()
 	}
 	attendance_rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.work_date >= week_start, Attendance.work_date <= week_end)
 		.all()
 	)
@@ -124,7 +138,8 @@ def list_week_status(db: Session, tenant_id: int, week_start: date) -> list[dict
 	day_start = datetime.combine(week_start, time.min)
 	day_end = datetime.combine(week_end, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id, Todo.start_date, Todo.end_date)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id, Todo.start_date, Todo.end_date)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
@@ -196,10 +211,12 @@ def list_month_status(db: Session, tenant_id: int, month_start: date) -> list[di
 	)
 	monthly_rows = {
 		cast(str, m.user_id): m
-		for m in db.query(MonthlyReport).filter(MonthlyReport.month_start_date == month_start).all()
+		for m in monthly_reports_in_tenant(db, tenant_id)
+		.filter(MonthlyReport.month_start_date == month_start)
+		.all()
 	}
 	attendance_rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.work_date >= month_start, Attendance.work_date <= month_end)
 		.all()
 	)
@@ -219,7 +236,8 @@ def list_month_status(db: Session, tenant_id: int, month_start: date) -> list[di
 	day_start = datetime.combine(month_start, time.min)
 	day_end = datetime.combine(month_end, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id, Todo.start_date, Todo.end_date)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id, Todo.start_date, Todo.end_date)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
@@ -290,7 +308,7 @@ def get_user_bundle(db: Session, tenant_id: int, user_login_id: str, week_start:
 	user = require_user_by_login_id(db, tenant_id, user_login_id)
 
 	dailies = (
-		db.query(DailyReport)
+		daily_reports_in_tenant(db, tenant_id)
 		.filter(
 			DailyReport.user_id == user_login_id,
 			DailyReport.report_date >= week_start,
@@ -300,13 +318,13 @@ def get_user_bundle(db: Session, tenant_id: int, user_login_id: str, week_start:
 		.all()
 	)
 	weekly = (
-		db.query(WeeklyReport)
+		weekly_reports_in_tenant(db, tenant_id)
 		.filter(WeeklyReport.user_id == user_login_id, WeeklyReport.week_start_date == week_start)
 		.first()
 	)
 	month_start = hr_reports.first_of_month(week_start)
 	monthly = (
-		db.query(MonthlyReport)
+		monthly_reports_in_tenant(db, tenant_id)
 		.filter(
 			MonthlyReport.user_id == user_login_id,
 			MonthlyReport.month_start_date == month_start,

@@ -13,7 +13,13 @@ from services.admin.user_service import (
 	sync_user_vacation,
 )
 from fastapi import HTTPException
-from services.tenant_scope import categories_in_tenant, get_user_by_login_id, require_user_by_login_id, users_in_tenant
+from services.tenant_scope import (
+	categories_in_tenant,
+	get_user_by_login_id,
+	require_user_by_login_id,
+	todo_configs_in_tenant,
+	todos_in_tenant,
+)
 
 _SEOUL = ZoneInfo("Asia/Seoul")
 
@@ -89,6 +95,7 @@ def _assert_vacation_balance(
 
 def _assert_no_vacation_date_overlap(
 	db: Session,
+	tenant_id: int,
 	user_id: str,
 	category: str | None,
 	start_date: datetime,
@@ -105,7 +112,7 @@ def _assert_no_vacation_date_overlap(
 		new_start, new_end = new_end, new_start
 
 	query = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user_id)
 		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
 	)
@@ -127,12 +134,7 @@ def _assert_no_vacation_date_overlap(
 # - 관리자: 전체 일정
 # - 일반: 본인 일정 전체 
 def get_todos(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
-	q = (
-		db.query(Todo)
-		.join(User, Todo.user_id == User.user_login_id)
-		.filter(User.tenant_id == tenant_id)
-		.options(joinedload(Todo.author))
-	)
+	q = todos_in_tenant(db, tenant_id).options(joinedload(Todo.author))
 	return q.offset(skip).limit(limit).all()
 
 
@@ -140,7 +142,9 @@ def create_todo(db: Session, tenant_id: int, todo: TodoCreate, user_id: str):
 	end_for_range = todo.end_date if todo.end_date is not None else todo.start_date
 	_assert_todo_range_within_employment(db, tenant_id, user_id, todo.start_date, end_for_range)
 	user = _get_user_for_vacation(db, tenant_id, user_id)
-	_assert_no_vacation_date_overlap(db, user_id, todo.category, todo.start_date, todo.end_date)
+	_assert_no_vacation_date_overlap(
+		db, tenant_id, user_id, todo.category, todo.start_date, todo.end_date
+	)
 	_assert_vacation_balance(
 		db,
 		user,
@@ -148,7 +152,7 @@ def create_todo(db: Session, tenant_id: int, todo: TodoCreate, user_id: str):
 	)
 
 	todo_data = todo.model_dump(exclude={"user_id"}) 
-	db_todo = Todo(**todo_data, user_id=user_id)
+	db_todo = Todo(**todo_data, tenant_id=tenant_id, user_id=user_id)
 	
 	try:
 		db.add(db_todo)
@@ -162,7 +166,11 @@ def create_todo(db: Session, tenant_id: int, todo: TodoCreate, user_id: str):
 		raise HTTPException(status_code=500, detail=f"일정 저장 중 오류 발생: {str(e)}")
 
 def update_todo(db: Session, tenant_id: int, todo_id: int, todo_update: TodoUpdate, user_id: str):
-	db_todo = db.query(Todo).filter(Todo.id == todo_id, Todo.user_id == user_id).first()
+	db_todo = (
+		todos_in_tenant(db, tenant_id)
+		.filter(Todo.id == todo_id, Todo.user_id == user_id)
+		.first()
+	)
 	if not db_todo:
 		return None
 
@@ -184,6 +192,7 @@ def update_todo(db: Session, tenant_id: int, todo_id: int, todo_update: TodoUpda
 	_assert_todo_range_within_employment(db, tenant_id, user_id, new_start, end_for_range)
 	_assert_no_vacation_date_overlap(
 		db,
+		tenant_id,
 		user_id,
 		cast(str | None, new_category),
 		new_start,
@@ -213,7 +222,11 @@ def update_todo(db: Session, tenant_id: int, todo_id: int, todo_update: TodoUpda
 		raise HTTPException(status_code=500, detail=f"수정 중 오류 발생: {str(e)}")
 
 def delete_todo(db: Session, tenant_id: int, todo_id: int, user_id: str):
-	db_todo = db.query(Todo).filter(Todo.id == todo_id, Todo.user_id == user_id).first()
+	db_todo = (
+		todos_in_tenant(db, tenant_id)
+		.filter(Todo.id == todo_id, Todo.user_id == user_id)
+		.first()
+	)
 	if not db_todo:
 		return None
 
@@ -229,22 +242,27 @@ def delete_todo(db: Session, tenant_id: int, todo_id: int, user_id: str):
 def get_categories(db: Session, tenant_id: int):
 	return categories_in_tenant(db, tenant_id).all()
 
-def get_todo_configs(db: Session, user_id: str):
-	return db.query(TodoConfig).filter(TodoConfig.user_id == user_id).all()
+def get_todo_configs(db: Session, tenant_id: int, user_id: str):
+	return todo_configs_in_tenant(db, tenant_id).filter(TodoConfig.user_id == user_id).all()
 
-def upsert_todo_config(db: Session, user_id: str, config_in: TodoConfigBase):
+
+def upsert_todo_config(db: Session, tenant_id: int, user_id: str, config_in: TodoConfigBase):
 	"""
 	등록과 수정을 한 번에 처리 (Upsert)
 	"""
 	# 1. 기존 설정이 있는지 확인
-	db_config = db.query(TodoConfig).filter(TodoConfig.user_id == user_id, TodoConfig.category_key == config_in.category_key).first()
+	db_config = (
+		todo_configs_in_tenant(db, tenant_id)
+		.filter(TodoConfig.user_id == user_id, TodoConfig.category_key == config_in.category_key)
+		.first()
+	)
 	if db_config:
 		# 2. 존재하면 수정 (Update)
 		db_config.color = config_in.color
 		db_config.default_description = config_in.default_description
 	else:
 		# 3. 존재하지 않으면 생성 (Create)
-		db_config = TodoConfig(user_id=user_id, **config_in.model_dump())
+		db_config = TodoConfig(tenant_id=tenant_id, user_id=user_id, **config_in.model_dump())
 		db.add(db_config)
 
 	db.commit()

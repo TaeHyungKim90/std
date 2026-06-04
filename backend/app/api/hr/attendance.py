@@ -56,7 +56,7 @@ def read_attendance_sessions_for_day(
 	tid = tenant_id_from_user(current_user)
 	user_id = _require_user_id(current_user)
 	items = service.list_attendance_sessions_for_work_date(db, tid, user_id, work_date)
-	summary_raw = summary_dict_for_work_date(db, user_id, work_date)
+	summary_raw = summary_dict_for_work_date(db, tid, user_id, work_date)
 	summary = (
 		attendance_schemas.AttendanceDailySummaryOut.model_validate(summary_raw)
 		if summary_raw is not None

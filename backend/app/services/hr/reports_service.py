@@ -6,7 +6,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from models.hr_models import DailyReport, MonthlyReport, WeeklyReport
-from services.tenant_scope import get_user_by_login_id
+from services.tenant_scope import (
+	daily_reports_in_tenant,
+	get_user_by_login_id,
+	monthly_reports_in_tenant,
+	weekly_reports_in_tenant,
+)
 
 
 def monday_of(d: date) -> date:
@@ -31,7 +36,7 @@ def list_daily_range(
 	resign_d = cast(date | None, user.resignation_date) if user is not None else None
 	if resign_d is not None and date_from > resign_d:
 		return []
-	query = db.query(DailyReport).filter(
+	query = daily_reports_in_tenant(db, tenant_id).filter(
 		DailyReport.user_id == user_id,
 		DailyReport.report_date >= date_from,
 		DailyReport.report_date <= date_to,
@@ -55,14 +60,16 @@ def upsert_daily(
 	if not text:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="내용을 입력해 주세요.")
 	row = (
-		db.query(DailyReport)
+		daily_reports_in_tenant(db, tenant_id)
 		.filter(DailyReport.user_id == user_id, DailyReport.report_date == report_date)
 		.first()
 	)
 	if row:
 		row.content = text
 	else:
-		row = DailyReport(user_id=user_id, report_date=report_date, content=text)
+		row = DailyReport(
+			tenant_id=tenant_id, user_id=user_id, report_date=report_date, content=text
+		)
 		db.add(row)
 	db.commit()
 	db.refresh(row)
@@ -76,7 +83,7 @@ def get_weekly(db: Session, tenant_id: int, user_id: str, week_start: date) -> W
 	if resign_d is not None and week_end > resign_d:
 		return None
 	return (
-		db.query(WeeklyReport)
+		weekly_reports_in_tenant(db, tenant_id)
 		.filter(WeeklyReport.user_id == user_id, WeeklyReport.week_start_date == week_start)
 		.first()
 	)
@@ -97,14 +104,16 @@ def upsert_weekly(
 	if not text:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="주간 요약을 입력해 주세요.")
 	row = (
-		db.query(WeeklyReport)
+		weekly_reports_in_tenant(db, tenant_id)
 		.filter(WeeklyReport.user_id == user_id, WeeklyReport.week_start_date == week_start)
 		.first()
 	)
 	if row:
 		row.summary = text
 	else:
-		row = WeeklyReport(user_id=user_id, week_start_date=week_start, summary=text)
+		row = WeeklyReport(
+			tenant_id=tenant_id, user_id=user_id, week_start_date=week_start, summary=text
+		)
 		db.add(row)
 	db.commit()
 	db.refresh(row)
@@ -118,7 +127,7 @@ def get_monthly(db: Session, tenant_id: int, user_id: str, month_start: date) ->
 	if resign_d is not None and month_start > resign_d:
 		return None
 	return (
-		db.query(MonthlyReport)
+		monthly_reports_in_tenant(db, tenant_id)
 		.filter(MonthlyReport.user_id == user_id, MonthlyReport.month_start_date == month_start)
 		.first()
 	)
@@ -139,14 +148,16 @@ def upsert_monthly(
 	if not text:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="월간 요약을 입력해 주세요.")
 	row = (
-		db.query(MonthlyReport)
+		monthly_reports_in_tenant(db, tenant_id)
 		.filter(MonthlyReport.user_id == user_id, MonthlyReport.month_start_date == month_start)
 		.first()
 	)
 	if row:
 		row.summary = text
 	else:
-		row = MonthlyReport(user_id=user_id, month_start_date=month_start, summary=text)
+		row = MonthlyReport(
+			tenant_id=tenant_id, user_id=user_id, month_start_date=month_start, summary=text
+		)
 		db.add(row)
 	db.commit()
 	db.refresh(row)

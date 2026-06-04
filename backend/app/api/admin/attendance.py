@@ -28,7 +28,8 @@ def post_attendance_record(
 	payload = body.model_dump(exclude_unset=True)
 	user_login_id = str(payload.pop("user_login_id", "")).strip()
 	work_date = payload.pop("work_date")
-	record = service.create_attendance_record(db, user_login_id, work_date, payload)
+	tid = tenant_id_from_user(current_admin)
+	record = service.create_attendance_record(db, tid, user_login_id, work_date, payload)
 	return AdminAttendanceRecordOut.model_validate(record)
 
 
@@ -41,7 +42,8 @@ def patch_attendance_record(
 ):
 	"""[관리자] 근태 기록 수정 (관리자 권한)."""
 	updates = body.model_dump(exclude_unset=True)
-	record = service.update_attendance_record(db, record_id, updates)
+	tid = tenant_id_from_user(current_admin)
+	record = service.update_attendance_record(db, tid, record_id, updates)
 	return AdminAttendanceRecordOut.model_validate(record)
 
 
@@ -103,8 +105,10 @@ def post_recompute_work_minutes(
 
 	기본 dry_run=true 로 `changes`만 반환하고, dry_run=false 일 때 DB 반영.
 	"""
+	tid = tenant_id_from_user(current_admin)
 	raw = service.recompute_work_minutes_bulk(
 		db,
+		tid,
 		start_date,
 		end_date,
 		user_login_id=user_login_id,

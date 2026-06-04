@@ -20,6 +20,11 @@ from services.hr.attendance_service import (
 	sync_shift_status_from_clock_times,
 )
 from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
+from services.tenant_scope import (
+	attendance_in_tenant,
+	require_user_by_login_id,
+	todos_in_tenant,
+)
 from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
 from utils.seoul_time import today_seoul
 
@@ -76,7 +81,9 @@ def get_all_attendance(
 		)
 		.outerjoin(
 			Attendance,
-			(Attendance.user_id == User.user_login_id) & (Attendance.work_date == parsed_work_date),
+			(Attendance.user_id == User.user_login_id)
+			& (Attendance.work_date == parsed_work_date)
+			& (Attendance.tenant_id == tenant_id),
 		)
 		.filter(
 			User.tenant_id == tenant_id,
@@ -239,9 +246,6 @@ def _calendar_row_enrichment(
 	}
 
 
-from services.tenant_scope import require_user_by_login_id
-
-
 def get_user_attendance_range(
 	db: Session,
 	tenant_id: int,
@@ -271,7 +275,7 @@ def get_user_attendance_range(
 		return {"items": []}
 
 	records = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(
 			Attendance.user_id == user_login_id,
 			Attendance.work_date >= start_d,
@@ -295,7 +299,7 @@ def get_user_attendance_range(
 	day_start = datetime.combine(start_d, time_type.min)
 	day_end = datetime.combine(end_d, time_type.max)
 	vac_todos = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user_login_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
@@ -449,6 +453,7 @@ def _apply_admin_attendance_payload(rec: Any, work_day: date_type, updates: dict
 
 def create_attendance_record(
 	db: Session,
+	tenant_id: int,
 	user_login_id: str,
 	work_day: date_type,
 	updates: dict,
@@ -457,10 +462,9 @@ def create_attendance_record(
 	uid = (user_login_id or "").strip()
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="사용자 ID가 필요합니다.")
-	if db.query(User).filter(User.user_login_id == uid).first() is None:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	require_user_by_login_id(db, tenant_id, uid)
 	if (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == uid, Attendance.work_date == work_day)
 		.first()
 		is not None
@@ -471,6 +475,7 @@ def create_attendance_record(
 		)
 
 	new_rec: Any = Attendance(
+		tenant_id=tenant_id,
 		user_id=uid,
 		work_date=work_day,
 		clock_in_time=None,
@@ -487,7 +492,7 @@ def create_attendance_record(
 	w, n = _recompute_work_and_night(new_rec.clock_in_time, new_rec.clock_out_time)
 	new_rec.work_minutes = w
 	new_rec.night_work_minutes = n
-	refresh_attendance_daily_summary(db, uid, work_day)
+	refresh_attendance_daily_summary(db, tenant_id, uid, work_day)
 	db.commit()
 	db.refresh(new_rec)
 	return new_rec
@@ -534,6 +539,7 @@ def _recompute_work_and_night(clock_in: datetime | None, clock_out: datetime | N
 
 def recompute_work_minutes_bulk(
 	db: Session,
+	tenant_id: int,
 	start_date: str | None,
 	end_date: str | None,
 	*,
@@ -547,14 +553,11 @@ def recompute_work_minutes_bulk(
 	- 잘못된 과거 계산식으로 저장된 데이터를 일괄 정정할 때 사용
 	"""
 	start_d, end_d = _parse_range_dates(start_date, end_date)
-	q = (
-		db.query(Attendance)
-		.filter(
-			Attendance.work_date >= start_d,
-			Attendance.work_date <= end_d,
-			Attendance.clock_in_time.isnot(None),
-			Attendance.clock_out_time.isnot(None),
-		)
+	q = attendance_in_tenant(db, tenant_id).filter(
+		Attendance.work_date >= start_d,
+		Attendance.work_date <= end_d,
+		Attendance.clock_in_time.isnot(None),
+		Attendance.clock_out_time.isnot(None),
 	)
 	if user_login_id:
 		q = q.filter(Attendance.user_id == user_login_id.strip())
@@ -595,7 +598,7 @@ def recompute_work_minutes_bulk(
 
 	if not dry_run and updated > 0:
 		for uid, wd in touched:
-			refresh_attendance_daily_summary(db, uid, wd)
+			refresh_attendance_daily_summary(db, tenant_id, uid, wd)
 		db.commit()
 
 	return {
@@ -609,11 +612,12 @@ def recompute_work_minutes_bulk(
 
 def update_attendance_record(
 	db: Session,
+	tenant_id: int,
 	record_id: int,
 	updates: dict,
 ) -> Attendance:
 	"""attendance PK 기준 부분 수정 (관리자)."""
-	record = db.query(Attendance).filter(Attendance.id == record_id).first()
+	record = attendance_in_tenant(db, tenant_id).filter(Attendance.id == record_id).first()
 	if not record:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="근태 기록을 찾을 수 없습니다.")
 
@@ -628,7 +632,7 @@ def update_attendance_record(
 	w, n = _recompute_work_and_night(rec.clock_in_time, rec.clock_out_time)
 	rec.work_minutes = w
 	rec.night_work_minutes = n
-	refresh_attendance_daily_summary(db, str(rec.user_id), work_day)
+	refresh_attendance_daily_summary(db, tenant_id, str(rec.user_id), work_day)
 
 	db.add(rec)
 	db.commit()

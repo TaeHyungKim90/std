@@ -18,7 +18,13 @@ from models.holiday_models import Holiday
 from models.system_models import WorkLocation
 from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
 from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
-from services.tenant_scope import get_user_by_login_id, require_user_by_login_id, work_locations_in_tenant
+from services.tenant_scope import (
+	attendance_in_tenant,
+	get_user_by_login_id,
+	require_user_by_login_id,
+	todos_in_tenant,
+	work_locations_in_tenant,
+)
 
 
 def is_vacation_status(status_str: Any) -> bool:
@@ -51,7 +57,7 @@ def sync_shift_status_from_clock_times(record: Attendance) -> None:
 def get_open_shift(db: Session, tenant_id: int, user_id: str) -> Attendance | None:
 	"""퇴근 미처리 근무(출근 있음·퇴근 없음). 사용자당 1건 가정, 최근 출근 순."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(
 			Attendance.user_id == user_id,
 			Attendance.clock_in_time.isnot(None),
@@ -70,11 +76,11 @@ def get_today_or_open_attendance(db: Session, tenant_id: int, user_id: str, toda
 	return get_today_attendance(db, tenant_id, user_id, today_date)
 
 
-def _vacation_todos_for_day(db: Session, user_id: str, target_date: date) -> list[Todo]:
+def _vacation_todos_for_day(db: Session, tenant_id: int, user_id: str, target_date: date) -> list[Todo]:
 	day_start = datetime.combine(target_date, time.min)
 	day_end = datetime.combine(target_date, time.max)
 	return (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
@@ -191,11 +197,11 @@ def set_user_preferred_work_location(db: Session, tenant_id: int, user_login_id:
 	return key
 
 
-def _vacation_categories_for_day(db: Session, user_id: str, target_date: date) -> set[str]:
+def _vacation_categories_for_day(db: Session, tenant_id: int, user_id: str, target_date: date) -> set[str]:
 	# 인스턴스 필드도 Column[T]로 오탐될 수 있어 런타임 값은 str로 취급
 	return {
 		cast(str, t.category)
-		for t in _vacation_todos_for_day(db, user_id, target_date)
+		for t in _vacation_todos_for_day(db, tenant_id, user_id, target_date)
 		if t.category
 	}
 
@@ -230,7 +236,7 @@ def check_clock_in_allowed(
 				},
 			)
 
-	cats = _vacation_categories_for_day(db, user_id, today_date)
+	cats = _vacation_categories_for_day(db, tenant_id, user_id, today_date)
 	if VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM & cats and not confirm_full_day_vacation:
 		raise HTTPException(
 			status_code=status.HTTP_409_CONFLICT,
@@ -262,10 +268,10 @@ def assert_user_can_clock_in(db: Session, tenant_id: int, user_id: str, current_
 
 
 def _append_official_leave_time_note(
-	db: Session, user_id: str, work_date: date, ts: datetime, *, clock_out: bool = False
+	db: Session, tenant_id: int, user_id: str, work_date: date, ts: datetime, *, clock_out: bool = False
 ) -> None:
 	"""공가 To-Do에 출근/퇴근 처리 시각 기록(update.md §2.4)."""
-	todos = _vacation_todos_for_day(db, user_id, work_date)
+	todos = _vacation_todos_for_day(db, tenant_id, user_id, work_date)
 	label = "퇴근처리" if clock_out else "출근처리"
 	tag = f"[{label} {ts.strftime('%Y-%m-%d %H:%M')}]"
 	for t in todos:
@@ -281,7 +287,7 @@ def _append_official_leave_time_note(
 def get_today_attendance(db: Session, tenant_id: int, user_id: str, today_date: date):
 	"""동일 work_date 중 가장 최근(id desc) 세션 1건. 다회 출근 시 마지막 행."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == user_id, Attendance.work_date == today_date)
 		.order_by(Attendance.id.desc())
 		.first()
@@ -291,7 +297,7 @@ def get_today_attendance(db: Session, tenant_id: int, user_id: str, today_date: 
 def list_attendance_sessions_for_work_date(db: Session, tenant_id: int, user_id: str, work_date: date) -> list[Attendance]:
 	"""당일 근태 행 전부(다회 출근·세션 순서)."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == user_id, Attendance.work_date == work_date)
 		.order_by(Attendance.id.asc())
 		.all()
@@ -300,7 +306,7 @@ def list_attendance_sessions_for_work_date(db: Session, tenant_id: int, user_id:
 
 def get_clock_context(db: Session, tenant_id: int, user_id: str, work_date: date) -> dict[str, Any]:
 	"""출퇴근 UI용 당일 맥락(확인 팝업 분기). 주말·공휴일은 DB holidays 기준."""
-	cats = _vacation_categories_for_day(db, user_id, work_date)
+	cats = _vacation_categories_for_day(db, tenant_id, user_id, work_date)
 	rec = get_today_attendance(db, tenant_id, user_id, work_date)
 	requires_full = bool(VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM & cats)
 	if rec and is_vacation_status(rec.status) and rec.clock_in_time is None:
@@ -379,13 +385,16 @@ def create_clock_in(
 		rec.shift_status = SHIFT_STATUS_IN_PROGRESS
 		if note:
 			rec.note = note
-		_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
+		_append_official_leave_time_note(
+			db, tenant_id, user_id, current_time.date(), current_time, clock_out=False
+		)
 		_apply_user_preferred_work_location(db, tenant_id, user_id, location_key)
 		db.commit()
 		db.refresh(rec)
 		return rec
 
 	new_record = Attendance(
+		tenant_id=tenant_id,
 		user_id=user_id,
 		work_date=current_time.date(),
 		clock_in_time=current_time,
@@ -397,7 +406,9 @@ def create_clock_in(
 		shift_status=SHIFT_STATUS_IN_PROGRESS,
 	)
 	db.add(new_record)
-	_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
+	_append_official_leave_time_note(
+		db, tenant_id, user_id, current_time.date(), current_time, clock_out=False
+	)
 	_apply_user_preferred_work_location(db, tenant_id, user_id, location_key)
 	db.commit()
 	db.refresh(new_record)
@@ -439,9 +450,13 @@ def update_clock_out(
 	rec.status = record_status
 	rec.shift_status = SHIFT_STATUS_CLOSED
 
-	_append_official_leave_time_note(db, str(rec.user_id), rec.work_date, current_time, clock_out=True)
+	_append_official_leave_time_note(
+		db, tenant_id, str(rec.user_id), cast(date, rec.work_date), current_time, clock_out=True
+	)
 
-	refresh_attendance_daily_summary(db, str(rec.user_id), cast(date, rec.work_date))
+	refresh_attendance_daily_summary(
+		db, tenant_id, str(rec.user_id), cast(date, rec.work_date)
+	)
 
 	_apply_user_preferred_work_location(db, tenant_id, str(rec.user_id), location_key)
 

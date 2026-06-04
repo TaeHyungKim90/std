@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from models.auth_models import User
 from models.hr_models import Todo, TodoCategoryType
-from services.tenant_scope import categories_in_tenant
+from services.tenant_scope import categories_in_tenant, todos_in_tenant
 
 
 def get_all_category_types(db: Session, tenant_id: int):
@@ -45,18 +45,9 @@ def delete_category_type(db: Session, tenant_id: int, cat_id: int):
 	if not category:
 		raise HTTPException(status_code=404, detail="카테고리를 찾을 수 없습니다.")
 
-	tenant_user_ids = [
-		u.user_login_id
-		for u in db.query(User.user_login_id)
-		.filter(User.tenant_id == tenant_id)
-		.all()
-	]
 	count = (
-		db.query(Todo)
-		.filter(
-			Todo.category == category.category_key,
-			Todo.user_id.in_(tenant_user_ids),
-		)
+		todos_in_tenant(db, tenant_id)
+		.filter(Todo.category == category.category_key)
 		.count()
 	)
 	if count > 0:

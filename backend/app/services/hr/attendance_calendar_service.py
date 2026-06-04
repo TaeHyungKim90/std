@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.holiday_models import Holiday
 from models.hr_models import Attendance, Todo
+from services.tenant_scope import attendance_in_tenant, todos_in_tenant
 
 
 _VACATION_LABELS: dict[str, str] = {
@@ -61,7 +62,7 @@ def build_month_context(
 		}
 
 	records = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id.in_(user_ids))
 		.filter(Attendance.work_date >= start_d, Attendance.work_date <= end_d)
 		.order_by(Attendance.work_date.asc(), Attendance.clock_in_time.asc(), Attendance.id.asc())
@@ -76,7 +77,7 @@ def build_month_context(
 	day_start = datetime.combine(start_d, time.min)
 	day_end = datetime.combine(end_d, time.max)
 	todos = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id.in_(user_ids))
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
