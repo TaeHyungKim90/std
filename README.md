@@ -72,7 +72,7 @@ Windows 운영 실행 절차는 [`PRODUCTION_GUIDE.md`](PRODUCTION_GUIDE.md)를 
 | `FRONTEND_URL` | | 소셜 로그인 리다이렉트 등, 예: `http://localhost:3000` |
 | `APP_PORT` | | API 포트 (기본 `8000`) |
 | `DATABASE_URL` | | 비우면 SQLite 기본. PostgreSQL 예: `postgresql+psycopg2://user:pass@localhost/todo` |
-| `BOOTSTRAP_DEFAULT_ADMIN` | | `true`일 때만 기본 관리자 시드 (운영에서는 `false`) |
+| `BOOTSTRAP_DEFAULT_ADMIN` | `true` | 테넌트별 `admin`/`1234` 시드 + 첫 로그인 비밀번호 변경 안내 (운영 `false`) |
 | `SERVE_UPLOADS_STATIC` | | `true`면 `/uploads` 정적 노출 (운영에서는 `false` 권장) |
 | `DEV_AUTO_START_REACT` | | `true`면 `python main.py` 시 프론트 `npm start` 병행 |
 | `ALLOW_LEGACY_PUBLIC_APPLY` | | 레거시 `POST /apply` 허용 (운영에서는 `false` 권장) |

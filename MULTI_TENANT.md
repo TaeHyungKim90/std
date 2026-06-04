@@ -77,6 +77,7 @@ HR 경로(`/{slug}/my`, `/{slug}/admin`)와 **겹치지 않도록** 별도 prefi
 | `GET` | `/api/platform/tenants` | 테넌트 전체 목록 (비활성 포함) |
 | `POST` | `/api/platform/tenants` | 테넌트 생성 + 시드 + 선택적 admin |
 | `PATCH` | `/api/platform/tenants/{id}` | `name`, `is_active` 수정 |
+| `DELETE` | `/api/platform/tenants/{id}` | 테넌트 영구 삭제 (`valuesplay` 등 기본 테넌트는 불가) |
 
 **테넌트 생성 시 자동 처리**
 
@@ -86,7 +87,7 @@ HR 경로(`/{slug}/my`, `/{slug}/admin`)와 **겹치지 않도록** 별도 prefi
 
 ### DB 초기화 (`init_db`)
 
-- 최초 기동 시 `tenants`가 비어 있으면 기본 테넌트 `valuesplay` 1건 생성
+- 최초 기동 시 `tenants`가 비어 있으면 기본 테넌트 `valuesplay`(기업명 **가치플레이**, **활성**) 1건 생성. 기존 DB도 기동 시 동일하게 맞춤
 - 테넌트별 마스터 시드, (옵션) 테넌트 admin, (옵션) 플랫폼 admin 부트스트랩
 
 ---
@@ -116,14 +117,13 @@ HR 경로(`/{slug}/my`, `/{slug}/admin`)와 **겹치지 않도록** 별도 prefi
 DEFAULT_TENANT_SLUG=valuesplay
 FRONTEND_URL=http://localhost:3000
 
-# 개발용: 테넌트별 admin/1234 자동 생성
+# 개발용(기본 true): 테넌트별 admin/1234 자동 생성 → 첫 로그인 시 비밀번호 변경 모달
 BOOTSTRAP_DEFAULT_ADMIN=true
-
-# 개발용: 플랫폼 admin/platform 자동 생성
-BOOTSTRAP_PLATFORM_ADMIN=true
 ```
 
-운영(`ENVIRONMENT=production`)에서는 `BOOTSTRAP_*` 모두 **false** 권장.
+운영(`ENVIRONMENT=production`)에서는 `BOOTSTRAP_DEFAULT_ADMIN=false` 권장.
+
+개발 환경에서는 `platform_admins`가 비어 있으면 서버 기동 시 **자동 1회 생성**합니다 (아래 «플랫폼 관리자 계정»). 운영은 자동 생성 없음.
 
 ### 프론트 (`.env`)
 
@@ -134,15 +134,36 @@ REACT_APP_API_BASE_URL=http://localhost:8001/api
 
 ---
 
+## 플랫폼 관리자 계정
+
+### 개발 (자동)
+
+`ENVIRONMENT=development` 이고 **`padmin` 계정이 없을 때** 기동 시 자동 생성합니다(다른 플랫폼 계정이 있어도 `padmin`은 추가).
+
+| 항목 | 기본값 | `.env`로 변경 |
+|------|--------|----------------|
+| 아이디 | `padmin` | `PLATFORM_ADMIN_LOGIN_ID` |
+| 비밀번호 | `padmin` | `PLATFORM_ADMIN_PASSWORD` |
+| 이름 | `플랫폼 관리자` | `PLATFORM_ADMIN_NAME` |
+
+로그인: **http://localhost:3000/platform/login**
+
+`padmin`이 이미 있으면 건너뜁니다. 예전 `platform` 계정만 1개 있으면 `padmin`으로 ID·비밀번호를 맞춥니다.
+
+### 운영
+
+자동 생성 없음. 최초 1회는 `backend/scripts/create_platform_admin.py` 로 생성하거나 DB에 직접 등록합니다.
+
+---
+
 ## 신규 기업(테넌트) 추가
 
 ### 권장: 플랫폼 관리 UI
 
-1. `BOOTSTRAP_PLATFORM_ADMIN=true` 로 기동 후 `/platform/login` 접속
-2. 기본 계정 `platform` / `platform` 로그인 (운영 전 반드시 변경)
-3. `/platform/tenants`에서 slug·기업명 입력 후 **테넌트 추가**
-4. (선택) 초기 admin ID·비밀번호 입력 → 해당 테넌트 HR admin 자동 생성
-5. HR 접속: `http://localhost:3000/{slug}/login`
+1. 개발: 서버 기동 후 `/platform/login` (`padmin` / `padmin` 기본, `.env`로 변경 가능)
+2. `/platform/tenants`에서 slug·기업명 입력 후 **테넌트 추가**
+3. (선택) 초기 admin ID·비밀번호 입력 → 해당 테넌트 HR admin 자동 생성
+4. HR 접속: `http://localhost:3000/{slug}/login`
 
 ### 대안: API / DB 직접
 
@@ -223,8 +244,8 @@ cd frontend && npm start
 
 개발 부트스트랩 예:
 
-- `BOOTSTRAP_DEFAULT_ADMIN=true` → 테넌트별 `admin` / `1234`
-- `BOOTSTRAP_PLATFORM_ADMIN=true` → `platform` / `platform`
+- `BOOTSTRAP_DEFAULT_ADMIN=true`(기본) → 테넌트별 `admin` / `1234`, **첫 로그인 시 비밀번호 변경 안내**, **직원 목록에는 미표시** (`visible_in_user_list=false`)
+- 플랫폼 관리자(개발) → 기동 시 자동 `padmin` / `padmin` (테이블 비어 있을 때만)
 
 ---
 
