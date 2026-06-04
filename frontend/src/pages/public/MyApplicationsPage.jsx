@@ -1,6 +1,6 @@
 import { recruitmentApi } from 'api/recruitmentApi';
-import { useAppPaths } from 'context/TenantContext';
 import { useLoading } from 'context/LoadingContext';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useEffect,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
@@ -59,7 +59,7 @@ const MyApplicationsPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, [navigate, showLoading, hideLoading]);
+	}, [navigate, showLoading, hideLoading, paths.CAREERS_LOGIN]);
 
 	const handleCancelApplication = async (applicationId) => {
 		if (!window.confirm("정말 지원을 취소하시겠습니까?\n취소된 내역은 복구할 수 없습니다.")) return;

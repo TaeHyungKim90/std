@@ -2,9 +2,9 @@
 // 웹 브릿지(WebView ↔ 네이티브) 연결 테스트: 상위 페이지 `pages/auth/LoginPage.jsx`의
 // 「앱 브릿지 연결 테스트」 버튼에서 `window.ReactNativeWebView.postMessage` 호출로 검증합니다.
 import { authApi } from 'api/authApi';
-import { useAppPaths } from 'context/TenantContext';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useEffect, useRef,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
@@ -38,7 +38,7 @@ const LoginForm = () => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current);
 		};
-	}, [isLoggedIn, loading, navigate]);
+	}, [isLoggedIn, loading, navigate, paths.MY_TODOS]);
 	// ✅ 한글 입력 차단 핸들러
 	const handleInputChange = (setter) => (e) => {
 		const { value } = e.target;

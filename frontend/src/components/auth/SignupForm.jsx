@@ -1,7 +1,7 @@
 import { authApi } from 'api/authApi';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
-import { useAppPaths } from 'context/TenantContext';
 import { useLoading } from 'context/LoadingContext';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useCallback,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
@@ -98,7 +98,7 @@ const SignupForm = () => {
 		}).finally(() => {
 			hideLoading();
 		});
-	}, [formData, idStatus, policyAccepted, navigate, showLoading, hideLoading]);
+	}, [formData, idStatus, policyAccepted, navigate, showLoading, hideLoading, paths.LOGIN]);
 
 	const isPasswordMatching = formData.user_password && formData.password_confirm && formData.user_password === formData.password_confirm;
 

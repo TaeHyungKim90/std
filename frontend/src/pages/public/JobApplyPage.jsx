@@ -59,7 +59,7 @@ const JobApplyPage = () => {
 		};
 		checkDuplicate();
 		return () => { isMounted = false; };
-	}, [job, navigate]);
+	}, [job, navigate, paths.CAREERS, paths.CAREERS_LOGIN, paths.CAREERS_MY_APPLICATIONS]);
 
 	const handleFileChange = (e, type) => {
 		const f = e.target.files?.[0];
