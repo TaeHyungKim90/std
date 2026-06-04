@@ -53,6 +53,27 @@ HR 경로(`/{slug}/my`, `/{slug}/admin`)와 **겹치지 않도록** 별도 prefi
 - `platform_admins` — 플랫폼 운영자 (테넌트 FK 없음)
 - `users`, `departments`, `positions`, `work_locations`, `todo_category_type`, `holidays`, `resume_templates`, `applicants`, `job_postings`, `office_location` 등에 `tenant_id`
 
+### 직원 활동 데이터 (`user_login_id` + `tenant_id`)
+
+일일·주간·월간 보고, 일정(`todos`), 출퇴근(`attendance`), 일별 근태 요약, 연차 잔여(`user_vacations`), 일정 색상 설정(`todo_config`)은 **`tenant_id`와 `user_login_id`(문자열)를 함께** 키로 사용합니다.
+
+| 테이블 | 복합 UNIQUE (요약) |
+|--------|-------------------|
+| `daily_reports` | `(tenant_id, user_id, report_date)` |
+| `weekly_reports` | `(tenant_id, user_id, week_start_date)` |
+| `monthly_reports` | `(tenant_id, user_id, month_start_date)` |
+| `user_vacations` | `(tenant_id, user_id)` |
+| `attendance_daily_summary` | `(tenant_id, user_id, work_date)` |
+| `todo_config` | `(tenant_id, user_id, category_key)` |
+| `todos`, `attendance` | `tenant_id` 인덱스 (행마다 저장) |
+
+- API는 기존과 같이 JWT·`X-Tenant-Slug`로 테넌트를 정하고, 서비스는 `tenant_scope.*_in_tenant()`로 조회·저장합니다.
+- **동일 로그인 ID**(예: `admin`)를 여러 테넌트에 두어도 보고·연차·출퇴근 데이터는 테넌트별로 분리됩니다.
+- **레거시 DB 마이그레이션**: `tenant_id` 추가 시 `users`에서 `user_login_id`가 일치하는 첫 행의 `tenant_id`로 백필합니다. 같은 `user_login_id`가 여러 테넌트에 있던 기존 HR 행은 한 테넌트에만 귀속될 수 있으므로, 마이그레이션 후 신규 데이터부터 완전 분리됩니다.
+- 테넌트 삭제 시 `user_id.in_(...)`가 아니라 **`tenant_id == 삭제 대상`** 으로 위 테이블을 정리합니다(타 테넌트 동일 ID 오삭제 방지).
+
+메시지(`messages`)는 `users.id`(PK) 기준이라 본 절과 별도입니다.
+
 ### 테넌트 요청 처리
 
 - `core/tenant.py` — `require_tenant`, `get_tenant_by_slug`, `tenant_pk()`, `tenant_slug_str()`
