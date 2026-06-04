@@ -39,6 +39,8 @@ Thumbs.db
 
 deploy_frontend.sh
 start_production.sh
+start_local.sh
+
 /static/index.html
 
 #그외
