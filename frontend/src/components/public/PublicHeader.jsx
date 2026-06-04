@@ -1,7 +1,7 @@
 import 'assets/css/publicHeader.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
-import { useAppPaths } from 'context/TenantContext';
+import { useTenant } from 'context/TenantContext';
 import { useApplicantSession } from 'hooks/useApplicantSession';
 import React, { useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import * as Notify from 'utils/toastUtils';
 import ApplicantProfileModal from './ApplicantProfileModal';
 
 const PublicHeader = () => {
-	const paths = useAppPaths();
+	const { paths, tenantName, logoUrl } = useTenant();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { user: loggedInUser, setUser, clearSession } = useApplicantSession(location.pathname);
@@ -37,7 +37,14 @@ const PublicHeader = () => {
 				<div className="public-header__inner">
 					<div className="public-header__brand-nav">
 					<Link to={paths.CAREERS} className="public-header__logo-link">
-						가치플레이 채용
+						<img
+							src={logoUrl}
+							alt=""
+							className="public-header__logo-img"
+							width={28}
+							height={28}
+						/>
+						<span>{tenantName} 채용</span>
 					</Link>
 
 					<nav className="public-header__nav">

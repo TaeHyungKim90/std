@@ -1,15 +1,15 @@
 // src/components/layout/Header.js
-import logo from 'assets/icon/favicon.png';
 import UserAvatar from 'components/common/UserAvatar';
 import { menuItemsFor } from 'constants/menu';
+import { DEFAULT_BRANDING_LOGO_SRC } from 'constants/tenantBranding';
 import { AuthContext } from 'context/AuthContext';
-import { useAppPaths } from 'context/TenantContext';
+import { useTenant } from 'context/TenantContext';
 import React, { useContext, useEffect, useState } from 'react';
 import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const Header = () => {
-	const paths = useAppPaths();
+	const { paths, tenantName, logoUrl } = useTenant();
 	const menuItems = menuItemsFor(paths);
 	const { isLoggedIn, logout, userNickname, userRole, userName, userProfileImageUrl, userProfileImageCacheBust, userAvatarAdjust } = useContext(AuthContext);
 	const navigate = useNavigate();
@@ -72,15 +72,23 @@ const Header = () => {
 			<div className="modern-gnb">
 					<div className="gnb-left">
 						<div onClick={() => navigate(paths.MY_TODOS)} className="bq-logo">
-							<img src={logo} alt="가치플레이 로고" className="bq-logo-img" />
+							<img
+								src={logoUrl}
+								alt={`${tenantName} 로고`}
+								className="bq-logo-img"
+								onError={(e) => {
+									e.currentTarget.onerror = null;
+									e.currentTarget.src = DEFAULT_BRANDING_LOGO_SRC;
+								}}
+							/>
 							<div className="bq-logo-text-group">
-								<span className="bq-logo-main">가치플레이 </span>
+								<span className="bq-logo-main">{tenantName}</span>
 								<span className="bq-logo-sub">HR</span>
 							</div>
 						</div>
 
 						<nav className="gnb-nav">
-							{MENU_ITEMS.map((item) => {
+							{menuItems.map((item) => {
 								if (item.adminOnly && !isAdmin) return null;
 								const isActive = item.id === 'admin' ? isAdminMode : currentPath.startsWith(item.path);
 

@@ -1,10 +1,10 @@
-import { pathsForTenant, TENANT_PARAM } from 'constants/paths';
-import React, { createContext, useContext, useMemo } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
-
 import { client } from 'api/axiosInstance';
 import LoadingBar from 'components/common/LoadingBar';
+import { pathsForTenant, TENANT_PARAM } from 'constants/paths';
+import { DEFAULT_BRANDING_LOGO_SRC, resolveBrandingAssetUrl } from 'constants/tenantBranding';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useEffect, useState } from 'react';
+import { Outlet, useParams } from 'react-router-dom';
 
 export const TenantContext = createContext(null);
 
@@ -29,6 +29,8 @@ export function TenantLayout() {
 	const tenantSlug = (rawSlug || '').toLowerCase();
 	const [status, setStatus] = useState('loading');
 	const [tenantName, setTenantName] = useState('');
+	const [logoUrl, setLogoUrl] = useState(DEFAULT_BRANDING_LOGO_SRC);
+	const [iconUrl, setIconUrl] = useState(DEFAULT_BRANDING_LOGO_SRC);
 
 	const paths = useMemo(() => pathsForTenant(tenantSlug), [tenantSlug]);
 
@@ -47,6 +49,16 @@ export function TenantLayout() {
 				if (cancelled) return;
 				if (res.data?.exists) {
 					setTenantName(res.data.name || tenantSlug);
+					setLogoUrl(
+						res.data.logo_url
+							? resolveBrandingAssetUrl(res.data.logo_url)
+							: DEFAULT_BRANDING_LOGO_SRC
+					);
+					setIconUrl(
+						res.data.icon_url
+							? resolveBrandingAssetUrl(res.data.icon_url)
+							: DEFAULT_BRANDING_LOGO_SRC
+					);
 					setStatus('ok');
 				} else {
 					setStatus('invalid');
@@ -59,6 +71,28 @@ export function TenantLayout() {
 			cancelled = true;
 		};
 	}, [tenantSlug]);
+
+	useEffect(() => {
+		if (status !== 'ok' || !tenantName) return;
+		document.title = tenantName;
+	}, [status, tenantName]);
+
+	useEffect(() => {
+		if (status !== 'ok' || !iconUrl) return;
+		let link = document.querySelector('link[rel="shortcut icon"]');
+		if (!link) {
+			link = document.createElement('link');
+			link.rel = 'shortcut icon';
+			link.type = 'image/png';
+			document.head.appendChild(link);
+		}
+		link.href = iconUrl;
+	}, [status, iconUrl]);
+
+	const value = useMemo(
+		() => ({ tenantSlug, tenantName, logoUrl, iconUrl, paths }),
+		[tenantSlug, tenantName, logoUrl, iconUrl, paths]
+	);
 
 	if (status === 'loading') {
 		return <LoadingBar text="기업 정보를 확인하는 중..." />;
@@ -76,11 +110,6 @@ export function TenantLayout() {
 			</div>
 		);
 	}
-
-	const value = useMemo(
-		() => ({ tenantSlug, tenantName, paths }),
-		[tenantSlug, tenantName, paths]
-	);
 
 	return (
 		<TenantContext.Provider value={value}>
