@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getApiBaseUrl } from 'constants/apiBaseUrl';
 import {
 	APPLICANT_SESSION_UPDATED_EVENT,
 	APPLICANT_USER_STORAGE_KEY,
@@ -6,6 +7,7 @@ import {
 import { API_SESSION_EXPIRED_CODE,AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
 import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
 import { formatApiDetail } from 'utils/formatApiError';
+import { isSessionRedirecting } from 'utils/sessionRedirect';
 import { showSessionExpiredToast } from 'utils/showSessionExpiredToast';
 
 /**
@@ -17,7 +19,7 @@ import { showSessionExpiredToast } from 'utils/showSessionExpiredToast';
  * 401(로그인 요청 제외): 토스트를 띄우고 사용자가 닫으면 로그인 화면으로 이동합니다.
  * 이동 직전에 `AUTH_SESSION_EXPIRED_EVENT`로 AuthContext가 직원 상태를 비웁니다.
  */
-const baseURL = process.env.REACT_APP_API_BASE_URL ?? '';
+const baseURL = getApiBaseUrl();
 
 function tenantSlugFromLocation() {
 	const segment = window.location.pathname.split('/').filter(Boolean)[0];
@@ -33,6 +35,11 @@ function pathsFromLocation() {
 		return pathsForTenant(DEFAULT_TENANT_SLUG);
 	}
 	return pathsForTenant(slug);
+}
+
+function normalizePathname(pathname) {
+	const p = (pathname || '/').replace(/\/+$/, '');
+	return p || '/';
 }
 
 export const client = axios.create({
@@ -106,11 +113,19 @@ client.interceptors.response.use(
 				return Promise.reject(new Error(msg));
 			}
 
-			const path = window.location.pathname;
+			if (isSessionRedirecting()) {
+				const expiredErr = new Error('세션이 만료되어 로그인이 필요합니다.');
+				expiredErr.code = API_SESSION_EXPIRED_CODE;
+				return Promise.reject(expiredErr);
+			}
+
+			const path = normalizePathname(window.location.pathname);
 			const P = pathsFromLocation();
 			const onCareers = path.includes('/careers');
 			const loginHref = onCareers ? P.CAREERS_LOGIN : P.LOGIN;
-			const alreadyOnLogin = path === P.LOGIN || path === P.CAREERS_LOGIN;
+			const alreadyOnLogin =
+				path === normalizePathname(P.LOGIN) ||
+				path === normalizePathname(P.CAREERS_LOGIN);
 
 			if (alreadyOnLogin) {
 				return Promise.reject(new Error('세션이 만료되어 로그인이 필요합니다.'));

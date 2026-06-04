@@ -2,6 +2,7 @@ import AdminRoute from 'components/common/AdminRoute';
 import Layout from 'components/common/Layout';
 import PrivateRoute from 'components/common/PrivateRoute';
 import { DEFAULT_TENANT_SLUG, ROUTE_SEGMENTS, TENANT_PARAM } from 'constants/paths';
+import { PLATFORM_ROOT } from 'constants/platformPaths';
 import { TenantLayout } from 'context/TenantContext';
 import { useAppPaths } from 'context/TenantContext';
 import React, { lazy } from 'react';
@@ -12,7 +13,6 @@ import authRoutes from './authRoutes';
 import hrRoutes from './hrRoutes';
 import platformRoutes from './platformRoutes';
 import publicRoutes from './publicRoutes';
-import { PLATFORM_ROOT } from 'constants/platformPaths';
 
 const NotFoundPage = lazy(() => import('pages/public/NotFoundPage'));
 const PdfViewerPage = lazy(() => import('pages/hr/PdfViewerPage'));

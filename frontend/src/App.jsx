@@ -4,6 +4,7 @@ import './assets/css/layout.css';
 // SunEditor 사용 화면이 많아 스타일은 앱 진입에서 한 번만 로드합니다.
 import 'suneditor/dist/css/suneditor.min.css';
 
+import AuthNavigateRegistrar from 'components/common/AuthNavigateRegistrar';
 import ErrorBoundary from 'components/common/ErrorBoundary';
 import LoadingBar from 'components/common/LoadingBar';
 import React, { Suspense } from 'react';
@@ -22,6 +23,7 @@ function App() {
 			<AuthProvider>
 				<PlatformAuthProvider>
 					<BrowserRouter>
+					<AuthNavigateRegistrar />
 					<ErrorBoundary>
 						<Suspense fallback={<LoadingBar text="페이지를 불러오는 중..." />}>
 							<AppRoutes />

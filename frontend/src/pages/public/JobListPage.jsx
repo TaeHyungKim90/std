@@ -1,8 +1,8 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import PaginationBar from 'components/common/PaginationBar';
 import { DEFAULT_PUBLIC_JOBS_PAGE_SIZE } from 'constants/apiConfig';
-import { useAppPaths } from 'context/TenantContext';
 import { useLoading } from 'context/LoadingContext';
+import { useAppPaths } from 'context/TenantContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
 import React, { useCallback,useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

@@ -10,11 +10,6 @@ import React from 'react';
 const LoginView = () => {
 	return (
 	<div className="bq-login-view-container">
-		{/* ✅ 로고 영역 */}
-		{/* <div className="bq-login-logo-area">
-			<h1 className="bq-login-logo-title">가치플레이</h1>
-			<div className="bq-login-logo-subtitle">vlaueplay System</div>
-		</div> */}
 		{/* 웹 브릿지 연결 테스트 (WebView 앱 전용) */}
 		{/* <div style={{ textAlign: 'center', marginBottom: '20px' }}>
 			<button 
@@ -34,7 +29,6 @@ const LoginView = () => {
 				📱 앱 브릿지 연결 테스트 🚀
 			</button>
 		</div> */}
-		{/* 로그인 폼 컴포넌트 */}
 		<LoginForm />
 	</div>
   );
