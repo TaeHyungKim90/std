@@ -10,6 +10,7 @@ from models.hr_models import Todo
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
+from services.tenant_scope import directory_users_in_tenant
 from models.holiday_models import Holiday
 from utils.seoul_time import today_seoul
 
@@ -23,8 +24,7 @@ class VacationUsageItem:
 # 1. 전체 사용자 목록 조회
 def get_all_users(db: Session, tenant_id: int):
 	return (
-		db.query(User)
-		.filter(User.tenant_id == tenant_id)
+		directory_users_in_tenant(db, tenant_id)
 		.options(
 			joinedload(User.vacation),
 			joinedload(User.avatar_setting),
@@ -319,11 +319,11 @@ def delete_user_by_admin(db: Session, user_id: int, tenant_id: int):
 def sync_all_users_vacation(db: Session, tenant_id: int):
 	"""모든 재직자의 입사일을 기준으로 연차를 자동 정산하여 테이블에 저장합니다."""
 	# 입사일이 있고, 퇴사하지 않은(재직중인) 유저만 가져옵니다.
-	users = db.query(User).filter(
-		User.tenant_id == tenant_id,
-		User.join_date.isnot(None),
-		User.resignation_date.is_(None),
-	).all()
+	users = (
+		directory_users_in_tenant(db, tenant_id)
+		.filter(User.join_date.isnot(None), User.resignation_date.is_(None))
+		.all()
+	)
 	
 	today = today_seoul()
 	user_login_ids = [u.user_login_id for u in users]

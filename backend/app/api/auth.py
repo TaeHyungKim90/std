@@ -208,6 +208,7 @@ async def login(
 		"role": user.role,
 		"join_date": user.join_date,
 		"resignation_date": user.resignation_date,
+		"mustChangePassword": bool(user.must_change_password),
 	}
 
 @router.post("/logout")
@@ -265,6 +266,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 	user_role = payload.get("role")
 	user_login_id = payload.get("userId")
 	user_pk = payload.get("id")
+	must_change_password = False
 	if user_pk is not None:
 		user = db.query(User).filter(User.id == user_pk).first()
 		if user:
@@ -278,6 +280,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 			avatar_zoom = float(user.avatar_zoom)
 			avatar_offset_x = float(user.avatar_offset_x)
 			avatar_offset_y = float(user.avatar_offset_y)
+			must_change_password = bool(user.must_change_password)
 	if join_date is None:
 		join_date = _optional_date_from_payload(payload.get("join_date"))
 	if resignation_date is None:
@@ -295,6 +298,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 		"avatar_offset_y": avatar_offset_y,
 		"join_date": join_date,
 		"resignation_date": resignation_date,
+		"mustChangePassword": must_change_password,
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)
@@ -377,7 +381,13 @@ def patch_my_profile(
 			)
 		if not verify_password(data["current_password"], str(u.user_password)):
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="현재 비밀번호가 일치하지 않습니다.")
+		if verify_password(data["new_password"], str(u.user_password)):
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="새 비밀번호는 현재 비밀번호와 달라야 합니다.",
+			)
 		u.user_password = get_password_hash(data["new_password"])
+		u.must_change_password = False
 
 	if "user_nickname" in data:
 		raw = data["user_nickname"]

@@ -5,6 +5,7 @@ import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import Header from './Header';
+import MustChangePasswordGate from './MustChangePasswordGate';
 import Sidebar from './Sidebar';
 
 const Layout = () => {
@@ -14,6 +15,7 @@ const Layout = () => {
 
 	return (
 		<div className="bq-layout-wrapper">
+			<MustChangePasswordGate />
 			<Header />
 			<div className="bq-layout-body">
 				<Sidebar />

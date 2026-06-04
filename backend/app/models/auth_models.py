@@ -4,7 +4,7 @@ from typing import Any
 from datetime import date, datetime
 
 
-from sqlalchemy import Column, Integer, String, DateTime, Date, Float, ForeignKey, UniqueConstraint
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Date, Float, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -29,6 +29,9 @@ class User(Base):
 	salary_bank_name = Column[str](String(100), nullable=True)				# 급여 은행명
 	salary_account_number = Column[str](String(50), nullable=True)			# 급여 계좌번호
 	role = Column[str](String(20), default="user")					 		# 권한
+	must_change_password = Column[bool](Boolean, nullable=False, default=False, server_default="0")
+	# False: 관리자 직원 목록·보고 현황 등 디렉터리에서 제외(부트스트랩 system admin)
+	visible_in_user_list = Column[bool](Boolean, nullable=False, default=True, server_default="1")
 	user_phone_number = Column[str](String(20), nullable=True)
 	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
 	join_date = Column[date](Date, nullable=True)

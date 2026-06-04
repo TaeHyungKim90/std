@@ -433,6 +433,12 @@
 	margin: 0;
 	font-size: 0.9rem;
 	color: var(--font-color, #141414);
+	line-height: 1.5;
+}
+
+.my-profile-password-social-msg--lead {
+	margin-bottom: 14px;
+	text-align: center;
 }
 
 .my-profile-photo-row {

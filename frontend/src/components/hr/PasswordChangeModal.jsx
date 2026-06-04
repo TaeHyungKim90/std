@@ -1,3 +1,6 @@
+import 'assets/css/my-profile.css';
+import 'assets/css/my-profile-extra.css';
+
 import AppModal from 'components/common/AppModal';
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
@@ -5,6 +8,9 @@ import * as Notify from 'utils/toastUtils';
 const PasswordChangeModal = ({
 	isOpen,
 	onClose,
+	required = false,
+	title = '비밀번호 변경',
+	description = null,
 	social,
 	passwordSaving,
 	onConfirm,
@@ -46,10 +52,15 @@ const PasswordChangeModal = ({
 	return (
 		<AppModal
 			isOpen={isOpen}
-			onClose={onClose}
+			onClose={required ? () => {} : onClose}
 			contentClassName="my-profile-password-detail-modal"
 		>
-			<h2 className="my-profile-vacation-detail-modal__title">비밀번호 변경</h2>
+			<h2 className="my-profile-vacation-detail-modal__title">{title}</h2>
+			{description ? (
+				<p className="my-profile-password-social-msg my-profile-password-social-msg--lead">
+					{description}
+				</p>
+			) : null}
 
 			{social ? (
 				<p className="my-profile-password-social-msg">
@@ -58,44 +69,52 @@ const PasswordChangeModal = ({
 			) : (
 				<>
 					<div className="my-profile-password-fields">
-						<label htmlFor="mp-modal-cur-pw">현재 비밀번호</label>
-						<input
-							id="mp-modal-cur-pw"
-							type="password"
-							value={currentPassword}
-							onChange={(e) => setCurrentPassword(e.target.value)}
-							autoComplete="current-password"
-						/>
+						<div className="my-profile-field">
+							<label htmlFor="mp-modal-cur-pw">현재 비밀번호</label>
+							<input
+								id="mp-modal-cur-pw"
+								type="password"
+								value={currentPassword}
+								onChange={(e) => setCurrentPassword(e.target.value)}
+								autoComplete="current-password"
+							/>
+						</div>
 
-						<label htmlFor="mp-modal-new-pw">새 비밀번호</label>
-						<input
-							id="mp-modal-new-pw"
-							type="password"
-							value={newPassword}
-							onChange={(e) => setNewPassword(e.target.value)}
-							autoComplete="new-password"
-						/>
+						<div className="my-profile-field">
+							<label htmlFor="mp-modal-new-pw">새 비밀번호</label>
+							<input
+								id="mp-modal-new-pw"
+								type="password"
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								autoComplete="new-password"
+							/>
+						</div>
 
-						<label htmlFor="mp-modal-confirm-pw">새 비밀번호 확인</label>
-						<input
-							id="mp-modal-confirm-pw"
-							type="password"
-							value={confirmPassword}
-							onChange={(e) => setConfirmPassword(e.target.value)}
-							autoComplete="new-password"
-						/>
+						<div className="my-profile-field">
+							<label htmlFor="mp-modal-confirm-pw">새 비밀번호 확인</label>
+							<input
+								id="mp-modal-confirm-pw"
+								type="password"
+								value={confirmPassword}
+								onChange={(e) => setConfirmPassword(e.target.value)}
+								autoComplete="new-password"
+							/>
+						</div>
 
-						<div className="my-profile-hint">변경 시에만 입력하세요. 6자 이상.</div>
+						<p className="my-profile-hint">변경 시에만 입력하세요. 6자 이상.</p>
 					</div>
 
 					<div className="my-profile-modal-actions">
-						<button
-							type="button"
-							className="my-profile-btn my-profile-btn--secondary"
-							onClick={onClose}
-						>
-							취소
-						</button>
+						{!required ? (
+							<button
+								type="button"
+								className="my-profile-btn my-profile-btn--secondary"
+								onClick={onClose}
+							>
+								취소
+							</button>
+						) : null}
 						<button
 							type="button"
 							className="my-profile-btn my-profile-btn--primary"

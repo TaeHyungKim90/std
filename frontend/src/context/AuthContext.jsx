@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
 	const [joinDate, setJoinDate] = useState(null);
 	const [resignationDate, setResignationDate] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [mustChangePassword, setMustChangePassword] = useState(false);
 	const isLoggedInRef = useRef(false);
 
 	// 🌟 2. 옛날 방식 대신 새로운 리모컨 함수 가져오기!
@@ -56,6 +57,11 @@ export const AuthProvider = ({ children }) => {
 		setUserRole('user');
 		setJoinDate(null);
 		setResignationDate(null);
+		setMustChangePassword(false);
+	}, []);
+
+	const clearMustChangePassword = useCallback(() => {
+		setMustChangePassword(false);
 	}, []);
 
 	// ✅ 로그아웃: API + 상태 초기화는 여기서만 수행 (Header 등에서 이중 호출 금지)
@@ -86,6 +92,7 @@ export const AuthProvider = ({ children }) => {
 			setUserRole(res.data.role || 'user');
 			setJoinDate(res.data.join_date || null);
 			setResignationDate(res.data.resignation_date || null);
+			setMustChangePassword(Boolean(res.data.mustChangePassword));
 			return true;
 		}
 		resetAuthState();
@@ -180,7 +187,9 @@ export const AuthProvider = ({ children }) => {
 			resignationDate, setResignationDate,
 			loading, logout,
 			checkAuth,
-			refreshAuth
+			refreshAuth,
+			mustChangePassword,
+			clearMustChangePassword,
 		}}>
 			{children}
 		</AuthContext.Provider>
