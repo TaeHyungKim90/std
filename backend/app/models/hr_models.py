@@ -13,6 +13,7 @@ class Todo(Base):
 	__tablename__ = "todos"
 
 	id = Column[int](Integer, primary_key=True, index=True) 			#교유식별자
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String, ForeignKey("users.user_login_id"))	# 유저 아이디
 	title = Column[str](String(200), nullable=False)	 				# 휴가/보고 제목
 	description = Column[str](Text)										# 상세 내용
@@ -42,8 +43,12 @@ class TodoCategoryType(Base):
 #일정 개인샛팅
 class TodoConfig(Base):
 	__tablename__ = "todo_config"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", "category_key", name="uq_todo_config_tenant_user_category"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String, ForeignKey("users.user_login_id"))
 	category_key = Column[str](String(20), ForeignKey("todo_category_type.category_key"))
 	color = Column[str](String(7), default="#3788d8") 
@@ -66,8 +71,12 @@ class OfficeLocation(Base):
 # 🌟 2. 기존 Attendance 테이블에 좌표 컬럼 추가
 class Attendance(Base):
 	__tablename__ = "attendance"
-	__table_args__ = (Index("ix_attendance_user_shift_status", "user_id", "shift_status"),)
+	__table_args__ = (
+		Index("ix_attendance_user_shift_status", "user_id", "shift_status"),
+		Index("ix_attendance_tenant_user_date", "tenant_id", "user_id", "work_date"),
+	)
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String, index=True)
 	work_date = Column[date](Date, index=True)
 	clock_in_time = Column[datetime](DateTime, nullable=True)
@@ -91,9 +100,14 @@ class AttendanceDailySummary(Base):
 	"""동일 user·work_date CLOSED 세션 합산(연장·야간 합)."""
 
 	__tablename__ = "attendance_daily_summary"
-	__table_args__ = (UniqueConstraint("user_id", "work_date", name="uq_attendance_daily_summary_user_date"),)
+	__table_args__ = (
+		UniqueConstraint(
+			"tenant_id", "user_id", "work_date", name="uq_attendance_daily_summary_tenant_user_date"
+		),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	work_date = Column[date](Date, index=True, nullable=False)
 	total_work_minutes = Column[int](Integer, default=0, nullable=False)
@@ -104,9 +118,12 @@ class AttendanceDailySummary(Base):
 class DailyReport(Base):
 	"""직원 일일 업무 보고 (캘린더 To-Do와 분리)."""
 	__tablename__ = "daily_reports"
-	__table_args__ = (UniqueConstraint("user_id", "report_date", name="uq_daily_reports_user_date"),)
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", "report_date", name="uq_daily_reports_tenant_user_date"),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	report_date = Column[date](Date, nullable=False, index=True)
 	content = Column[str](Text, nullable=False)
@@ -117,9 +134,14 @@ class DailyReport(Base):
 class WeeklyReport(Base):
 	"""주간 요약 보고."""
 	__tablename__ = "weekly_reports"
-	__table_args__ = (UniqueConstraint("user_id", "week_start_date", name="uq_weekly_reports_user_week"),)
+	__table_args__ = (
+		UniqueConstraint(
+			"tenant_id", "user_id", "week_start_date", name="uq_weekly_reports_tenant_user_week"
+		),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	week_start_date = Column[date](Date, nullable=False, index=True)
 	summary = Column[str](Text, nullable=False)
@@ -130,9 +152,14 @@ class WeeklyReport(Base):
 class MonthlyReport(Base):
 	"""월간 요약 보고 (달력 월 1일 기준)."""
 	__tablename__ = "monthly_reports"
-	__table_args__ = (UniqueConstraint("user_id", "month_start_date", name="uq_monthly_reports_user_month"),)
+	__table_args__ = (
+		UniqueConstraint(
+			"tenant_id", "user_id", "month_start_date", name="uq_monthly_reports_tenant_user_month"
+		),
+	)
 
 	id = Column[int](Integer, primary_key=True, index=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
 	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
 	month_start_date = Column[date](Date, nullable=False, index=True)
 	summary = Column[str](Text, nullable=False)

@@ -66,9 +66,13 @@ class User(Base):
 
 class UserVacation(Base):
 	__tablename__ = "user_vacations"
-	
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", name="uq_user_vacations_tenant_user"),
+	)
+
 	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), unique=True)
+	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+	user_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), nullable=False)
 	total_days = Column[int](Integer, default=0)												# 총 발생 연차
 	used_days = Column[Any](Float, default=0.0)													# 사용 연차 (반차를 위해 Float)
 	remaining_days = Column[Any](Float, default=0.0)											# 잔여 연차

@@ -158,7 +158,40 @@ def _ensure_multi_tenant_schema() -> None:
 			)
 
 	_drop_legacy_single_column_unique_indexes(insp)
+	_ensure_hr_employee_tenant_columns(default_tid)
 	_migrate_tenant_scoped_unique_constraints()
+
+
+def _ensure_hr_employee_tenant_columns(default_tid: int) -> None:
+	"""HR 직원 활동 테이블(todos·출퇴근·보고·연차)에 tenant_id 추가 및 백필."""
+	insp = inspect(engine)
+	for table in _HR_EMPLOYEE_TENANT_TABLES:
+		if not insp.has_table(table):
+			continue
+		cols = {c["name"] for c in insp.get_columns(table)}
+		if "tenant_id" not in cols:
+			print(f"--- HR {table}.tenant_id column add ---")
+			with engine.begin() as conn:
+				conn.execute(
+					text(f"ALTER TABLE {table} ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT {default_tid}")
+				)
+		with engine.begin() as conn:
+			conn.execute(
+				text(
+					f"""
+					UPDATE {table}
+					SET tenant_id = (
+						SELECT u.tenant_id FROM users u
+						WHERE u.user_login_id = {table}.user_id
+						ORDER BY u.id LIMIT 1
+					)
+					WHERE EXISTS (
+						SELECT 1 FROM users u
+						WHERE u.user_login_id = {table}.user_id
+					)
+					"""
+				)
+			)
 
 
 # SQLite 레거시 단일 컬럼 UNIQUE → (tenant_id, ...) 복합 UNIQUE
@@ -177,7 +210,44 @@ _TENANT_SCOPED_UNIQUE_SPECS: list[tuple[str, list[tuple[tuple[str, ...], str]]]]
 	("holidays", [(("tenant_id", "holiday_date"), "uq_holidays_tenant_date")]),
 	("resume_templates", [(("tenant_id", "saved_name"), "uq_resume_templates_tenant_saved")]),
 	("applicants", [(("tenant_id", "email_id"), "uq_applicants_tenant_email")]),
+	(
+		"daily_reports",
+		[(("tenant_id", "user_id", "report_date"), "uq_daily_reports_tenant_user_date")],
+	),
+	(
+		"weekly_reports",
+		[(("tenant_id", "user_id", "week_start_date"), "uq_weekly_reports_tenant_user_week")],
+	),
+	(
+		"monthly_reports",
+		[(("tenant_id", "user_id", "month_start_date"), "uq_monthly_reports_tenant_user_month")],
+	),
+	("user_vacations", [(("tenant_id", "user_id"), "uq_user_vacations_tenant_user")]),
+	(
+		"attendance_daily_summary",
+		[
+			(
+				("tenant_id", "user_id", "work_date"),
+				"uq_attendance_daily_summary_tenant_user_date",
+			)
+		],
+	),
+	(
+		"todo_config",
+		[(("tenant_id", "user_id", "category_key"), "uq_todo_config_tenant_user_category")],
+	),
 ]
+
+_HR_EMPLOYEE_TENANT_TABLES = (
+	"todos",
+	"todo_config",
+	"attendance",
+	"attendance_daily_summary",
+	"daily_reports",
+	"weekly_reports",
+	"monthly_reports",
+	"user_vacations",
+)
 
 
 def _sqlite_unique_index_columns(conn, index_name: str) -> list[str]:
