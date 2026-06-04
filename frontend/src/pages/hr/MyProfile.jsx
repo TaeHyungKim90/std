@@ -23,6 +23,12 @@ function formatYmd(value) {
 	}
 }
 
+function isBootstrapSystemAdmin(profile) {
+	if (!profile) return false;
+	if (profile.join_date_editable === false) return true;
+	return profile.user_login_id === 'admin';
+}
+
 function isSocialLoginId(loginId) {
 	if (!loginId || typeof loginId !== 'string') return false;
 	return loginId.startsWith('kakao_') || loginId.startsWith('naver_');
@@ -105,6 +111,7 @@ const MyProfile = () => {
 	}, [photoPreviewUrl]);
 
 	const social = useMemo(() => isSocialLoginId(profile?.user_login_id), [profile?.user_login_id]);
+	const joinDateLocked = useMemo(() => isBootstrapSystemAdmin(profile), [profile]);
 
 	const vacation = profile?.vacation;
 	const totalDays = vacation?.total_days ?? 0;
@@ -175,10 +182,12 @@ const MyProfile = () => {
 			const prevNick = (profile.user_nickname || '').trim();
 			if (nickTrim !== prevNick) payload.user_nickname = nickTrim || null;
 
-			// 입사일
-			const nextJoinDate = joinDate || null;
-			const prevJoinDate = formatYmd(profile.join_date) === '—' ? null : formatYmd(profile.join_date);
-			if (nextJoinDate !== prevJoinDate) payload.join_date = nextJoinDate;
+			// 입사일 (운영용 admin 계정은 변경 불가)
+			if (!joinDateLocked) {
+				const nextJoinDate = joinDate || null;
+				const prevJoinDate = formatYmd(profile.join_date) === '—' ? null : formatYmd(profile.join_date);
+				if (nextJoinDate !== prevJoinDate) payload.join_date = nextJoinDate;
+			}
 
 			// 전화번호(숫자만)
 			const phoneDigits = (phone || '').replace(/\D/g, '');
@@ -448,7 +457,14 @@ const MyProfile = () => {
 										type="date"
 										value={joinDate}
 										onChange={(e) => setJoinDate(e.target.value)}
+										disabled={joinDateLocked}
+										readOnly={joinDateLocked}
 									/>
+									{joinDateLocked ? (
+										<div className="my-profile-hint">
+											테넌트 운영용 admin 계정은 입사일을 등록할 수 없습니다.
+										</div>
+									) : null}
 								</div>
 
 								<div className="my-profile-field">

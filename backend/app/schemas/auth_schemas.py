@@ -165,6 +165,7 @@ class UserResponse(BaseModel):
 	created_at: datetime
 	join_date: Optional[date] = None 
 	resignation_date: Optional[date] = None
+	join_date_editable: bool = True
 	avatar_zoom: float = 1.0
 	avatar_offset_x: float = 0.0
 	avatar_offset_y: float = 0.0

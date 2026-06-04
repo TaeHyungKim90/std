@@ -23,10 +23,17 @@ from models.auth_models import User, UserAvatarSetting
 from models.system_models import Department, Position
 from models.tenant_models import Tenant
 from schemas import auth_schemas
+from constants.bootstrap_admin import is_bootstrap_system_admin
 from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
 router = APIRouter()
+
+
+def _user_response(user: User) -> auth_schemas.UserResponse:
+	base = auth_schemas.UserResponse.model_validate(user)
+	return base.model_copy(update={"join_date_editable": not is_bootstrap_system_admin(user)})
+
 
 # ==========================================
 # ⚙️ 환경 설정 및 공통 변수
@@ -339,7 +346,7 @@ def get_my_profile(
 	)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
-	return auth_schemas.UserResponse.model_validate(user)
+	return _user_response(user)
 
 
 @router.patch("/me", response_model=auth_schemas.UserResponse)
@@ -427,6 +434,11 @@ def patch_my_profile(
 		u.user_profile_image_url = data["user_profile_image_url"] or None
 
 	if "join_date" in data:
+		if is_bootstrap_system_admin(u):
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="테넌트 운영용 admin 계정은 입사일을 변경할 수 없습니다.",
+			)
 		u.join_date = data["join_date"]
 		sync_user_vacation(db, u)
 
@@ -468,7 +480,7 @@ def patch_my_profile(
 		.filter(User.id == user_pk)
 		.first()
 	)
-	return auth_schemas.UserResponse.model_validate(updated_user or u)
+	return _user_response(updated_user or u)
 
 
 # ==========================================
