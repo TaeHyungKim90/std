@@ -11,20 +11,21 @@ from core.tenant import normalize_tenant_slug, validate_tenant_slug_format
 from db.session import _seed_tenant_defaults
 from models.auth_models import User
 from models.common_models import AuditLog
+from models.auth_models import UserVacation
 from models.hr_models import (
 	Attendance,
 	AttendanceDailySummary,
 	DailyReport,
 	MonthlyReport,
 	Todo,
+	TodoConfig,
 	WeeklyReport,
 )
 from models.message_models import Message
 from models.tenant_models import Tenant
 from schemas.platform_schemas import TenantCreateRequest, TenantUpdateRequest
 
-BOOTSTRAP_ADMIN_LOGIN_ID = "admin"
-
+from constants.bootstrap_admin import BOOTSTRAP_ADMIN_LOGIN_ID
 
 def _upsert_bootstrap_admin(db: Session, tenant_id: int, password: str) -> None:
 	"""테넌트 HR 부트스트랩 관리자(admin) — 로그인 ID 고정."""
@@ -169,7 +170,6 @@ def delete_tenant(db: Session, tenant_id: int) -> dict[str, str]:
 	tid = tenant_id
 	users = db.query(User).filter(User.tenant_id == tid).all()
 	user_pks = [cast(int, u.id) for u in users]
-	user_logins = [cast(str, u.user_login_id) for u in users]
 
 	try:
 		if user_pks:
@@ -180,16 +180,17 @@ def delete_tenant(db: Session, tenant_id: int) -> dict[str, str]:
 				or_(AuditLog.admin_id.in_(user_pks), AuditLog.target_user_id.in_(user_pks))
 			).delete(synchronize_session=False)
 
-		if user_logins:
-			for model in (
-				Todo,
-				Attendance,
-				AttendanceDailySummary,
-				DailyReport,
-				WeeklyReport,
-				MonthlyReport,
-			):
-				db.query(model).filter(model.user_id.in_(user_logins)).delete(synchronize_session=False)
+		for model in (
+			Todo,
+			TodoConfig,
+			Attendance,
+			AttendanceDailySummary,
+			DailyReport,
+			WeeklyReport,
+			MonthlyReport,
+			UserVacation,
+		):
+			db.query(model).filter(model.tenant_id == tid).delete(synchronize_session=False)
 
 		for user in users:
 			db.delete(user)
