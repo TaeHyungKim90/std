@@ -54,6 +54,8 @@ FRONTEND_STATIC_DIR = os.path.join(STATIC_DIR, "static")
 REPO_ROOT = os.path.normpath(os.path.join(BASE_DIR, "..", ".."))
 if not os.path.exists(UPLOAD_DIR):
 	os.makedirs(UPLOAD_DIR)
+TENANT_BRANDING_DIR = os.path.join(UPLOAD_DIR, "tenant-branding")
+os.makedirs(TENANT_BRANDING_DIR, exist_ok=True)
 
 
 @app.get("/assets/icon/favicon.png")
@@ -80,6 +82,13 @@ if os.path.exists(STATIC_DIR):
 	else:
 		# 예전 배포: favicon 등이 static 루트 바로 아래에만 있는 경우
 		app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
+# 테넌트 로고·아이콘 — 공개 브랜딩(인증 불필요). SERVE_UPLOADS_STATIC 과 무관하게 항상 노출.
+if os.path.isdir(TENANT_BRANDING_DIR):
+	app.mount(
+		"/uploads/tenant-branding",
+		StaticFiles(directory=TENANT_BRANDING_DIR),
+		name="tenant_branding",
+	)
 # 운영: SERVE_UPLOADS_STATIC=False 로 두고 /api/common/files/{file_id} 만 사용 (인증 필요)
 if settings.SERVE_UPLOADS_STATIC and os.path.isdir(UPLOAD_DIR):
 	app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
