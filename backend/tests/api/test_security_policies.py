@@ -7,8 +7,10 @@ import main as app_main  # noqa: E402
 from conftest import TENANT_HEADERS  # noqa: E402
 from core.config import settings  # noqa: E402
 from db.session import get_db  # noqa: E402
+from core.tenant import require_tenant  # noqa: E402
 from models.auth_models import User  # noqa: E402
 from models.common_models import UploadedFile  # noqa: E402
+from models.tenant_models import Tenant  # noqa: E402
 from models.message_models import Message, MessageAttachment  # noqa: E402
 from services.auth_service import get_current_user_for_tenant  # noqa: E402
 from services.public.applicant_auth import get_current_applicant_for_tenant  # noqa: E402
@@ -281,24 +283,24 @@ def test_common_download_blocks_individual_pdf_for_sender_and_allows_global_pdf_
 
 
 def test_legacy_applicant_endpoint_returns_410_when_disabled():
-	with memory_db_session() as db:
+	_stub_tenant = Tenant(id=1, slug="valuesplay", name="Test Tenant", is_active=True)
 
-		def _override_db():
-			yield db
+	async def _override_tenant():
+		return _stub_tenant
 
-		app_main.app.dependency_overrides[get_db] = _override_db
-		app_main.app.dependency_overrides[get_current_applicant_for_tenant] = lambda: {
-			"applicantId": 1,
-			"tenantId": 1,
-		}
-		prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
-		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
+	app_main.app.dependency_overrides[require_tenant] = _override_tenant
+	app_main.app.dependency_overrides[get_current_applicant_for_tenant] = lambda: {
+		"applicantId": 1,
+		"tenantId": 1,
+	}
+	prev = settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS
+	settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = False
 
-		try:
-			client = TestClient(app_main.app, headers=TENANT_HEADERS)
-			res = client.get("/api/public/recruitment/my-applications/1")
-			assert res.status_code == status.HTTP_410_GONE
-		finally:
-			settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
-			app_main.app.dependency_overrides.clear()
+	try:
+		client = TestClient(app_main.app, headers=TENANT_HEADERS)
+		res = client.get("/api/public/recruitment/my-applications/1")
+		assert res.status_code == status.HTTP_410_GONE
+	finally:
+		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
+		app_main.app.dependency_overrides.clear()
 
