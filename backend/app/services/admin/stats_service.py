@@ -3,11 +3,12 @@ from sqlalchemy import func
 from constants.vacation_categories import VACATION_STATS_CATEGORIES
 from models.hr_models import Todo, TodoCategoryType
 from models.auth_models import User, UserVacation
+from services.tenant_scope import directory_users_in_tenant
 from utils.seoul_time import today_seoul
 
 
 def get_admin_stats(db: Session, tenant_id: int):
-	user_count = db.query(User).filter(User.tenant_id == tenant_id).count()
+	user_count = directory_users_in_tenant(db, tenant_id).count()
 	category_count = (
 		db.query(TodoCategoryType).filter(TodoCategoryType.tenant_id == tenant_id).count()
 	)
@@ -62,6 +63,7 @@ def get_admin_stats(db: Session, tenant_id: int):
 		.outerjoin(UserVacation, User.user_login_id == UserVacation.user_id)
 		.filter(
 			User.tenant_id == tenant_id,
+			User.visible_in_user_list.is_(True),
 			User.join_date.isnot(None),
 			User.resignation_date.is_(None),
 		)

@@ -64,6 +64,12 @@ def test_platform_tenant_crud():
 		assert patch_res.status_code == 200
 		assert patch_res.json()["name"] == "Pytest Tenant Updated"
 
+		pw_res = client.patch(
+			f"/api/platform/tenants/{tenant_id}",
+			json={"bootstrap_admin_password": "5678"},
+		)
+		assert pw_res.status_code == 200, pw_res.text
+
 		deact_res = client.patch(
 			f"/api/platform/tenants/{tenant_id}",
 			json={"is_active": False},
@@ -74,6 +80,14 @@ def test_platform_tenant_crud():
 		list_res2 = client.get("/api/platform/tenants")
 		assert list_res2.status_code == 200
 		assert len(list_res2.json()) >= before + 1
+
+		del_res = client.delete(f"/api/platform/tenants/{tenant_id}")
+		assert del_res.status_code == 200, del_res.text
+
+		list_res3 = client.get("/api/platform/tenants")
+		assert list_res3.status_code == 200
+		ids = {t["id"] for t in list_res3.json()}
+		assert tenant_id not in ids
 
 
 def test_platform_auth_rejects_tenant_token():

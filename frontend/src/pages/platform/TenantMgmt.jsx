@@ -1,12 +1,18 @@
 import { platformApi } from 'api/platformApi';
+import TenantEditModal from 'components/platform/TenantEditModal';
+import { DEFAULT_TENANT_SLUG } from 'constants/paths';
 import { useLoading } from 'context/LoadingContext';
 import React, { useCallback, useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
+const isDefaultTenant = (row) =>
+	(row?.slug || '').toLowerCase() === DEFAULT_TENANT_SLUG.toLowerCase();
+
+const BOOTSTRAP_ADMIN_ID = 'admin';
+
 const emptyForm = {
 	slug: '',
 	name: '',
-	bootstrap_admin_login_id: 'admin',
 	bootstrap_admin_password: '',
 };
 
@@ -14,8 +20,8 @@ const TenantMgmt = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [tenants, setTenants] = useState([]);
 	const [form, setForm] = useState(emptyForm);
-	const [editingId, setEditingId] = useState(null);
-	const [editName, setEditName] = useState('');
+	const [editModalOpen, setEditModalOpen] = useState(false);
+	const [editingTenant, setEditingTenant] = useState(null);
 
 	const loadList = useCallback(async (withOverlay = true) => {
 		try {
@@ -41,38 +47,49 @@ const TenantMgmt = () => {
 			return Notify.toastWarn('slug와 기업명을 입력해 주세요.');
 		}
 		const payload = { slug, name };
-		const adminId = (form.bootstrap_admin_login_id || '').trim();
-		const adminPw = form.bootstrap_admin_password || '';
-		if (adminId && adminPw) {
-			payload.bootstrap_admin_login_id = adminId;
+		const adminPw = (form.bootstrap_admin_password || '').trim();
+		if (adminPw) {
+			payload.bootstrap_admin_login_id = BOOTSTRAP_ADMIN_ID;
 			payload.bootstrap_admin_password = adminPw;
 		}
 		Notify.toastPromise(platformApi.createTenant(payload), {
 			loading: '테넌트를 등록하는 중...',
 			success: '테넌트가 등록되었습니다.',
 			error: (err) => err?.message || '테넌트 등록에 실패했습니다.',
-		}).then(() => {
-			setForm(emptyForm);
-			loadList(false);
-		});
+		})
+			.then(() => {
+				setForm(emptyForm);
+				loadList(false);
+			})
+			.catch(() => {});
 	};
 
-	const handleStartEdit = (row) => {
-		setEditingId(row.id);
-		setEditName(row.name || '');
+	const handleOpenEdit = (row) => {
+		setEditingTenant(row);
+		setEditModalOpen(true);
 	};
 
-	const handleSaveName = async (id) => {
-		const name = (editName || '').trim();
+	const handleCloseEdit = () => {
+		setEditModalOpen(false);
+		setEditingTenant(null);
+	};
+
+	const handleSaveEdit = async ({ id, name, bootstrap_admin_password: adminPw }) => {
 		if (!name) return Notify.toastWarn('기업명을 입력해 주세요.');
-		Notify.toastPromise(platformApi.updateTenant(id, { name }), {
+		const payload = { name };
+		if (adminPw) {
+			payload.bootstrap_admin_password = adminPw;
+		}
+		Notify.toastPromise(platformApi.updateTenant(id, payload), {
 			loading: '저장 중...',
 			success: '수정되었습니다.',
-			error: '수정에 실패했습니다.',
-		}).then(() => {
-			setEditingId(null);
-			loadList(false);
-		});
+			error: (err) => err?.message || '수정에 실패했습니다.',
+		})
+			.then(() => {
+				handleCloseEdit();
+				loadList(false);
+			})
+			.catch(() => {});
 	};
 
 	const handleToggleActive = async (row) => {
@@ -83,7 +100,28 @@ const TenantMgmt = () => {
 			loading: `${label} 처리 중...`,
 			success: `${label}되었습니다.`,
 			error: `${label}에 실패했습니다.`,
-		}).then(() => loadList(false));
+		})
+			.then(() => loadList(false))
+			.catch(() => {});
+	};
+
+	const handleDelete = async (row) => {
+		const typed = window.prompt(
+			`「${row.slug}」 테넌트를 영구 삭제합니다.\n` +
+				`직원·채용·일정 등 모든 데이터가 삭제되며 복구할 수 없습니다.\n\n` +
+				`계속하려면 slug를 입력하세요: ${row.slug}`
+		);
+		if (typed === null) return;
+		if ((typed || '').trim().toLowerCase() !== (row.slug || '').trim().toLowerCase()) {
+			return Notify.toastWarn('slug가 일치하지 않아 삭제가 취소되었습니다.');
+		}
+		Notify.toastPromise(platformApi.deleteTenant(row.id), {
+			loading: '테넌트를 삭제하는 중...',
+			success: '테넌트가 삭제되었습니다.',
+			error: (err) => err?.message || '삭제에 실패했습니다.',
+		})
+			.then(() => loadList(false))
+			.catch(() => {});
 	};
 
 	const formatDate = (value) => {
@@ -96,15 +134,17 @@ const TenantMgmt = () => {
 	};
 
 	return (
-		<div>
+		<div className="bq-admin-view">
 			<div className="admin-header">
-				<h2>🏢 테넌트(기업) 관리</h2>
-				<p style={{ color: '#6b7280', marginTop: 8 }}>
-					신규 기업 등록 시 HR 접속 URL: <code>/&#123;slug&#125;/login</code>
+				<h2>
+					<span>테넌트</span> 기업 관리
+				</h2>
+				<p className="admin-header__hint">
+					신규 기업 등록 시 HR 접속 URL: <code>/{'{slug}'}/login</code>
 				</p>
 			</div>
 
-			<div className="category-add-box" style={{ flexWrap: 'wrap', gap: 8 }}>
+			<div className="category-add-box tenant-mgmt-add-form">
 				<input
 					type="text"
 					className="cat-input"
@@ -121,10 +161,10 @@ const TenantMgmt = () => {
 				/>
 				<input
 					type="text"
-					className="cat-input"
-					placeholder="초기 admin ID (선택)"
-					value={form.bootstrap_admin_login_id}
-					onChange={(e) => setForm((f) => ({ ...f, bootstrap_admin_login_id: e.target.value }))}
+					className="cat-input cat-input--readonly"
+					value={BOOTSTRAP_ADMIN_ID}
+					readOnly
+					title="초기 HR 관리자 ID (고정)"
 				/>
 				<input
 					type="password"
@@ -158,45 +198,41 @@ const TenantMgmt = () => {
 									<td>
 										<code>{t.slug}</code>
 									</td>
+									<td>{t.name}</td>
 									<td>
-										{editingId === t.id ? (
-											<input
-												type="text"
-												value={editName}
-												onChange={(e) => setEditName(e.target.value)}
-											/>
-										) : (
-											t.name
-										)}
+										<span
+											className={`tenant-status ${
+												t.is_active ? 'tenant-status--active' : 'tenant-status--inactive'
+											}`}
+										>
+											{t.is_active ? '활성' : '비활성'}
+										</span>
 									</td>
-									<td>{t.is_active ? '활성' : '비활성'}</td>
 									<td>{formatDate(t.created_at)}</td>
 									<td>
-										{editingId === t.id ? (
+										<button type="button" className="btn-edit" onClick={() => handleOpenEdit(t)}>
+											수정
+										</button>
+										{!isDefaultTenant(t) ? (
 											<>
-												<button type="button" className="btn-save" onClick={() => handleSaveName(t.id)}>
-													저장
-												</button>
-												<button type="button" className="btn-cancel" onClick={() => setEditingId(null)}>
-													취소
-												</button>
-											</>
-										) : (
-											<>
-												<button type="button" className="btn-save" onClick={() => handleStartEdit(t)}>
-													수정
-												</button>
-												<button type="button" className="btn-cancel" onClick={() => handleToggleActive(t)}>
+												<button
+													type="button"
+													className="btn-cancel"
+													onClick={() => handleToggleActive(t)}
+												>
 													{t.is_active ? '비활성화' : '활성화'}
 												</button>
+												<button type="button" className="btn-delete" onClick={() => handleDelete(t)}>
+													삭제
+												</button>
 											</>
-										)}
+										) : null}
 									</td>
 								</tr>
 							))
 						) : (
 							<tr>
-								<td colSpan={6} style={{ textAlign: 'center', padding: 24 }}>
+								<td colSpan={6} className="admin-table__empty">
 									등록된 테넌트가 없습니다.
 								</td>
 							</tr>
@@ -204,6 +240,13 @@ const TenantMgmt = () => {
 					</tbody>
 				</table>
 			</div>
+
+			<TenantEditModal
+				isOpen={editModalOpen}
+				tenant={editingTenant}
+				onClose={handleCloseEdit}
+				onSave={handleSaveEdit}
+			/>
 		</div>
 	);
 };

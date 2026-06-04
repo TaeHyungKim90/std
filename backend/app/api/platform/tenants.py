@@ -18,6 +18,8 @@ def _to_response(tenant) -> TenantAdminResponse:
 		slug=cast(str, tenant.slug),
 		name=cast(str, tenant.name),
 		is_active=bool(tenant.is_active),
+		logo_url=cast(str | None, tenant.logo_url),
+		icon_url=cast(str | None, tenant.icon_url),
 		created_at=cast(datetime, tenant.created_at),
 	)
 
@@ -47,3 +49,12 @@ def update_tenant(
 	_current: dict = Depends(get_current_platform_admin),
 ):
 	return _to_response(tenant_service.update_tenant(db, tenant_id, payload))
+
+
+@router.delete("/{tenant_id}")
+def delete_tenant(
+	tenant_id: int,
+	db: Session = Depends(get_db),
+	_current: dict = Depends(get_current_platform_admin),
+):
+	return tenant_service.delete_tenant(db, tenant_id)

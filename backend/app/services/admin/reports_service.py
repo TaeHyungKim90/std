@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.auth_models import User
+from services.tenant_scope import directory_users_in_tenant
 from models.holiday_models import Holiday
 from models.hr_models import Attendance, DailyReport, MonthlyReport, Todo, WeeklyReport
 from services.hr import reports_service as hr_reports
@@ -30,8 +31,7 @@ def _is_public_holiday(db: Session, tenant_id: int, work_date: date) -> bool:
 def list_daily_status(db: Session, tenant_id: int, work_date: date) -> list[dict]:
 	"""일일보고 현황: 휴일 → 휴가(근태/일정) → 작성완료/미작성 순으로 판별."""
 	users = (
-		db.query(User)
-		.filter(User.tenant_id == tenant_id)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= work_date)
 		# 기준일(work_date) 이전에 퇴사한 직원은 제외 (퇴사일이 기준일 이상이면 포함)
@@ -93,8 +93,7 @@ def list_week_status(db: Session, tenant_id: int, week_start: date) -> list[dict
 	week_end = week_start + timedelta(days=6)
 
 	users = (
-		db.query(User)
-		.filter(User.tenant_id == tenant_id)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= week_end)
 		# 해당 주 내 재직 기간이 하루라도 있으면 포함 (주중 퇴사자 포함)
@@ -188,8 +187,7 @@ def list_month_status(db: Session, tenant_id: int, month_start: date) -> list[di
 	month_end = hr_reports.last_of_month(month_start)
 
 	users = (
-		db.query(User)
-		.filter(User.tenant_id == tenant_id)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= month_end)
 		.filter(or_(User.resignation_date.is_(None), User.resignation_date >= month_start))

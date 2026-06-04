@@ -14,6 +14,11 @@ def users_in_tenant(db: Session, tenant_id: int) -> Query:
 	return db.query(User).filter(User.tenant_id == tenant_id)
 
 
+def directory_users_in_tenant(db: Session, tenant_id: int) -> Query:
+	"""직원 목록·보고 현황 등 UI 디렉터리용(부트스트랩 system admin 제외)."""
+	return users_in_tenant(db, tenant_id).filter(User.visible_in_user_list.is_(True))
+
+
 def departments_in_tenant(db: Session, tenant_id: int) -> Query:
 	return db.query(Department).filter(Department.tenant_id == tenant_id)
 

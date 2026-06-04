@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from models.auth_models import User
+from services.tenant_scope import directory_users_in_tenant
 from services.hr.attendance_calendar_service import (
 	build_month_context,
 	iter_days,
@@ -40,9 +41,8 @@ def _is_on_time(first_clock_in: datetime | None) -> bool:
 
 def _active_users_for_month(db: Session, tenant_id: int, start_d: date, end_d: date) -> list[User]:
 	return (
-		db.query(User)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(
-			User.tenant_id == tenant_id,
 			User.join_date.isnot(None),
 			User.join_date <= end_d,
 			or_(User.resignation_date == None, User.resignation_date >= start_d),  # noqa: E711
