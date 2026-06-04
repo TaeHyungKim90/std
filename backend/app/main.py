@@ -159,7 +159,15 @@ def run_react():
 	frontend_dir = os.path.join(BASE_DIR, "../..", "frontend")
 	if not os.path.exists(frontend_dir):
 		return
+	node_modules = os.path.join(frontend_dir, "node_modules")
+	if not os.path.isdir(node_modules):
+		print(
+			"--- [WARN] frontend/node_modules 없음 — React 미기동. "
+			"프로젝트 루트에서 `cd frontend && npm ci` 후 다시 실행하세요. ---"
+		)
+		return
 	print(f"--- Starting React Dev Server in {frontend_dir} ---")
+	print("--- UI: http://localhost:3000 (CRA) | API: http://127.0.0.1:%s ---" % settings.APP_PORT)
 	env = os.environ.copy()
 	env["HOST"] = "0.0.0.0"
 	# 윈도우 환경 대응
