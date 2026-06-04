@@ -13,6 +13,9 @@
 # production
 /build
 
+# pdfjs worker — npm prestart/prebuild 시 node_modules에서 복사 (커밋 불필요)
+/public/pdf.worker.min.mjs
+
 # misc
 .DS_Store
 .env.local
