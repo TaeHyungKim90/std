@@ -118,8 +118,8 @@ def resolve_work_location_token_to_key(db: Session, tenant_id: int, token: str) 
 	)
 
 
-def format_stored_work_location_for_display(db: Session, stored: str | None) -> str | None:
-	"""DB에 저장된 location_key(또는 레거시 value)를 화면 표시용 location_value로 바꿈. 없으면 원문 유지."""
+def format_stored_work_location_for_display(db: Session, tenant_id: int, stored: str | None) -> str | None:
+	"""DB에 저장된 location_key(또는 레거시 value)를 화면 표시용 location_value로 바꿈. 없으면 원문 유지 (테넌트 격리)."""
 	if stored is None:
 		return None
 	s = str(stored).strip()
@@ -127,6 +127,7 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 		return None
 	w = (
 		db.query(WorkLocation)
+		.filter(WorkLocation.tenant_id == tenant_id)
 		.filter(WorkLocation.location_key == s)
 		.order_by(WorkLocation.id.desc())
 		.first()
@@ -135,6 +136,7 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 		return str(w.location_value).strip()
 	w = (
 		db.query(WorkLocation)
+		.filter(WorkLocation.tenant_id == tenant_id)
 		.filter(WorkLocation.location_value == s)
 		.order_by(WorkLocation.id.desc())
 		.first()
@@ -145,33 +147,37 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 
 
 def backfill_legacy_work_location_values_to_keys(db: Session) -> None:
-	"""attendance·users에 남아 있는 활성 근무장소의 표시 문자열을 location_key로 치환."""
-	active = db.query(WorkLocation).filter(WorkLocation.is_active.is_(True)).all()
-	if not active:
-		return
-	value_to_key = {str(w.location_value).strip(): str(w.location_key).strip() for w in active}
-	keys = {str(w.location_key).strip() for w in active}
+	"""attendance·users에 남아 있는 활성 근무장소의 표시 문자열을 location_key로 치환 (테넌트 격리 처리)."""
+	from models.tenant_models import Tenant
+	tenants = db.query(Tenant).all()
 	changed = False
-	for a in db.query(Attendance).all():
-		for attr in ("clock_in_location", "clock_out_location"):
-			val = getattr(a, attr)
-			if val is None:
-				continue
-			s = str(val).strip()
+	for tenant in tenants:
+		tid = tenant.id
+		active = db.query(WorkLocation).filter(WorkLocation.tenant_id == tid, WorkLocation.is_active.is_(True)).all()
+		if not active:
+			continue
+		value_to_key = {str(w.location_value).strip(): str(w.location_key).strip() for w in active}
+		keys = {str(w.location_key).strip() for w in active}
+		for a in db.query(Attendance).filter(Attendance.tenant_id == tid).all():
+			for attr in ("clock_in_location", "clock_out_location"):
+				val = getattr(a, attr)
+				if val is None:
+					continue
+				s = str(val).strip()
+				if s in keys:
+					continue
+				nk = value_to_key.get(s)
+				if nk and nk != s:
+					setattr(a, attr, nk)
+					changed = True
+		for u in db.query(User).filter(User.tenant_id == tid, User.preferred_work_location.isnot(None)).all():
+			s = str(u.preferred_work_location).strip()
 			if s in keys:
 				continue
 			nk = value_to_key.get(s)
 			if nk and nk != s:
-				setattr(a, attr, nk)
+				u.preferred_work_location = nk
 				changed = True
-	for u in db.query(User).filter(User.preferred_work_location.isnot(None)).all():
-		s = str(u.preferred_work_location).strip()
-		if s in keys:
-			continue
-		nk = value_to_key.get(s)
-		if nk and nk != s:
-			u.preferred_work_location = nk
-			changed = True
 	if changed:
 		db.commit()
 

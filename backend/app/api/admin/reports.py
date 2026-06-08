@@ -71,13 +71,14 @@ def user_report_bundle(
 		validate_report_date_range(week_start, "week_start")
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-	data = admin_reports.get_user_bundle(db, tenant_id_from_user(current_admin), user_login_id, week_start)
+	tid = tenant_id_from_user(current_admin)
+	data = admin_reports.get_user_bundle(db, tid, user_login_id, week_start)
 
 	# 감사 로그: 다른 관리자가 누구의 보고서를 열람했는지 기록 (실패해도 메인 로직 영향 없음)
 	try:
 		admin_login_id = current_admin.get("userId")
-		admin_user = db.query(User).filter(User.user_login_id == admin_login_id).first()
-		target_user = db.query(User).filter(User.user_login_id == user_login_id).first()
+		admin_user = db.query(User).filter(User.tenant_id == tid, User.user_login_id == admin_login_id).first()
+		target_user = db.query(User).filter(User.tenant_id == tid, User.user_login_id == user_login_id).first()
 		if admin_user and target_user:
 			xff = request.headers.get("x-forwarded-for") or ""
 			ip = xff.split(",")[0].strip() if xff else (request.client.host if request.client else None)

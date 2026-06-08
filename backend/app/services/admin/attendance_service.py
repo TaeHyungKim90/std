@@ -3,7 +3,7 @@ from typing import Any, cast
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 
 from constants.vacation_categories import (
 	VACATION_TODO_CATEGORIES,
@@ -40,7 +40,7 @@ def get_all_attendance(
 	[관리자] 일일 근태 조회
 
 	- 조회 기준(Base)은 User
-	- work_date에 해당하는 Attendance만 outer join으로 붙임
+	- work_date에 해당하는 Attendance만 outer join으로 붙임(테넌트·직원당 1행)
 	- 해당일 기준 정상 재직자만 필터링(입사일 <= work_date, 퇴사일 >= work_date 또는 NULL)
 	- Attendance가 없는 유저는 clock_in_time/id 등이 None으로 오더라도 dict로 안전 반환
 	"""
@@ -63,7 +63,18 @@ def get_all_attendance(
 		# work_date가 없거나 파싱이 실패하면 "오늘"을 기본으로 사용
 		parsed_work_date = today_seoul()
 
-	# User 기준 + 지정 work_date에 해당하는 Attendance만 outer join
+	# 직원·일자당 대표 출근 1건(테넌트 스코프, 동일 ID 타 테넌트·복수 세션 중복 방지)
+	attendance_pick_subq = (
+		attendance_in_tenant(db, tenant_id)
+		.filter(Attendance.work_date == parsed_work_date)
+		.group_by(Attendance.user_id)
+		.with_entities(
+			Attendance.user_id.label("pick_user_id"),
+			func.min(Attendance.id).label("pick_attendance_id"),
+		)
+		.subquery()
+	)
+
 	query = (
 		db.query(
 			User.user_login_id.label("user_id"),
@@ -79,12 +90,8 @@ def get_all_attendance(
 			Attendance.status.label("status"),
 			Attendance.shift_status.label("shift_status"),
 		)
-		.outerjoin(
-			Attendance,
-			(Attendance.user_id == User.user_login_id)
-			& (Attendance.work_date == parsed_work_date)
-			& (Attendance.tenant_id == tenant_id),
-		)
+		.outerjoin(attendance_pick_subq, attendance_pick_subq.c.pick_user_id == User.user_login_id)
+		.outerjoin(Attendance, Attendance.id == attendance_pick_subq.c.pick_attendance_id)
 		.filter(
 			User.tenant_id == tenant_id,
 			User.join_date.isnot(None),  # 입사일 미등록자 제외
@@ -116,8 +123,8 @@ def get_all_attendance(
 	items = []
 	for row in results:
 		m = dict(row._mapping)
-		m["clock_in_location"] = format_stored_work_location_for_display(db, m.get("clock_in_location"))
-		m["clock_out_location"] = format_stored_work_location_for_display(db, m.get("clock_out_location"))
+		m["clock_in_location"] = format_stored_work_location_for_display(db, tenant_id, m.get("clock_in_location"))
+		m["clock_out_location"] = format_stored_work_location_for_display(db, tenant_id, m.get("clock_out_location"))
 		items.append(m)
 	return {"items": items, "total": total}
 
@@ -321,8 +328,8 @@ def get_user_attendance_range(
 				"work_date": r.work_date,
 				"clock_in_time": r.clock_in_time,
 				"clock_out_time": r.clock_out_time,
-				"clock_in_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_in_location)),
-				"clock_out_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_out_location)),
+				"clock_in_location": format_stored_work_location_for_display(db, tenant_id, cast(str | None, r.clock_in_location)),
+				"clock_out_location": format_stored_work_location_for_display(db, tenant_id, cast(str | None, r.clock_out_location)),
 				"status": r.status,
 				"work_minutes": r.work_minutes,
 				"night_work_minutes": int(getattr(r, "night_work_minutes", None) or 0),
