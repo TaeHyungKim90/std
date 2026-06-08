@@ -90,10 +90,9 @@ const AdminAttendanceRewards = () => {
 					<div className="attendance-rewards__eyebrow">가산점 기준</div>
 					<div className="attendance-rewards__policy-list">
 						<span>출퇴근 완료 +{policy.attendance_complete ?? 0}</span>
-						<span>정시 출근 +{policy.on_time ?? 0}</span>
 						<span>휴가 인정 +{policy.vacation ?? 0}</span>
 					</div>
-					<p>미출근·미퇴근·지각은 감점 없이 해당 가산점만 부여하지 않습니다.</p>
+					<p>미출근·미퇴근은 감점 없이 해당 가산점만 부여하지 않습니다.</p>
 				</div>
 			</div>
 
@@ -106,7 +105,6 @@ const AdminAttendanceRewards = () => {
 							<th>총점</th>
 							<th>출퇴근 완료</th>
 							<th>휴가 인정</th>
-							<th>정시 출근</th>
 							<th>최장 연속</th>
 							<th>대상일</th>
 							<th>쿠폰</th>
@@ -115,7 +113,7 @@ const AdminAttendanceRewards = () => {
 					<tbody>
 						{loading ? (
 							<tr>
-								<td colSpan="9" className="admin-table__empty">가산점 데이터를 불러오는 중입니다.</td>
+								<td colSpan="8" className="admin-table__empty">가산점 데이터를 불러오는 중입니다.</td>
 							</tr>
 						) : items.length > 0 ? (
 							items.map((row) => (
@@ -128,7 +126,6 @@ const AdminAttendanceRewards = () => {
 									<td className="attendance-rewards__score">{row.score}점</td>
 									<td>{row.attendance_completed_days}일</td>
 									<td>{row.vacation_days}일</td>
-									<td>{row.on_time_days}일</td>
 									<td>{row.longest_streak_days}일</td>
 									<td>{row.eligible_days}일</td>
 									<td>{row.coupon_target ? <span className="role-badge admin">대상</span> : '-'}</td>
@@ -136,7 +133,7 @@ const AdminAttendanceRewards = () => {
 							))
 						) : (
 							<tr>
-								<td colSpan="9" className="admin-table__empty">표시할 직원이 없습니다.</td>
+								<td colSpan="8" className="admin-table__empty">표시할 직원이 없습니다.</td>
 							</tr>
 						)}
 					</tbody>

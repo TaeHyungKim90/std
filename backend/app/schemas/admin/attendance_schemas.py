@@ -76,7 +76,6 @@ class AdminAttendanceRecomputeResponse(BaseModel):
 
 class AdminAttendanceRewardPointsPolicy(BaseModel):
 	attendance_complete: int
-	on_time: int
 	vacation: int
 
 
@@ -87,7 +86,6 @@ class AdminAttendanceRewardItem(BaseModel):
 	score: int
 	attendance_completed_days: int
 	vacation_days: int
-	on_time_days: int
 	longest_streak_days: int
 	eligible_days: int
 	coupon_target: bool
