@@ -9,7 +9,7 @@ from models.auth_models import User
 from models.tenant_models import Tenant
 from schemas import auth_schemas
 from core.security import verify_password, get_password_hash, decode_auth_token # 👈 분리된 보안 로직 임포트
-from core.tenant import assert_token_tenant_matches, require_tenant
+from core.tenant import assert_token_tenant_matches, require_tenant, require_tenant_header_or_query
 
 # 💡 핵심: auto_error=False로 설정하여 헤더에 토큰이 없어도 바로 터지지 않고 쿠키를 검사할 기회를 줍니다.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
@@ -68,6 +68,15 @@ async def get_current_user_for_tenant(
 	tenant: Tenant = Depends(require_tenant),
 ):
 	"""JWT 테넌트와 요청 헤더(X-Tenant-Slug) 테넌트 일치 검증."""
+	assert_token_tenant_matches(current_user, tenant)
+	return current_user
+
+
+async def get_current_user_for_tenant_media(
+	current_user: dict = Depends(get_current_user),
+	tenant: Tenant = Depends(require_tenant_header_or_query),
+):
+	"""파일·이미지 등 브라우저 서브리소스 요청용(헤더 또는 tenant 쿼리)."""
 	assert_token_tenant_matches(current_user, tenant)
 	return current_user
 
@@ -138,6 +147,12 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: 
 		db.add(new_user)
 		db.commit()
 		db.refresh(new_user)
+		if user_data.joined_at is not None:
+			from services.admin.user_service import sync_user_vacation
+
+			sync_user_vacation(db, new_user)
+			db.commit()
+			db.refresh(new_user)
 		return new_user
 	except IntegrityError:
 		db.rollback()

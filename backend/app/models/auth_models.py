@@ -38,7 +38,14 @@ class User(Base):
 	resignation_date = Column[date](Date, nullable=True)
 	# 출퇴근 UI 기본 근무장소(활성 work_locations.location_key 저장)
 	preferred_work_location = Column[str](String(120), nullable=True)
-	vacation = relationship("UserVacation", back_populates="user", uselist=False, cascade="all, delete")
+	vacation = relationship(
+		"UserVacation",
+		back_populates="user",
+		uselist=False,
+		cascade="all, delete",
+		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
+		foreign_keys="[UserVacation.tenant_id, UserVacation.user_id]",
+	)
 	avatar_setting = relationship("UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan")
 	tenant = relationship("Tenant", foreign_keys=[tenant_id])
 	department = relationship("Department", foreign_keys=[department_id])
@@ -78,8 +85,13 @@ class UserVacation(Base):
 	remaining_days = Column[Any](Float, default=0.0)											# 잔여 연차
 	last_updated = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) 	# 최근 정산일
 	
-	# User 테이블과의 연결 고리
-	user = relationship("User", back_populates="vacation")
+	# User 테이블과의 연결 고리 (tenant_id + user_login_id 복합 매칭)
+	user = relationship(
+		"User",
+		back_populates="vacation",
+		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
+		foreign_keys="[UserVacation.tenant_id, UserVacation.user_id]",
+	)
 
 
 class UserAvatarSetting(Base):

@@ -3,6 +3,7 @@ from sqlalchemy import func
 from constants.vacation_categories import VACATION_STATS_CATEGORIES
 from models.hr_models import Todo, TodoCategoryType
 from models.auth_models import User, UserVacation
+from services.admin.user_service import refresh_active_users_vacation
 from services.tenant_scope import directory_users_in_tenant
 from utils.seoul_time import today_seoul
 
@@ -26,7 +27,7 @@ def get_admin_stats(db: Session, tenant_id: int):
 			Todo.start_date,
 			Todo.end_date,
 		)
-		.join(User, Todo.user_id == User.user_login_id)
+		.join(User, (Todo.user_id == User.user_login_id) & (Todo.tenant_id == User.tenant_id))
 		.join(
 			TodoCategoryType,
 			(Todo.category == TodoCategoryType.category_key)
@@ -52,6 +53,17 @@ def get_admin_stats(db: Session, tenant_id: int):
 		}
 		for v in vacation_query
 	]
+	active_users = (
+		directory_users_in_tenant(db, tenant_id)
+		.filter(
+			User.join_date.isnot(None),
+			User.resignation_date.is_(None),
+		)
+		.all()
+	)
+	refresh_active_users_vacation(db, active_users)
+	db.commit()
+
 	users_vacation_info = (
 		db.query(
 			User.id,
@@ -60,7 +72,11 @@ def get_admin_stats(db: Session, tenant_id: int):
 			UserVacation.used_days,
 			UserVacation.remaining_days,
 		)
-		.outerjoin(UserVacation, User.user_login_id == UserVacation.user_id)
+		.outerjoin(
+			UserVacation,
+			(User.user_login_id == UserVacation.user_id)
+			& (UserVacation.tenant_id == User.tenant_id),
+		)
 		.filter(
 			User.tenant_id == tenant_id,
 			User.visible_in_user_list.is_(True),

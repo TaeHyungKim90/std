@@ -27,9 +27,18 @@ class VacationUsageItem:
 	start_date: datetime
 	end_date: datetime | None = None
 
+def refresh_active_users_vacation(db: Session, users: list[User], today: date | None = None) -> None:
+	"""재직자 연차를 입사일·휴가 일정 기준으로 일괄 재정산합니다."""
+	today = today or today_seoul()
+	for user in users:
+		if user.join_date is None or user.resignation_date is not None:
+			continue
+		sync_user_vacation(db, user, today)
+
+
 # 1. 전체 사용자 목록 조회
 def get_all_users(db: Session, tenant_id: int):
-	return (
+	users = (
 		directory_users_in_tenant(db, tenant_id)
 		.options(
 			joinedload(User.vacation),
@@ -40,6 +49,11 @@ def get_all_users(db: Session, tenant_id: int):
 		.order_by(User.id.desc())
 		.all()
 	)
+	refresh_active_users_vacation(db, users)
+	db.commit()
+	for user in users:
+		db.refresh(user)
+	return users
 
 
 def _resolve_department_position(
@@ -69,11 +83,19 @@ def _resolve_department_position(
 	return department_id, position_id
 
 
-def _calculate_total_vacation(join_date: date, today: date) -> int:
-	months_diff = (today.year - join_date.year) * 12 + today.month - join_date.month
+def _completed_work_months(join_date: date, today: date) -> int:
+	"""입사일 기준 완료된 근속 개월 수(입사 당일=0, 다음 달 같은 일자에 1개월 완료)."""
+	if today < join_date:
+		return 0
+	months = (today.year - join_date.year) * 12 + today.month - join_date.month
 	if today.day < join_date.day:
-		months_diff -= 1
-	months_diff = max(months_diff, 0)
+		months -= 1
+	return max(months, 0)
+
+
+def _calculate_total_vacation(join_date: date, today: date) -> int:
+	"""총 발생 연차: 1년 미만=월차(완료 개월 수), 1년 이상=15일+2년마다 1일 가산(최대 25)."""
+	months_diff = _completed_work_months(join_date, today)
 	years_worked = months_diff // 12
 	if years_worked == 0:
 		return months_diff
