@@ -12,7 +12,7 @@ from models.auth_models import User  # noqa: E402
 from models.common_models import UploadedFile  # noqa: E402
 from models.tenant_models import Tenant  # noqa: E402
 from models.message_models import Message, MessageAttachment  # noqa: E402
-from services.auth_service import get_current_user_for_tenant  # noqa: E402
+from services.auth_service import get_current_user_for_tenant_media  # noqa: E402
 from services.public.applicant_auth import get_current_applicant_for_tenant  # noqa: E402
 from support.memory_db import memory_db_session  # noqa: E402
 
@@ -47,7 +47,7 @@ def test_common_upload_requires_authentication():
 
 def test_common_download_returns_403_when_authorized_user_has_no_permission(monkeypatch):
 	# 인증은 통과시키고, 파일 권한 체크에서 403 강제
-	app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+	app_main.app.dependency_overrides[get_current_user_for_tenant_media] = lambda: {
 		"id": 101,
 		"role": "user",
 		"tenantId": 1,
@@ -68,6 +68,54 @@ def test_common_download_returns_403_when_authorized_user_has_no_permission(monk
 	assert res.status_code == status.HTTP_403_FORBIDDEN
 
 	app_main.app.dependency_overrides.clear()
+
+
+def test_common_download_allows_own_profile_image_with_tenant_query(monkeypatch, tmp_path):
+	from services import common_service
+
+	saved_name = "profile-query.png"
+	(tmp_path / saved_name).write_bytes(b"fake png")
+	monkeypatch.setattr(common_service, "UPLOAD_DIR", str(tmp_path))
+
+	with memory_db_session() as db:
+		user = User(
+			tenant_id=1,
+			user_login_id="profile-owner",
+			user_password="hashed",
+			user_name="Profile Owner",
+			role="user",
+			user_profile_image_url=f"/uploads/{saved_name}",
+		)
+		file_row = UploadedFile(
+			original_name=saved_name,
+			saved_name=saved_name,
+			file_path=f"/uploads/{saved_name}",
+			file_size=8,
+			content_type="image/png",
+		)
+		db.add_all([user, file_row])
+		db.commit()
+		db.refresh(user)
+
+		def _override_db():
+			yield db
+
+		app_main.app.dependency_overrides[get_current_user_for_tenant_media] = lambda: {
+			"id": user.id,
+			"role": "user",
+			"tenantId": 1,
+		}
+		app_main.app.dependency_overrides[get_db] = _override_db
+
+		try:
+			client = TestClient(app_main.app)
+			res = client.get(
+				f"/api/common/files/by-saved-name/{saved_name}?tenant=valuesplay"
+			)
+			assert res.status_code == status.HTTP_200_OK
+			assert res.content == b"fake png"
+		finally:
+			app_main.app.dependency_overrides.clear()
 
 
 def test_common_download_allows_own_profile_image(monkeypatch, tmp_path):
@@ -100,7 +148,7 @@ def test_common_download_allows_own_profile_image(monkeypatch, tmp_path):
 		def _override_db():
 			yield db
 
-		app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+		app_main.app.dependency_overrides[get_current_user_for_tenant_media] = lambda: {
 			"id": user.id,
 			"role": "user",
 			"tenantId": 1,
@@ -153,7 +201,7 @@ def test_common_download_blocks_other_users_profile_image(monkeypatch, tmp_path)
 		def _override_db():
 			yield db
 
-		app_main.app.dependency_overrides[get_current_user_for_tenant] = lambda: {
+		app_main.app.dependency_overrides[get_current_user_for_tenant_media] = lambda: {
 			"id": other.id,
 			"role": "user",
 			"tenantId": 1,

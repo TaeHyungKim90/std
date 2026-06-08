@@ -10,7 +10,7 @@ from db.session import get_db
 from models.common_models import UploadedFile
 from schemas.common_schemas import FileUploadResponse
 from services import common_service as service
-from services.auth_service import get_current_user_for_tenant
+from services.auth_service import get_current_user_for_tenant, get_current_user_for_tenant_media
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def _file_response_for_row(row: UploadedFile):
 async def download_file_by_saved_name(
 	saved_name: str,
 	db: Session = Depends(get_db),
-	current_user: dict = Depends(get_current_user_for_tenant),
+	current_user: dict = Depends(get_current_user_for_tenant_media),
 ):
 	safe = os.path.basename(saved_name.strip().replace("\\", "/"))
 	if not safe or ".." in saved_name:
@@ -72,7 +72,7 @@ async def download_file_by_saved_name(
 async def download_file_legacy_path(
 	file_id: int,
 	db: Session = Depends(get_db),
-	current_user: dict = Depends(get_current_user_for_tenant),
+	current_user: dict = Depends(get_current_user_for_tenant_media),
 ):
 	row = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
 	if not row:
@@ -88,7 +88,7 @@ async def download_file_legacy_path(
 async def download_file(
 	file_id: int,
 	db: Session = Depends(get_db),
-	current_user: dict = Depends(get_current_user_for_tenant),
+	current_user: dict = Depends(get_current_user_for_tenant_media),
 ):
 	row = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
 	if not row:

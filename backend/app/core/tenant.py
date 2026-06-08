@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import cast
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from db.session import get_db
@@ -91,6 +91,21 @@ async def require_tenant(
 			detail="테넌트 정보가 필요합니다. (X-Tenant-Slug 헤더)",
 		)
 	return get_tenant_by_slug(db, tenant_slug)
+
+
+async def require_tenant_header_or_query(
+	db: Session = Depends(get_db),
+	tenant_slug: str | None = Depends(get_tenant_slug_header),
+	tenant_query: str | None = Query(default=None, alias="tenant"),
+) -> Tenant:
+	"""img·iframe 등 헤더를 못 실을 때 tenant 쿼리로 테넌트를 식별합니다."""
+	slug = tenant_slug or normalize_tenant_slug(tenant_query)
+	if not slug:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="테넌트 정보가 필요합니다. (X-Tenant-Slug 헤더 또는 tenant 쿼리)",
+		)
+	return get_tenant_by_slug(db, slug)
 
 
 def assert_token_tenant_matches(current_user: dict, tenant: Tenant) -> None:
