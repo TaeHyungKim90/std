@@ -16,12 +16,10 @@
 	"reportExplicitAny": "none",
 	"reportGeneralTypeIssues": "none",
 	"reportAttributeAccessIssue": "none",
-	"executionEnvironments": [
-		{
-			"root": ".",
-			"pythonVersion": "3.13",
-			"extraPaths": ["backend/app", "backend/tests"]
-		}
+	"pythonVersion": "3.12",
+	"extraPaths": [
+		"backend/app",
+		"backend/tests"
 	],
 	"exclude": [
 		"frontend/node_modules",
