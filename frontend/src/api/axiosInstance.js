@@ -4,7 +4,11 @@ import {
 	APPLICANT_SESSION_UPDATED_EVENT,
 	APPLICANT_USER_STORAGE_KEY,
 } from 'constants/applicantCache';
-import { API_SESSION_EXPIRED_CODE,AUTH_SESSION_EXPIRED_EVENT } from 'constants/authEvents';
+import {
+	API_SESSION_EXPIRED_CODE,
+	AUTH_SESSION_EXPIRED_EVENT,
+	AUTH_TENANT_MISMATCH_EVENT,
+} from 'constants/authEvents';
 import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
 import { formatApiDetail } from 'utils/formatApiError';
 import { isSessionRedirecting } from 'utils/sessionRedirect';
@@ -147,6 +151,16 @@ client.interceptors.response.use(
 			const expiredErr = new Error('세션이 만료되어 로그인이 필요합니다.');
 			expiredErr.code = API_SESSION_EXPIRED_CODE;
 			return Promise.reject(expiredErr);
+		}
+
+		if (status === 403) {
+			const msg = formatApiDetail(error).trim();
+			if (msg.includes('다른 기업')) {
+				window.dispatchEvent(new CustomEvent(AUTH_TENANT_MISMATCH_EVENT));
+				const mismatchErr = new Error(msg);
+				mismatchErr.code = 'TENANT_MISMATCH';
+				return Promise.reject(mismatchErr);
+			}
 		}
 
 		const msg =

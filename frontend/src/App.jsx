@@ -20,33 +20,33 @@ import AppRoutes from './routes';
 function App() {
 	return (
 		<LoadingProvider>
-			<AuthProvider>
-				<PlatformAuthProvider>
-					<BrowserRouter>
-					<AuthNavigateRegistrar />
-					<ErrorBoundary>
-						<Suspense fallback={<LoadingBar text="페이지를 불러오는 중..." />}>
-							<AppRoutes />
-						</Suspense>
-					</ErrorBoundary>
-					<Toaster 
-						position="top-center" 
-						toastOptions={{
-							duration: 3000,
-							style: {
-								background: '#333',
-								color: '#fff',
-								borderRadius: '8px',
-								padding: '12px 20px',
-								fontSize: '15px'
-							},
-							success: { style: { background: '#28a745' } },
-							error: { style: { background: '#dc3545' } },
-						}} 
-					/>
-					</BrowserRouter>
-				</PlatformAuthProvider>
-			</AuthProvider>
+			<PlatformAuthProvider>
+				<BrowserRouter>
+					<AuthProvider>
+						<AuthNavigateRegistrar />
+						<ErrorBoundary>
+							<Suspense fallback={<LoadingBar text="페이지를 불러오는 중..." />}>
+								<AppRoutes />
+							</Suspense>
+						</ErrorBoundary>
+						<Toaster
+							position="top-center"
+							toastOptions={{
+								duration: 3000,
+								style: {
+									background: '#333',
+									color: '#fff',
+									borderRadius: '8px',
+									padding: '12px 20px',
+									fontSize: '15px'
+								},
+								success: { style: { background: '#28a745' } },
+								error: { style: { background: '#dc3545' } },
+							}}
+						/>
+					</AuthProvider>
+				</BrowserRouter>
+			</PlatformAuthProvider>
 		</LoadingProvider>
 	);
 }

@@ -15,7 +15,14 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
 from core.config import settings
-from core.tenant import get_tenant_by_slug, normalize_tenant_slug, require_tenant, tenant_pk, tenant_slug_str
+from core.tenant import (
+	get_tenant_by_slug,
+	get_tenant_slug_header,
+	normalize_tenant_slug,
+	require_tenant,
+	tenant_pk,
+	tenant_slug_str,
+)
 from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
@@ -239,8 +246,30 @@ def _optional_date_from_payload(value):
 	return None
 
 
+def _auth_check_logged_out() -> dict:
+	return {"isLoggedIn": False, "access_token": None}
+
+
+def _token_matches_request_tenant(db: Session, payload: dict, tenant_slug: str | None) -> bool:
+	"""X-Tenant-Slug 요청과 JWT tenantId가 다르면 이 테넌트에서는 비로그인 처리."""
+	if not tenant_slug:
+		return True
+	token_tid = payload.get("tenantId")
+	if token_tid is None:
+		return False
+	try:
+		tenant = get_tenant_by_slug(db, tenant_slug)
+	except HTTPException:
+		return False
+	return int(token_tid) == tenant_pk(tenant)
+
+
 @router.get("/check", response_model=auth_schemas.AuthCheckResponse)
-async def check_auth(request: Request, db: Session = Depends(get_db)):
+async def check_auth(
+	request: Request,
+	db: Session = Depends(get_db),
+	tenant_slug: str | None = Depends(get_tenant_slug_header),
+):
 	"""인증 상태 확인: 헤더 또는 쿠키의 토큰 검증. 입사일/퇴사일은 DB 최신값 우선."""
 	token = None
 	auth_header = request.headers.get("Authorization")
@@ -260,7 +289,9 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 
 	# 3단계 - 검증 및 반환
 	if not payload or not payload.get("userName"):
-		return {"isLoggedIn": False, "access_token": None}
+		return _auth_check_logged_out()
+	if not _token_matches_request_tenant(db, payload, tenant_slug):
+		return _auth_check_logged_out()
 
 	join_date = None
 	resignation_date = None
@@ -346,7 +377,20 @@ def get_my_profile(
 	)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
-	return _user_response(user)
+	sync_user_vacation(db, user)
+	db.commit()
+	refreshed_user = (
+		db.query(User)
+		.options(
+			joinedload(User.vacation),
+			joinedload(User.avatar_setting),
+			joinedload(User.department),
+			joinedload(User.position),
+		)
+		.filter(User.id == user_pk)
+		.first()
+	)
+	return _user_response(refreshed_user or user)
 
 
 @router.patch("/me", response_model=auth_schemas.UserResponse)

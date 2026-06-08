@@ -1,8 +1,14 @@
 import { authApi } from 'api/authApi';
-import { AUTH_SESSION_EXPIRED_EVENT, isSessionExpiredApiError } from 'constants/authEvents';
-import { PATH_PREFIX,PATHS } from 'constants/paths';
-import React, { createContext, useCallback, useContext, useEffect, useRef,useState } from 'react';
+import {
+	AUTH_SESSION_EXPIRED_EVENT,
+	AUTH_TENANT_MISMATCH_EVENT,
+	isSessionExpiredApiError,
+} from 'constants/authEvents';
+import { pathsForTenant } from 'constants/paths';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
+import { tenantSlugFromLocation } from 'utils/fileUtils';
 import * as Notify from 'utils/toastUtils';
 
 // 🌟 1. 우리가 만든 똑똑한 리모컨 임포트!
@@ -24,7 +30,18 @@ function normalizeSessionAvatarAdjust(src) {
 
 export const AuthContext = createContext(null);
 
+function isHrTenantPath(pathname) {
+	const segment = String(pathname || '').split('/').filter(Boolean)[0];
+	return Boolean(segment && segment !== 'platform');
+}
+
 export const AuthProvider = ({ children }) => {
+	const location = useLocation();
+	const tenantSlug = useMemo(
+		() => (isHrTenantPath(location.pathname) ? tenantSlugFromLocation() : null),
+		[location.pathname]
+	);
+
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [userName, setUserName] = useState('');
 	const [userNickname, setUserNickname] = useState('');
@@ -144,8 +161,13 @@ export const AuthProvider = ({ children }) => {
 	}, [applyAuthCheckResult, resetAuthState]);
 
 	useEffect(() => {
+		if (!tenantSlug) {
+			resetAuthState();
+			setLoading(false);
+			return;
+		}
 		checkAuth();
-	}, [checkAuth]);
+	}, [tenantSlug, checkAuth, resetAuthState]);
 
 	// API 401(비로그인 요청 아님) — 사용자가 세션 만료 토스트를 닫은 뒤 직원 UI 상태 동기화
 	useEffect(() => {
@@ -156,6 +178,15 @@ export const AuthProvider = ({ children }) => {
 		return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
 	}, [resetAuthState]);
 
+	// API 403(다른 테넌트 JWT) — 쿠키는 유지하고 현재 URL 테넌트만 비로그인 UI
+	useEffect(() => {
+		const onTenantMismatch = () => {
+			resetAuthState();
+		};
+		window.addEventListener(AUTH_TENANT_MISMATCH_EVENT, onTenantMismatch);
+		return () => window.removeEventListener(AUTH_TENANT_MISMATCH_EVENT, onTenantMismatch);
+	}, [resetAuthState]);
+
 	// 다른 탭에서 로그아웃 → 직원 세션이 있던 탭만 상태 초기화 + 안내 (지원자 전용 탭은 무시)
 	useEffect(() => {
 		return subscribeLogoutFromOtherTabs(() => {
@@ -163,11 +194,13 @@ export const AuthProvider = ({ children }) => {
 			resetAuthState();
 			Notify.toastInfo('다른 탭에서 로그아웃되어 세션이 종료되었습니다.');
 			const path = window.location.pathname;
-			if (path.startsWith(PATH_PREFIX.CAREERS)) {
+			const slug = tenantSlugFromLocation();
+			const paths = pathsForTenant(slug);
+			if (path.includes('/careers')) {
 				window.location.reload();
 				return;
 			}
-			window.location.replace(PATHS.LOGIN);
+			window.location.replace(paths.LOGIN);
 		});
 	}, [resetAuthState]);
 
