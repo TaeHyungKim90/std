@@ -5,6 +5,7 @@ from typing import Iterator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 import db.base  # noqa: F401
 from db.session import Base
@@ -16,7 +17,11 @@ DEFAULT_TEST_TENANT_ID = 1
 
 @contextmanager
 def memory_db_session() -> Iterator[Session]:
-	engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+	engine = create_engine(
+		"sqlite:///:memory:",
+		connect_args={"check_same_thread": False},
+		poolclass=StaticPool,
+	)
 	Base.metadata.create_all(bind=engine)
 	Sess = sessionmaker(bind=engine)
 	s = Sess()
