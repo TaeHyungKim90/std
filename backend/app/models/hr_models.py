@@ -26,7 +26,11 @@ class Todo(Base):
 	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive) # 처음 생성 시 자동 기록
 	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) # 수정 시마다 자동 갱신
 	
-	author = relationship("User", foreign_keys=[user_id])
+	author = relationship(
+		"User",
+		primaryjoin="and_(Todo.tenant_id == User.tenant_id, Todo.user_id == User.user_login_id)",
+		foreign_keys="[Todo.tenant_id, Todo.user_id]",
+	)
 #일정 카테고리
 class TodoCategoryType(Base):
 	__tablename__ = "todo_category_type"

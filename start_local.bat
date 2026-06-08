@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 
 REM Run from this script's directory (project root)
@@ -23,6 +24,7 @@ if errorlevel 1 (
 
 REM Local profile overrides
 set ENVIRONMENT=development
+set PYTHONIOENCODING=utf-8
 
 REM Usage:
 REM   start_local.bat		  -> backend + react

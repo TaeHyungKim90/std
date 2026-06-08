@@ -114,9 +114,6 @@ def _ensure_multi_tenant_schema() -> None:
 				vp.name = "가치플레이"
 				vp.is_active = True
 				db.commit()
-		if not db.query(Tenant).filter(Tenant.slug == "naver").first():
-			db.add(Tenant(slug="naver", name="네이버", is_active=True))
-			db.commit()
 		default_tenant = (
 			db.query(Tenant)
 			.filter(Tenant.slug == app_settings.DEFAULT_TENANT_SLUG)
@@ -175,23 +172,23 @@ def _ensure_hr_employee_tenant_columns(default_tid: int) -> None:
 				conn.execute(
 					text(f"ALTER TABLE {table} ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT {default_tid}")
 				)
-		with engine.begin() as conn:
-			conn.execute(
-				text(
-					f"""
-					UPDATE {table}
-					SET tenant_id = (
-						SELECT u.tenant_id FROM users u
-						WHERE u.user_login_id = {table}.user_id
-						ORDER BY u.id LIMIT 1
+			with engine.begin() as conn:
+				conn.execute(
+					text(
+						f"""
+						UPDATE {table}
+						SET tenant_id = (
+							SELECT u.tenant_id FROM users u
+							WHERE u.user_login_id = {table}.user_id
+							ORDER BY u.id LIMIT 1
+						)
+						WHERE EXISTS (
+							SELECT 1 FROM users u
+							WHERE u.user_login_id = {table}.user_id
+						)
+						"""
 					)
-					WHERE EXISTS (
-						SELECT 1 FROM users u
-						WHERE u.user_login_id = {table}.user_id
-					)
-					"""
 				)
-			)
 
 
 # SQLite 레거시 단일 컬럼 UNIQUE → (tenant_id, ...) 복합 UNIQUE
