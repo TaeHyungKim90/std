@@ -69,11 +69,10 @@ def test_monthly_rewards_use_bonus_points_without_penalties(db_session):
 	alice = next(row for row in out["items"] if row["user_id"] == "alice")
 	bob = next(row for row in out["items"] if row["user_id"] == "bob")
 
-	assert alice["score"] == 4
+	assert alice["score"] == 3
 	assert alice["attendance_completed_days"] == 2
 	assert alice["vacation_days"] == 1
-	assert alice["on_time_days"] == 1
-	assert bob["score"] == 2
+	assert bob["score"] == 1
 	assert bob["attendance_completed_days"] == 1
 	assert bob["coupon_target"] is False
 	assert out["winner"]["user_id"] == "alice"

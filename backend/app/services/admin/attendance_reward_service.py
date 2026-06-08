@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any, cast
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from core.config import settings
 from models.auth_models import User
 from services.tenant_scope import directory_users_in_tenant
 from services.hr.attendance_calendar_service import (
@@ -20,23 +19,7 @@ from utils.seoul_time import now_seoul_naive, today_seoul
 
 
 ATTENDANCE_COMPLETE_POINTS = 1
-ON_TIME_POINTS = 1
 VACATION_POINTS = 1
-
-
-def _workday_start_minutes() -> int:
-	hour, minute = settings.ATTENDANCE_WORKDAY_START.split(":")[:2]
-	return int(hour) * 60 + int(minute)
-
-
-def _time_to_minutes(dt: datetime) -> int:
-	return dt.hour * 60 + dt.minute
-
-
-def _is_on_time(first_clock_in: datetime | None) -> bool:
-	if first_clock_in is None:
-		return False
-	return _time_to_minutes(first_clock_in) <= _workday_start_minutes()
 
 
 def _active_users_for_month(db: Session, tenant_id: int, start_d: date, end_d: date) -> list[User]:
@@ -74,7 +57,6 @@ def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month
 		eligible_days = 0
 		attendance_completed_days = 0
 		vacation_days = 0
-		on_time_days = 0
 		score = 0
 		current_streak = 0
 		longest_streak = 0
@@ -98,9 +80,6 @@ def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month
 				if att["is_complete"]:
 					attendance_completed_days += 1
 					score += ATTENDANCE_COMPLETE_POINTS
-					if _is_on_time(att["first_clock_in"]):
-						on_time_days += 1
-						score += ON_TIME_POINTS
 					current_streak += 1
 					longest_streak = max(longest_streak, current_streak)
 				else:
@@ -114,7 +93,6 @@ def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month
 				"score": score,
 				"attendance_completed_days": attendance_completed_days,
 				"vacation_days": vacation_days,
-				"on_time_days": on_time_days,
 				"longest_streak_days": longest_streak,
 				"eligible_days": eligible_days,
 				"coupon_target": False,
@@ -126,7 +104,6 @@ def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month
 			-int(row["score"]),
 			-int(row["attendance_completed_days"]),
 			-int(row["vacation_days"]),
-			-int(row["on_time_days"]),
 			str(row["user_name"]),
 			str(row["user_id"]),
 		)
@@ -143,7 +120,6 @@ def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month
 		"generated_at": now_seoul_naive(),
 		"points_policy": {
 			"attendance_complete": ATTENDANCE_COMPLETE_POINTS,
-			"on_time": ON_TIME_POINTS,
 			"vacation": VACATION_POINTS,
 		},
 		"winner": winner,
