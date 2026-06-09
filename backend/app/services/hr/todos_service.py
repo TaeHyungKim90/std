@@ -165,23 +165,22 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	user = _get_user_for_vacation(db, user_id)
 	new_category = todo_update.category if todo_update.category is not None else db_todo.category
 
-	# 수정 요청에 날짜가 없으면 기존 날짜 사용 (ORM 컬럼은 Pyright에 Column[datetime]으로 잡혀 cast)
 	new_start: datetime = (
 		todo_update.start_date
 		if todo_update.start_date is not None
-		else cast(datetime, db_todo.start_date)
+		else db_todo.start_date
 	)
 	new_end: datetime | None = (
 		todo_update.end_date
 		if todo_update.end_date is not None
-		else cast(datetime | None, db_todo.end_date)
+		else db_todo.end_date
 	)
 	end_for_range: datetime = new_end if new_end is not None else new_start
 	_assert_todo_range_within_employment(db, user_id, new_start, end_for_range)
 	_assert_no_vacation_date_overlap(
 		db,
 		user_id,
-		cast(str | None, new_category),
+		new_category,
 		new_start,
 		new_end,
 		exclude_todo_id=todo_id,
@@ -189,7 +188,7 @@ def update_todo(db: Session, todo_id: int, todo_update: TodoUpdate, user_id: str
 	_assert_vacation_balance(
 		db,
 		user,
-		extra_item=VacationUsageItem(cast(str | None, new_category), new_start, new_end),
+		extra_item=VacationUsageItem(new_category, new_start, new_end),
 		exclude_todo_id=todo_id,
 	)
 		

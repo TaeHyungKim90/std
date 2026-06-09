@@ -1,5 +1,5 @@
 from datetime import date, datetime, time
-from typing import Any, cast
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -20,11 +20,8 @@ from services.hr.attendance_daily_summary_service import refresh_attendance_dail
 from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
 
 
-def is_vacation_status(status_str: Any) -> bool:
-	"""Attendance.status 문자열 기반 휴가 키워드 판별.
-
-	SQLAlchemy 인스턴스의 status는 정적 분석상 Column[str]로 잡힐 수 있어 Any로 받음.
-	"""
+def is_vacation_status(status_str: str | None) -> bool:
+	"""Attendance.status 문자열 기반 휴가 키워드 판별."""
 	if status_str is None:
 		return False
 	s = str(status_str)
@@ -40,11 +37,10 @@ def is_vacation_status(status_str: Any) -> bool:
 
 def sync_shift_status_from_clock_times(record: Attendance) -> None:
 	"""clock_in / clock_out 조합에 맞춰 shift_status 정합성 유지."""
-	r: Any = record
-	if r.clock_in_time is not None and r.clock_out_time is None:
-		r.shift_status = SHIFT_STATUS_IN_PROGRESS
+	if record.clock_in_time is not None and record.clock_out_time is None:
+		record.shift_status = SHIFT_STATUS_IN_PROGRESS
 	else:
-		r.shift_status = SHIFT_STATUS_CLOSED
+		record.shift_status = SHIFT_STATUS_CLOSED
 
 
 def get_open_shift(db: Session, user_id: str) -> Attendance | None:
@@ -191,9 +187,8 @@ def set_user_preferred_work_location(db: Session, user_login_id: str, location_n
 
 
 def _vacation_categories_for_day(db: Session, user_id: str, target_date: date) -> set[str]:
-	# 인스턴스 필드도 Column[T]로 오탐될 수 있어 런타임 값은 str로 취급
 	return {
-		cast(str, t.category)
+		t.category
 		for t in _vacation_todos_for_day(db, user_id, target_date)
 		if t.category
 	}
@@ -412,33 +407,33 @@ def update_clock_out(
 ):
 	"""기존 레코드에 퇴근 정보를 업데이트하고 총 근무 시간을 계산합니다."""
 	location_key = resolve_work_location_token_to_key(db, location)
-	# Column[...] 인스턴스 필드 대입·조건 오탐 방지 (이 함수 범위만 Any)
-	rec: Any = record
-	rec.clock_out_time = current_time
-	rec.clock_out_location = location_key
-	rec.clock_out_lat = lat
-	rec.clock_out_lng = lng
+	record.clock_out_time = current_time
+	record.clock_out_location = location_key
+	record.clock_out_lat = lat
+	record.clock_out_lng = lng
 
 	if note:
-		rec.note = note
+		record.note = note
 
-	if rec.clock_in_time is None:
-		rec.work_minutes = 0
-		rec.night_work_minutes = 0
+	if record.clock_in_time is None:
+		record.work_minutes = 0
+		record.night_work_minutes = 0
 	else:
 		cfg = app_break_tier_config()
-		session_m = session_minutes_at_clock_out(rec.clock_in_time, current_time, cfg=cfg)
-		rec.work_minutes = session_m.work_minutes
-		rec.night_work_minutes = session_m.night_work_minutes
-	rec.status = record_status
-	rec.shift_status = SHIFT_STATUS_CLOSED
+		session_m = session_minutes_at_clock_out(record.clock_in_time, current_time, cfg=cfg)
+		record.work_minutes = session_m.work_minutes
+		record.night_work_minutes = session_m.night_work_minutes
+	record.status = record_status
+	record.shift_status = SHIFT_STATUS_CLOSED
 
-	_append_official_leave_time_note(db, str(rec.user_id), rec.work_date, current_time, clock_out=True)
+	user_id = record.user_id or ""
+	work_day = record.work_date
+	if work_day is not None:
+		_append_official_leave_time_note(db, user_id, work_day, current_time, clock_out=True)
+		refresh_attendance_daily_summary(db, user_id, work_day)
 
-	refresh_attendance_daily_summary(db, str(rec.user_id), cast(date, rec.work_date))
-
-	_apply_user_preferred_work_location(db, str(rec.user_id), location_key)
+	_apply_user_preferred_work_location(db, user_id, location_key)
 
 	db.commit()
-	db.refresh(rec)
-	return rec
+	db.refresh(record)
+	return record

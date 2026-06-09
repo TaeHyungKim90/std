@@ -7,7 +7,6 @@ import uuid
 import re
 import time
 from datetime import date, datetime
-from typing import Any
 from urllib.parse import urlencode
 import httpx
 from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
@@ -320,10 +319,8 @@ def patch_my_profile(
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
-	# Column[...] 제네릭으로 인스턴스 필드 대입이 오탐 나는 것을 피하기 위해 이 함수 안에서만 Any로 둡니다.
-	u: Any = user
 	data = body.model_dump(exclude_unset=True)
-	login_id = str(u.user_login_id or "")
+	login_id = str(user.user_login_id or "")
 	is_social = login_id.startswith(("kakao_", "naver_"))
 
 	if is_social and (data.get("current_password") or data.get("new_password")):
@@ -338,35 +335,35 @@ def patch_my_profile(
 				status_code=status.HTTP_400_BAD_REQUEST,
 				detail="비밀번호 변경 시 현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.",
 			)
-		if not verify_password(data["current_password"], str(u.user_password)):
+		if not verify_password(data["current_password"], user.user_password):
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="현재 비밀번호가 일치하지 않습니다.")
-		u.user_password = get_password_hash(data["new_password"])
+		user.user_password = get_password_hash(data["new_password"])
 
 	if "user_nickname" in data:
 		raw = data["user_nickname"]
 		if raw is None:
-			u.user_nickname = None
+			user.user_nickname = None
 		else:
 			s = str(raw).strip()
-			u.user_nickname = s if s else None
+			user.user_nickname = s if s else None
 
 	if "user_name" in data:
 		raw = data["user_name"]
 		s = str(raw or "").strip()
 		if not s:
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이름을 입력해 주세요.")
-		u.user_name = s
+		user.user_name = s
 
 	if "user_phone_number" in data:
-		u.user_phone_number = data["user_phone_number"]
+		user.user_phone_number = data["user_phone_number"]
 
 	avatar_zoom = data.pop("avatar_zoom", None)
 	avatar_offset_x = data.pop("avatar_offset_x", None)
 	avatar_offset_y = data.pop("avatar_offset_y", None)
 	if avatar_zoom is not None or avatar_offset_x is not None or avatar_offset_y is not None:
-		setting = db.query(UserAvatarSetting).filter(UserAvatarSetting.user_id == u.id).first()
+		setting = db.query(UserAvatarSetting).filter(UserAvatarSetting.user_id == user.id).first()
 		if not setting:
-			setting = UserAvatarSetting(user_id=u.id)
+			setting = UserAvatarSetting(user_id=user.id)
 			db.add(setting)
 		if avatar_zoom is not None:
 			setting.zoom = avatar_zoom
@@ -377,42 +374,42 @@ def patch_my_profile(
 
 	# 사용자 프로필 확장 필드(부서/직급/급여계좌/사진 URL)
 	if "user_profile_image_url" in data:
-		u.user_profile_image_url = data["user_profile_image_url"] or None
+		user.user_profile_image_url = data["user_profile_image_url"] or None
 
 	if "join_date" in data:
-		u.join_date = data["join_date"]
-		sync_user_vacation(db, u)
+		user.join_date = data["join_date"]
+		sync_user_vacation(db, user)
 
 	if "department_id" in data:
 		if data["department_id"] is None:
-			u.department_id = None
+			user.department_id = None
 		else:
 			dept = db.query(Department).filter(Department.id == data["department_id"]).first()
 			if not dept:
 				raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 부서입니다.")
-			u.department_id = dept.id
+			user.department_id = dept.id
 
 	if "position_id" in data:
 		if data["position_id"] is None:
-			u.position_id = None
+			user.position_id = None
 		else:
 			pos = db.query(Position).filter(Position.id == data["position_id"]).first()
 			if not pos:
 				raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 직급입니다.")
-			u.position_id = pos.id
+			user.position_id = pos.id
 
 	if "salary_bank_name" in data:
 		raw = data["salary_bank_name"]
-		u.salary_bank_name = str(raw).strip() if raw else None
+		user.salary_bank_name = str(raw).strip() if raw else None
 
 	if "salary_account_number" in data:
 		raw = data["salary_account_number"]
 		if raw is None:
-			u.salary_account_number = None
+			user.salary_account_number = None
 		else:
 			# 숫자만 저장(입력값에 하이픈/공백이 섞여도 방어)
 			s = re.sub(r"\D+", "", str(raw)).strip()
-			u.salary_account_number = s if s else None
+			user.salary_account_number = s if s else None
 
 	db.commit()
 	updated_user = (
@@ -421,7 +418,7 @@ def patch_my_profile(
 		.filter(User.id == user_pk)
 		.first()
 	)
-	return auth_schemas.UserResponse.model_validate(updated_user or u)
+	return auth_schemas.UserResponse.model_validate(updated_user or user)
 
 
 # ==========================================
