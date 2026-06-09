@@ -16,6 +16,7 @@ jest.mock('api/attendanceApi', () => ({
 	attendanceApi: {
 		getAttendanceDaySessions: jest.fn(),
 		getClockContext: jest.fn(),
+		getClockContextRange: jest.fn(),
 	},
 }));
 
@@ -65,6 +66,7 @@ describe('MyReports', () => {
 
 		holidayApi.getHolidays.mockResolvedValue({ data: [] });
 		attendanceApi.getClockContext.mockResolvedValue({ data: null });
+		attendanceApi.getClockContextRange.mockResolvedValue({ data: { items: [] } });
 
 		reportApi.getDailyRange.mockResolvedValue({ data: [] });
 		reportApi.getWeekly.mockResolvedValue({ data: { summary: '' } });
