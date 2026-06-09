@@ -2,7 +2,7 @@
 name = "hr-backend"
 version = "0.1.0"
 description = "FastAPI backend for the HR management system"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "annotated-doc==0.0.4",
     "annotated-types==0.7.0",
@@ -53,6 +53,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pyright==1.1.408",
     "pytest==9.0.2",
 ]
 

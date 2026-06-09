@@ -312,8 +312,8 @@ def get_user_attendance_range(
 				"work_date": r.work_date,
 				"clock_in_time": r.clock_in_time,
 				"clock_out_time": r.clock_out_time,
-				"clock_in_location": format_stored_work_location_for_display(db, r.clock_in_location),
-				"clock_out_location": format_stored_work_location_for_display(db, r.clock_out_location),
+				"clock_in_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_in_location)),
+				"clock_out_location": format_stored_work_location_for_display(db, cast(str | None, r.clock_out_location)),
 				"status": r.status,
 				"work_minutes": r.work_minutes,
 				"night_work_minutes": int(getattr(r, "night_work_minutes", None) or 0),
@@ -426,13 +426,13 @@ def _apply_admin_attendance_payload(rec: Any, work_day: date_type, updates: dict
 	"""관리자 PATCH/POST 공통: 출·퇴근 시각·상태 반영."""
 	if "clock_in_time" in updates:
 		raw_in = updates["clock_in_time"]
-		if raw_in is None or (isinstance(raw_in, str) and not str(raw_in).strip()):
+		if raw_in is None or (isinstance(raw_in, str) and not raw_in.strip()):
 			rec.clock_in_time = None
 		else:
 			rec.clock_in_time = _parse_clock_value(str(raw_in), work_day)
 	if "clock_out_time" in updates:
 		raw_out = updates["clock_out_time"]
-		if raw_out is None or (isinstance(raw_out, str) and not str(raw_out).strip()):
+		if raw_out is None or (isinstance(raw_out, str) and not raw_out.strip()):
 			rec.clock_out_time = None
 		else:
 			rec.clock_out_time = _parse_clock_value(str(raw_out), work_day)
@@ -492,7 +492,7 @@ def _parse_clock_value(value: str | None, work_day: date_type) -> datetime | Non
 	"""'HH:MM' 또는 ISO datetime 문자열을 해당 근무일 기준 naive datetime으로 변환."""
 	if value is None:
 		return None
-	s = str(value).strip()
+	s = value.strip()
 	if not s:
 		return None
 	if "T" in s or len(s) > 8:

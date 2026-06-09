@@ -5,7 +5,7 @@ import threading
 import platform
 import atexit
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +26,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="HR Management System", lifespan=lifespan)
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # pyright: ignore[reportArgumentType]
+
+
+def _handle_rate_limit_exceeded(request: Request, exc: Exception) -> Response:
+	if not isinstance(exc, RateLimitExceeded):
+		raise exc
+	return _rate_limit_exceeded_handler(request, exc)
+
+
+app.add_exception_handler(RateLimitExceeded, _handle_rate_limit_exceeded)
 # CORS보다 먼저 등록 → 요청 시 CORS가 바깥에서 먼저 처리(프리플라이트 등)
 app.add_middleware(SlowAPIMiddleware)
 

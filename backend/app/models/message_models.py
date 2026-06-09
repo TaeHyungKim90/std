@@ -1,75 +1,68 @@
-import enum
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Enum, UniqueConstraint
-from sqlalchemy.orm import relationship
+from __future__ import annotations
 
-# 프로젝트 기존 구조에 맞춘 Base 임포트
+import enum
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from db.session import Base
 from utils.seoul_time import now_seoul_naive
 
-# 관계 설정을 위한 모델 임포트
-from models.common_models import UploadedFile
-from models.auth_models import User
+if TYPE_CHECKING:
+	from models.auth_models import User
+	from models.common_models import UploadedFile
+
 
 class MessageType(enum.Enum):
-	INDIVIDUAL = "individual"  # 개별 메시지 (급여명세서 등)
-	GLOBAL = "global"		  # 전체 공지사항
+	INDIVIDUAL = "individual"
+	GLOBAL = "global"
+
 
 class Message(Base):
 	__tablename__ = "messages"
 
-	id = Column(Integer, primary_key=True, index=True)
-	title = Column(String(200), nullable=False)
-	content = Column(Text, nullable=True)  # SunEditor HTML 내용
-	
-	# 메시지 성격 구분
-	message_type = Column(Enum(MessageType), default=MessageType.INDIVIDUAL)
-	is_global = Column(Boolean, default=False)
-	
-	# 발송자 (관리자)
-	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	# 수신자 (개별 메시지일 때만 값이 있음)
-	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-	
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
-	is_read = Column(Boolean, default=False)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	title: Mapped[str] = mapped_column(String(200), nullable=False)
+	content: Mapped[str | None] = mapped_column(Text, nullable=True)
+	message_type: Mapped[MessageType | None] = mapped_column(Enum(MessageType), default=MessageType.INDIVIDUAL)
+	is_global: Mapped[bool | None] = mapped_column(Boolean, default=False)
+	sender_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+	receiver_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	is_read: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
-	# 🤝 관계 설정
-	# foreign_keys를 명시하여 sender와 receiver를 정확히 구분합니다.
-	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
-	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
-	
-	# 메시지 삭제 시 연결된 attachment 기록도 함께 삭제 (파일 실제 삭제는 별도 로직)
-	attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
-	# 전체 공지(is_global)는 사용자별 읽음을 이 테이블로만 판별 (messages.is_read는 개별 메시지용)
-	read_receipts = relationship("MessageReadReceipt", back_populates="message", cascade="all, delete-orphan")
+	sender: Mapped[User] = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
+	receiver: Mapped[User | None] = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
+	attachments: Mapped[list[MessageAttachment]] = relationship(
+		"MessageAttachment", back_populates="message", cascade="all, delete-orphan"
+	)
+	read_receipts: Mapped[list[MessageReadReceipt]] = relationship(
+		"MessageReadReceipt", back_populates="message", cascade="all, delete-orphan"
+	)
 
 
 class MessageReadReceipt(Base):
-	"""전체 공지: 사용자별 읽음 여부 (공지 1건이 여러 사용자에게 각각 다른 읽음 상태)"""
 	__tablename__ = "message_read_receipts"
 	__table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_message_read_user"),)
 
-	id = Column(Integer, primary_key=True, autoincrement=True)
-	message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
-	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	read_at = Column(DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+	message_id: Mapped[int] = mapped_column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+	user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+	read_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	message = relationship("Message", back_populates="read_receipts")
-	user = relationship("User", foreign_keys=[user_id])
+	message: Mapped[Message] = relationship("Message", back_populates="read_receipts")
+	user: Mapped[User] = relationship("User", foreign_keys=[user_id])
 
 
 class MessageAttachment(Base):
 	__tablename__ = "message_attachments"
 
-	id = Column(Integer, primary_key=True, index=True)
-	message_id = Column(Integer, ForeignKey("messages.id"), nullable=False)
-	
-	# 🌟 기존 UploadedFile 테이블의 ID를 그대로 사용 (재사용성 극대화)
-	file_id = Column(Integer, ForeignKey("uploaded_files.id"), nullable=False)
-	
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	message_id: Mapped[int] = mapped_column(Integer, ForeignKey("messages.id"), nullable=False)
+	file_id: Mapped[int] = mapped_column(Integer, ForeignKey("uploaded_files.id"), nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	# 🤝 관계 설정
-	message = relationship("Message", back_populates="attachments")
-	# 파일의 실제 경로(file_path), 원본이름(original_name) 등을 가져올 수 있게 함
-	file_info = relationship("UploadedFile")
+	message: Mapped[Message] = relationship("Message", back_populates="attachments")
+	file_info: Mapped[UploadedFile] = relationship("UploadedFile")

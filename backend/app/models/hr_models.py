@@ -1,132 +1,165 @@
-from typing import Any
-
+from __future__ import annotations
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
+from sqlalchemy import (
+	Boolean,
+	Date,
+	DateTime,
+	Float,
+	ForeignKey,
+	Index,
+	Integer,
+	String,
+	Text,
+	UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from sqlalchemy import Column, Integer, Float, String, Date, DateTime, ForeignKey, Text, Boolean, UniqueConstraint, Index
-from sqlalchemy.orm import relationship
-from db.session import Base # 상위 폴더의 database.py를 참조하도록 설정
+from db.session import Base
 from utils.seoul_time import now_seoul_naive
-#일정
+
+if TYPE_CHECKING:
+	from models.auth_models import User
+
+
 class Todo(Base):
 	__tablename__ = "todos"
 
-	id = Column[int](Integer, primary_key=True, index=True) 			#교유식별자
-	user_id = Column[str](String, ForeignKey("users.user_login_id"))	# 유저 아이디
-	title = Column[str](String(200), nullable=False)	 				# 휴가/보고 제목
-	description = Column[str](Text)										# 상세 내용
-	start_date = Column[datetime](DateTime, nullable=False)				# 시작 일시
-	end_date = Column[datetime](DateTime)								# 종료 일시
-	color = Column[str](String(7))						 				# 색상 (#HEX)
-	category = Column[str](String(20))					 				# vacation / report
-	
-	# --- 날짜 기록 컬럼 추가 ---
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive) # 처음 생성 시 자동 기록
-	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) # 수정 시마다 자동 갱신
-	
-	author = relationship("User", foreign_keys=[user_id])
-#일정 카테고리
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.user_login_id"))
+	title: Mapped[str] = mapped_column(String(200), nullable=False)
+	description: Mapped[str | None] = mapped_column(Text)
+	start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+	end_date: Mapped[datetime | None] = mapped_column(DateTime)
+	color: Mapped[str | None] = mapped_column(String(7))
+	category: Mapped[str | None] = mapped_column(String(20))
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	updated_at: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)
+
+	author: Mapped[User | None] = relationship("User", foreign_keys=[user_id])
+
+
 class TodoCategoryType(Base):
 	__tablename__ = "todo_category_type"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	category_key = Column[str](String(20), unique=True, nullable=False) # 'report', 'vacation'
-	category_name = Column[str](String(50), nullable=False)			 	# '주간보고', '휴가'
-	icon = Column[str](String(10))										# '📝', '✈️'
-	is_active = Column[bool](Boolean, default=True)
-#일정 개인샛팅
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	category_key: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+	category_name: Mapped[str] = mapped_column(String(50), nullable=False)
+	icon: Mapped[str | None] = mapped_column(String(10))
+	is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 class TodoConfig(Base):
 	__tablename__ = "todo_config"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String, ForeignKey("users.user_login_id"))
-	category_key = Column[str](String(20), ForeignKey("todo_category_type.category_key"))
-	color = Column[str](String(7), default="#3788d8") 
-	default_description=Column[str](Text)
-	category_type = relationship("TodoCategoryType")
-# 🌟 1. 회사 지정 장소 마스터 테이블 (어드민에서 관리)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.user_login_id"))
+	category_key: Mapped[str | None] = mapped_column(
+		String(20), ForeignKey("todo_category_type.category_key")
+	)
+	color: Mapped[str | None] = mapped_column(String(7), default="#3788d8")
+	default_description: Mapped[str | None] = mapped_column(Text)
+	category_type: Mapped[TodoCategoryType | None] = relationship("TodoCategoryType")
+
+
 class OfficeLocation(Base):
 	__tablename__ = "office_location"
-	
-	id = Column[int](Integer, primary_key=True, index=True)
-	name = Column[str](String)			# 예: "본사", "강남지사"
-	latitude = Column[Any](Float)		 # 위도 (예: 37.4979)
-	longitude = Column[Any](Float)		# 경도 (예: 127.0276)
-	radius = Column[int](Integer, default=100) # 허용 반경 (미터 단위, 기본 100m)
 
-# 🌟 2. 기존 Attendance 테이블에 좌표 컬럼 추가
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	name: Mapped[str | None] = mapped_column(String)
+	latitude: Mapped[float | None] = mapped_column(Float)
+	longitude: Mapped[float | None] = mapped_column(Float)
+	radius: Mapped[int | None] = mapped_column(Integer, default=100)
+
+
 class Attendance(Base):
 	__tablename__ = "attendance"
 	__table_args__ = (Index("ix_attendance_user_shift_status", "user_id", "shift_status"),)
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String, index=True)
-	work_date = Column[date](Date, index=True)
-	clock_in_time = Column[datetime](DateTime, nullable=True)
-	clock_out_time = Column[datetime](DateTime, nullable=True)
-	clock_in_location = Column[str](String, nullable=True)
-	clock_in_lat = Column[Any](Float, nullable=True)
-	clock_in_lng = Column[Any](Float, nullable=True)
-	clock_out_location = Column[str](String, nullable=True)
-	clock_out_lat = Column[Any](Float, nullable=True)
-	clock_out_lng = Column[Any](Float, nullable=True)
-	location_name = Column[str](String, nullable=True)
-	status = Column[str](String, default="NORMAL")
-	work_minutes = Column[int](Integer, default=0)
-	night_work_minutes = Column[int](Integer, default=0, nullable=False)
-	note = Column[str](String, nullable=True)
-	# 진행 중(IN_PROGRESS) / 마감(CLOSED) — 자정 이후 퇴근 시 달력일이 아닌 미종료 근무 조회용
-	shift_status = Column[str](String(20), nullable=True, index=True)
+
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str | None] = mapped_column(String, index=True)
+	work_date: Mapped[date | None] = mapped_column(Date, index=True)
+	clock_in_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+	clock_out_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+	clock_in_location: Mapped[str | None] = mapped_column(String, nullable=True)
+	clock_in_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+	clock_in_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+	clock_out_location: Mapped[str | None] = mapped_column(String, nullable=True)
+	clock_out_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+	clock_out_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+	location_name: Mapped[str | None] = mapped_column(String, nullable=True)
+	status: Mapped[str | None] = mapped_column(String, default="NORMAL")
+	work_minutes: Mapped[int | None] = mapped_column(Integer, default=0)
+	night_work_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+	note: Mapped[str | None] = mapped_column(String, nullable=True)
+	shift_status: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
 
 
 class AttendanceDailySummary(Base):
 	"""동일 user·work_date CLOSED 세션 합산(연장·야간 합)."""
 
 	__tablename__ = "attendance_daily_summary"
-	__table_args__ = (UniqueConstraint("user_id", "work_date", name="uq_attendance_daily_summary_user_date"),)
+	__table_args__ = (
+		UniqueConstraint("user_id", "work_date", name="uq_attendance_daily_summary_user_date"),
+	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
-	work_date = Column[date](Date, index=True, nullable=False)
-	total_work_minutes = Column[int](Integer, default=0, nullable=False)
-	overtime_minutes = Column[int](Integer, default=0, nullable=False)
-	total_night_minutes = Column[int](Integer, default=0, nullable=False)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
+	)
+	work_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
+	total_work_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+	overtime_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+	total_night_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
 class DailyReport(Base):
-	"""직원 일일 업무 보고 (캘린더 To-Do와 분리)."""
 	__tablename__ = "daily_reports"
 	__table_args__ = (UniqueConstraint("user_id", "report_date", name="uq_daily_reports_user_date"),)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
-	report_date = Column[date](Date, nullable=False, index=True)
-	content = Column[str](Text, nullable=False)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
-	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
+	)
+	report_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+	content: Mapped[str] = mapped_column(Text, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	updated_at: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)
 
 
 class WeeklyReport(Base):
-	"""주간 요약 보고."""
 	__tablename__ = "weekly_reports"
 	__table_args__ = (UniqueConstraint("user_id", "week_start_date", name="uq_weekly_reports_user_week"),)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
-	week_start_date = Column[date](Date, nullable=False, index=True)
-	summary = Column[str](Text, nullable=False)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
-	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
+	)
+	week_start_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+	summary: Mapped[str] = mapped_column(Text, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	updated_at: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)
 
 
 class MonthlyReport(Base):
-	"""월간 요약 보고 (달력 월 1일 기준)."""
 	__tablename__ = "monthly_reports"
 	__table_args__ = (UniqueConstraint("user_id", "month_start_date", name="uq_monthly_reports_user_month"),)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id"), index=True, nullable=False)
-	month_start_date = Column[date](Date, nullable=False, index=True)
-	summary = Column[str](Text, nullable=False)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
-	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
+	)
+	month_start_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+	summary: Mapped[str] = mapped_column(Text, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	updated_at: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)

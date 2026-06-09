@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from models.auth_models import User
 from models.holiday_models import Holiday
@@ -180,7 +181,7 @@ def test_exclude_resigned_user():
 	db.set_context_work_date(work_date)
 
 	# When: 보고서 일일 현황 조회 실행
-	rows = reports_service.list_daily_status(db, work_date)
+	rows = reports_service.list_daily_status(cast(Session, db), work_date)
 
 	# Then: 퇴사자가 결과에서 제외됨을 검증
 	ids = {r["user_login_id"] for r in rows}
@@ -218,7 +219,7 @@ def test_report_status_vacation_or_holiday(monkeypatch, case: str):
 	)
 
 	# When: 상태 판별 로직 실행
-	rows = reports_service.list_daily_status(db, work_date)
+	rows = reports_service.list_daily_status(cast(Session, db), work_date)
 
 	# Then: MISSING이 아니라 VACATION 또는 HOLIDAY로 반환되는지 검증
 	assert len(rows) == 1
@@ -233,7 +234,7 @@ def test_invalid_date_range():
 
 	# When/Then: API 레이어에서 HTTPException(400)을 발생시키는지 검증
 	with pytest.raises(HTTPException) as e:
-		admin_reports_api.report_daily_status(work_date=too_old, db=db, _={})
+		admin_reports_api.report_daily_status(work_date=too_old, db=cast(Session, db), _={})
 
 	assert e.value.status_code == 400
 

@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -65,9 +65,14 @@ class Settings(BaseSettings):
 
 	model_config = SettingsConfigDict(env_file=ENV_PATH)
 
+	if TYPE_CHECKING:
 
-# BaseSettings는 .env·환경 변수로 필수 필드를 채움. Pyright/BasedPyright는 생성자 시그니처만 보고 오탐함.
-settings = Settings()  # pyright: ignore[reportCallIssue]
+		def __init__(self, /, **data: Any) -> None:
+			"""Pyright: .env에서 필수 필드를 채우는 BaseSettings 생성자."""
+			...
+
+
+settings = Settings()
 
 # 배포 로그에 .env 절대 경로가 남지 않도록, 개발 환경에서만 경로 힌트 출력
 if settings.ENVIRONMENT == "development":

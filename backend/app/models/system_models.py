@@ -1,4 +1,9 @@
-from sqlalchemy import Boolean, CheckConstraint, Column, Integer, String, DateTime
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
 from utils.seoul_time import now_seoul_naive
@@ -7,17 +12,17 @@ from utils.seoul_time import now_seoul_naive
 class Department(Base):
 	__tablename__ = "departments"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	department_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	department_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
 
 class Position(Base):
 	__tablename__ = "positions"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	position_name = Column[str](String(100), unique=True, nullable=False)
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	position_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
 
 class WorkLocation(Base):
@@ -27,10 +32,9 @@ class WorkLocation(Base):
 		CheckConstraint("length(trim(location_value)) > 0", name="ck_work_locations_value_not_blank"),
 	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	location_key = Column[str](String(50), unique=True, nullable=False, index=True)
-	location_value = Column[str](String(120), unique=True, nullable=False)
-	description = Column[str](String(255), nullable=True)
-	is_active = Column[bool](Boolean, nullable=False, server_default="1")
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
-
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	location_key: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+	location_value: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+	description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+	is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="1")
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
