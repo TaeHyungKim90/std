@@ -438,7 +438,7 @@ def get_user_attendance_range(
 	return {"items": items}
 
 
-def _apply_admin_attendance_payload(rec: Any, work_day: date_type, updates: dict) -> None:
+def _apply_admin_attendance_payload(rec: Attendance, work_day: date_type, updates: dict) -> None:
 	"""관리자 PATCH/POST 공통: 출·퇴근 시각·상태 반영."""
 	if "clock_in_time" in updates:
 		raw_in = updates["clock_in_time"]
@@ -481,7 +481,7 @@ def create_attendance_record(
 			detail="해당 근무일에 이미 근태 기록이 있습니다. 해당 행을 수정해 주세요.",
 		)
 
-	new_rec: Any = Attendance(
+	new_rec = Attendance(
 		tenant_id=tenant_id,
 		user_id=uid,
 		work_date=work_day,
@@ -577,12 +577,11 @@ def recompute_work_minutes_bulk(
 
 	touched: set[tuple[str, date_type]] = set()
 	for rec in records:
-		rec_any: Any = rec
-		ci = rec_any.clock_in_time
-		co = rec_any.clock_out_time
+		ci = rec.clock_in_time
+		co = rec.clock_out_time
 		new_w, new_n = _recompute_work_and_night(ci, co)
-		old_m = int(rec_any.work_minutes or 0)
-		old_n = int(getattr(rec_any, "night_work_minutes", None) or 0)
+		old_m = int(rec.work_minutes or 0)
+		old_n = int(rec.night_work_minutes or 0)
 		examined += 1
 		if new_w == old_m and new_n == old_n:
 			unchanged += 1
@@ -591,17 +590,18 @@ def recompute_work_minutes_bulk(
 		if len(changes) < max_change_samples:
 			changes.append(
 				{
-					"record_id": int(rec_any.id),
-					"user_id": str(rec_any.user_id),
-					"work_date": rec_any.work_date,
+					"record_id": rec.id,
+					"user_id": str(rec.user_id),
+					"work_date": rec.work_date,
 					"old_work_minutes": old_m,
 					"new_work_minutes": new_w,
 				}
 			)
 		if not dry_run:
-			rec_any.work_minutes = new_w
-			rec_any.night_work_minutes = new_n
-			touched.add((str(rec_any.user_id), cast(date_type, rec_any.work_date)))
+			rec.work_minutes = new_w
+			rec.night_work_minutes = new_n
+			if rec.work_date is not None:
+				touched.add((str(rec.user_id), rec.work_date))
 
 	if not dry_run and updated > 0:
 		for uid, wd in touched:
@@ -628,20 +628,20 @@ def update_attendance_record(
 	if not record:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="근태 기록을 찾을 수 없습니다.")
 
-	# Column[...] 인스턴스 필드 대입·인자 전달 오탐 방지 (이 함수 범위만 Any)
-	rec: Any = record
-	work_day = cast(date_type, rec.work_date)
+	if record.work_date is None:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="근무일이 없는 근태 기록입니다.")
+	work_day = record.work_date
 
-	_apply_admin_attendance_payload(rec, work_day, updates)
+	_apply_admin_attendance_payload(record, work_day, updates)
 
 	sync_shift_status_from_clock_times(record)
 
-	w, n = _recompute_work_and_night(rec.clock_in_time, rec.clock_out_time)
-	rec.work_minutes = w
-	rec.night_work_minutes = n
-	refresh_attendance_daily_summary(db, tenant_id, str(rec.user_id), work_day)
+	w, n = _recompute_work_and_night(record.clock_in_time, record.clock_out_time)
+	record.work_minutes = w
+	record.night_work_minutes = n
+	refresh_attendance_daily_summary(db, tenant_id, str(record.user_id), work_day)
 
-	db.add(rec)
+	db.add(record)
 	db.commit()
-	db.refresh(rec)
-	return rec
+	db.refresh(record)
+	return record

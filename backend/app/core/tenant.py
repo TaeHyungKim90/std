@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import cast
 
 from fastapi import Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -66,13 +65,11 @@ def get_tenant_by_slug(db: Session, slug: str) -> Tenant:
 
 
 def tenant_pk(tenant: Tenant) -> int:
-	"""SQLAlchemy 인스턴스 pk — Column[int] 타입 오탐 방지."""
-	return cast(int, tenant.id)
+	return tenant.id
 
 
 def tenant_slug_str(tenant: Tenant) -> str:
-	"""SQLAlchemy 인스턴스 slug — Column[str] 타입 오탐 방지."""
-	return cast(str, tenant.slug)
+	return tenant.slug
 
 
 async def get_tenant_slug_header(

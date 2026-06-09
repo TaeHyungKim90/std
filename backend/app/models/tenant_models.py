@@ -1,4 +1,9 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
 from utils.seoul_time import now_seoul_naive
@@ -9,10 +14,10 @@ class Tenant(Base):
 
 	__tablename__ = "tenants"
 
-	id = Column(Integer, primary_key=True, index=True)
-	slug = Column(String(50), unique=True, nullable=False, index=True)
-	name = Column(String(200), nullable=False)
-	is_active = Column(Boolean, nullable=False, default=True)
-	logo_url = Column(String(500), nullable=True)
-	icon_url = Column(String(500), nullable=True)
-	created_at = Column(DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+	name: Mapped[str] = mapped_column(String(200), nullable=False)
+	is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+	logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+	icon_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)

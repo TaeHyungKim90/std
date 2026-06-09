@@ -92,6 +92,7 @@ def test_delete_only_affects_one_tenant(db_session, two_tenants):
 		),
 	)
 	row = get_holiday_by_date(db_session, tid1, d)
+	assert row is not None
 	remove_holiday(db_session, row)
 
 	assert get_holiday_by_date(db_session, tid1, d) is None
@@ -112,15 +113,19 @@ def test_shared_update_replicates(db_session, two_tenants):
 		),
 	)
 	row = get_holiday_by_date(db_session, tid1, d)
+	assert row is not None
 	update_holiday(
 		db_session,
 		tid1,
-		int(row.id),
+		row.id,
 		HolidayUpdate(holiday_name="광복절(수정)"),
 	)
 
-	assert get_holiday_by_date(db_session, tid1, d).holiday_name == "광복절(수정)"
-	assert get_holiday_by_date(db_session, tid2, d).holiday_name == "광복절(수정)"
+	h1 = get_holiday_by_date(db_session, tid1, d)
+	h2 = get_holiday_by_date(db_session, tid2, d)
+	assert h1 is not None and h2 is not None
+	assert h1.holiday_name == "광복절(수정)"
+	assert h2.holiday_name == "광복절(수정)"
 
 
 def test_sync_public_holidays_all_tenants(monkeypatch, db_session, two_tenants):

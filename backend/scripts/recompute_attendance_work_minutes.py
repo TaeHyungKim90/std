@@ -32,6 +32,7 @@ def main() -> None:
 	parser.add_argument("--start", required=True, help="시작일 YYYY-MM-DD")
 	parser.add_argument("--end", required=True, help="종료일 YYYY-MM-DD")
 	parser.add_argument("--user", default=None, help="직원 user_login_id (선택)")
+	parser.add_argument("--tenant-id", type=int, default=1, help="테넌트 ID (기본 1)")
 	parser.add_argument(
 		"--apply",
 		action="store_true",
@@ -49,6 +50,7 @@ def main() -> None:
 	try:
 		result = recompute_work_minutes_bulk(
 			db,
+			args.tenant_id,
 			args.start,
 			args.end,
 			user_login_id=args.user,

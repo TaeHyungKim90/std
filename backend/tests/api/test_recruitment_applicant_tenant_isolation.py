@@ -215,6 +215,7 @@ def test_applicant_jwt_cross_tenant_rejected_on_my_applications(manual_seed):
 			resume_url="/uploads/resume-cross.pdf",
 		)
 		token_a = client_a.cookies.get("applicantToken")
+		assert token_a is not None
 
 	with _client_for_db(db, SLUG_B) as client_b:
 		client_b.cookies.set("applicantToken", token_a)
