@@ -1,26 +1,43 @@
-# 운영 실행 가이드 (Windows / Linux)
+# 운영 실행 가이드 (Windows)
 
-이 문서는 Windows / Linux 기준으로 프론트 정적 배포와 백엔드 운영 실행 절차를 안내합니다.
+프론트 정적 배포(`static/`)와 FastAPI 운영 서버 기동 절차입니다.  
+로컬 개발은 [`README.md`](README.md), 멀티테넌트·URL은 [`MULTI_TENANT.md`](MULTI_TENANT.md)를 참고하세요.
+
+> Linux/macOS용 `start_production.sh`는 저장소에 포함되어 있지 않습니다. 아래 `deploy_frontend`·`uvicorn` 단계를 수동으로 동일하게 수행하면 됩니다.
+
+---
 
 ## 1) 사전 준비
 
-- 서버에 `uv`가 설치되어 있어야 합니다.
-- Node.js / npm이 설치되어 있어야 합니다.
-- 루트 `.env`와 `frontend/.env.production` 값이 운영값으로 설정되어 있어야 합니다.
-- 백엔드는 `backend/.env.production` 파일을 자동 로드하지 않습니다. 백엔드 운영값은 **루트 `.env` 또는 서버 환경 변수**로 설정하세요.
-- 특히 `frontend/.env.production`의 `REACT_APP_API_BASE_URL`은 필수입니다.
+- **uv**, **Node.js / npm** 설치
+- 프로젝트 루트 **`.env`** — 운영값 설정 (백엔드는 `backend/.env.production`을 **자동 로드하지 않음**)
+- **`frontend/.env.production`** — 빌드 시 `REACT_APP_API_BASE_URL` 등 (**gitignore 대상**, 서버에 파일만 두거나 CI에서 주입)
 
-예시:
+필수 예시:
 
 ```env
+# frontend/.env.production (빌드 전)
 REACT_APP_API_BASE_URL=https://api.example.com/api
 ```
 
-## 2) 초기 1회 세팅 (`uv` + 패키지 설치)
+백엔드 루트 `.env` 운영 권장:
 
-처음 서버를 올리기 전(또는 새 PC/새 서버)에는 아래를 1회 수행하세요.
+```env
+ENVIRONMENT=production
+SECRET_KEY=…
+CORS_ORIGINS=https://hr.example.com
+FRONTEND_URL=https://hr.example.com
+DEFAULT_TENANT_SLUG=valuesplay
+BOOTSTRAP_DEFAULT_ADMIN=false
+SERVE_UPLOADS_STATIC=false
+DEV_AUTO_START_REACT=false
+ALLOW_LEGACY_PUBLIC_APPLY=false
+ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS=false
+```
 
-Windows (PowerShell):
+---
+
+## 2) 초기 1회 세팅
 
 ```powershell
 cd C:\project\hr
@@ -30,73 +47,95 @@ npm ci
 cd ..
 ```
 
-Linux / macOS:
+운영 서버는 `npm ci` 권장.
 
-```bash
-cd /path/to/hr
-uv sync --project backend --group dev
-cd frontend
-npm ci
-cd ..
-```
+---
 
-`npm ci` 대신 `npm install`을 써도 되지만, 운영 서버는 `npm ci`를 권장합니다.
+## 3) 자동 실행 (`start_production.bat`)
 
-## 3) 자동 실행 방식
-
-운영 실행은 `start_production.bat`(Windows) 또는 `start_production.sh`(Linux)로 처리됩니다.
-
-이 스크립트는 내부에서 다음을 순서대로 수행합니다.
-
-1. `uv` 프로젝트 환경 확인/동기화
-2. `deploy_frontend.bat` 또는 `deploy_frontend.sh` 실행
-   - `frontend`에서 `npm run build`
-   - 빌드 결과를 루트 `static`에 복사
-   - `static/uploads`는 보존
-3. FastAPI 운영 서버 기동 (`uvicorn`)
-
-## 4) 실행 방법
-
-프로젝트 루트에서 아래 명령을 실행합니다.
+프로젝트 루트:
 
 ```bat
 start_production.bat
 ```
 
-```bash
-bash ./start_production.sh
-```
+내부 순서:
 
-포트를 바꾸려면 실행 전에 환경변수를 지정합니다.
+1. `uv` 확인·동기화
+2. **`deploy_frontend.bat`** — `npm run build` → `frontend/build` → 루트 **`static/`** 복사 (`static/uploads` 보존)
+3. 운영 프로필 환경 변수 설정 (`ENVIRONMENT=production`, `BOOTSTRAP_DEFAULT_ADMIN=false` 등)
+4. **Uvicorn** 기동: `uv run --project backend python -m uvicorn main:app --app-dir backend/app --host 0.0.0.0 --port %APP_PORT%`
+
+포트 변경:
 
 ```bat
 set APP_PORT=9000
 start_production.bat
 ```
 
-```bash
-APP_PORT=9000 bash ./start_production.sh
-```
+기본 포트: **8000** (`APP_PORT` 미설정 시).
+
+---
+
+## 4) 접속 URL (멀티테넌트)
+
+단일 호스트에서 FastAPI가 SPA + API를 함께 서빙합니다.
+
+| 용도 | URL 예 |
+|------|--------|
+| 테넌트 로그인 | `https://hr.example.com/{tenant}/login` |
+| 직원 | `https://hr.example.com/{tenant}/my/todos` |
+| 관리자 | `https://hr.example.com/{tenant}/admin/...` |
+| 채용 | `https://hr.example.com/{tenant}/careers/...` |
+| 플랫폼 관리 | `https://hr.example.com/platform/login` |
+| API | `https://hr.example.com/api/...` |
+
+루트 `/` → `/{DEFAULT_TENANT_SLUG}/login` 리다이렉트.
+
+---
 
 ## 5) 배포 산출물 확인
 
-- 프론트: `static/index.html`, `static/static/js/*`, `static/static/css/*`
-- 백엔드: `http://<host>:<APP_PORT>/` 접속 시 프론트 화면 응답
+| 항목 | 경로 |
+|------|------|
+| SPA | `static/index.html`, `static/static/js/*`, `static/static/css/*` |
+| PDF.js worker | `static/pdf.worker.min.mjs` (`prebuild`에서 복사 — 누락 시 PDF 뷰어 실패) |
+| 테넌트 브랜딩 | `static/uploads/tenant-branding/` (항상 `/uploads/tenant-branding` 노출) |
+| 첨부 파일 | `SERVE_UPLOADS_STATIC=false` 권장 → `/api/common/files/{id}` |
 
-## 6) 자주 발생하는 문제
+브라우저: `http://<host>:<APP_PORT>/{tenant}/login`
 
-- `REACT_APP_API_BASE_URL` 누락: 프론트 빌드가 실패합니다.
-- npm 미설치/경로 미등록: `deploy_frontend.bat` / `deploy_frontend.sh`가 실패합니다.
-- `uv` 미설치: `start_production.bat` / `start_production.sh` 시작 단계에서 중단됩니다.
+---
 
-## 7) 수동 프론트 배포만 먼저 하고 싶을 때
-
-아래 명령으로 프론트만 배포할 수 있습니다.
+## 6) 프론트만 재배포
 
 ```bat
 deploy_frontend.bat
 ```
 
-```bash
-bash ./deploy_frontend.sh
-```
+빌드 후 백엔드 재시작이 필요하면 `start_production.bat` 또는 uvicorn만 재기동.
+
+---
+
+## 7) 자주 발생하는 문제
+
+| 증상 | 확인 |
+|------|------|
+| 빌드 실패 | `REACT_APP_API_BASE_URL` 누락 (`prebuild` 검증) |
+| API 401·CORS | `CORS_ORIGINS`에 실제 프론트 origin 포함 |
+| 로그인 후 튕김 | URL `{tenant}`와 JWT `tenantSlug` 일치 여부 |
+| PDF 안 열림 | `static/pdf.worker.min.mjs` 배포 여부 |
+| npm/uv 오류 | PATH·`npm ci` / `uv sync` 재실행 |
+
+---
+
+## 8) 관련 문서·스크립트
+
+| 문서/파일 | 내용 |
+|-----------|------|
+| [`README.md`](README.md) | 로컬 온보딩 |
+| [`research.md`](research.md) | API·기능 상세 |
+| [`MULTI_TENANT.md`](MULTI_TENANT.md) | 테넌트·플랫폼 |
+| `start_local.bat` | 로컬 개발 (Windows) |
+| `start_production.bat` | 운영 기동 |
+| `deploy_frontend.bat` | CRA → `static/` |

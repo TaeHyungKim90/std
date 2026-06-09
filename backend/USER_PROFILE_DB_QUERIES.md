@@ -1,24 +1,33 @@
 # 사용자 프로필 확장 컬럼 DB 쿼리 (사진/부서/직급/급여계좌)
 
-프로젝트는 현재 Alembic 마이그레이션을 사용하지 않고 `Base.metadata.create_all()` + 런타임 `ALTER TABLE`(SQLite)을 시도합니다.
-그래도 운영/개발 DB 스키마를 미리 맞추려면 아래 쿼리를 사용할 수 있습니다.
+Alembic 없이 `create_all()` + SQLite 런타임 `ALTER`를 쓰는 경우, 운영/개발 DB를 수동으로 맞출 때 참고합니다.
 
-## SQLite (`todo.db`) 예시
+**멀티테넌트**: `departments`, `positions`는 **`tenant_id` + 이름** 복합 UNIQUE. `users`는 **`tenant_id` + `user_login_id`** 조합으로 테넌트별 직원.
+
+---
+
+## SQLite 예시
 
 ```sql
--- 부서 / 직급 마스터 테이블
-CREATE TABLE departments (
+-- tenants (init_db가 없으면 먼저 생성)
+-- departments / positions (테넌트별)
+CREATE TABLE IF NOT EXISTS departments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  department_name TEXT NOT NULL UNIQUE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  department_name TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (tenant_id, department_name)
 );
 
-CREATE TABLE positions (
+CREATE TABLE IF NOT EXISTS positions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  position_name TEXT NOT NULL UNIQUE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  position_name TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (tenant_id, position_name)
 );
 
+-- users 프로필 확장 (컬럼 존재 시 스킵)
 ALTER TABLE users ADD COLUMN user_profile_image_url TEXT;
 ALTER TABLE users ADD COLUMN user_department TEXT;
 ALTER TABLE users ADD COLUMN user_position TEXT;
@@ -27,17 +36,21 @@ ALTER TABLE users ADD COLUMN salary_account_number TEXT;
 ```
 
 주의:
-- SQLite는 컬럼이 이미 존재하면 `ALTER TABLE ... ADD COLUMN`이 실패합니다.
-- 위 쿼리를 그대로 실행할 경우, 이미 컬럼이 추가된 환경에서는 스킵하거나 `table_info(users)`로 컬럼 존재 여부를 확인한 뒤 실행하세요.
 
-## PostgreSQL / MySQL 공통(개념)
+- SQLite는 컬럼이 이미 있으면 `ADD COLUMN` 실패 → `PRAGMA table_info(users)`로 확인.
+- 레거시 `departments.department_name UNIQUE`(전역) 스키마는 멀티테넌트와 맞지 않음 → 테넌트별 UNIQUE로 재생성 필요.
+
+---
+
+## PostgreSQL 개념
 
 ```sql
 ALTER TABLE users
-  ADD COLUMN user_profile_image_url VARCHAR(500),
-  ADD COLUMN user_department VARCHAR(100),
-  ADD COLUMN user_position VARCHAR(100),
-  ADD COLUMN salary_bank_name VARCHAR(100),
-  ADD COLUMN salary_account_number VARCHAR(50);
+  ADD COLUMN IF NOT EXISTS user_profile_image_url VARCHAR(500),
+  ADD COLUMN IF NOT EXISTS user_department VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS user_position VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS salary_bank_name VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS salary_account_number VARCHAR(50);
 ```
 
+프로필 이미지 URL은 테넌트 쿼리 파라미(`tenant=`)·same-origin 경로를 프론트에서 지원합니다.

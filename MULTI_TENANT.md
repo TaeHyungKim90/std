@@ -1,6 +1,7 @@
 # 멀티테넌트 SaaS (경로 기반)
 
-브랜치: `feature/multi-tenant`
+한 호스트에서 여러 기업(테넌트) HR·채용을 분리 운영합니다.  
+기술 상세: [`research.md`](research.md) §8, 온보딩: [`README.md`](README.md).
 
 ## URL 구조
 
@@ -239,21 +240,23 @@ departments_in_tenant(db, tenant_id_from_user(current_admin)).all()
 
 ## 남은 작업 (낮은 우선순위)
 
-대부분의 admin/HR/public API에는 테넌트 스코핑이 적용되어 있습니다. 잔여 항목:
-
-- `common_service` 업로드 경로에 `uploads/{tenant_slug}/` prefix 미적용
-- `summary_dict_for_work_date(db, user_id, ...)` — 동일 `login_id`가 여러 테넌트에 있을 때 `tenant_id` 미전달 (엣지 케이스)
+- `common_service` 업로드 경로에 `uploads/{tenant_slug}/` prefix 미적용 (전역 uploads 디렉터리)
 
 ---
 
 ## 로컬 실행
 
-```bash
-# 백엔드 (스키마·시드는 기동 시 init_db 자동)
-cd backend
-python -m uvicorn main:app --reload --app-dir app
+Windows (권장):
 
-# 프론트
+```bat
+start_local.bat
+```
+
+수동:
+
+```bash
+uv sync --project backend --group dev
+uv run --project backend python backend/app/main.py   # 또는 DEV_AUTO_START_REACT=true
 cd frontend && npm start
 ```
 
@@ -277,5 +280,5 @@ cd frontend && npm start
 - `conftest.py` — `TENANT_HEADERS`, `BOOTSTRAP_DEFAULT_ADMIN`
 
 ```bash
-cd backend && python -m pytest tests/api/test_tenant_isolation.py tests/api/test_platform_tenants.py -q
+cd backend && uv run pytest tests/api/test_tenant_isolation.py tests/api/test_platform_tenants.py -q
 ```
