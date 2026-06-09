@@ -70,6 +70,20 @@ def _signup_or_exists(client: TestClient, payload: dict) -> None:
 	pytest.fail(f"signup failed: {r.status_code} {r.text}")
 
 
+def _ensure_user_role(login_id: str, role: str) -> None:
+	from models.auth_models import User
+	from db.session import SessionLocal
+
+	db = SessionLocal()
+	try:
+		user = db.query(User).filter(User.user_login_id == login_id).first()
+		if user and user.role != role:
+			user.role = role
+			db.commit()
+	finally:
+		db.close()
+
+
 @pytest.fixture(scope="session")
 def ensure_integration_users():
 	import main as app_main
@@ -81,14 +95,9 @@ def ensure_integration_users():
 			"user_nickname": "통합",
 			"joined_at": "2020-01-01",
 		}
-		_signup_or_exists(
-			client,
-			{**base, "user_login_id": INTEGRATION_ADMIN_LOGIN_ID, "role": "admin"},
-		)
-		_signup_or_exists(
-			client,
-			{**base, "user_login_id": INTEGRATION_EMPLOYEE_LOGIN_ID, "role": "user"},
-		)
+		_signup_or_exists(client, {**base, "user_login_id": INTEGRATION_ADMIN_LOGIN_ID})
+		_ensure_user_role(INTEGRATION_ADMIN_LOGIN_ID, "admin")
+		_signup_or_exists(client, {**base, "user_login_id": INTEGRATION_EMPLOYEE_LOGIN_ID})
 	yield
 
 

@@ -126,10 +126,17 @@ def check_user_exists(db: Session, login_id: str, tenant_id: int):
 	)
 
 def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: int):
-	"""일반 회원가입 (신규 유저 DB 등록)"""
+	"""일반 회원가입 (신규 유저 DB 등록) — 권한은 항상 user 고정."""
 	if check_user_exists(db, user_data.user_login_id, tenant_id):
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 사용 중인 아이디입니다.")
-	
+
+	requested_role = (user_data.role or "user").strip()
+	if requested_role != "user":
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="공개 회원가입으로 관리자 권한을 부여할 수 없습니다.",
+		)
+
 	hashed_password = get_password_hash(user_data.user_password)
 	new_user = User(
 		tenant_id=tenant_id,
@@ -138,7 +145,7 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: 
 		user_name=user_data.user_name,
 		user_nickname=user_data.user_nickname,
 		user_phone_number=user_data.user_phone_number,
-		role=user_data.role or "user",
+		role="user",
 		join_date=user_data.joined_at,
 		resignation_date=user_data.resignation_date
 	)

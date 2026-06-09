@@ -78,6 +78,20 @@ def _upsert_user(
 	return user
 
 
+def ensure_naver_tenant_for_tests(db: Session) -> int:
+	"""격리 스모크 테스트용 naver 테넌트 + admin/1234 (init_db는 valuesplay만 생성)."""
+	tid_b = _ensure_tenant_b(db)
+	_upsert_user(
+		db,
+		tenant_id=tid_b,
+		login_id="admin",
+		name="Admin B",
+		role="admin",
+		join_date=date(2020, 1, 1),
+	)
+	return tid_b
+
+
 def _ensure_vacation_category(db: Session, tenant_id: int) -> None:
 	if (
 		db.query(TodoCategoryType)

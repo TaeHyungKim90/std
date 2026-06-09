@@ -1,14 +1,18 @@
-from typing import Any
-
+from __future__ import annotations
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
-
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, Date, Float, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
 from utils.seoul_time import now_seoul_naive
+
+if TYPE_CHECKING:
+	from models.system_models import Department, Position
+	from models.tenant_models import Tenant
+
 
 class User(Base):
 	__tablename__ = "users"
@@ -16,29 +20,33 @@ class User(Base):
 		UniqueConstraint("tenant_id", "user_login_id", name="uq_users_tenant_login"),
 	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True)
-	user_login_id = Column[str](String(50), nullable=False) 	# id (테넌트 내 unique)
-	user_password = Column[str](String(255), nullable=False)				# 해싱된 pw
-	user_name = Column[str](String(50), nullable=False)				 		# 실명
-	user_nickname = Column[str](String(50))							 		# 닉네임
-	# 사용자 프로필 확장 필드(사진/부서/직급/급여계좌)
-	user_profile_image_url = Column[str](String(500), nullable=True)		# 파일 저장 경로(/uploads/...)
-	department_id = Column[int](Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, index=True)
-	position_id = Column[int](Integer, ForeignKey("positions.id", ondelete="SET NULL"), nullable=True, index=True)
-	salary_bank_name = Column[str](String(100), nullable=True)				# 급여 은행명
-	salary_account_number = Column[str](String(50), nullable=True)			# 급여 계좌번호
-	role = Column[str](String(20), default="user")					 		# 권한
-	must_change_password = Column[bool](Boolean, nullable=False, default=False, server_default="0")
-	# False: 관리자 직원 목록·보고 현황 등 디렉터리에서 제외(부트스트랩 system admin)
-	visible_in_user_list = Column[bool](Boolean, nullable=False, default=True, server_default="1")
-	user_phone_number = Column[str](String(20), nullable=True)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
-	join_date = Column[date](Date, nullable=True)
-	resignation_date = Column[date](Date, nullable=True)
-	# 출퇴근 UI 기본 근무장소(활성 work_locations.location_key 저장)
-	preferred_work_location = Column[str](String(120), nullable=True)
-	vacation = relationship(
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+	)
+	user_login_id: Mapped[str] = mapped_column(String(50), nullable=False)
+	user_password: Mapped[str] = mapped_column(String(255), nullable=False)
+	user_name: Mapped[str] = mapped_column(String(50), nullable=False)
+	user_nickname: Mapped[str | None] = mapped_column(String(50))
+	user_profile_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+	department_id: Mapped[int | None] = mapped_column(
+		Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, index=True
+	)
+	position_id: Mapped[int | None] = mapped_column(
+		Integer, ForeignKey("positions.id", ondelete="SET NULL"), nullable=True, index=True
+	)
+	salary_bank_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+	salary_account_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+	role: Mapped[str | None] = mapped_column(String(20), default="user")
+	must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+	visible_in_user_list: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="1")
+	user_phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	join_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+	resignation_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+	preferred_work_location: Mapped[str | None] = mapped_column(String(120), nullable=True)
+
+	vacation: Mapped[UserVacation | None] = relationship(
 		"UserVacation",
 		back_populates="user",
 		uselist=False,
@@ -46,10 +54,12 @@ class User(Base):
 		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
 		foreign_keys="[UserVacation.tenant_id, UserVacation.user_id]",
 	)
-	avatar_setting = relationship("UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan")
-	tenant = relationship("Tenant", foreign_keys=[tenant_id])
-	department = relationship("Department", foreign_keys=[department_id])
-	position = relationship("Position", foreign_keys=[position_id])
+	avatar_setting: Mapped[UserAvatarSetting | None] = relationship(
+		"UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan"
+	)
+	tenant: Mapped[Tenant] = relationship("Tenant", foreign_keys=[tenant_id])
+	department: Mapped[Department | None] = relationship("Department", foreign_keys=[department_id])
+	position: Mapped[Position | None] = relationship("Position", foreign_keys=[position_id])
 
 	@property
 	def avatar_zoom(self) -> float:
@@ -57,11 +67,19 @@ class User(Base):
 
 	@property
 	def avatar_offset_x(self) -> float:
-		return float(self.avatar_setting.offset_x) if self.avatar_setting and self.avatar_setting.offset_x is not None else 0.0
+		return (
+			float(self.avatar_setting.offset_x)
+			if self.avatar_setting and self.avatar_setting.offset_x is not None
+			else 0.0
+		)
 
 	@property
 	def avatar_offset_y(self) -> float:
-		return float(self.avatar_setting.offset_y) if self.avatar_setting and self.avatar_setting.offset_y is not None else 0.0
+		return (
+			float(self.avatar_setting.offset_y)
+			if self.avatar_setting and self.avatar_setting.offset_y is not None
+			else 0.0
+		)
 
 	@property
 	def department_name(self) -> str | None:
@@ -71,22 +89,28 @@ class User(Base):
 	def position_name(self) -> str | None:
 		return self.position.position_name if self.position else None
 
+
 class UserVacation(Base):
 	__tablename__ = "user_vacations"
 	__table_args__ = (
 		UniqueConstraint("tenant_id", "user_id", name="uq_user_vacations_tenant_user"),
 	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-	user_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), nullable=False)
-	total_days = Column[int](Integer, default=0)												# 총 발생 연차
-	used_days = Column[Any](Float, default=0.0)													# 사용 연차 (반차를 위해 Float)
-	remaining_days = Column[Any](Float, default=0.0)											# 잔여 연차
-	last_updated = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive) 	# 최근 정산일
-	
-	# User 테이블과의 연결 고리 (tenant_id + user_login_id 복합 매칭)
-	user = relationship(
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), nullable=False
+	)
+	total_days: Mapped[int | None] = mapped_column(Integer, default=0)
+	used_days: Mapped[float | None] = mapped_column(Float, default=0.0)
+	remaining_days: Mapped[float | None] = mapped_column(Float, default=0.0)
+	last_updated: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)
+
+	user: Mapped[User | None] = relationship(
 		"User",
 		back_populates="vacation",
 		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
@@ -97,12 +121,16 @@ class UserVacation(Base):
 class UserAvatarSetting(Base):
 	__tablename__ = "user_avatar_settings"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	user_id = Column[int](Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
-	zoom = Column[Any](Float, nullable=False, default=1.0)
-	offset_x = Column[Any](Float, nullable=False, default=0.0)
-	offset_y = Column[Any](Float, nullable=False, default=0.0)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
-	updated_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	user_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True
+	)
+	zoom: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+	offset_x: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+	offset_y: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
+	updated_at: Mapped[datetime] = mapped_column(
+		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
+	)
 
-	user = relationship("User", back_populates="avatar_setting")
+	user: Mapped[User | None] = relationship("User", back_populates="avatar_setting")

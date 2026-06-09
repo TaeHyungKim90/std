@@ -5,6 +5,9 @@ setlocal
 REM Run from this script's directory (project root)
 cd /d "%~dp0"
 
+REM uv 기본 설치 경로 (시스템 PATH 미등록 시에도 동작)
+set "PATH=%USERPROFILE%\.local\bin;%USERPROFILE%\.cargo\bin;%PATH%"
+
 where uv >nul 2>nul
 if errorlevel 1 (
 	echo [INFO] uv not found. Installing uv...

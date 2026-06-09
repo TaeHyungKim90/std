@@ -5,6 +5,17 @@ from fastapi.testclient import TestClient
 
 import main as app_main
 from core.limiter import limiter
+from db.session import SessionLocal
+from support.multitenant_manual_seed import ensure_naver_tenant_for_tests
+
+
+def _seed_naver_tenant() -> None:
+	db = SessionLocal()
+	try:
+		ensure_naver_tenant_for_tests(db)
+		db.commit()
+	finally:
+		db.close()
 
 
 def test_departments_isolated_between_tenants():
@@ -21,6 +32,8 @@ def test_departments_isolated_between_tenants():
 			json={"department_name": "valuesplay-only-dept"},
 		)
 		assert create.status_code == status.HTTP_200_OK, create.text
+
+	_seed_naver_tenant()
 
 	with TestClient(app_main.app, headers={"X-Tenant-Slug": "naver"}) as nv_client:
 		r = nv_client.post(
@@ -46,6 +59,7 @@ def test_tenant_header_required_for_login():
 
 def test_public_jobs_scoped_by_tenant():
 	with TestClient(app_main.app) as client:
+		_seed_naver_tenant()
 		vp = client.get("/api/public/recruitment/jobs", headers={"X-Tenant-Slug": "valuesplay"})
 		nv = client.get("/api/public/recruitment/jobs", headers={"X-Tenant-Slug": "naver"})
 		assert vp.status_code == status.HTTP_200_OK

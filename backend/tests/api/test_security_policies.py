@@ -352,3 +352,18 @@ def test_legacy_applicant_endpoint_returns_410_when_disabled():
 		settings.ALLOW_LEGACY_APPLICANT_ID_ENDPOINTS = prev
 		app_main.app.dependency_overrides.clear()
 
+
+def test_public_signup_rejects_admin_role():
+	client = TestClient(app_main.app, headers=TENANT_HEADERS)
+	res = client.post(
+		"/api/auth/signup",
+		json={
+			"user_login_id": "security_test_no_admin_signup",
+			"user_password": "test-pass-1234",
+			"user_name": "일반가입테스트",
+			"role": "admin",
+		},
+	)
+	assert res.status_code == status.HTTP_400_BAD_REQUEST
+	assert "관리자" in str(res.json().get("detail") or "")
+

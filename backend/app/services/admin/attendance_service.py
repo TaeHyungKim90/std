@@ -442,13 +442,13 @@ def _apply_admin_attendance_payload(rec: Any, work_day: date_type, updates: dict
 	"""관리자 PATCH/POST 공통: 출·퇴근 시각·상태 반영."""
 	if "clock_in_time" in updates:
 		raw_in = updates["clock_in_time"]
-		if raw_in is None or (isinstance(raw_in, str) and not str(raw_in).strip()):
+		if raw_in is None or (isinstance(raw_in, str) and not raw_in.strip()):
 			rec.clock_in_time = None
 		else:
 			rec.clock_in_time = _parse_clock_value(str(raw_in), work_day)
 	if "clock_out_time" in updates:
 		raw_out = updates["clock_out_time"]
-		if raw_out is None or (isinstance(raw_out, str) and not str(raw_out).strip()):
+		if raw_out is None or (isinstance(raw_out, str) and not raw_out.strip()):
 			rec.clock_out_time = None
 		else:
 			rec.clock_out_time = _parse_clock_value(str(raw_out), work_day)
@@ -509,7 +509,7 @@ def _parse_clock_value(value: str | None, work_day: date_type) -> datetime | Non
 	"""'HH:MM' 또는 ISO datetime 문자열을 해당 근무일 기준 naive datetime으로 변환."""
 	if value is None:
 		return None
-	s = str(value).strip()
+	s = value.strip()
 	if not s:
 		return None
 	if "T" in s or len(s) > 8:

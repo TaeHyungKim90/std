@@ -1,112 +1,113 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 
-
-from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Date, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
 from utils.seoul_time import now_seoul_naive
 
 
-# --- 0. 이력서 양식 템플릿 (관리자 업로드 + 시드) ---
 class ResumeTemplate(Base):
 	__tablename__ = "resume_templates"
 	__table_args__ = (
 		UniqueConstraint("tenant_id", "saved_name", name="uq_resume_templates_tenant_saved"),
 	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-	name = Column[str](String(200), nullable=False)
-	saved_name = Column[str](String(255), nullable=False)
-	file_path = Column[str](String(500), nullable=False)
-	is_default = Column[bool](Boolean, nullable=False, default=False)
-	is_deleted = Column[bool](Boolean, nullable=False, default=False)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	name: Mapped[str] = mapped_column(String(200), nullable=False)
+	saved_name: Mapped[str] = mapped_column(String(255), nullable=False)
+	file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+	is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+	is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	job_postings = relationship("JobPosting", back_populates="resume_template")
+	job_postings: Mapped[list[JobPosting]] = relationship("JobPosting", back_populates="resume_template")
 
 
-# --- 1. 외부 지원자용 테이블 (Applicants) ---
 class Applicant(Base):
 	__tablename__ = "applicants"
 	__table_args__ = (
 		UniqueConstraint("tenant_id", "email_id", name="uq_applicants_tenant_email"),
 	)
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-	email_id = Column[str](String(100), nullable=False, index=True) # 지원자 로그인용 아이디 (이메일)
-	password = Column[str](String(255), nullable=False) # 해싱된 비밀번호
-	name = Column[str](String(50), nullable=False)
-	phone = Column[str](String(20), nullable=True)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	email_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+	password: Mapped[str] = mapped_column(String(255), nullable=False)
+	name: Mapped[str] = mapped_column(String(50), nullable=False)
+	phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	# 관계 설정: 한 명의 지원자가 여러 공고에 지원할 수 있음
-	applications = relationship("Application", back_populates="applicant", cascade="all, delete")
+	applications: Mapped[list[Application]] = relationship(
+		"Application", back_populates="applicant", cascade="all, delete"
+	)
 
 
-# --- 2. 채용 공고 테이블 (Job Postings) ---
 class JobPosting(Base):
 	__tablename__ = "job_postings"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	tenant_id = Column[int](Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-	title = Column[str](String(100), nullable=False)
-	description = Column[str](Text, nullable=False)
-	status = Column[str](String(20), default="open") # open(진행중), closed(마감), draft(임시저장)
-	deadline = Column[date](Date, nullable=True)
-	# 내부 직원/관리자 테이블(users)과 연결
-	author_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="SET NULL"))
-	resume_template_id = Column[int](
-		Integer,
-		ForeignKey("resume_templates.id", ondelete="SET NULL"),
-		nullable=True,
-		index=True,
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
 	)
-	created_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	title: Mapped[str] = mapped_column(String(100), nullable=False)
+	description: Mapped[str] = mapped_column(Text, nullable=False)
+	status: Mapped[str | None] = mapped_column(String(20), default="open")
+	deadline: Mapped[date | None] = mapped_column(Date, nullable=True)
+	author_id: Mapped[str | None] = mapped_column(
+		String(50), ForeignKey("users.user_login_id", ondelete="SET NULL")
+	)
+	resume_template_id: Mapped[int | None] = mapped_column(
+		Integer, ForeignKey("resume_templates.id", ondelete="SET NULL"), nullable=True, index=True
+	)
+	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	# 관계 설정: 하나의 공고에 여러 지원서가 접수됨
-	applications = relationship("Application", back_populates="job_posting", cascade="all, delete")
-	resume_template = relationship("ResumeTemplate", back_populates="job_postings")
+	applications: Mapped[list[Application]] = relationship(
+		"Application", back_populates="job_posting", cascade="all, delete"
+	)
+	resume_template: Mapped[ResumeTemplate | None] = relationship(
+		"ResumeTemplate", back_populates="job_postings"
+	)
 
 
-# --- 3. 지원서 제출 내역 테이블 (Applications) ---
 class Application(Base):
 	__tablename__ = "applications"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	job_id = Column[int](Integer, ForeignKey("job_postings.id", ondelete="CASCADE"))
-	applicant_id = Column[int](Integer, ForeignKey("applicants.id", ondelete="CASCADE"))
-	
-	# 첨부 항목 (물리적 파일 경로와 URL을 명확히 분리)
-	resume_file_url = Column[str](String(255), nullable=True)	# 이력서 파일 경로 (필수)
-	portfolio_file_url = Column[str](String(255), nullable=True)  # 포트폴리오 파일 경로 (선택)
-	reference_url = Column[str](String(500), nullable=True)	   # GitHub/Notion 등 URL (선택)
-	
-	# 전형 상태: applied(서류접수), document_passed(서류합격), interviewing(면접중), final_passed(최종합격), rejected(불합격)
-	status = Column[str](String(30), default="applied") 
-	applied_at = Column[datetime](DateTime, nullable=False, default=now_seoul_naive)
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	job_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("job_postings.id", ondelete="CASCADE"))
+	applicant_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("applicants.id", ondelete="CASCADE"))
+	resume_file_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+	portfolio_file_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+	reference_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+	status: Mapped[str | None] = mapped_column(String(30), default="applied")
+	applied_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 
-	# 관계 설정
-	job_posting = relationship("JobPosting", back_populates="applications")
-	applicant = relationship("Applicant", back_populates="applications")
-	interviews = relationship("Interview", back_populates="application", cascade="all, delete")
+	job_posting: Mapped[JobPosting | None] = relationship("JobPosting", back_populates="applications")
+	applicant: Mapped[Applicant | None] = relationship("Applicant", back_populates="applications")
+	interviews: Mapped[list[Interview]] = relationship(
+		"Interview", back_populates="application", cascade="all, delete"
+	)
 
 
-# --- 4. 면접 평가 테이블 (Interviews) ---
 class Interview(Base):
 	__tablename__ = "interviews"
 
-	id = Column[int](Integer, primary_key=True, index=True)
-	application_id = Column[int](Integer, ForeignKey("applications.id", ondelete="CASCADE"))
-	
-	# 면접관은 내부 직원(users)이므로 users 테이블과 연결
-	interviewer_id = Column[str](String(50), ForeignKey("users.user_login_id", ondelete="SET NULL")) 
-	
-	interview_date = Column[datetime](DateTime, nullable=True)
-	score = Column[int](Integer, nullable=True) # 평가 점수 (예: 1~5점)
-	feedback = Column[str](Text, nullable=True) # 면접관 정성 평가 코멘트
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	application_id: Mapped[int | None] = mapped_column(
+		Integer, ForeignKey("applications.id", ondelete="CASCADE")
+	)
+	interviewer_id: Mapped[str | None] = mapped_column(
+		String(50), ForeignKey("users.user_login_id", ondelete="SET NULL")
+	)
+	interview_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+	score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+	feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-	# 관계 설정
-	application = relationship("Application", back_populates="interviews")
+	application: Mapped[Application | None] = relationship("Application", back_populates="interviews")
