@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -305,13 +305,44 @@ def list_attendance_sessions_for_work_date(db: Session, tenant_id: int, user_id:
 	)
 
 
+def _build_clock_context_payload(
+	work_date: date,
+	cats: set[str],
+	rec: Attendance | None,
+	holiday: Holiday | None,
+	pref_loc: str | None,
+) -> dict[str, Any]:
+	requires_full = bool(VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM & cats)
+	if rec and is_vacation_status(rec.status) and rec.clock_in_time is None:
+		requires_full = True
+	return {
+		"work_date": work_date,
+		"requires_full_day_vacation_confirm": requires_full,
+		"requires_official_leave_confirm": bool(VACATION_TODO_REQUIRES_OFFICIAL_LEAVE_CONFIRM & cats),
+		"has_half_day_vacation": ("vacation_am" in cats or "vacation_pm" in cats),
+		"has_sick_or_special_vacation": ("vacation_sick" in cats or "vacation_special" in cats),
+		"is_weekend": work_date.weekday() >= 5,
+		"is_public_holiday": holiday is not None,
+		"holiday_name": holiday.holiday_name if holiday else None,
+		"preferred_work_location": pref_loc,
+	}
+
+
+def _vacation_categories_on_day(vacation_todos: list[Todo], work_date: date) -> set[str]:
+	day_start = datetime.combine(work_date, time.min)
+	day_end = datetime.combine(work_date, time.max)
+	cats: set[str] = set()
+	for todo in vacation_todos:
+		if todo.start_date <= day_end and (todo.end_date is None or todo.end_date >= day_start):
+			if todo.category:
+				cats.add(todo.category)
+	return cats
+
+
 def get_clock_context(db: Session, tenant_id: int, user_id: str, work_date: date) -> dict[str, Any]:
 	"""출퇴근 UI용 당일 맥락(확인 팝업 분기). 주말·공휴일은 DB holidays 기준."""
 	cats = _vacation_categories_for_day(db, tenant_id, user_id, work_date)
 	rec = get_today_attendance(db, tenant_id, user_id, work_date)
-	requires_full = bool(VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM & cats)
-	if rec and is_vacation_status(rec.status) and rec.clock_in_time is None:
-		requires_full = True
 	h = (
 		db.query(Holiday)
 		.filter(Holiday.tenant_id == tenant_id, Holiday.holiday_date == work_date)
@@ -321,17 +352,83 @@ def get_clock_context(db: Session, tenant_id: int, user_id: str, work_date: date
 	pref_loc: str | None = None
 	if user_row is not None and getattr(user_row, "preferred_work_location", None):
 		pref_loc = str(user_row.preferred_work_location).strip() or None
-	return {
-		"work_date": work_date,
-		"requires_full_day_vacation_confirm": requires_full,
-		"requires_official_leave_confirm": bool(VACATION_TODO_REQUIRES_OFFICIAL_LEAVE_CONFIRM & cats),
-		"has_half_day_vacation": ("vacation_am" in cats or "vacation_pm" in cats),
-		"has_sick_or_special_vacation": ("vacation_sick" in cats or "vacation_special" in cats),
-		"is_weekend": work_date.weekday() >= 5,
-		"is_public_holiday": h is not None,
-		"holiday_name": h.holiday_name if h else None,
-		"preferred_work_location": pref_loc,
+	return _build_clock_context_payload(work_date, cats, rec, h, pref_loc)
+
+
+def get_clock_context_range(
+	db: Session,
+	tenant_id: int,
+	user_id: str,
+	date_from: date,
+	date_to: date,
+	*,
+	max_days: int = 62,
+) -> list[dict[str, Any]]:
+	"""기간별 clock-context 일괄 조회(보고서 캘린더용 — N회 API 대신 1회 DB 세션)."""
+	if date_from > date_to:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="date_from은 date_to보다 늦을 수 없습니다.",
+		)
+	if (date_to - date_from).days > max_days:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=f"조회 기간은 최대 {max_days}일까지 가능합니다.",
+		)
+
+	range_start = datetime.combine(date_from, time.min)
+	range_end = datetime.combine(date_to, time.max)
+	vacation_todos = (
+		todos_in_tenant(db, tenant_id)
+		.filter(Todo.user_id == user_id)
+		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
+		.filter(Todo.start_date <= range_end)
+		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= range_start))
+		.all()
+	)
+	holidays = {
+		h.holiday_date: h
+		for h in db.query(Holiday)
+		.filter(
+			Holiday.tenant_id == tenant_id,
+			Holiday.holiday_date >= date_from,
+			Holiday.holiday_date <= date_to,
+		)
+		.all()
 	}
+	attendance_rows = (
+		attendance_in_tenant(db, tenant_id)
+		.filter(Attendance.user_id == user_id)
+		.filter(Attendance.work_date >= date_from, Attendance.work_date <= date_to)
+		.order_by(Attendance.work_date.asc(), Attendance.id.desc())
+		.all()
+	)
+	att_by_date: dict[date, Attendance] = {}
+	for row in attendance_rows:
+		wd = row.work_date
+		if wd is not None and wd not in att_by_date:
+			att_by_date[wd] = row
+
+	user_row = get_user_by_login_id(db, tenant_id, user_id)
+	pref_loc: str | None = None
+	if user_row is not None and getattr(user_row, "preferred_work_location", None):
+		pref_loc = str(user_row.preferred_work_location).strip() or None
+
+	items: list[dict[str, Any]] = []
+	cursor = date_from
+	while cursor <= date_to:
+		cats = _vacation_categories_on_day(vacation_todos, cursor)
+		items.append(
+			_build_clock_context_payload(
+				cursor,
+				cats,
+				att_by_date.get(cursor),
+				holidays.get(cursor),
+				pref_loc,
+			)
+		)
+		cursor += timedelta(days=1)
+	return items
 
 
 # 2. 출근 데이터 생성 (Create)

@@ -1,6 +1,6 @@
 from datetime import date as date_type
 
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -81,6 +81,22 @@ def read_monthly_calendar_stamps(
 	return attendance_calendar_service.get_user_monthly_stamps(db, tid, user_id, year, month)
 
 
+@router.get("/clock-context/range", response_model=attendance_schemas.AttendanceClockContextRangeResponse)
+def read_clock_context_range(
+	date_from: date_type = Query(..., alias="date_from"),
+	date_to: date_type = Query(..., alias="date_to"),
+	db: Session = Depends(get_db),
+	current_user: dict = Depends(get_current_user_for_tenant),
+):
+	"""[유저] 기간별 출근 확인 맥락 일괄 조회(보고서 캘린더용)."""
+	tid = tenant_id_from_user(current_user)
+	user_id = _require_user_id(current_user)
+	items = service.get_clock_context_range(db, tid, user_id, date_from, date_to)
+	return attendance_schemas.AttendanceClockContextRangeResponse(
+		items=[attendance_schemas.AttendanceClockContextResponse.model_validate(i) for i in items]
+	)
+
+
 @router.get("/clock-context", response_model=attendance_schemas.AttendanceClockContextResponse)
 def read_clock_context(
 	work_date: Optional[date_type] = Query(None, description="미지정 시 오늘"),
@@ -151,10 +167,9 @@ def clock_out(req: attendance_schemas.AttendanceRequest, db: Session = Depends(g
 	record = service.get_open_shift(db, tid, user_id)
 	if not record:
 		raise HTTPException(status_code=400, detail="출근 기록을 찾을 수 없습니다. 먼저 출근을 해주세요.")
-	rec: Any = record
-	if rec.clock_out_time is not None:
+	if record.clock_out_time is not None:
 		raise HTTPException(status_code=400, detail="이미 퇴근 처리가 완료되었습니다.")
-	status_str = str(rec.status) if rec.status is not None else "NORMAL"
+	status_str = record.status if record.status is not None else "NORMAL"
 
 	return service.update_clock_out(
 		db,

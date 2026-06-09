@@ -80,6 +80,15 @@ export const attendanceApi = {
 		}),
 
 	/**
+	 * 기간별 출퇴근 맥락 일괄 조회 (보고서 캘린더용)
+	 * GET /hr/attendance/clock-context/range?date_from=&date_to=
+	 */
+	getClockContextRange: (dateFrom, dateTo) =>
+		client.get(`${PATH}/clock-context/range`, {
+			params: { date_from: dateFrom, date_to: dateTo },
+		}),
+
+	/**
 	 * 특정 근무일 세션 목록 + 일별 합산
 	 * GET /hr/attendance/day/sessions?work_date=YYYY-MM-DD
 	 */

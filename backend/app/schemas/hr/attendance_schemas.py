@@ -94,3 +94,9 @@ class AttendanceClockContextResponse(BaseModel):
 	is_public_holiday: bool
 	holiday_name: Optional[str] = None
 	preferred_work_location: Optional[str] = None
+
+
+class AttendanceClockContextRangeResponse(BaseModel):
+	"""기간별 clock-context 일괄 응답."""
+
+	items: list[AttendanceClockContextResponse]

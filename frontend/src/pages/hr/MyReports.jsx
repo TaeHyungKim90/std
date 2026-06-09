@@ -135,6 +135,11 @@ function isVacationContext(clockCtx) {
 	);
 }
 
+function clockContextsFromRangeResponse(res) {
+	const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+	return Object.fromEntries(items.map((ctx) => [ctx.work_date, ctx]));
+}
+
 function isSameCalendarMonth(a, b) {
 	return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
@@ -267,22 +272,15 @@ const MyReports = () => {
 	}, [dailyRows]);
 
 	const loadMonthDailies = useCallback(async () => {
-		const monthYmds = enumerateYmdInclusive(dateFrom, dateTo);
 		setDailyLoading(true);
 		try {
-			const [res, , ctxResponses] = await Promise.all([
+			const [res, , ctxRes] = await Promise.all([
 				reportApi.getDailyRange(dateFrom, dateTo),
 				loadHolidayDates(dateFrom, dateTo),
-				Promise.all(
-					monthYmds.map((ymd) =>
-						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
-					)
-				),
+				attendanceApi.getClockContextRange(dateFrom, dateTo).catch(() => ({ data: { items: [] } })),
 			]);
 			setDailyRows(Array.isArray(res.data) ? res.data : []);
-			setDailyClockContexts(
-				Object.fromEntries(monthYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
-			);
+			setDailyClockContexts(clockContextsFromRangeResponse(ctxRes));
 		} catch (err) {
 			Notify.toastApiFailure(err, '일일 보고를 불러오지 못했습니다.');
 			setDailyRows([]);
@@ -295,23 +293,16 @@ const MyReports = () => {
 	const loadWeekBundle = useCallback(async () => {
 		const start = weekStartYmd;
 		const end = weekEndYmd(start);
-		const weekYmds = Array.from({ length: 7 }, (_, i) => toYmd(addDays(new Date(`${start}T00:00:00`), i)));
 		setWeekLoading(true);
 		try {
-			const [dRes, wRes, , ctxResponses] = await Promise.all([
+			const [dRes, wRes, , ctxRes] = await Promise.all([
 				reportApi.getDailyRange(start, end),
 				reportApi.getWeekly(start),
 				loadHolidayDates(start, end),
-				Promise.all(
-					weekYmds.map((ymd) =>
-						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
-					)
-				),
+				attendanceApi.getClockContextRange(start, end).catch(() => ({ data: { items: [] } })),
 			]);
 			setWeekDailies(Array.isArray(dRes.data) ? dRes.data : []);
-			setWeekClockContexts(
-				Object.fromEntries(weekYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
-			);
+			setWeekClockContexts(clockContextsFromRangeResponse(ctxRes));
 			const w = wRes.data;
 			setWeekSummaryDraft(w?.summary ? String(w.summary) : '');
 		} catch (err) {
@@ -325,23 +316,16 @@ const MyReports = () => {
 	}, [weekStartYmd, loadHolidayDates]);
 
 	const loadMonthBundle = useCallback(async () => {
-		const monthYmds = enumerateYmdInclusive(dateFrom, dateTo);
 		setMonthLoading(true);
 		try {
-			const [dRes, mRes, , ctxResponses] = await Promise.all([
+			const [dRes, mRes, , ctxRes] = await Promise.all([
 				reportApi.getDailyRange(dateFrom, dateTo),
 				reportApi.getMonthly(monthStartYmd),
 				loadHolidayDates(dateFrom, dateTo),
-				Promise.all(
-					monthYmds.map((ymd) =>
-						attendanceApi.getClockContext(ymd).catch(() => ({ data: null }))
-					)
-				),
+				attendanceApi.getClockContextRange(dateFrom, dateTo).catch(() => ({ data: { items: [] } })),
 			]);
 			setMonthDailies(Array.isArray(dRes.data) ? dRes.data : []);
-			setMonthClockContexts(
-				Object.fromEntries(monthYmds.map((ymd, idx) => [ymd, ctxResponses[idx]?.data ?? null]))
-			);
+			setMonthClockContexts(clockContextsFromRangeResponse(ctxRes));
 			const m = mRes.data;
 			setMonthSummaryDraft(m?.summary ? String(m.summary) : '');
 		} catch (err) {
