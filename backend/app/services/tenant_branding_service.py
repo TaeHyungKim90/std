@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 from typing import cast
 
 from fastapi import HTTPException, UploadFile, status
@@ -12,11 +13,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "..", "static"))
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
 BRANDING_ROOT = os.path.join(UPLOAD_DIR, "tenant-branding")
+_BRANDING_ROOT = Path(BRANDING_ROOT).resolve()
 
 DEFAULT_LOGO_URL = "/assets/icon/favicon.png"
 DEFAULT_ICON_URL = "/assets/icon/favicon.png"
 
 _REPO_ROOT = os.path.normpath(os.path.join(BASE_DIR, "..", "..", ".."))
+_BRANDING_ASSET_PREFIXES = frozenset({"logo", "icon"})
 
 
 def _api_branding_path(slug: str, kind: str) -> str:
@@ -46,15 +49,44 @@ def default_favicon_path() -> str | None:
 	return None
 
 
+def _require_positive_tenant_id(tenant_id: int) -> int:
+	tid = int(tenant_id)
+	if tid <= 0:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 테넌트 ID입니다.")
+	return tid
+
+
+def _path_under_branding_root(*parts: str) -> Path:
+	candidate = _BRANDING_ROOT.joinpath(*parts).resolve()
+	try:
+		candidate.relative_to(_BRANDING_ROOT)
+	except ValueError as exc:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="브랜딩 파일 경로가 올바르지 않습니다.",
+		) from exc
+	return candidate
+
+
+def _safe_branding_entry_name(name: str) -> bool:
+	if not name or name in {".", ".."}:
+		return False
+	return Path(name).name == name and "/" not in name and "\\" not in name
+
+
 def _branding_file_path(tenant_id: int, prefix: str) -> str | None:
-	directory = os.path.join(BRANDING_ROOT, str(tenant_id))
-	if not os.path.isdir(directory):
+	if prefix not in _BRANDING_ASSET_PREFIXES:
 		return None
-	for name in sorted(os.listdir(directory)):
-		if name.startswith(prefix):
-			full = os.path.join(directory, name)
-			if os.path.isfile(full):
-				return full
+	tid = _require_positive_tenant_id(tenant_id)
+	directory = _path_under_branding_root(str(tid))
+	if not directory.is_dir():
+		return None
+	for entry in sorted(directory.iterdir(), key=lambda p: p.name):
+		name = entry.name
+		if not _safe_branding_entry_name(name):
+			continue
+		if name.startswith(prefix) and entry.is_file():
+			return str(entry)
 	return None
 
 
@@ -81,9 +113,10 @@ ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 MAX_BYTES = 2 * 1024 * 1024
 
 
-def _tenant_branding_dir(tenant_id: int) -> str:
-	path = os.path.join(BRANDING_ROOT, str(tenant_id))
-	os.makedirs(path, exist_ok=True)
+def _tenant_branding_dir(tenant_id: int) -> Path:
+	tid = _require_positive_tenant_id(tenant_id)
+	path = _path_under_branding_root(str(tid))
+	path.mkdir(parents=True, exist_ok=True)
 	return path
 
 
@@ -118,7 +151,7 @@ def get_branding_payload(tenant: Tenant) -> dict:
 
 
 def _safe_extension(filename: str | None, content_type: str | None) -> str:
-	_, ext = os.path.splitext(filename or "")
+	_, ext = os.path.splitext(os.path.basename(filename or ""))
 	ext = ext.lower()
 	if ext in ALLOWED_EXTENSIONS:
 		return ext
@@ -148,7 +181,17 @@ def _validate_upload(file: UploadFile) -> None:
 	_safe_extension(file.filename, ct)
 
 
-async def _write_branding_file(file: UploadFile, dest_path: str) -> None:
+async def _write_branding_file(
+	file: UploadFile,
+	*,
+	tenant_id: int,
+	asset_prefix: str,
+	ext: str,
+) -> Path:
+	if asset_prefix not in _BRANDING_ASSET_PREFIXES:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 브랜딩 종류입니다.")
+	if ext not in ALLOWED_EXTENSIONS:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="허용되지 않은 파일 확장자입니다.")
 	_validate_upload(file)
 	contents = await file.read()
 	if len(contents) > MAX_BYTES:
@@ -158,18 +201,25 @@ async def _write_branding_file(file: UploadFile, dest_path: str) -> None:
 		)
 	if not contents:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="빈 파일입니다.")
-	os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-	with open(dest_path, "wb") as out:
-		out.write(contents)
+	dest_path = _path_under_branding_root(str(_require_positive_tenant_id(tenant_id)), f"{asset_prefix}{ext}")
+	dest_path.parent.mkdir(parents=True, exist_ok=True)
+	dest_path.write_bytes(contents)
+	return dest_path
 
 
-def _clear_prefix_files(directory: str, prefix: str) -> None:
-	if not os.path.isdir(directory):
+def _clear_prefix_files(tenant_id: int, prefix: str) -> None:
+	if prefix not in _BRANDING_ASSET_PREFIXES:
 		return
-	for name in os.listdir(directory):
-		if name.startswith(prefix):
+	directory = _path_under_branding_root(str(_require_positive_tenant_id(tenant_id)))
+	if not directory.is_dir():
+		return
+	for entry in directory.iterdir():
+		name = entry.name
+		if not _safe_branding_entry_name(name):
+			continue
+		if name.startswith(prefix) and entry.is_file():
 			try:
-				os.remove(os.path.join(directory, name))
+				entry.unlink()
 			except OSError:
 				pass
 
@@ -177,12 +227,12 @@ def _clear_prefix_files(directory: str, prefix: str) -> None:
 async def save_tenant_logo(db: Session, tenant_id: int, file: UploadFile) -> Tenant:
 	tenant = require_tenant_by_id(db, tenant_id)
 	ext = _safe_extension(file.filename, file.content_type)
-	branding_dir = _tenant_branding_dir(tenant_id)
-	_clear_prefix_files(branding_dir, "logo")
+	tid = _require_positive_tenant_id(tenant_id)
+	_tenant_branding_dir(tid)
+	_clear_prefix_files(tid, "logo")
 	filename = f"logo{ext}"
-	full_path = os.path.join(branding_dir, filename)
-	await _write_branding_file(file, full_path)
-	tenant.logo_url = f"/uploads/tenant-branding/{tenant_id}/{filename}"
+	await _write_branding_file(file, tenant_id=tid, asset_prefix="logo", ext=ext)
+	tenant.logo_url = f"/uploads/tenant-branding/{tid}/{filename}"
 	db.commit()
 	db.refresh(tenant)
 	return tenant
@@ -191,18 +241,18 @@ async def save_tenant_logo(db: Session, tenant_id: int, file: UploadFile) -> Ten
 async def save_tenant_icon(db: Session, tenant_id: int, file: UploadFile) -> Tenant:
 	tenant = require_tenant_by_id(db, tenant_id)
 	ext = _safe_extension(file.filename, file.content_type)
-	branding_dir = _tenant_branding_dir(tenant_id)
-	_clear_prefix_files(branding_dir, "icon")
+	tid = _require_positive_tenant_id(tenant_id)
+	_tenant_branding_dir(tid)
+	_clear_prefix_files(tid, "icon")
 	filename = f"icon{ext}"
-	full_path = os.path.join(branding_dir, filename)
-	await _write_branding_file(file, full_path)
-	tenant.icon_url = f"/uploads/tenant-branding/{tenant_id}/{filename}"
+	await _write_branding_file(file, tenant_id=tid, asset_prefix="icon", ext=ext)
+	tenant.icon_url = f"/uploads/tenant-branding/{tid}/{filename}"
 	db.commit()
 	db.refresh(tenant)
 	return tenant
 
 
 def remove_tenant_branding_files(tenant_id: int) -> None:
-	path = os.path.join(BRANDING_ROOT, str(tenant_id))
-	if os.path.isdir(path):
+	path = _path_under_branding_root(str(_require_positive_tenant_id(tenant_id)))
+	if path.is_dir():
 		shutil.rmtree(path, ignore_errors=True)

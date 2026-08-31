@@ -1,4 +1,5 @@
 # session.py
+import logging
 import os
 from collections.abc import Sequence
 from typing import cast
@@ -8,6 +9,8 @@ from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from core.config import settings
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_NAME = "todo.db"
@@ -167,7 +170,7 @@ def _ensure_hr_employee_tenant_columns(default_tid: int) -> None:
 			continue
 		cols = {c["name"] for c in insp.get_columns(table)}
 		if "tenant_id" not in cols:
-			print(f"--- HR {table}.tenant_id column add ---")
+			logger.info("HR %s tenant_id column add", table)
 			with engine.begin() as conn:
 				conn.execute(
 					text(f"ALTER TABLE {table} ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT {default_tid}")
@@ -451,6 +454,7 @@ def get_db():
 	finally:
 		db.close()
 def init_db():
+	from constants.bootstrap_admin import BOOTSTRAP_DEFAULT_ADMIN_PASSWORD
 	from db import base
 	from models.auth_models import User
 	from models.hr_models import TodoCategoryType
@@ -458,36 +462,36 @@ def init_db():
 	from core.security import get_password_hash, verify_password
 	
 	# 테이블 생성 (이미 있으면 무시됨)
-	print("🚀 테이블 생성 시도 중...")
+	logger.info("테이블 생성 시도 중")
 	Base.metadata.create_all(bind=engine)
 	try:
 		_ensure_tenant_branding_columns()
-	except Exception as ex:
-		print(f"info: tenant branding columns skipped: {ex}")
+	except Exception:
+		logger.info("tenant branding columns skipped")
 	try:
 		_ensure_multi_tenant_schema()
-	except Exception as ex:
-		print(f"ℹ️ 멀티테넌트 스키마 보강 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("멀티테넌트 스키마 보강 실패(무시 가능)")
 	try:
 		_migrate_tenant_scoped_unique_constraints()
-	except Exception as ex:
-		print(f"info: tenant-scoped UNIQUE migration skipped: {ex}")
+	except Exception:
+		logger.info("tenant-scoped UNIQUE migration skipped")
 	try:
 		_ensure_attendance_shift_status_column()
-	except Exception as ex:
-		print(f"ℹ️ attendance.shift_status 보강 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("attendance.shift_status 보강 실패(무시 가능)")
 	try:
 		_ensure_attendance_night_work_minutes_column()
-	except Exception as ex:
-		print(f"ℹ️ attendance.night_work_minutes 보강 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("attendance.night_work_minutes 보강 실패(무시 가능)")
 	try:
 		_ensure_attendance_daily_summary_table()
-	except Exception as ex:
-		print(f"ℹ️ attendance_daily_summary 테이블 생성 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("attendance_daily_summary 테이블 생성 실패(무시 가능)")
 	try:
 		_ensure_users_preferred_work_location_column()
-	except Exception as ex:
-		print(f"ℹ️ users.preferred_work_location 보강 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("users.preferred_work_location 보강 실패(무시 가능)")
 	# 기존 SQLite DB에 신규 컬럼이 없을 경우, 런타임에서 안전하게 ALTER TABLE을 시도합니다.
 	# (운영에서는 마이그레이션(Alembic 등)을 권장합니다.)
 	try:
@@ -549,13 +553,13 @@ def init_db():
 					jp_cols = {r["name"] for r in conn.execute(text("PRAGMA table_info(job_postings)")).mappings()}
 					if "resume_template_id" not in jp_cols:
 						conn.execute(text("ALTER TABLE job_postings ADD COLUMN resume_template_id INTEGER"))
-				except Exception as jp_e:
-					print(f"ℹ️ job_postings resume_template_id ALTER 시도 실패(무시): {jp_e}")
+				except Exception:
+					logger.warning("job_postings resume_template_id ALTER 시도 실패(무시)")
 				conn.commit()
 			finally:
 				conn.close()
-	except Exception as e:
-		print(f"ℹ️ users 프로필 컬럼 ALTER TABLE 시도 실패(무시): {e}")
+	except Exception:
+		logger.warning("users 프로필 컬럼 ALTER TABLE 시도 실패(무시)")
 	
 	db = SessionLocal()
 	try:
@@ -568,7 +572,7 @@ def init_db():
 		if not tenants:
 			tenants = db.query(Tenant).all()
 
-		# 개발용 기본 관리자(admin/1234) — 테넌트별 1회
+		# 개발용 bootstrap admin — 테넌트별 1회
 		if settings.BOOTSTRAP_DEFAULT_ADMIN:
 			for tenant in tenants:
 				tid = cast(int, tenant.id)
@@ -578,14 +582,15 @@ def init_db():
 					.first()
 				)
 				if not admin:
-					print(
-						f"--- 🛠️ [{tenant.slug}] 초기 관리자(admin) 생성 (BOOTSTRAP_DEFAULT_ADMIN) ---"
+					logger.info(
+						"[%s] 초기 bootstrap admin 생성 (BOOTSTRAP_DEFAULT_ADMIN)",
+						tenant.slug,
 					)
 					db.add(
 						User(
 							tenant_id=tid,
 							user_login_id="admin",
-							user_password=get_password_hash("1234"),
+							user_password=get_password_hash(BOOTSTRAP_DEFAULT_ADMIN_PASSWORD),
 							user_name="관리자",
 							user_nickname="관리자",
 							role="admin",
@@ -593,22 +598,22 @@ def init_db():
 							visible_in_user_list=False,
 						)
 					)
-				elif verify_password("1234", admin.user_password):
+				elif verify_password(BOOTSTRAP_DEFAULT_ADMIN_PASSWORD, admin.user_password):
 					admin.must_change_password = True
 					admin.visible_in_user_list = False
-			print("--- ✅ 테넌트별 admin/1234 — 첫 로그인 시 비밀번호 변경 안내 ---")
+			logger.info("테넌트별 bootstrap admin — 첫 로그인 시 비밀번호 변경 안내")
 		elif settings.ENVIRONMENT == "production":
-			print("--- ℹ️ BOOTSTRAP_DEFAULT_ADMIN=false — 기본 관리자 자동 생성을 건너뜁니다. ---")
+			logger.info("BOOTSTRAP_DEFAULT_ADMIN=false — 기본 관리자 자동 생성을 건너뜁니다.")
 
 		for tenant in tenants:
 			try:
 				_seed_tenant_defaults(db, cast(int, tenant.id))
 				db.commit()
-			except Exception as seed_err:
+			except Exception:
 				db.rollback()
-				print(
-					f"ℹ️ [{getattr(tenant, 'slug', tenant.id)}] 테넌트 시드 일부 실패 "
-					f"(레거시 DB unique 제약일 수 있음): {seed_err}"
+				logger.warning(
+					"[%s] 테넌트 시드 일부 실패(레거시 DB unique 제약일 수 있음)",
+					getattr(tenant, "slug", tenant.id),
 				)
 		# 이력서 템플릿 시드: DB에 행이 없으면 assets 기본 .docx를 uploads로 복사 후 1건 등록
 		try:
@@ -628,7 +633,7 @@ def init_db():
 				if asset.is_file():
 					shutil.copy2(str(asset), dest)
 				else:
-					print(f"⚠️ 기본 이력서 템플릿 파일이 없습니다: {asset}")
+					logger.warning("기본 이력서 템플릿 파일이 없습니다")
 					raise FileNotFoundError(str(asset))
 				default_tid = cast(int, tenants[0].id) if tenants else 1
 				tpl = ResumeTemplate(
@@ -645,12 +650,12 @@ def init_db():
 					{JobPosting.resume_template_id: tpl.id},
 					synchronize_session=False,
 				)
-				print("--- ✅ 기본 이력서 템플릿(시드) 등록 완료 ---")
-		except Exception as seed_e:
-			print(f"ℹ️ 이력서 템플릿 시드 건너뜀 또는 실패: {seed_e}")
+				logger.info("기본 이력서 템플릿(시드) 등록 완료")
+		except Exception:
+			logger.warning("이력서 템플릿 시드 건너뜀 또는 실패")
 		db.commit()
-	except Exception as e:
-		print(f"❌ 초기화 에러: {e}")
+	except Exception:
+		logger.error("DB 초기화 실패")
 		db.rollback()
 	finally:
 		db.close()
@@ -664,5 +669,5 @@ def init_db():
 			backfill_legacy_work_location_values_to_keys(_bf)
 		finally:
 			_bf.close()
-	except Exception as ex:
-		print(f"ℹ️ 근무장소 value→key 백필 실패(무시 가능): {ex}")
+	except Exception:
+		logger.warning("근무장소 value→key 백필 실패(무시 가능)")

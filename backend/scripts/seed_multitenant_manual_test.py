@@ -22,10 +22,7 @@ for p in (_APP_DIR, _TESTS_DIR):
 		sys.path.insert(0, p)
 
 from db.session import SessionLocal, init_db  # noqa: E402
-from support.multitenant_manual_seed import (  # noqa: E402
-	MANUAL_TEST_PASSWORD,
-	seed_manual_test_data,
-)
+from support.multitenant_manual_seed import seed_manual_test_data  # noqa: E402
 
 
 def main() -> None:
@@ -37,7 +34,7 @@ def main() -> None:
 		print(f"  테넌트 A: {ctx.slug_a} (id={ctx.tid_a})")
 		print(f"  테넌트 B: {ctx.slug_b} (id={ctx.tid_b})")
 		print(f"  기준일: {ctx.work_date.isoformat()}")
-		print(f"  공통 비밀번호: {MANUAL_TEST_PASSWORD}")
+		print("  공통 비밀번호: tests/support/multitenant_manual_seed.py 의 MANUAL_TEST_PASSWORD 참고")
 		print("  계정: admin, emp_a, emp_b, shared01 (각 테넌트별 별도 User 행)")
 		print("  URL 예:")
 		print(f"    http://localhost:3000/{ctx.slug_a}/login")
