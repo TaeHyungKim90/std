@@ -20,6 +20,7 @@ from services.hr import reports_service as hr_reports
 from services.hr import todos_service
 from schemas.hr.todos_schemas import TodoCreate
 from support.memory_db import memory_db_session
+from utils.seoul_time import today_seoul
 
 
 @pytest.fixture()
@@ -107,15 +108,14 @@ def test_check_auth_rejects_cross_tenant_session(db_session, two_tenants_with_sh
 	app_main.app.dependency_overrides[get_db] = _override_db
 	try:
 		client = TestClient(app_main.app)
+		client.cookies.set("accessToken", token)
 		res_a = client.get(
 			"/api/auth/check",
 			headers={"X-Tenant-Slug": "valuesplay"},
-			cookies={"accessToken": token},
 		)
 		res_b = client.get(
 			"/api/auth/check",
 			headers={"X-Tenant-Slug": "naver"},
-			cookies={"accessToken": token},
 		)
 		assert res_a.status_code == 200
 		assert res_a.json().get("isLoggedIn") is True
@@ -311,9 +311,10 @@ def test_admin_stats_vacation_isolated_by_tenant(db_session, two_tenants_with_sh
 	from services.admin.stats_service import get_admin_stats
 	tid_a, tid_b = two_tenants_with_shared_admin
 	
-	st = datetime(2026, 6, 8, 9, 0, 0)
-	en = datetime(2026, 6, 8, 18, 0, 0)
-	
+	work_day = today_seoul()
+	st = datetime.combine(work_day, time(9, 0, 0))
+	en = datetime.combine(work_day, time(18, 0, 0))
+
 	from models.hr_models import TodoCategoryType
 	for tid in (tid_a, tid_b):
 		if db_session.query(TodoCategoryType).filter(TodoCategoryType.tenant_id == tid, TodoCategoryType.category_key == "vacation_full").count() == 0:

@@ -18,6 +18,7 @@ import main as app_main
 from core.limiter import limiter
 from core.security import create_access_token
 from db.session import get_db
+from support.freeze_seoul import freeze_seoul_today
 from support.multitenant_manual_seed import (
 	MANUAL_TEST_PASSWORD,
 	MARKER,
@@ -27,6 +28,15 @@ from support.multitenant_manual_seed import (
 	seed_manual_test_data,
 )
 from support.memory_db import memory_db_session
+
+_MANUAL_PLAN_TODAY = date(2026, 6, 8)
+
+
+@pytest.fixture(autouse=True)
+def _freeze_manual_plan_seoul_today(monkeypatch):
+	"""시드 work_date(2026-06-08)와 API의 today_seoul()을 맞춥니다."""
+	freeze_seoul_today(monkeypatch, _MANUAL_PLAN_TODAY)
+	yield
 
 
 @pytest.fixture(autouse=True)
@@ -105,7 +115,8 @@ class TestPhase0Session:
 		db, ctx = manual_seed
 		token = _token_for(db, ctx, tenant_id=ctx.tid_a, slug=SLUG_A)
 		with _client_for_db(db, SLUG_B) as client:
-			r = client.get("/api/auth/check", cookies={"accessToken": token})
+			client.cookies.set("accessToken", token)
+			r = client.get("/api/auth/check")
 			assert r.status_code == status.HTTP_200_OK
 			assert r.json().get("isLoggedIn") is False
 
@@ -349,10 +360,8 @@ class TestCrossTenantMatrix:
 		db, ctx = manual_seed
 		token = _token_for(db, ctx, tenant_id=ctx.tid_a, slug=SLUG_A)
 		with _client_for_db(db, SLUG_B) as client:
-			r = client.get(
-				"/api/admin/users/",
-				cookies={"accessToken": token},
-			)
+			client.cookies.set("accessToken", token)
+			r = client.get("/api/admin/users/")
 			assert r.status_code in (
 				status.HTTP_401_UNAUTHORIZED,
 				status.HTTP_403_FORBIDDEN,
