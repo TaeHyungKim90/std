@@ -1,5 +1,5 @@
 import { BASE_URL } from 'constants/apiConfig';
-import { PATHS } from 'constants/paths';
+import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
 import * as Notify from 'utils/toastUtils';
 
 /** axios baseURL 과 동일한 호스트(포트) — /api 제거 */
@@ -11,21 +11,37 @@ export function getApiOrigin() {
 	return BASE_URL;
 }
 
+/** img·iframe 등 헤더를 못 실을 때 tenant 쿼리용 (경로 첫 세그먼트) */
+export function tenantSlugFromLocation() {
+	if (typeof window === 'undefined') return DEFAULT_TENANT_SLUG;
+	const segment = window.location.pathname.split('/').filter(Boolean)[0];
+	if (segment === 'platform') return DEFAULT_TENANT_SLUG;
+	return (segment || DEFAULT_TENANT_SLUG).toLowerCase();
+}
+
 /**
- * 미리보기·iframe/img src용 절대 URL (인증 쿠키가 필요한 API 경로 포함).
+ * 미리보기·iframe/img src용 URL (인증 쿠키가 필요한 API 경로 포함).
+ * 브라우저에서는 same-origin `/api/...` + `tenant` 쿼리를 사용합니다.
  * @param {string} fileUrl - DB 경로 또는 http(s)
  * @returns {string|null}
  */
 export function getFilePreviewUrl(fileUrl) {
 	if (!fileUrl) return null;
 	if (fileUrl.startsWith('http')) return fileUrl;
-	const origin = getApiOrigin();
 	const preferApi = process.env.REACT_APP_FILE_DOWNLOAD_VIA_API !== 'false';
 	if (preferApi && fileUrl.startsWith('/uploads/')) {
 		const saved = fileUrl.replace(/^\/uploads\//, '').split('?')[0];
 		if (!saved) return null;
-		return `${origin}/api/common/files/by-saved-name/${encodeURIComponent(saved)}`;
+		const tenant = tenantSlugFromLocation();
+		const qs = tenant ? `?tenant=${encodeURIComponent(tenant)}` : '';
+		const apiPath = `/api/common/files/by-saved-name/${encodeURIComponent(saved)}${qs}`;
+		if (typeof window !== 'undefined') {
+			return apiPath;
+		}
+		const origin = getApiOrigin();
+		return `${origin}${apiPath}`;
 	}
+	const origin = typeof window !== 'undefined' ? '' : getApiOrigin();
 	return `${origin}${fileUrl}`;
 }
 
@@ -41,7 +57,13 @@ export async function openAuthenticatedDownloadByFileId(fileId, _fallbackName) {
 		if (_fallbackName) {
 			params.set('name', _fallbackName);
 		}
-		const url = `${window.location.origin}${PATHS.MY_PDF_VIEWER}?${params.toString()}`;
+		const segment = window.location.pathname.split('/').filter(Boolean)[0];
+		const slug =
+			segment && segment !== 'platform'
+				? segment.toLowerCase()
+				: DEFAULT_TENANT_SLUG;
+		const paths = pathsForTenant(slug);
+		const url = `${window.location.origin}${paths.MY_PDF_VIEWER}?${params.toString()}`;
 		window.open(url, '_blank', 'noopener,noreferrer');
 	} catch (err) {
 		Notify.toastApiFailure(err, '파일을 열 수 없습니다.');

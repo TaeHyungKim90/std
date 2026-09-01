@@ -1,7 +1,7 @@
 import 'assets/css/publicHeader.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
-import { PATHS } from 'constants/paths';
+import { useTenant } from 'context/TenantContext';
 import { useApplicantSession } from 'hooks/useApplicantSession';
 import React, { useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import * as Notify from 'utils/toastUtils';
 import ApplicantProfileModal from './ApplicantProfileModal';
 
 const PublicHeader = () => {
+	const { paths, tenantName, logoUrl } = useTenant();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { user: loggedInUser, setUser, clearSession } = useApplicantSession(location.pathname);
@@ -26,7 +27,7 @@ const PublicHeader = () => {
 			}
 		).finally(() => {
 			clearSession();
-			navigate(PATHS.CAREERS);
+			navigate(paths.CAREERS);
 		});
 	};
 
@@ -35,15 +36,22 @@ const PublicHeader = () => {
 			<header className="public-header">
 				<div className="public-header__inner">
 					<div className="public-header__brand-nav">
-					<Link to={PATHS.CAREERS} className="public-header__logo-link">
-						가치플레이 채용
+					<Link to={paths.CAREERS} className="public-header__logo-link">
+						<img
+							src={logoUrl}
+							alt=""
+							className="public-header__logo-img"
+							width={28}
+							height={28}
+						/>
+						<span>{tenantName} 채용</span>
 					</Link>
 
 					<nav className="public-header__nav">
-						<Link to={PATHS.CAREERS} className="public-header__nav-link">채용 공고</Link>
+						<Link to={paths.CAREERS} className="public-header__nav-link">채용 공고</Link>
 						{loggedInUser && (
 							<>
-								<Link to={PATHS.CAREERS_MY_APPLICATIONS} className="public-header__nav-link">내 지원 내역</Link>
+								<Link to={paths.CAREERS_MY_APPLICATIONS} className="public-header__nav-link">내 지원 내역</Link>
 							</>
 						)}
 					</nav>
@@ -68,7 +76,7 @@ const PublicHeader = () => {
 								</button>
 							</div>
 						) : (
-							<button type="button" onClick={() => navigate(PATHS.CAREERS_LOGIN)} className="public-header__btn-login">
+							<button type="button" onClick={() => navigate(paths.CAREERS_LOGIN)} className="public-header__btn-login">
 								지원자 로그인
 							</button>
 						)}

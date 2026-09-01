@@ -7,9 +7,16 @@ from fastapi import HTTPException
 from models.auth_models import User, UserAvatarSetting, UserVacation
 from models.system_models import Department, Position
 from models.hr_models import Todo
+from constants.bootstrap_admin import is_bootstrap_system_admin
 from constants.vacation_categories import VACATION_DEDUCTIBLE_CATEGORIES
 from schemas.auth_schemas import UserCreate, UserUpdate
 from services.auth_service import get_password_hash
+from services.tenant_scope import (
+	directory_users_in_tenant,
+	holidays_in_tenant,
+	todos_in_tenant,
+	user_vacations_in_tenant,
+)
 from models.holiday_models import Holiday
 from utils.seoul_time import today_seoul
 
@@ -20,10 +27,19 @@ class VacationUsageItem:
 	start_date: datetime
 	end_date: datetime | None = None
 
+def refresh_active_users_vacation(db: Session, users: list[User], today: date | None = None) -> None:
+	"""재직자 연차를 입사일·휴가 일정 기준으로 일괄 재정산합니다."""
+	today = today or today_seoul()
+	for user in users:
+		if user.join_date is None or user.resignation_date is not None:
+			continue
+		sync_user_vacation(db, user, today)
+
+
 # 1. 전체 사용자 목록 조회
-def get_all_users(db: Session):
-	return (
-		db.query(User)
+def get_all_users(db: Session, tenant_id: int):
+	users = (
+		directory_users_in_tenant(db, tenant_id)
 		.options(
 			joinedload(User.vacation),
 			joinedload(User.avatar_setting),
@@ -33,30 +49,53 @@ def get_all_users(db: Session):
 		.order_by(User.id.desc())
 		.all()
 	)
+	refresh_active_users_vacation(db, users)
+	db.commit()
+	for user in users:
+		db.refresh(user)
+	return users
 
 
-def _resolve_department_position(db: Session, payload) -> tuple[int | None, int | None]:
+def _resolve_department_position(
+	db: Session, payload, tenant_id: int
+) -> tuple[int | None, int | None]:
 	department_id = getattr(payload, "department_id", None)
 	position_id = getattr(payload, "position_id", None)
 
 	if department_id is not None:
-		department = db.query(Department).filter(Department.id == department_id).first()
+		department = (
+			db.query(Department)
+			.filter(Department.id == department_id, Department.tenant_id == tenant_id)
+			.first()
+		)
 		if not department:
 			raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
 
 	if position_id is not None:
-		position = db.query(Position).filter(Position.id == position_id).first()
+		position = (
+			db.query(Position)
+			.filter(Position.id == position_id, Position.tenant_id == tenant_id)
+			.first()
+		)
 		if not position:
 			raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
 
 	return department_id, position_id
 
 
-def _calculate_total_vacation(join_date: date, today: date) -> int:
-	months_diff = (today.year - join_date.year) * 12 + today.month - join_date.month
+def _completed_work_months(join_date: date, today: date) -> int:
+	"""입사일 기준 완료된 근속 개월 수(입사 당일=0, 다음 달 같은 일자에 1개월 완료)."""
+	if today < join_date:
+		return 0
+	months = (today.year - join_date.year) * 12 + today.month - join_date.month
 	if today.day < join_date.day:
-		months_diff -= 1
-	months_diff = max(months_diff, 0)
+		months -= 1
+	return max(months, 0)
+
+
+def _calculate_total_vacation(join_date: date, today: date) -> int:
+	"""총 발생 연차: 1년 미만=월차(완료 개월 수), 1년 이상=15일+2년마다 1일 가산(최대 25)."""
+	months_diff = _completed_work_months(join_date, today)
 	years_worked = months_diff // 12
 	if years_worked == 0:
 		return months_diff
@@ -72,7 +111,7 @@ def _todo_to_vacation_usage_item(todo: Todo) -> VacationUsageItem:
 	)
 
 
-def _get_holiday_dates(db: Session, items: list[VacationUsageItem]) -> set[date]:
+def _get_holiday_dates(db: Session, tenant_id: int, items: list[VacationUsageItem]) -> set[date]:
 	global_start: date | None = None
 	global_end: date | None = None
 	for item in items:
@@ -89,10 +128,10 @@ def _get_holiday_dates(db: Session, items: list[VacationUsageItem]) -> set[date]
 		return set()
 	return {
 		row[0]
-		for row in db.query(Holiday.holiday_date).filter(
-			Holiday.holiday_date >= global_start,
-			Holiday.holiday_date <= global_end,
-		).all()
+		for row in holidays_in_tenant(db, tenant_id)
+		.filter(Holiday.holiday_date >= global_start, Holiday.holiday_date <= global_end)
+		.with_entities(Holiday.holiday_date)
+		.all()
 	}
 
 
@@ -129,8 +168,9 @@ def calculate_user_vacation_snapshot(
 		return {"total_days": 0.0, "used_days": 0.0, "remaining_days": 0.0}
 
 	today = today or today_seoul()
+	tenant_id = cast(int, user.tenant_id)
 	query = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user.user_login_id)
 		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
 	)
@@ -140,7 +180,7 @@ def calculate_user_vacation_snapshot(
 	if extra_items:
 		items.extend(extra_items)
 
-	holiday_dates = _get_holiday_dates(db, items)
+	holiday_dates = _get_holiday_dates(db, tenant_id, items)
 	total_vacation = _calculate_total_vacation(cast(date, user.join_date), today)
 	used_days = _calculate_used_vacation_days(items, holiday_dates)
 	return {
@@ -152,8 +192,13 @@ def calculate_user_vacation_snapshot(
 
 def sync_user_vacation(db: Session, user: User, today: date | None = None) -> UserVacation | None:
 	"""사용자 1명의 입사일과 휴가 일정 기준으로 연차를 재정산합니다."""
+	tid = cast(int, user.tenant_id)
 	if user.join_date is None or user.resignation_date is not None:
-		vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
+		vacation_record = (
+			user_vacations_in_tenant(db, tid)
+			.filter(UserVacation.user_id == user.user_login_id)
+			.first()
+		)
 		if vacation_record and user.join_date is None:
 			vacation_record.total_days = 0
 			vacation_record.remaining_days = 0.0
@@ -162,9 +207,15 @@ def sync_user_vacation(db: Session, user: User, today: date | None = None) -> Us
 
 	snapshot = calculate_user_vacation_snapshot(db, user, today)
 
-	vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
+	vacation_record = (
+		user_vacations_in_tenant(db, tid)
+		.filter(UserVacation.user_id == user.user_login_id)
+		.first()
+	)
 	if not vacation_record:
-		vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
+		vacation_record = UserVacation(
+			tenant_id=tid, user_id=user.user_login_id, used_days=0.0
+		)
 		db.add(vacation_record)
 
 	vacation_record.total_days = int(snapshot["total_days"])
@@ -173,14 +224,19 @@ def sync_user_vacation(db: Session, user: User, today: date | None = None) -> Us
 	return vacation_record
 
 # 2. 신규 사용자 등록 (관리자용)
-def create_user_by_admin(db: Session, payload: UserCreate):
-	existing_user = db.query(User).filter(User.user_login_id == payload.user_login_id).first()
+def create_user_by_admin(db: Session, payload: UserCreate, tenant_id: int):
+	existing_user = (
+		db.query(User)
+		.filter(User.user_login_id == payload.user_login_id, User.tenant_id == tenant_id)
+		.first()
+	)
 	if existing_user:
 		raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
 	hashed_pw = get_password_hash(payload.user_password)
-	department_id, position_id = _resolve_department_position(db, payload)
+	department_id, position_id = _resolve_department_position(db, payload, tenant_id)
 	new_user = User(
+		tenant_id=tenant_id,
 		user_login_id=payload.user_login_id,
 		user_password=hashed_pw,
 		user_name=payload.user_name,
@@ -214,8 +270,8 @@ def create_user_by_admin(db: Session, payload: UserCreate):
 	return new_user
 
 # 3. 사용자 정보 수정
-def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
-	user = db.query(User).filter(User.id == user_id).first()
+def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate, tenant_id: int):
+	user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
 	if not user:
 		raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
@@ -228,6 +284,13 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 	position_id = update_data.pop("position_id", None)
 	if "joined_at" in update_data:
 		update_data["join_date"] = update_data.pop("joined_at")
+	if is_bootstrap_system_admin(user) and (
+		"join_date" in update_data or "joined_at" in payload.model_fields_set
+	):
+		raise HTTPException(
+			status_code=400,
+			detail="테넌트 운영용 admin 계정은 입사일을 변경할 수 없습니다.",
+		)
 	for key, value in update_data.items():
 		if key == "user_password":
 			if value:
@@ -239,7 +302,11 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 		if department_id is None:
 			user.department_id = None
 		else:
-			department = db.query(Department).filter(Department.id == department_id).first()
+			department = (
+				db.query(Department)
+				.filter(Department.id == department_id, Department.tenant_id == tenant_id)
+				.first()
+			)
 			if not department:
 				raise HTTPException(status_code=400, detail="유효하지 않은 부서입니다.")
 			user.department_id = department_id
@@ -248,7 +315,11 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 		if position_id is None:
 			user.position_id = None
 		else:
-			position = db.query(Position).filter(Position.id == position_id).first()
+			position = (
+				db.query(Position)
+				.filter(Position.id == position_id, Position.tenant_id == tenant_id)
+				.first()
+			)
 			if not position:
 				raise HTTPException(status_code=400, detail="유효하지 않은 직급입니다.")
 			user.position_id = position_id
@@ -282,9 +353,9 @@ def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate):
 	)
 	return updated_user or user
 
-def delete_user_by_admin(db: Session, user_id: int):
+def delete_user_by_admin(db: Session, user_id: int, tenant_id: int):
 	# 1. 대상 사용자 조회
-	user = db.query(User).filter(User.id == user_id).first()
+	user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
 	if not user:
 		raise HTTPException(status_code=404, detail="삭제하려는 사용자를 찾을 수 없습니다.")
 	db.delete(user)
@@ -292,20 +363,21 @@ def delete_user_by_admin(db: Session, user_id: int):
 	
 	return {"status": "success", "message": f"사용자 '{user.user_login_id}'가 성공적으로 삭제되었습니다."}
 
-def sync_all_users_vacation(db: Session):
+def sync_all_users_vacation(db: Session, tenant_id: int):
 	"""모든 재직자의 입사일을 기준으로 연차를 자동 정산하여 테이블에 저장합니다."""
 	# 입사일이 있고, 퇴사하지 않은(재직중인) 유저만 가져옵니다.
-	users = db.query(User).filter(
-		User.join_date.isnot(None),
-		User.resignation_date.is_(None)
-	).all()
+	users = (
+		directory_users_in_tenant(db, tenant_id)
+		.filter(User.join_date.isnot(None), User.resignation_date.is_(None))
+		.all()
+	)
 	
 	today = today_seoul()
 	user_login_ids = [u.user_login_id for u in users]
 
 	# 성능 최적화: 사용자별 Todo를 한 번에 조회해서 메모리에서 그룹핑
 	vacation_todos = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id.in_(user_login_ids))
 		.filter(Todo.category.in_(VACATION_DEDUCTIBLE_CATEGORIES))
 		.all()
@@ -328,10 +400,10 @@ def sync_all_users_vacation(db: Session):
 	if global_start is not None and global_end is not None:
 		holiday_dates = {
 			row[0]
-			for row in db.query(Holiday.holiday_date).filter(
-				Holiday.holiday_date >= global_start,
-				Holiday.holiday_date <= global_end,
-			).all()
+			for row in holidays_in_tenant(db, tenant_id)
+			.filter(Holiday.holiday_date >= global_start, Holiday.holiday_date <= global_end)
+			.with_entities(Holiday.holiday_date)
+			.all()
 		}
 	updated_count = 0
 	
@@ -341,10 +413,16 @@ def sync_all_users_vacation(db: Session):
 		total_vacation = _calculate_total_vacation(cast(date, join_date), today)
 			
 		# 3. DB 테이블 업데이트 (없으면 생성, 있으면 수정)
-		vacation_record = db.query(UserVacation).filter(UserVacation.user_id == user.user_login_id).first()
-		
+		vacation_record = (
+			user_vacations_in_tenant(db, tenant_id)
+			.filter(UserVacation.user_id == user.user_login_id)
+			.first()
+		)
+
 		if not vacation_record:
-			vacation_record = UserVacation(user_id=user.user_login_id, used_days=0.0)
+			vacation_record = UserVacation(
+				tenant_id=tenant_id, user_id=user.user_login_id, used_days=0.0
+			)
 			db.add(vacation_record)
 
 		recalculated_used_days = _calculate_used_vacation_days(

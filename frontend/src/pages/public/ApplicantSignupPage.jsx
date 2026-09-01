@@ -1,12 +1,13 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
-import { PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
 
 const ApplicantSignupPage = () => {
+	const paths = useAppPaths();
 	const navigate = useNavigate();
 	const [form, setForm] = useState({ email_id: '', password: '', name: '', phone: '' });
 	const [agreed, setAgreed] = useState(false); 
@@ -33,7 +34,7 @@ const ApplicantSignupPage = () => {
 			}
 		).then(() => {
 			// 성공했을 때만 로그인 페이지로 이동!
-			navigate(PATHS.CAREERS_LOGIN);		  
+			navigate(paths.CAREERS_LOGIN);		  
 		}).catch((error) => {
 			// API 통신 실패 시 콘솔에 로그만 조용히 남김 (에러 토스트는 이미 떴음)
 			console.error("회원가입 에러:", error);
@@ -58,7 +59,7 @@ const ApplicantSignupPage = () => {
 						동의
 					</button>
 					<div className="applicant-signup__footer">
-						이미 계정이 있으신가요? <Link to={PATHS.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
+						이미 계정이 있으신가요? <Link to={paths.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
 					</div>
 				</div>
 			</div>
@@ -80,7 +81,7 @@ const ApplicantSignupPage = () => {
 					</button>
 				</form>
 				<div className="applicant-signup__footer">
-					이미 계정이 있으신가요? <Link to={PATHS.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
+					이미 계정이 있으신가요? <Link to={paths.CAREERS_LOGIN} className="applicant-signup__login-link">로그인하기</Link>
 				</div>
 			</div>
 		</div>

@@ -1,5 +1,7 @@
 import React from 'react';
 import toast from 'react-hot-toast';
+import { navigateToLogin } from 'utils/authNavigate';
+import { beginSessionRedirect, endSessionRedirect, isSessionRedirecting } from 'utils/sessionRedirect';
 
 const DEDUP_MS = 3000;
 let lastShownAt = 0;
@@ -40,15 +42,23 @@ const btnBase = {
  */
 export function showSessionExpiredToast(loginHref, onBeforeRedirect) {
 	const now = Date.now();
+	if (isSessionRedirecting()) return;
 	if (now - lastShownAt < DEDUP_MS) return;
 	lastShownAt = now;
 
 	const redirectToLogin = (toastId) => {
+		if (!beginSessionRedirect()) return;
 		toast.dismiss(toastId);
-		if (typeof onBeforeRedirect === 'function') {
-			onBeforeRedirect();
+		try {
+			if (typeof onBeforeRedirect === 'function') {
+				onBeforeRedirect();
+			}
+			if (!navigateToLogin(loginHref, { replace: true })) {
+				endSessionRedirect();
+			}
+		} catch {
+			endSessionRedirect();
 		}
-		window.location.href = loginHref;
 	};
 
 	toast.custom(
@@ -67,7 +77,11 @@ export function showSessionExpiredToast(loginHref, onBeforeRedirect) {
 							color: '#ccc',
 							border: '1px solid #555',
 						}}
-						onClick={() => redirectToLogin(t.id)}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							redirectToLogin(t.id);
+						}}
 					>
 						닫기
 					</button>
@@ -78,7 +92,11 @@ export function showSessionExpiredToast(loginHref, onBeforeRedirect) {
 							background: '#28a745',
 							color: '#fff',
 						}}
-						onClick={() => redirectToLogin(t.id)}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							redirectToLogin(t.id);
+						}}
 					>
 						로그인으로 이동
 					</button>

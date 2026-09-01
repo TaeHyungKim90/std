@@ -19,6 +19,7 @@ def db_session():
 def _user(user_id: str, name: str) -> User:
 	return User(
 		user_login_id=user_id,
+		tenant_id=1,
 		user_password="x",
 		user_name=name,
 		join_date=date(2020, 1, 1),
@@ -28,6 +29,7 @@ def _user(user_id: str, name: str) -> User:
 def _attendance(db, user_id: str, work_date: date, start: time, end: time | None) -> None:
 	db.add(
 		Attendance(
+			tenant_id=1,
 			user_id=user_id,
 			work_date=work_date,
 			clock_in_time=datetime.combine(work_date, start),
@@ -42,6 +44,7 @@ def _attendance(db, user_id: str, work_date: date, start: time, end: time | None
 def _vacation(db, user_id: str, work_date: date, category: str = "vacation_full") -> None:
 	db.add(
 		Todo(
+			tenant_id=1,
 			user_id=user_id,
 			title="휴가",
 			start_date=datetime.combine(work_date, time.min),
@@ -62,7 +65,7 @@ def test_monthly_rewards_use_bonus_points_without_penalties(db_session):
 	_attendance(db_session, "bob", date(2024, 1, 2), time(8, 50), time(18, 0))
 	_attendance(db_session, "bob", date(2024, 1, 3), time(9, 0), None)
 
-	out = attendance_reward_service.get_monthly_attendance_rewards(db_session, 2024, 1)
+	out = attendance_reward_service.get_monthly_attendance_rewards(db_session, 1, 2024, 1)
 	alice = next(row for row in out["items"] if row["user_id"] == "alice")
 	bob = next(row for row in out["items"] if row["user_id"] == "bob")
 
@@ -77,11 +80,11 @@ def test_monthly_rewards_use_bonus_points_without_penalties(db_session):
 
 def test_monthly_rewards_skip_public_holidays(db_session):
 	db_session.add(_user("worker", "직원"))
-	db_session.add(Holiday(holiday_date=date(2024, 1, 5), holiday_name="테스트공휴일", is_official=True))
+	db_session.add(Holiday(tenant_id=1, holiday_date=date(2024, 1, 5), holiday_name="테스트공휴일", is_official=True))
 	db_session.commit()
 	_attendance(db_session, "worker", date(2024, 1, 5), time(8, 40), time(18, 0))
 
-	out = attendance_reward_service.get_monthly_attendance_rewards(db_session, 2024, 1)
+	out = attendance_reward_service.get_monthly_attendance_rewards(db_session, 1, 2024, 1)
 	worker = next(row for row in out["items"] if row["user_id"] == "worker")
 
 	assert worker["score"] == 0
@@ -95,7 +98,7 @@ def test_employee_calendar_stamps_do_not_include_scores(db_session):
 	_attendance(db_session, "stamp_user", date(2024, 1, 2), time(8, 55), time(18, 0))
 	_vacation(db_session, "stamp_user", date(2024, 1, 3), "official_leave")
 
-	out = attendance_calendar_service.get_user_monthly_stamps(db_session, "stamp_user", 2024, 1)
+	out = attendance_calendar_service.get_user_monthly_stamps(db_session, 1, "stamp_user", 2024, 1)
 	stamps = {row["work_date"]: row for row in out["items"]}
 
 	assert stamps[date(2024, 1, 2)]["stamp_type"] == "attendance_complete"

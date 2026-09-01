@@ -5,14 +5,12 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 import main as app_main
-from services.auth_service import get_current_user
+from conftest import TENANT_HEADERS
+from services.auth_service import get_current_user_for_tenant_media
 
 
 def _client():
-	return TestClient(app_main.app)
-
-
-def test_messages_inbox_requires_authentication():
+	return TestClient(app_main.app, headers=TENANT_HEADERS)
 	res = _client().get("/api/messages/inbox")
 	assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -68,10 +66,11 @@ def test_common_download_by_saved_name_requires_authentication():
 
 def test_common_download_by_saved_name_rejects_double_dot_segment():
 	"""경로에 '..'가 포함되면 400 (URL 정규화로 ../ 세그먼트가 사라지는 경우는 별도)."""
-	app_main.app.dependency_overrides[get_current_user] = lambda: {
+	app_main.app.dependency_overrides[get_current_user_for_tenant_media] = lambda: {
 		"id": 1,
 		"userId": "u1",
 		"role": "user",
+		"tenantId": 1,
 	}
 	try:
 		res = _client().get("/api/common/files/by-saved-name/evil..dot.pdf")
@@ -83,7 +82,7 @@ def test_common_download_by_saved_name_rejects_double_dot_segment():
 def test_public_recruitment_login_invalid_credentials_401(monkeypatch):
 	from api.public import recruitment as recruitment_api
 
-	monkeypatch.setattr(recruitment_api.service, "login_applicant", lambda db, data: None)
+	monkeypatch.setattr(recruitment_api.service, "login_applicant", lambda db, data, tenant_id: None)
 
 	res = _client().post(
 		"/api/public/recruitment/login",
@@ -95,7 +94,7 @@ def test_public_recruitment_login_invalid_credentials_401(monkeypatch):
 def test_public_recruitment_signup_duplicate_email_400(monkeypatch):
 	from api.public import recruitment as recruitment_api
 
-	monkeypatch.setattr(recruitment_api.service, "signup_applicant", lambda db, data: None)
+	monkeypatch.setattr(recruitment_api.service, "signup_applicant", lambda db, data, tenant_id: None)
 
 	res = _client().post(
 		"/api/public/recruitment/signup",

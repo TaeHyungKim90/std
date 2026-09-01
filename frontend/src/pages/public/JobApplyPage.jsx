@@ -1,5 +1,5 @@
 import { recruitmentApi } from 'api/recruitmentApi';
-import { pathCareersJobApply,PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useEffect,useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
@@ -8,6 +8,7 @@ import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
 
 const JobApplyPage = () => {
+	const paths = useAppPaths();
 	const { state } = useLocation();
 	const navigate = useNavigate();
 	const [loggedInUser, setLoggedInUser] = useState(null);
@@ -20,7 +21,7 @@ const JobApplyPage = () => {
 		let isMounted = true; 
 		if (!job) {
 			Notify.toastError("🚨 잘못된 접근입니다.");
-			navigate(PATHS.CAREERS, { replace: true });
+			navigate(paths.CAREERS, { replace: true });
 			return;
 		}
 
@@ -32,7 +33,7 @@ const JobApplyPage = () => {
 			}
 			if (isMounted) {
 				Notify.toastWarn("로그인이 필요한 서비스입니다.");
-				navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
+				navigate(paths.CAREERS_LOGIN, { state: { returnUrl: `${paths.CAREERS}/${job.id}/apply`, job } });
 			}
 			return false;
 		};
@@ -49,7 +50,7 @@ const JobApplyPage = () => {
 				if (applications.some(app => app.job_id === job.id)) {
 					if (isMounted) {
 						Notify.toastWarn("이미 지원이 완료된 공고입니다.\n[내 지원 내역] 페이지에서 확인해 주세요.");
-						navigate(PATHS.CAREERS_MY_APPLICATIONS, { replace: true }); 
+						navigate(paths.CAREERS_MY_APPLICATIONS, { replace: true }); 
 					}
 				}
 			}).catch((error) => {
@@ -58,7 +59,7 @@ const JobApplyPage = () => {
 		};
 		checkDuplicate();
 		return () => { isMounted = false; };
-	}, [job, navigate]);
+	}, [job, navigate, paths.CAREERS, paths.CAREERS_LOGIN, paths.CAREERS_MY_APPLICATIONS]);
 
 	const handleFileChange = (e, type) => {
 		const f = e.target.files?.[0];
@@ -115,7 +116,7 @@ const JobApplyPage = () => {
 			}
 		).then(() => {
 			// 전부 다 성공했을 때의 처리
-			navigate(PATHS.CAREERS_MY_APPLICATIONS, { replace: true });
+			navigate(paths.CAREERS_MY_APPLICATIONS, { replace: true });
 		}).catch((error) => {
 			// 에러 로그
 			console.error("지원서 제출 에러:", error);

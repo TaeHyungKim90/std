@@ -1,70 +1,101 @@
-# Getting Started with Create React App
+# Frontend (Create React App)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+HR·채용 **멀티테넌트 SPA**. 테넌트별 경로 `/{tenantSlug}/my/*`, `/{tenantSlug}/admin/*`, `/{tenantSlug}/careers/*`와 플랫폼 `/platform/*`를 React Router 7로 제공합니다.
 
-## Available Scripts
+- 저장소 온보딩: [`../README.md`](../README.md)
+- API·기능 상세: [`../research.md`](../research.md)
+- 파일 네이밍: [`FILE_CONVENTIONS.md`](FILE_CONVENTIONS.md)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 요구 사항
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Node.js 24** (CI 기준, LTS 호환 버전 권장)
+- npm
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 환경 변수
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+`frontend/.env.example` → `frontend/.env` (로컬)
 
-### `npm run build`
+| 변수 | 설명 |
+|------|------|
+| `REACT_APP_API_BASE_URL` | **`/api` 포함** (예: `http://localhost:8000/api`) |
+| `REACT_APP_DEFAULT_TENANT_SLUG` | 기본 테넌트 slug (선택) |
+| `REACT_APP_FILE_DOWNLOAD_VIA_API` | 첨부·PDF API 경유 (권장) |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+프로덕션 빌드: `frontend/.env.production` 또는 빌드 시 환경 변수 주입. **`npm run build` 전 `prebuild`가 `REACT_APP_API_BASE_URL`을 검증**합니다.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 스크립트
 
-### `npm run eject`
+```bash
+npm install          # 또는 npm ci
+npm start            # prestart: PDF worker 복사 → http://localhost:3000
+npm run build        # prebuild: worker 복사 + env 검증 → build/
+npm run lint         # ESLint (max-warnings 0)
+npm run lint:fix
+npm test             # Jest (watch)
+npm run test:ci      # CI: --watchAll=false
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+**로컬 접속 예** (테넌트 `valuesplay`):
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- `http://localhost:3000/valuesplay/login`
+- `http://localhost:3000/valuesplay/my/todos`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+플랫폼: `http://localhost:3000/platform/login`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Windows에서 백엔드+프론트 동시 기동: 프로젝트 루트 [`start_local.bat`](../start_local.bat)
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 주요 디렉터리
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+src/
+├── routes/           # index.jsx (TenantLayout), hr/admin/public/platform
+├── context/          # AuthContext, TenantContext, PlatformAuthContext
+├── pages/
+│   ├── hr/           # TodoList(도장), Attendance, PdfViewerPage, …
+│   ├── admin/        # AdminAttendanceRewards, …
+│   └── platform/     # TenantMgmt
+├── api/              # axiosInstance (+ X-Tenant-Slug), adminApi, attendanceApi
+├── constants/        # paths.js, menu.js
+└── utils/            # fileUtils (PDF 뷰어 URL), toastUtils (세션 만료)
+```
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 테넌트·API
 
-### Analyzing the Bundle Size
+- `TenantLayout`이 `GET /api/tenants/{slug}/exists`로 slug 검증.
+- `axiosInstance`: `/platform` 제외 요청에 **`X-Tenant-Slug`** 자동 부착, **`withCredentials: true`** (httpOnly 쿠키).
+- URL slug와 JWT tenant 불일치 시 비로그인 처리.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## PDF 뷰어
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- 라우트: `/{tenant}/my/pdf-viewer?fileId=…`
+- `pdfjs-dist` + `public/pdf.worker.min.mjs` (`scripts/copy-pdf-worker.js`가 prestart/prebuild에서 동기화)
+- 운영: 빌드 산출물에 worker 포함 → [`deploy_frontend.bat`](../deploy_frontend.bat)로 `static/` 배포
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 빌드·배포
 
-### Deployment
+```bat
+cd frontend
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+산출물은 루트 [`deploy_frontend.bat`](../deploy_frontend.bat)가 `static/`으로 복사합니다. CRA 기본 [deployment 문서](https://create-react-app.dev/docs/deployment/)도 참고할 수 있습니다.
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## CI
+
+[`.github/workflows/frontend-ci.yml`](../.github/workflows/frontend-ci.yml) — Node 24, `npm ci`, lint, test.

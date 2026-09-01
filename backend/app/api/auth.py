@@ -14,16 +14,32 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
 from core.config import settings
+from core.tenant import (
+	get_tenant_by_slug,
+	get_tenant_slug_header,
+	normalize_tenant_slug,
+	require_tenant,
+	tenant_pk,
+	tenant_slug_str,
+)
 from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
 from models.auth_models import User, UserAvatarSetting
 from models.system_models import Department, Position
+from models.tenant_models import Tenant
 from schemas import auth_schemas
+from constants.bootstrap_admin import is_bootstrap_system_admin
 from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
 router = APIRouter()
+
+
+def _user_response(user: User) -> auth_schemas.UserResponse:
+	base = auth_schemas.UserResponse.model_validate(user)
+	return base.model_copy(update={"join_date_editable": not is_bootstrap_system_admin(user)})
+
 
 # ==========================================
 # ⚙️ 환경 설정 및 공통 변수
@@ -46,14 +62,19 @@ COOKIE_OPTIONS = {
 	"secure": IS_PROD,
 	"path": "/",
 }
-def generate_user_token(user):
-	"""💡 공통 헬퍼 함수: 유저 객체로 JWT 토큰 생성"""
+def generate_user_token(user, *, tenant_slug: str | None = None):
+	"""공통 헬퍼: JWT 토큰 생성 (tenantId/tenantSlug 포함)"""
+	slug = tenant_slug
+	if slug is None and getattr(user, "tenant", None) is not None:
+		slug = user.tenant.slug
 	token_data = {
-		"userId": user.user_login_id, 
+		"userId": user.user_login_id,
 		"userName": user.user_name,
-		"userNickname": user.user_nickname, 
-		"role": user.role, 
+		"userNickname": user.user_nickname,
+		"role": user.role,
 		"id": user.id,
+		"tenantId": user.tenant_id,
+		"tenantSlug": slug,
 		"join_date": user.join_date.isoformat() if user.join_date else None,
 		"resignation_date": user.resignation_date.isoformat() if user.resignation_date else None,
 	}
@@ -64,10 +85,11 @@ def _normalize_social_mode(mode: str | None) -> str:
 	return "signup" if mode == "signup" else "login"
 
 
-def _create_oauth_state(mode: str | None) -> str:
+def _create_oauth_state(mode: str | None, tenant_slug: str) -> str:
 	payload = {
 		"nonce": str(uuid.uuid4()),
 		"mode": _normalize_social_mode(mode),
+		"tenant": tenant_slug,
 		"iat": int(time.time()),
 	}
 	raw_payload = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
@@ -81,7 +103,7 @@ def _create_oauth_state(mode: str | None) -> str:
 	return f"{encoded_payload}.{encoded_signature}"
 
 
-def _read_oauth_state(state: str) -> str:
+def _read_oauth_state(state: str) -> tuple[str, str]:
 	try:
 		encoded_payload, encoded_signature = state.split(".", 1)
 		expected_signature = hmac.new(
@@ -104,24 +126,32 @@ def _read_oauth_state(state: str) -> str:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="유효하지 않은 OAuth state 입니다.")
 	if issued_at <= 0 or int(time.time()) - issued_at > 300:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OAuth 인증 시간이 만료되었습니다. 다시 시도해 주세요.")
-	return _normalize_social_mode(payload.get("mode"))
+	tenant_slug = normalize_tenant_slug(payload.get("tenant"))
+	if not tenant_slug:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OAuth state에 테넌트 정보가 없습니다.")
+	return _normalize_social_mode(payload.get("mode")), tenant_slug
 
 
-def _oauth_callback_url(**params: str) -> str:
+def _oauth_callback_url(tenant_slug: str, **params: str) -> str:
 	query = urlencode(params)
-	return f"{settings.FRONTEND_URL}/oauth/callback?{query}" if query else f"{settings.FRONTEND_URL}/oauth/callback"
+	base = f"{settings.FRONTEND_URL}/{tenant_slug}/oauth/callback"
+	return f"{base}?{query}" if query else base
 
 
-def _create_social_login_response(user, *, social_status: str, provider: str):
+def _create_social_login_response(user, *, social_status: str, provider: str, tenant_slug: str):
 	"""소셜 로그인 토큰 발급 후 프론트 콜백에 처리 결과를 전달합니다."""
-	token = generate_user_token(user)
-	response = RedirectResponse(url=_oauth_callback_url(social_status=social_status, provider=provider))
+	token = generate_user_token(user, tenant_slug=tenant_slug)
+	response = RedirectResponse(
+		url=_oauth_callback_url(tenant_slug, social_status=social_status, provider=provider)
+	)
 	response.set_cookie(value=token, **COOKIE_OPTIONS)
 	return response
 
 
-def _create_social_notice_response(*, social_status: str, provider: str):
-	return RedirectResponse(url=_oauth_callback_url(social_status=social_status, provider=provider))
+def _create_social_notice_response(*, social_status: str, provider: str, tenant_slug: str):
+	return RedirectResponse(
+		url=_oauth_callback_url(tenant_slug, social_status=social_status, provider=provider)
+	)
 
 
 def _process_social_callback(
@@ -133,6 +163,7 @@ def _process_social_callback(
 	nickname: str,
 	phone: str | None,
 	social_mode: str,
+	tenant: Tenant,
 ):
 	try:
 		user, created = service.process_social_login(
@@ -142,19 +173,25 @@ def _process_social_callback(
 			name,
 			nickname,
 			phone,
+			tenant_id=tenant_pk(tenant),
 			allow_create=social_mode == "signup",
 		)
 	except HTTPException as exc:
 		if exc.status_code == status.HTTP_404_NOT_FOUND and social_mode == "login":
-			return _create_social_notice_response(social_status="not_registered", provider=provider)
+			return _create_social_notice_response(
+				social_status="not_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
+			)
 		raise
 
 	if social_mode == "signup" and not created:
-		return _create_social_notice_response(social_status="already_registered", provider=provider)
+		return _create_social_notice_response(
+			social_status="already_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
+		)
 	return _create_social_login_response(
 		user,
 		social_status="signed_up" if created else "logged_in",
 		provider=provider,
+		tenant_slug=tenant_slug_str(tenant),
 	)
 
 # ==========================================
@@ -163,11 +200,17 @@ def _process_social_callback(
 
 @router.post("/login", response_model=auth_schemas.LoginResponse)
 @limiter.limit("5/minute")
-async def login(request: Request, data: auth_schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
-	"""일반 로그인: ID/PW 검증 후 쿠키와 토큰 반환"""
-	user = service.authenticate_user(db, data.id, data.pw)
-	
-	token = generate_user_token(user)
+async def login(
+	request: Request,
+	data: auth_schemas.LoginRequest,
+	response: Response,
+	db: Session = Depends(get_db),
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""일반 로그인: ID/PW 검증 후 쿠키와 토큰 반환 (테넌트 스코프)"""
+	user = service.authenticate_user(db, data.id, data.pw, tenant_pk(tenant))
+
+	token = generate_user_token(user, tenant_slug=tenant_slug_str(tenant))
 	response.set_cookie(value=token, **COOKIE_OPTIONS)
 	# access_token은 httpOnly 쿠키로만 전달 (응답 JSON에 넣지 않음 → XSS로 토큰 유출 방지)
 	return {
@@ -178,6 +221,7 @@ async def login(request: Request, data: auth_schemas.LoginRequest, response: Res
 		"role": user.role,
 		"join_date": user.join_date,
 		"resignation_date": user.resignation_date,
+		"mustChangePassword": bool(user.must_change_password),
 	}
 
 @router.post("/logout")
@@ -201,8 +245,30 @@ def _optional_date_from_payload(value):
 	return None
 
 
+def _auth_check_logged_out() -> dict:
+	return {"isLoggedIn": False, "access_token": None}
+
+
+def _token_matches_request_tenant(db: Session, payload: dict, tenant_slug: str | None) -> bool:
+	"""X-Tenant-Slug 요청과 JWT tenantId가 다르면 이 테넌트에서는 비로그인 처리."""
+	if not tenant_slug:
+		return True
+	token_tid = payload.get("tenantId")
+	if token_tid is None:
+		return False
+	try:
+		tenant = get_tenant_by_slug(db, tenant_slug)
+	except HTTPException:
+		return False
+	return int(token_tid) == tenant_pk(tenant)
+
+
 @router.get("/check", response_model=auth_schemas.AuthCheckResponse)
-async def check_auth(request: Request, db: Session = Depends(get_db)):
+async def check_auth(
+	request: Request,
+	db: Session = Depends(get_db),
+	tenant_slug: str | None = Depends(get_tenant_slug_header),
+):
 	"""인증 상태 확인: 헤더 또는 쿠키의 토큰 검증. 입사일/퇴사일은 DB 최신값 우선."""
 	token = None
 	auth_header = request.headers.get("Authorization")
@@ -222,7 +288,9 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 
 	# 3단계 - 검증 및 반환
 	if not payload or not payload.get("userName"):
-		return {"isLoggedIn": False, "access_token": None}
+		return _auth_check_logged_out()
+	if not _token_matches_request_tenant(db, payload, tenant_slug):
+		return _auth_check_logged_out()
 
 	join_date = None
 	resignation_date = None
@@ -235,6 +303,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 	user_role = payload.get("role")
 	user_login_id = payload.get("userId")
 	user_pk = payload.get("id")
+	must_change_password = False
 	if user_pk is not None:
 		user = db.query(User).filter(User.id == user_pk).first()
 		if user:
@@ -248,6 +317,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 			avatar_zoom = float(user.avatar_zoom)
 			avatar_offset_x = float(user.avatar_offset_x)
 			avatar_offset_y = float(user.avatar_offset_y)
+			must_change_password = bool(user.must_change_password)
 	if join_date is None:
 		join_date = _optional_date_from_payload(payload.get("join_date"))
 	if resignation_date is None:
@@ -265,25 +335,34 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
 		"avatar_offset_y": avatar_offset_y,
 		"join_date": join_date,
 		"resignation_date": resignation_date,
+		"mustChangePassword": must_change_password,
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)
-async def check_id(data: auth_schemas.CheckIdRequest, db: Session = Depends(get_db)):
-	"""아이디 중복 검사"""
-	exists = service.check_user_exists(db, data.user_login_id)
+async def check_id(
+	data: auth_schemas.CheckIdRequest,
+	db: Session = Depends(get_db),
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""아이디 중복 검사 (테넌트별)"""
+	exists = service.check_user_exists(db, data.user_login_id, tenant_pk(tenant))
 	return {"available": not exists}
 
 @router.post("/signup")
-async def signup(data: auth_schemas.UserCreate, db: Session = Depends(get_db)):
+async def signup(
+	data: auth_schemas.UserCreate,
+	db: Session = Depends(get_db),
+	tenant: Tenant = Depends(require_tenant),
+):
 	"""회원 가입"""
-	service.create_new_user(db, data)
+	service.create_new_user(db, data, tenant_pk(tenant))
 	return {"success": True, "message": "회원가입이 완료되었습니다."}
 
 
 @router.get("/me", response_model=auth_schemas.UserResponse)
 def get_my_profile(
 	db: Session = Depends(get_db),
-	current_user: dict = Depends(service.get_current_user),
+	current_user: dict = Depends(service.get_current_user_for_tenant),
 ):
 	"""로그인 사용자 본인 정보 + 연차(UserVacation) 조회."""
 	user_pk = current_user.get("id")
@@ -297,14 +376,27 @@ def get_my_profile(
 	)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
-	return auth_schemas.UserResponse.model_validate(user)
+	sync_user_vacation(db, user)
+	db.commit()
+	refreshed_user = (
+		db.query(User)
+		.options(
+			joinedload(User.vacation),
+			joinedload(User.avatar_setting),
+			joinedload(User.department),
+			joinedload(User.position),
+		)
+		.filter(User.id == user_pk)
+		.first()
+	)
+	return _user_response(refreshed_user or user)
 
 
 @router.patch("/me", response_model=auth_schemas.UserResponse)
 def patch_my_profile(
 	body: auth_schemas.MeProfilePatch,
 	db: Session = Depends(get_db),
-	current_user: dict = Depends(service.get_current_user),
+	current_user: dict = Depends(service.get_current_user_for_tenant),
 ):
 	"""로그인 사용자 본인 연락처·닉네임·비밀번호 수정 (비밀번호는 해시 저장)."""
 	user_pk = current_user.get("id")
@@ -337,7 +429,13 @@ def patch_my_profile(
 			)
 		if not verify_password(data["current_password"], user.user_password):
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="현재 비밀번호가 일치하지 않습니다.")
+		if verify_password(data["new_password"], user.user_password):
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="새 비밀번호는 현재 비밀번호와 달라야 합니다.",
+			)
 		user.user_password = get_password_hash(data["new_password"])
+		user.must_change_password = False
 
 	if "user_nickname" in data:
 		raw = data["user_nickname"]
@@ -377,6 +475,11 @@ def patch_my_profile(
 		user.user_profile_image_url = data["user_profile_image_url"] or None
 
 	if "join_date" in data:
+		if is_bootstrap_system_admin(user):
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="테넌트 운영용 admin 계정은 입사일을 변경할 수 없습니다.",
+			)
 		user.join_date = data["join_date"]
 		sync_user_vacation(db, user)
 
@@ -418,7 +521,7 @@ def patch_my_profile(
 		.filter(User.id == user_pk)
 		.first()
 	)
-	return auth_schemas.UserResponse.model_validate(updated_user or user)
+	return _user_response(updated_user or user)
 
 
 # ==========================================
@@ -426,9 +529,12 @@ def patch_my_profile(
 # ==========================================
 
 @router.get("/kakao/login")
-async def kakao_login(mode: str | None = None):
+async def kakao_login(
+	mode: str | None = None,
+	tenant: Tenant = Depends(require_tenant),
+):
 	"""사용자를 카카오 로그인 페이지로 보내는 URL 생성"""
-	state = _create_oauth_state(mode)
+	state = _create_oauth_state(mode, tenant_slug_str(tenant))
 	kakao_auth_url = "https://kauth.kakao.com/oauth/authorize?" + urlencode({
 		"client_id": KAKAO_CLIENT_ID,
 		"redirect_uri": KAKAO_REDIRECT_URI,
@@ -444,7 +550,8 @@ async def kakao_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""카카오 인증 완료 후 돌아오는 지점"""
-	social_mode = _read_oauth_state(state)
+	social_mode, tenant_slug = _read_oauth_state(state)
+	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
 		token_res = await client.post("https://kauth.kakao.com/oauth/token", data={
@@ -469,15 +576,19 @@ async def kakao_callback_handler(
 		nickname=nickname,
 		phone=phone,
 		social_mode=social_mode,
+		tenant=tenant,
 	)
 	response.delete_cookie(key="kakao_oauth_state", path="/")
 	response.delete_cookie(key="kakao_oauth_mode", path="/")
 	return response
 
 @router.get("/naver/login")
-async def naver_login(mode: str | None = None):
+async def naver_login(
+	mode: str | None = None,
+	tenant: Tenant = Depends(require_tenant),
+):
 	"""네이버 로그인 창으로 보내는 URL 생성"""
-	state = _create_oauth_state(mode)
+	state = _create_oauth_state(mode, tenant_slug_str(tenant))
 	naver_auth_url = "https://nid.naver.com/oauth2.0/authorize?" + urlencode({
 		"response_type": "code",
 		"client_id": NAVER_CLIENT_ID,
@@ -493,7 +604,8 @@ async def naver_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""네이버 인증 완료 후 돌아오는 지점"""
-	social_mode = _read_oauth_state(state)
+	social_mode, tenant_slug = _read_oauth_state(state)
+	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
 		token_res = await client.get("https://nid.naver.com/oauth2.0/token", params={
@@ -518,6 +630,7 @@ async def naver_callback_handler(
 		nickname=nickname,
 		phone=phone,
 		social_mode=social_mode,
+		tenant=tenant,
 	)
 	response.delete_cookie(key="naver_oauth_state", path="/")
 	response.delete_cookie(key="naver_oauth_mode", path="/")

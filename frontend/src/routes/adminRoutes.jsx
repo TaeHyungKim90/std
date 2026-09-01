@@ -1,4 +1,4 @@
-import { PATH_PREFIX, ROUTE_SEGMENTS } from 'constants/paths';
+import { ROUTE_SEGMENTS } from 'constants/paths';
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ const AdminMessage = lazy(() => import('pages/admin/AdminMessage'));
 const AdminDailyReport = lazy(() => import('pages/admin/AdminDailyReport'));
 
 const adminRoutes = (
-	<Route path={PATH_PREFIX.ADMIN}>
+	<Route path="admin">
 		<Route path={ROUTE_SEGMENTS.ADMIN.DASHBOARD} element={<AdminDashboard />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.TODOS} element={<AdminTodoView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.CATEGORIES} element={<CategoryMgmtView />} />

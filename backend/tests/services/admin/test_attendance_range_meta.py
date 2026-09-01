@@ -23,6 +23,7 @@ def range_user(db_session):
 	u = User(
 		id=1,
 		user_login_id="range_user",
+		tenant_id=1,
 		user_password="x",
 		user_name="Range User",
 		join_date=date(2020, 1, 1),
@@ -39,7 +40,16 @@ def _monday_on_or_before(d: date) -> date:
 def _todo(db, uid: str, cat: str, d: date) -> None:
 	st = datetime.combine(d, time.min)
 	en = datetime.combine(d, time.max)
-	db.add(Todo(user_id=uid, title="일정", start_date=st, end_date=en, category=cat))
+	db.add(
+		Todo(
+			tenant_id=1,
+			user_id=uid,
+			title="일정",
+			start_date=st,
+			end_date=en,
+			category=cat,
+		)
+	)
 	db.commit()
 
 
@@ -60,7 +70,7 @@ def test_half_day_no_attendance_yields_missing_explanation(db_session, range_use
 	_todo(db_session, "range_user", "vacation_am", wed)
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		mon.isoformat(),
 		(mon + timedelta(days=4)).isoformat(),
@@ -79,7 +89,7 @@ def test_vacation_full_skips_absent_virtual(db_session, range_user):
 	_todo(db_session, "range_user", "vacation_full", tue)
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		mon.isoformat(),
 		(mon + timedelta(days=4)).isoformat(),
@@ -98,7 +108,7 @@ def test_sick_todo_weekday_no_record_yields_auto_absent(db_session, range_user):
 	_todo(db_session, "range_user", "vacation_sick", thu)
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		mon.isoformat(),
 		(mon + timedelta(days=4)).isoformat(),
@@ -120,6 +130,7 @@ def test_real_row_merged_with_vacation_summary(db_session, range_user):
 	ci = datetime.combine(fri, time(9, 0))
 	db_session.add(
 		Attendance(
+			tenant_id=1,
 			user_id="range_user",
 			work_date=fri,
 			clock_in_time=ci,
@@ -131,7 +142,7 @@ def test_real_row_merged_with_vacation_summary(db_session, range_user):
 	db_session.commit()
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		mon.isoformat(),
 		fri.isoformat(),
@@ -150,7 +161,7 @@ def test_weekend_half_day_no_attendance_yields_missing(db_session, range_user):
 	_todo(db_session, "range_user", "vacation_pm", sat)
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		mon.isoformat(),
 		(mon + timedelta(days=6)).isoformat(),
@@ -162,10 +173,11 @@ def test_weekend_half_day_no_attendance_yields_missing(db_session, range_user):
 def test_public_holiday_row_has_name(db_session, range_user):
 	mon = _monday_on_or_before(today_seoul() - timedelta(days=10))
 	wed = mon + timedelta(days=2)
-	db_session.add(Holiday(holiday_date=wed, holiday_name="임시공휴일", is_official=True))
+	db_session.add(Holiday(tenant_id=1, holiday_date=wed, holiday_name="임시공휴일", is_official=True))
 	ci = datetime.combine(wed, time(10, 0))
 	db_session.add(
 		Attendance(
+			tenant_id=1,
 			user_id="range_user",
 			work_date=wed,
 			clock_in_time=ci,
@@ -176,7 +188,7 @@ def test_public_holiday_row_has_name(db_session, range_user):
 	db_session.commit()
 
 	out = admin_att.get_user_attendance_range(
-		db_session,
+		db_session, 1,
 		"range_user",
 		wed.isoformat(),
 		wed.isoformat(),

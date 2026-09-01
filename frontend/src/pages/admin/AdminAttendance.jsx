@@ -146,25 +146,33 @@ const AdminAttendance = () => {
 				if (!totalEmployees || skip >= totalEmployees || items.length === 0) break;
 			}
 
-			const counts = allItems.reduce(
-				(acc, record) => {
-					// 분배 규칙:
-					// 1) clock_in_time 있으면 출근(완료)
-					// 2) clock_in_time 없으면 (캘린더 휴가 OR 상태의 휴가 키워드 OR HR todos 휴가) => 휴가
-					// 3) 그 외 => 미출근
-					if (record?.clock_in_time) acc.attendedCompleted += 1;
-					else if (
-						isWeekendLocal ||
-						isHoliday ||
-						isVacation(record) ||
-						vacationTodoUserIdSetLocal.has(record.user_id)
-					)
-						acc.vacationCount += 1;
-					else acc.absentCount += 1;
-					return acc;
-				},
-				{ attendedCompleted: 0, vacationCount: 0, absentCount: 0 }
-			);
+			const attendedUserIds = new Set();
+			const vacationUserIds = new Set();
+			for (const record of allItems) {
+				const uid = record?.user_id;
+				if (!uid) continue;
+				// 분배 규칙(직원당 1회만 집계 — 테넌트·세션 중복 행 방어):
+				// 1) clock_in_time 있으면 출근(완료)
+				// 2) clock_in_time 없으면 (캘린더 휴가 OR 상태의 휴가 키워드 OR HR todos 휴가) => 휴가
+				// 3) 그 외 => 미출근
+				if (record?.clock_in_time) {
+					attendedUserIds.add(uid);
+					continue;
+				}
+				if (
+					isWeekendLocal ||
+					isHoliday ||
+					isVacation(record) ||
+					vacationTodoUserIdSetLocal.has(uid)
+				) {
+					vacationUserIds.add(uid);
+				}
+			}
+			const counts = {
+				attendedCompleted: attendedUserIds.size,
+				vacationCount: vacationUserIds.size,
+				absentCount: 0,
+			};
 
 			// totalEmployees는 User 기준(중복 없는 재직자 수)로 오기 때문에
 			// 반드시 합이 totalEmployees가 되도록 absentCount를 최종 보정

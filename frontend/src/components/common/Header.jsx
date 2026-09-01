@@ -1,14 +1,16 @@
 // src/components/layout/Header.js
-import logo from 'assets/icon/favicon.png';
 import UserAvatar from 'components/common/UserAvatar';
-import { MENU_ITEMS } from 'constants/menu';
-import { PATH_PREFIX,PATHS } from 'constants/paths';
+import { menuItemsFor } from 'constants/menu';
+import { DEFAULT_BRANDING_LOGO_SRC } from 'constants/tenantBranding';
 import { AuthContext } from 'context/AuthContext';
+import { useTenant } from 'context/TenantContext';
 import React, { useContext, useEffect, useState } from 'react';
 import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const Header = () => {
+	const { paths, tenantName, logoUrl } = useTenant();
+	const menuItems = menuItemsFor(paths);
 	const { isLoggedIn, logout, userNickname, userRole, userName, userProfileImageUrl, userProfileImageCacheBust, userAvatarAdjust } = useContext(AuthContext);
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -17,12 +19,12 @@ const Header = () => {
 	const isAdmin = userRole === 'admin';
 
 	const currentPath = location.pathname;
-	const isAdminMode = currentPath.startsWith(PATH_PREFIX.ADMIN);
-	const mobileMenuItems = MENU_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+	const isAdminMode = currentPath.startsWith(paths.PATH_PREFIX.ADMIN);
+	const mobileMenuItems = menuItems.filter((item) => !item.adminOnly || isAdmin);
 	const quickActions = [
-		{ id: 'quick-attendance', label: '출퇴근', icon: '⏱', path: PATHS.MY_ATTENDANCE },
-		{ id: 'quick-report', label: '보고서', icon: '📝', path: PATHS.MY_REPORTS },
-		{ id: 'quick-todos', label: '일정', icon: '📅', path: PATHS.MY_TODOS },
+		{ id: 'quick-attendance', label: '출퇴근', icon: '⏱', path: paths.MY_ATTENDANCE },
+		{ id: 'quick-report', label: '보고서', icon: '📝', path: paths.MY_REPORTS },
+		{ id: 'quick-todos', label: '일정', icon: '📅', path: paths.MY_TODOS },
 	];
 
 	useEffect(() => {
@@ -53,7 +55,7 @@ const Header = () => {
 		setIsLoggingOut(true);
 		logout()
 			.then(() => {
-				navigate(PATHS.LOGIN);
+				navigate(paths.LOGIN);
 			})
 			.catch((err) => {
 				Notify.toastApiFailure(err, "로그아웃 실패");
@@ -69,16 +71,24 @@ const Header = () => {
 		<header className="modern-header-wrapper">
 			<div className="modern-gnb">
 					<div className="gnb-left">
-						<div onClick={() => navigate(PATHS.HOME)} className="bq-logo">
-							<img src={logo} alt="가치플레이 로고" className="bq-logo-img" />
+						<div onClick={() => navigate(paths.MY_TODOS)} className="bq-logo">
+							<img
+								src={logoUrl}
+								alt={`${tenantName} 로고`}
+								className="bq-logo-img"
+								onError={(e) => {
+									e.currentTarget.onerror = null;
+									e.currentTarget.src = DEFAULT_BRANDING_LOGO_SRC;
+								}}
+							/>
 							<div className="bq-logo-text-group">
-								<span className="bq-logo-main">가치플레이 </span>
+								<span className="bq-logo-main">{tenantName}</span>
 								<span className="bq-logo-sub">HR</span>
 							</div>
 						</div>
 
 						<nav className="gnb-nav">
-							{MENU_ITEMS.map((item) => {
+							{menuItems.map((item) => {
 								if (item.adminOnly && !isAdmin) return null;
 								const isActive = item.id === 'admin' ? isAdminMode : currentPath.startsWith(item.path);
 

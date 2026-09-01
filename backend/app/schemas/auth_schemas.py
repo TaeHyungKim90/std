@@ -18,6 +18,7 @@ class LoginResponse(BaseModel):
 	userId: Optional[str] = None
 	join_date: Optional[date] = None
 	resignation_date: Optional[date] = None
+	mustChangePassword: bool = False
 
 # 3. 인증 상태 확인 응답 (checkAuth용)
 class AuthCheckResponse(BaseModel):
@@ -33,6 +34,7 @@ class AuthCheckResponse(BaseModel):
 	avatar_offset_y: Optional[float] = None
 	join_date: Optional[date] = None
 	resignation_date: Optional[date] = None
+	mustChangePassword: bool = False
 
 # 4. 사용자 생성 요청 (회원가입/관리자 등록)
 class UserCreate(BaseModel):
@@ -163,6 +165,7 @@ class UserResponse(BaseModel):
 	created_at: datetime
 	join_date: Optional[date] = None 
 	resignation_date: Optional[date] = None
+	join_date_editable: bool = True
 	avatar_zoom: float = 1.0
 	avatar_offset_x: float = 0.0
 	avatar_offset_y: float = 0.0

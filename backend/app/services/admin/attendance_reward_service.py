@@ -7,6 +7,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from models.auth_models import User
+from services.tenant_scope import directory_users_in_tenant
 from services.hr.attendance_calendar_service import (
 	build_month_context,
 	iter_days,
@@ -21,9 +22,9 @@ ATTENDANCE_COMPLETE_POINTS = 1
 VACATION_POINTS = 1
 
 
-def _active_users_for_month(db: Session, start_d: date, end_d: date) -> list[User]:
+def _active_users_for_month(db: Session, tenant_id: int, start_d: date, end_d: date) -> list[User]:
 	return (
-		db.query(User)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(
 			User.join_date.isnot(None),
 			User.join_date <= end_d,
@@ -34,13 +35,13 @@ def _active_users_for_month(db: Session, start_d: date, end_d: date) -> list[Use
 	)
 
 
-def get_monthly_attendance_rewards(db: Session, year: int, month: int) -> dict[str, Any]:
+def get_monthly_attendance_rewards(db: Session, tenant_id: int, year: int, month: int) -> dict[str, Any]:
 	month_start, month_end = month_bounds(year, month)
 	today = today_seoul()
 	score_end = min(month_end, today)
-	users = _active_users_for_month(db, month_start, month_end)
+	users = _active_users_for_month(db, tenant_id, month_start, month_end)
 	user_ids = [str(u.user_login_id) for u in users]
-	ctx = build_month_context(db, user_ids, month_start, score_end)
+	ctx = build_month_context(db, tenant_id, user_ids, month_start, score_end)
 	records_by_user_day = ctx["records_by_user_day"]
 	todos_by_user_day = ctx["todos_by_user_day"]
 	holiday_by_date = ctx["holiday_by_date"]

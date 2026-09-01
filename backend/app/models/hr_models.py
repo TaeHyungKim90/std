@@ -28,6 +28,9 @@ class Todo(Base):
 	__tablename__ = "todos"
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.user_login_id"))
 	title: Mapped[str] = mapped_column(String(200), nullable=False)
 	description: Mapped[str | None] = mapped_column(Text)
@@ -40,14 +43,24 @@ class Todo(Base):
 		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
 	)
 
-	author: Mapped[User | None] = relationship("User", foreign_keys=[user_id])
+	author: Mapped[User | None] = relationship(
+		"User",
+		primaryjoin="and_(Todo.tenant_id == User.tenant_id, Todo.user_id == User.user_login_id)",
+		foreign_keys="[Todo.tenant_id, Todo.user_id]",
+	)
 
 
 class TodoCategoryType(Base):
 	__tablename__ = "todo_category_type"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "category_key", name="uq_todo_category_tenant_key"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-	category_key: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	category_key: Mapped[str] = mapped_column(String(20), nullable=False)
 	category_name: Mapped[str] = mapped_column(String(50), nullable=False)
 	icon: Mapped[str | None] = mapped_column(String(10))
 	is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -55,8 +68,14 @@ class TodoCategoryType(Base):
 
 class TodoConfig(Base):
 	__tablename__ = "todo_config"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", "category_key", name="uq_todo_config_tenant_user_category"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.user_login_id"))
 	category_key: Mapped[str | None] = mapped_column(
 		String(20), ForeignKey("todo_category_type.category_key")
@@ -68,8 +87,14 @@ class TodoConfig(Base):
 
 class OfficeLocation(Base):
 	__tablename__ = "office_location"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "name", name="uq_office_location_tenant_name"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	name: Mapped[str | None] = mapped_column(String)
 	latitude: Mapped[float | None] = mapped_column(Float)
 	longitude: Mapped[float | None] = mapped_column(Float)
@@ -78,9 +103,15 @@ class OfficeLocation(Base):
 
 class Attendance(Base):
 	__tablename__ = "attendance"
-	__table_args__ = (Index("ix_attendance_user_shift_status", "user_id", "shift_status"),)
+	__table_args__ = (
+		Index("ix_attendance_user_shift_status", "user_id", "shift_status"),
+		Index("ix_attendance_tenant_user_date", "tenant_id", "user_id", "work_date"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str | None] = mapped_column(String, index=True)
 	work_date: Mapped[date | None] = mapped_column(Date, index=True)
 	clock_in_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -104,10 +135,15 @@ class AttendanceDailySummary(Base):
 
 	__tablename__ = "attendance_daily_summary"
 	__table_args__ = (
-		UniqueConstraint("user_id", "work_date", name="uq_attendance_daily_summary_user_date"),
+		UniqueConstraint(
+			"tenant_id", "user_id", "work_date", name="uq_attendance_daily_summary_tenant_user_date"
+		),
 	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str] = mapped_column(
 		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
 	)
@@ -119,9 +155,14 @@ class AttendanceDailySummary(Base):
 
 class DailyReport(Base):
 	__tablename__ = "daily_reports"
-	__table_args__ = (UniqueConstraint("user_id", "report_date", name="uq_daily_reports_user_date"),)
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", "report_date", name="uq_daily_reports_tenant_user_date"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str] = mapped_column(
 		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
 	)
@@ -135,9 +176,16 @@ class DailyReport(Base):
 
 class WeeklyReport(Base):
 	__tablename__ = "weekly_reports"
-	__table_args__ = (UniqueConstraint("user_id", "week_start_date", name="uq_weekly_reports_user_week"),)
+	__table_args__ = (
+		UniqueConstraint(
+			"tenant_id", "user_id", "week_start_date", name="uq_weekly_reports_tenant_user_week"
+		),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str] = mapped_column(
 		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
 	)
@@ -151,9 +199,16 @@ class WeeklyReport(Base):
 
 class MonthlyReport(Base):
 	__tablename__ = "monthly_reports"
-	__table_args__ = (UniqueConstraint("user_id", "month_start_date", name="uq_monthly_reports_user_month"),)
+	__table_args__ = (
+		UniqueConstraint(
+			"tenant_id", "user_id", "month_start_date", name="uq_monthly_reports_tenant_user_month"
+		),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	user_id: Mapped[str] = mapped_column(
 		String(50), ForeignKey("users.user_login_id"), index=True, nullable=False
 	)

@@ -22,4 +22,18 @@ module.exports = function setupProxy(app) {
 			changeOrigin: true,
 		})
 	);
+	app.use(
+		'/uploads/tenant-branding',
+		createProxyMiddleware({
+			target,
+			changeOrigin: true,
+		})
+	);
+	app.use(
+		'/assets',
+		createProxyMiddleware({
+			target,
+			changeOrigin: true,
+		})
+	);
 };

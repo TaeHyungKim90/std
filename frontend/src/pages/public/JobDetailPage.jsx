@@ -1,5 +1,5 @@
 import { recruitmentApi } from 'api/recruitmentApi';
-import { pathCareersJobApply, PATHS } from 'constants/paths';
+import { useAppPaths } from 'context/TenantContext';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -21,13 +21,14 @@ function isDeadlinePassedSeoul(deadline) {
 }
 
 const JobDetailPage = () => {
+	const paths = useAppPaths();
 	const { state } = useLocation();
 	const navigate = useNavigate();
 
 	const job = state?.job;
 	if (!job) {
 		Notify.toastWarn(' 공고 상세페이지 - 잘못된 접근입니다.');
-		navigate(PATHS.CAREERS, { replace: true });
+		navigate(paths.CAREERS, { replace: true });
 		return null;
 	}
 
@@ -36,16 +37,16 @@ const JobDetailPage = () => {
 
 	const handleApplyClick = async () => {
 		if (hasApplied) {
-			navigate(PATHS.CAREERS_MY_APPLICATIONS);
+			navigate(paths.CAREERS_MY_APPLICATIONS);
 			return;
 		}
 		const me = await syncApplicantSessionFromServer();
 		if (me?.isLoggedIn) {
-			navigate(pathCareersJobApply(job.id), { state: { job } });
+			navigate(`${paths.CAREERS}/${job.id}/apply`, { state: { job } });
 			return;
 		}
 		Notify.toastInfo('입사 지원은 로그인이 필요합니다.');
-		navigate(PATHS.CAREERS_LOGIN, { state: { returnUrl: pathCareersJobApply(job.id), job } });
+		navigate(paths.CAREERS_LOGIN, { state: { returnUrl: `${paths.CAREERS}/${job.id}/apply`, job } });
 	};
 
 	const handleDownloadTemplate = async () => {

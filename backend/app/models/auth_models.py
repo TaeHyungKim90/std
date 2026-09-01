@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
@@ -11,13 +11,20 @@ from utils.seoul_time import now_seoul_naive
 
 if TYPE_CHECKING:
 	from models.system_models import Department, Position
+	from models.tenant_models import Tenant
 
 
 class User(Base):
 	__tablename__ = "users"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_login_id", name="uq_users_tenant_login"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-	user_login_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+	)
+	user_login_id: Mapped[str] = mapped_column(String(50), nullable=False)
 	user_password: Mapped[str] = mapped_column(String(255), nullable=False)
 	user_name: Mapped[str] = mapped_column(String(50), nullable=False)
 	user_nickname: Mapped[str | None] = mapped_column(String(50))
@@ -31,6 +38,8 @@ class User(Base):
 	salary_bank_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 	salary_account_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 	role: Mapped[str | None] = mapped_column(String(20), default="user")
+	must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+	visible_in_user_list: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="1")
 	user_phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 	join_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -38,11 +47,17 @@ class User(Base):
 	preferred_work_location: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
 	vacation: Mapped[UserVacation | None] = relationship(
-		"UserVacation", back_populates="user", uselist=False, cascade="all, delete"
+		"UserVacation",
+		back_populates="user",
+		uselist=False,
+		cascade="all, delete",
+		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
+		foreign_keys="[UserVacation.tenant_id, UserVacation.user_id]",
 	)
 	avatar_setting: Mapped[UserAvatarSetting | None] = relationship(
 		"UserAvatarSetting", back_populates="user", uselist=False, cascade="all, delete-orphan"
 	)
+	tenant: Mapped[Tenant] = relationship("Tenant", foreign_keys=[tenant_id])
 	department: Mapped[Department | None] = relationship("Department", foreign_keys=[department_id])
 	position: Mapped[Position | None] = relationship("Position", foreign_keys=[position_id])
 
@@ -77,10 +92,16 @@ class User(Base):
 
 class UserVacation(Base):
 	__tablename__ = "user_vacations"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "user_id", name="uq_user_vacations_tenant_user"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-	user_id: Mapped[str | None] = mapped_column(
-		String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), unique=True
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	user_id: Mapped[str] = mapped_column(
+		String(50), ForeignKey("users.user_login_id", ondelete="CASCADE"), nullable=False
 	)
 	total_days: Mapped[int | None] = mapped_column(Integer, default=0)
 	used_days: Mapped[float | None] = mapped_column(Float, default=0.0)
@@ -89,7 +110,12 @@ class UserVacation(Base):
 		DateTime, nullable=False, default=now_seoul_naive, onupdate=now_seoul_naive
 	)
 
-	user: Mapped[User | None] = relationship("User", back_populates="vacation")
+	user: Mapped[User | None] = relationship(
+		"User",
+		back_populates="vacation",
+		primaryjoin="and_(User.tenant_id == UserVacation.tenant_id, User.user_login_id == UserVacation.user_id)",
+		foreign_keys="[UserVacation.tenant_id, UserVacation.user_id]",
+	)
 
 
 class UserAvatarSetting(Base):

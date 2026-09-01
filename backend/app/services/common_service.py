@@ -60,11 +60,15 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 	if current_user.get("role") == "admin":
 		return
 
+	tenant_id = current_user.get("tenantId")
 	uid = current_user.get("id")
 	if uid is None:
 		login_id = current_user.get("userId")
 		if login_id:
-			user = db.query(User).filter(User.user_login_id == login_id).first()
+			user_query = db.query(User).filter(User.user_login_id == login_id)
+			if tenant_id is not None:
+				user_query = user_query.filter(User.tenant_id == int(tenant_id))
+			user = user_query.first()
 			uid = user.id if user else None
 	if uid is None:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 파일에 접근할 권한이 없습니다.")
@@ -73,12 +77,13 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 	file_path = str(uploaded_row.file_path or "")
 	profile_paths = {path for path in (file_path, f"/uploads/{saved_name}" if saved_name else "") if path}
 	if profile_paths:
-		profile_owner = (
-			db.query(User)
-			.filter(User.id == uid, User.user_profile_image_url.in_(profile_paths))
-			.first()
+		profile_query = db.query(User).filter(
+			User.id == uid,
+			User.user_profile_image_url.in_(profile_paths),
 		)
-		if profile_owner:
+		if tenant_id is not None:
+			profile_query = profile_query.filter(User.tenant_id == int(tenant_id))
+		if profile_query.first():
 			return
 
 	links = db.query(MessageAttachment).filter(MessageAttachment.file_id == uploaded_row.id).all()
@@ -96,6 +101,10 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 		msg = db.query(Message).filter(Message.id == link.message_id).first()
 		if not msg:
 			continue
+		# 테넌트 격리 체크: 메시지 발송자의 테넌트 ID가 현재 유저의 테넌트 ID와 일치하는지 확인
+		if msg.sender is None or (tenant_id is not None and msg.sender.tenant_id != int(tenant_id)):
+			continue
+
 		if is_pdf:
 			if getattr(msg, "is_global", False):
 				return

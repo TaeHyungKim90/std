@@ -7,24 +7,38 @@ from sqlalchemy.orm import Session
 
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.auth_models import User
+from services.tenant_scope import (
+	attendance_in_tenant,
+	daily_reports_in_tenant,
+	directory_users_in_tenant,
+	monthly_reports_in_tenant,
+	todos_in_tenant,
+	weekly_reports_in_tenant,
+)
 from models.holiday_models import Holiday
 from models.hr_models import Attendance, DailyReport, MonthlyReport, Todo, WeeklyReport
 from services.hr import reports_service as hr_reports
 from services.hr.attendance_service import is_vacation_status
+from services.tenant_scope import require_user_by_login_id
 
 
 def _is_weekend(d: date) -> bool:
 	return d.weekday() >= 5
 
 
-def _is_public_holiday(db: Session, work_date: date) -> bool:
-	return db.query(Holiday.id).filter(Holiday.holiday_date == work_date).first() is not None
+def _is_public_holiday(db: Session, tenant_id: int, work_date: date) -> bool:
+	return (
+		db.query(Holiday.id)
+		.filter(Holiday.tenant_id == tenant_id, Holiday.holiday_date == work_date)
+		.first()
+		is not None
+	)
 
 
-def list_daily_status(db: Session, work_date: date) -> list[dict]:
+def list_daily_status(db: Session, tenant_id: int, work_date: date) -> list[dict]:
 	"""일일보고 현황: 휴일 → 휴가(근태/일정) → 작성완료/미작성 순으로 판별."""
 	users = (
-		db.query(User)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= work_date)
 		# 기준일(work_date) 이전에 퇴사한 직원은 제외 (퇴사일이 기준일 이상이면 포함)
@@ -33,28 +47,33 @@ def list_daily_status(db: Session, work_date: date) -> list[dict]:
 		.all()
 	)
 
-	holiday_or_weekend = _is_weekend(work_date) or _is_public_holiday(db, work_date)
+	holiday_or_weekend = _is_weekend(work_date) or _is_public_holiday(db, tenant_id, work_date)
 
 	att_by_user = {
 		a.user_id: a
-		for a in db.query(Attendance).filter(Attendance.work_date == work_date).all()
+		for a in attendance_in_tenant(db, tenant_id)
+		.filter(Attendance.work_date == work_date)
+		.all()
 	}
 	report_by_user = {
 		r.user_id: r
-		for r in db.query(DailyReport).filter(DailyReport.report_date == work_date).all()
+		for r in daily_reports_in_tenant(db, tenant_id)
+		.filter(DailyReport.report_date == work_date)
+		.all()
 	}
 
 	day_start = datetime.combine(work_date, time.min)
 	day_end = datetime.combine(work_date, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
 		.distinct()
 		.all()
 	)
-	vacation_todo_users = {row[0] for row in vac_todo_rows}
+	vacation_todo_users = {cast(str, row[0]) for row in vac_todo_rows}
 
 	out = []
 	for u in users:
@@ -81,12 +100,12 @@ def list_daily_status(db: Session, work_date: date) -> list[dict]:
 	return out
 
 
-def list_week_status(db: Session, week_start: date) -> list[dict]:
+def list_week_status(db: Session, tenant_id: int, week_start: date) -> list[dict]:
 	week_start = hr_reports.monday_of(week_start)
 	week_end = week_start + timedelta(days=6)
 
 	users = (
-		db.query(User)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= week_end)
 		# 해당 주 내 재직 기간이 하루라도 있으면 포함 (주중 퇴사자 포함)
@@ -96,10 +115,12 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 	)
 	weekly_rows = {
 		cast(str, w.user_id): w
-		for w in db.query(WeeklyReport).filter(WeeklyReport.week_start_date == week_start).all()
+		for w in weekly_reports_in_tenant(db, tenant_id)
+		.filter(WeeklyReport.week_start_date == week_start)
+		.all()
 	}
 	attendance_rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.work_date >= week_start, Attendance.work_date <= week_end)
 		.all()
 	)
@@ -109,12 +130,16 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 	}
 	holiday_map = {
 		cast(date, h.holiday_date): True
-		for h in db.query(Holiday).filter(Holiday.holiday_date >= week_start, Holiday.holiday_date <= week_end).all()
+		for h in db.query(Holiday)
+		.filter(Holiday.tenant_id == tenant_id)
+		.filter(Holiday.holiday_date >= week_start, Holiday.holiday_date <= week_end)
+		.all()
 	}
 	day_start = datetime.combine(week_start, time.min)
 	day_end = datetime.combine(week_end, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id, Todo.start_date, Todo.end_date)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id, Todo.start_date, Todo.end_date)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
@@ -172,12 +197,12 @@ def list_week_status(db: Session, week_start: date) -> list[dict]:
 	return out
 
 
-def list_month_status(db: Session, month_start: date) -> list[dict]:
+def list_month_status(db: Session, tenant_id: int, month_start: date) -> list[dict]:
 	month_start = hr_reports.first_of_month(month_start)
 	month_end = hr_reports.last_of_month(month_start)
 
 	users = (
-		db.query(User)
+		directory_users_in_tenant(db, tenant_id)
 		.filter(User.join_date.isnot(None))
 		.filter(User.join_date <= month_end)
 		.filter(or_(User.resignation_date.is_(None), User.resignation_date >= month_start))
@@ -186,10 +211,12 @@ def list_month_status(db: Session, month_start: date) -> list[dict]:
 	)
 	monthly_rows = {
 		cast(str, m.user_id): m
-		for m in db.query(MonthlyReport).filter(MonthlyReport.month_start_date == month_start).all()
+		for m in monthly_reports_in_tenant(db, tenant_id)
+		.filter(MonthlyReport.month_start_date == month_start)
+		.all()
 	}
 	attendance_rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.work_date >= month_start, Attendance.work_date <= month_end)
 		.all()
 	)
@@ -199,14 +226,18 @@ def list_month_status(db: Session, month_start: date) -> list[dict]:
 	}
 	holiday_map = {
 		cast(date, h.holiday_date): True
-		for h in db.query(Holiday).filter(
+		for h in db.query(Holiday)
+		.filter(Holiday.tenant_id == tenant_id)
+		.filter(
 			Holiday.holiday_date >= month_start, Holiday.holiday_date <= month_end
-		).all()
+		)
+		.all()
 	}
 	day_start = datetime.combine(month_start, time.min)
 	day_end = datetime.combine(month_end, time.max)
 	vac_todo_rows = (
-		db.query(Todo.user_id, Todo.start_date, Todo.end_date)
+		todos_in_tenant(db, tenant_id)
+		.with_entities(Todo.user_id, Todo.start_date, Todo.end_date)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
 		.filter(or_(Todo.end_date.is_(None), Todo.end_date >= day_start))
@@ -270,16 +301,14 @@ def list_month_status(db: Session, month_start: date) -> list[dict]:
 	return out
 
 
-def get_user_bundle(db: Session, user_login_id: str, week_start: date) -> dict:
+def get_user_bundle(db: Session, tenant_id: int, user_login_id: str, week_start: date) -> dict:
 	week_start = hr_reports.monday_of(week_start)
 	week_end = week_start + timedelta(days=6)
 
-	user = db.query(User).filter(User.user_login_id == user_login_id).first()
-	if not user:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+	user = require_user_by_login_id(db, tenant_id, user_login_id)
 
 	dailies = (
-		db.query(DailyReport)
+		daily_reports_in_tenant(db, tenant_id)
 		.filter(
 			DailyReport.user_id == user_login_id,
 			DailyReport.report_date >= week_start,
@@ -289,13 +318,13 @@ def get_user_bundle(db: Session, user_login_id: str, week_start: date) -> dict:
 		.all()
 	)
 	weekly = (
-		db.query(WeeklyReport)
+		weekly_reports_in_tenant(db, tenant_id)
 		.filter(WeeklyReport.user_id == user_login_id, WeeklyReport.week_start_date == week_start)
 		.first()
 	)
 	month_start = hr_reports.first_of_month(week_start)
 	monthly = (
-		db.query(MonthlyReport)
+		monthly_reports_in_tenant(db, tenant_id)
 		.filter(
 			MonthlyReport.user_id == user_login_id,
 			MonthlyReport.month_start_date == month_start,

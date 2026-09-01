@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
@@ -10,10 +11,16 @@ from utils.seoul_time import now_seoul_naive
 
 class ResumeTemplate(Base):
 	__tablename__ = "resume_templates"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "saved_name", name="uq_resume_templates_tenant_saved"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	name: Mapped[str] = mapped_column(String(200), nullable=False)
-	saved_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+	saved_name: Mapped[str] = mapped_column(String(255), nullable=False)
 	file_path: Mapped[str] = mapped_column(String(500), nullable=False)
 	is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 	is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -24,9 +31,15 @@ class ResumeTemplate(Base):
 
 class Applicant(Base):
 	__tablename__ = "applicants"
+	__table_args__ = (
+		UniqueConstraint("tenant_id", "email_id", name="uq_applicants_tenant_email"),
+	)
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-	email_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
+	email_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 	password: Mapped[str] = mapped_column(String(255), nullable=False)
 	name: Mapped[str] = mapped_column(String(50), nullable=False)
 	phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -41,6 +54,9 @@ class JobPosting(Base):
 	__tablename__ = "job_postings"
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+	tenant_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+	)
 	title: Mapped[str] = mapped_column(String(100), nullable=False)
 	description: Mapped[str] = mapped_column(Text, nullable=False)
 	status: Mapped[str | None] = mapped_column(String(20), default="open")

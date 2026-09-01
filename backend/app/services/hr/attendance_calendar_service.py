@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from constants.vacation_categories import VACATION_TODO_CATEGORIES
 from models.holiday_models import Holiday
 from models.hr_models import Attendance, Todo
+from services.tenant_scope import attendance_in_tenant, todos_in_tenant
 
 
 _VACATION_LABELS: dict[str, str] = {
@@ -48,6 +49,7 @@ def vacation_summary(day_todos: list[Todo]) -> str | None:
 
 def build_month_context(
 	db: Session,
+	tenant_id: int,
 	user_ids: list[str],
 	start_d: date,
 	end_d: date,
@@ -60,7 +62,7 @@ def build_month_context(
 		}
 
 	records = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id.in_(user_ids))
 		.filter(Attendance.work_date >= start_d, Attendance.work_date <= end_d)
 		.order_by(Attendance.work_date.asc(), Attendance.clock_in_time.asc(), Attendance.id.asc())
@@ -75,7 +77,7 @@ def build_month_context(
 	day_start = datetime.combine(start_d, time.min)
 	day_end = datetime.combine(end_d, time.max)
 	todos = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id.in_(user_ids))
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
@@ -92,6 +94,7 @@ def build_month_context(
 
 	holiday_rows = (
 		db.query(Holiday.holiday_date, Holiday.holiday_name)
+		.filter(Holiday.tenant_id == tenant_id)
 		.filter(Holiday.holiday_date >= start_d, Holiday.holiday_date <= end_d)
 		.all()
 	)
@@ -118,9 +121,9 @@ def summarize_attendance_records(records: list[Attendance]) -> dict[str, Any]:
 	}
 
 
-def get_user_monthly_stamps(db: Session, user_id: str, year: int, month: int) -> dict[str, Any]:
+def get_user_monthly_stamps(db: Session, tenant_id: int, user_id: str, year: int, month: int) -> dict[str, Any]:
 	start_d, end_d = month_bounds(year, month)
-	ctx = build_month_context(db, [user_id], start_d, end_d)
+	ctx = build_month_context(db, tenant_id, [user_id], start_d, end_d)
 	records_by_day = ctx["records_by_user_day"].get(user_id, {})
 	todos_by_day = ctx["todos_by_user_day"].get(user_id, {})
 

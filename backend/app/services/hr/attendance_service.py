@@ -18,6 +18,13 @@ from models.holiday_models import Holiday
 from models.system_models import WorkLocation
 from services.hr.attendance_daily_summary_service import refresh_attendance_daily_summary
 from services.hr.attendance_time_math import app_break_tier_config, session_minutes_at_clock_out
+from services.tenant_scope import (
+	attendance_in_tenant,
+	get_user_by_login_id,
+	require_user_by_login_id,
+	todos_in_tenant,
+	work_locations_in_tenant,
+)
 
 
 def is_vacation_status(status_str: str | None) -> bool:
@@ -43,10 +50,10 @@ def sync_shift_status_from_clock_times(record: Attendance) -> None:
 		record.shift_status = SHIFT_STATUS_CLOSED
 
 
-def get_open_shift(db: Session, user_id: str) -> Attendance | None:
+def get_open_shift(db: Session, tenant_id: int, user_id: str) -> Attendance | None:
 	"""퇴근 미처리 근무(출근 있음·퇴근 없음). 사용자당 1건 가정, 최근 출근 순."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(
 			Attendance.user_id == user_id,
 			Attendance.clock_in_time.isnot(None),
@@ -57,19 +64,19 @@ def get_open_shift(db: Session, user_id: str) -> Attendance | None:
 	)
 
 
-def get_today_or_open_attendance(db: Session, user_id: str, today_date: date) -> Attendance | None:
+def get_today_or_open_attendance(db: Session, tenant_id: int, user_id: str, today_date: date) -> Attendance | None:
 	"""GET /today용: 미종료 야근이 있으면 그 행을, 없으면 당일 work_date 행을 반환."""
-	open_rec = get_open_shift(db, user_id)
+	open_rec = get_open_shift(db, tenant_id, user_id)
 	if open_rec is not None:
 		return open_rec
-	return get_today_attendance(db, user_id, today_date)
+	return get_today_attendance(db, tenant_id, user_id, today_date)
 
 
-def _vacation_todos_for_day(db: Session, user_id: str, target_date: date) -> list[Todo]:
+def _vacation_todos_for_day(db: Session, tenant_id: int, user_id: str, target_date: date) -> list[Todo]:
 	day_start = datetime.combine(target_date, time.min)
 	day_end = datetime.combine(target_date, time.max)
 	return (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= day_end)
@@ -78,25 +85,25 @@ def _vacation_todos_for_day(db: Session, user_id: str, target_date: date) -> lis
 	)
 
 
-def get_active_work_locations(db: Session) -> list[WorkLocation]:
+def get_active_work_locations(db: Session, tenant_id: int) -> list[WorkLocation]:
 	return (
-		db.query(WorkLocation)
+		work_locations_in_tenant(db, tenant_id)
 		.filter(WorkLocation.is_active.is_(True))
 		.order_by(WorkLocation.created_at.desc(), WorkLocation.id.desc())
 		.all()
 	)
 
 
-def _active_work_location_keys(db: Session) -> set[str]:
-	return {str(w.location_key).strip() for w in get_active_work_locations(db)}
+def _active_work_location_keys(db: Session, tenant_id: int) -> set[str]:
+	return {str(w.location_key).strip() for w in get_active_work_locations(db, tenant_id)}
 
 
-def resolve_work_location_token_to_key(db: Session, token: str) -> str:
+def resolve_work_location_token_to_key(db: Session, tenant_id: int, token: str) -> str:
 	"""활성 근무장소의 location_key 또는 location_value로 들어온 토큰을 location_key로 정규화."""
 	raw = (token or "").strip()
 	if not raw:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="근무장소를 입력해 주세요.")
-	for w in get_active_work_locations(db):
+	for w in get_active_work_locations(db, tenant_id):
 		k = str(w.location_key).strip()
 		v = str(w.location_value).strip()
 		if raw == k or raw == v:
@@ -107,8 +114,8 @@ def resolve_work_location_token_to_key(db: Session, token: str) -> str:
 	)
 
 
-def format_stored_work_location_for_display(db: Session, stored: str | None) -> str | None:
-	"""DB에 저장된 location_key(또는 레거시 value)를 화면 표시용 location_value로 바꿈. 없으면 원문 유지."""
+def format_stored_work_location_for_display(db: Session, tenant_id: int, stored: str | None) -> str | None:
+	"""DB에 저장된 location_key(또는 레거시 value)를 화면 표시용 location_value로 바꿈. 없으면 원문 유지 (테넌트 격리)."""
 	if stored is None:
 		return None
 	s = str(stored).strip()
@@ -116,6 +123,7 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 		return None
 	w = (
 		db.query(WorkLocation)
+		.filter(WorkLocation.tenant_id == tenant_id)
 		.filter(WorkLocation.location_key == s)
 		.order_by(WorkLocation.id.desc())
 		.first()
@@ -124,6 +132,7 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 		return str(w.location_value).strip()
 	w = (
 		db.query(WorkLocation)
+		.filter(WorkLocation.tenant_id == tenant_id)
 		.filter(WorkLocation.location_value == s)
 		.order_by(WorkLocation.id.desc())
 		.first()
@@ -134,51 +143,55 @@ def format_stored_work_location_for_display(db: Session, stored: str | None) -> 
 
 
 def backfill_legacy_work_location_values_to_keys(db: Session) -> None:
-	"""attendance·users에 남아 있는 활성 근무장소의 표시 문자열을 location_key로 치환."""
-	active = get_active_work_locations(db)
-	if not active:
-		return
-	value_to_key = {str(w.location_value).strip(): str(w.location_key).strip() for w in active}
-	keys = {str(w.location_key).strip() for w in active}
+	"""attendance·users에 남아 있는 활성 근무장소의 표시 문자열을 location_key로 치환 (테넌트 격리 처리)."""
+	from models.tenant_models import Tenant
+	tenants = db.query(Tenant).all()
 	changed = False
-	for a in db.query(Attendance).all():
-		for attr in ("clock_in_location", "clock_out_location"):
-			val = getattr(a, attr)
-			if val is None:
-				continue
-			s = str(val).strip()
+	for tenant in tenants:
+		tid = tenant.id
+		active = db.query(WorkLocation).filter(WorkLocation.tenant_id == tid, WorkLocation.is_active.is_(True)).all()
+		if not active:
+			continue
+		value_to_key = {str(w.location_value).strip(): str(w.location_key).strip() for w in active}
+		keys = {str(w.location_key).strip() for w in active}
+		for a in db.query(Attendance).filter(Attendance.tenant_id == tid).all():
+			for attr in ("clock_in_location", "clock_out_location"):
+				val = getattr(a, attr)
+				if val is None:
+					continue
+				s = str(val).strip()
+				if s in keys:
+					continue
+				nk = value_to_key.get(s)
+				if nk and nk != s:
+					setattr(a, attr, nk)
+					changed = True
+		for u in db.query(User).filter(User.tenant_id == tid, User.preferred_work_location.isnot(None)).all():
+			s = str(u.preferred_work_location).strip()
 			if s in keys:
 				continue
 			nk = value_to_key.get(s)
 			if nk and nk != s:
-				setattr(a, attr, nk)
+				u.preferred_work_location = nk
 				changed = True
-	for u in db.query(User).filter(User.preferred_work_location.isnot(None)).all():
-		s = str(u.preferred_work_location).strip()
-		if s in keys:
-			continue
-		nk = value_to_key.get(s)
-		if nk and nk != s:
-			u.preferred_work_location = nk
-			changed = True
 	if changed:
 		db.commit()
 
 
-def _apply_user_preferred_work_location(db: Session, user_login_id: str, location_key: str) -> None:
+def _apply_user_preferred_work_location(db: Session, tenant_id: int, user_login_id: str, location_key: str) -> None:
 	"""활성 근무장소의 location_key일 때만 users.preferred_work_location 갱신(동일 트랜잭션 내)."""
 	key = (location_key or "").strip()
-	if not key or key not in _active_work_location_keys(db):
+	if not key or key not in _active_work_location_keys(db, tenant_id):
 		return
-	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	user = get_user_by_login_id(db, tenant_id, user_login_id)
 	if user:
 		user.preferred_work_location = key
 
 
-def set_user_preferred_work_location(db: Session, user_login_id: str, location_name: str) -> str:
+def set_user_preferred_work_location(db: Session, tenant_id: int, user_login_id: str, location_name: str) -> str:
 	"""선호 근무장소를 location_key로 저장. 요청은 key 또는 활성 location_value."""
-	key = resolve_work_location_token_to_key(db, location_name)
-	user = db.query(User).filter(User.user_login_id == user_login_id).first()
+	key = resolve_work_location_token_to_key(db, tenant_id, location_name)
+	user = get_user_by_login_id(db, tenant_id, user_login_id)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 	user.preferred_work_location = key
@@ -186,16 +199,17 @@ def set_user_preferred_work_location(db: Session, user_login_id: str, location_n
 	return key
 
 
-def _vacation_categories_for_day(db: Session, user_id: str, target_date: date) -> set[str]:
+def _vacation_categories_for_day(db: Session, tenant_id: int, user_id: str, target_date: date) -> set[str]:
 	return {
 		t.category
-		for t in _vacation_todos_for_day(db, user_id, target_date)
+		for t in _vacation_todos_for_day(db, tenant_id, user_id, target_date)
 		if t.category
 	}
 
 
 def check_clock_in_allowed(
 	db: Session,
+	tenant_id: int,
 	user_id: str,
 	current_time: datetime,
 	*,
@@ -203,7 +217,7 @@ def check_clock_in_allowed(
 	confirm_official_leave: bool = False,
 ) -> None:
 	"""출근 가능 여부(update.md §2). 병가·경조·반차는 차단하지 않음. 종일 연차·공가는 확인 플래그 필요."""
-	user = db.query(User).filter(User.user_login_id == user_id).first()
+	user = get_user_by_login_id(db, tenant_id, user_id)
 	if not user or user.join_date is None:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
@@ -211,7 +225,7 @@ def check_clock_in_allowed(
 		)
 
 	today_date = current_time.date()
-	record = get_today_attendance(db, user_id, today_date)
+	record = get_today_attendance(db, tenant_id, user_id, today_date)
 
 	if record and is_vacation_status(record.status) and record.clock_in_time is None:
 		if not confirm_full_day_vacation:
@@ -223,7 +237,7 @@ def check_clock_in_allowed(
 				},
 			)
 
-	cats = _vacation_categories_for_day(db, user_id, today_date)
+	cats = _vacation_categories_for_day(db, tenant_id, user_id, today_date)
 	if VACATION_TODO_REQUIRES_FULL_DAY_CONFIRM & cats and not confirm_full_day_vacation:
 		raise HTTPException(
 			status_code=status.HTTP_409_CONFLICT,
@@ -242,10 +256,11 @@ def check_clock_in_allowed(
 		)
 
 
-def assert_user_can_clock_in(db: Session, user_id: str, current_time: datetime) -> None:
+def assert_user_can_clock_in(db: Session, tenant_id: int, user_id: str, current_time: datetime) -> None:
 	"""레거시 호환: 확인 플래그 없이 검사(항상 종일 연차·공가·휴가 상태 행이 있으면 거절)."""
 	check_clock_in_allowed(
 		db,
+		tenant_id,
 		user_id,
 		current_time,
 		confirm_full_day_vacation=False,
@@ -254,10 +269,10 @@ def assert_user_can_clock_in(db: Session, user_id: str, current_time: datetime) 
 
 
 def _append_official_leave_time_note(
-	db: Session, user_id: str, work_date: date, ts: datetime, *, clock_out: bool = False
+	db: Session, tenant_id: int, user_id: str, work_date: date, ts: datetime, *, clock_out: bool = False
 ) -> None:
 	"""공가 To-Do에 출근/퇴근 처리 시각 기록(update.md §2.4)."""
-	todos = _vacation_todos_for_day(db, user_id, work_date)
+	todos = _vacation_todos_for_day(db, tenant_id, user_id, work_date)
 	label = "퇴근처리" if clock_out else "출근처리"
 	tag = f"[{label} {ts.strftime('%Y-%m-%d %H:%M')}]"
 	for t in todos:
@@ -270,20 +285,20 @@ def _append_official_leave_time_note(
 
 
 # 1. 특정 날짜의 내 출퇴근 기록 조회
-def get_today_attendance(db: Session, user_id: str, today_date: date):
+def get_today_attendance(db: Session, tenant_id: int, user_id: str, today_date: date):
 	"""동일 work_date 중 가장 최근(id desc) 세션 1건. 다회 출근 시 마지막 행."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == user_id, Attendance.work_date == today_date)
 		.order_by(Attendance.id.desc())
 		.first()
 	)
 
 
-def list_attendance_sessions_for_work_date(db: Session, user_id: str, work_date: date) -> list[Attendance]:
+def list_attendance_sessions_for_work_date(db: Session, tenant_id: int, user_id: str, work_date: date) -> list[Attendance]:
 	"""당일 근태 행 전부(다회 출근·세션 순서)."""
 	return (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == user_id, Attendance.work_date == work_date)
 		.order_by(Attendance.id.asc())
 		.all()
@@ -324,16 +339,16 @@ def _vacation_categories_on_day(vacation_todos: list[Todo], work_date: date) -> 
 	return cats
 
 
-def get_clock_context(db: Session, user_id: str, work_date: date) -> dict[str, Any]:
+def get_clock_context(db: Session, tenant_id: int, user_id: str, work_date: date) -> dict[str, Any]:
 	"""출퇴근 UI용 당일 맥락(확인 팝업 분기). 주말·공휴일은 DB holidays 기준."""
-	cats = _vacation_categories_for_day(db, user_id, work_date)
-	rec = get_today_attendance(db, user_id, work_date)
+	cats = _vacation_categories_for_day(db, tenant_id, user_id, work_date)
+	rec = get_today_attendance(db, tenant_id, user_id, work_date)
 	h = (
 		db.query(Holiday)
-		.filter(Holiday.holiday_date == work_date)
+		.filter(Holiday.tenant_id == tenant_id, Holiday.holiday_date == work_date)
 		.first()
 	)
-	user_row = db.query(User).filter(User.user_login_id == user_id).first()
+	user_row = get_user_by_login_id(db, tenant_id, user_id)
 	pref_loc: str | None = None
 	if user_row is not None and getattr(user_row, "preferred_work_location", None):
 		pref_loc = str(user_row.preferred_work_location).strip() or None
@@ -342,6 +357,7 @@ def get_clock_context(db: Session, user_id: str, work_date: date) -> dict[str, A
 
 def get_clock_context_range(
 	db: Session,
+	tenant_id: int,
 	user_id: str,
 	date_from: date,
 	date_to: date,
@@ -363,7 +379,7 @@ def get_clock_context_range(
 	range_start = datetime.combine(date_from, time.min)
 	range_end = datetime.combine(date_to, time.max)
 	vacation_todos = (
-		db.query(Todo)
+		todos_in_tenant(db, tenant_id)
 		.filter(Todo.user_id == user_id)
 		.filter(Todo.category.in_(VACATION_TODO_CATEGORIES))
 		.filter(Todo.start_date <= range_end)
@@ -373,11 +389,15 @@ def get_clock_context_range(
 	holidays = {
 		h.holiday_date: h
 		for h in db.query(Holiday)
-		.filter(Holiday.holiday_date >= date_from, Holiday.holiday_date <= date_to)
+		.filter(
+			Holiday.tenant_id == tenant_id,
+			Holiday.holiday_date >= date_from,
+			Holiday.holiday_date <= date_to,
+		)
 		.all()
 	}
 	attendance_rows = (
-		db.query(Attendance)
+		attendance_in_tenant(db, tenant_id)
 		.filter(Attendance.user_id == user_id)
 		.filter(Attendance.work_date >= date_from, Attendance.work_date <= date_to)
 		.order_by(Attendance.work_date.asc(), Attendance.id.desc())
@@ -389,7 +409,7 @@ def get_clock_context_range(
 		if wd is not None and wd not in att_by_date:
 			att_by_date[wd] = row
 
-	user_row = db.query(User).filter(User.user_login_id == user_id).first()
+	user_row = get_user_by_login_id(db, tenant_id, user_id)
 	pref_loc: str | None = None
 	if user_row is not None and getattr(user_row, "preferred_work_location", None):
 		pref_loc = str(user_row.preferred_work_location).strip() or None
@@ -414,6 +434,7 @@ def get_clock_context_range(
 # 2. 출근 데이터 생성 (Create)
 def create_clock_in(
 	db: Session,
+	tenant_id: int,
 	user_id: str,
 	current_time: datetime,
 	record_status: str,
@@ -428,19 +449,20 @@ def create_clock_in(
 	"""새로운 출퇴근 레코드를 생성하고 출근 정보를 기록합니다."""
 	check_clock_in_allowed(
 		db,
+		tenant_id,
 		user_id,
 		current_time,
 		confirm_full_day_vacation=confirm_full_day_vacation,
 		confirm_official_leave=confirm_official_leave,
 	)
 
-	if get_open_shift(db, user_id) is not None:
+	if get_open_shift(db, tenant_id, user_id) is not None:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="미종료 근무가 있습니다. 먼저 퇴근 처리한 뒤 출근할 수 있습니다.",
 		)
 
-	day_rows = list_attendance_sessions_for_work_date(db, user_id, current_time.date())
+	day_rows = list_attendance_sessions_for_work_date(db, tenant_id, user_id, current_time.date())
 	incomplete_same_day = [r for r in day_rows if r.clock_in_time is not None and r.clock_out_time is None]
 	if incomplete_same_day:
 		raise HTTPException(
@@ -448,7 +470,7 @@ def create_clock_in(
 			detail="미종료 근무가 있습니다. 먼저 퇴근 처리한 뒤 출근할 수 있습니다.",
 		)
 
-	location_key = resolve_work_location_token_to_key(db, location)
+	location_key = resolve_work_location_token_to_key(db, tenant_id, location)
 
 	placeholder = next((r for r in day_rows if r.clock_in_time is None), None)
 	if placeholder is not None:
@@ -461,13 +483,16 @@ def create_clock_in(
 		rec.shift_status = SHIFT_STATUS_IN_PROGRESS
 		if note:
 			rec.note = note
-		_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
-		_apply_user_preferred_work_location(db, user_id, location_key)
+		_append_official_leave_time_note(
+			db, tenant_id, user_id, current_time.date(), current_time, clock_out=False
+		)
+		_apply_user_preferred_work_location(db, tenant_id, user_id, location_key)
 		db.commit()
 		db.refresh(rec)
 		return rec
 
 	new_record = Attendance(
+		tenant_id=tenant_id,
 		user_id=user_id,
 		work_date=current_time.date(),
 		clock_in_time=current_time,
@@ -479,8 +504,10 @@ def create_clock_in(
 		shift_status=SHIFT_STATUS_IN_PROGRESS,
 	)
 	db.add(new_record)
-	_append_official_leave_time_note(db, user_id, current_time.date(), current_time, clock_out=False)
-	_apply_user_preferred_work_location(db, user_id, location_key)
+	_append_official_leave_time_note(
+		db, tenant_id, user_id, current_time.date(), current_time, clock_out=False
+	)
+	_apply_user_preferred_work_location(db, tenant_id, user_id, location_key)
 	db.commit()
 	db.refresh(new_record)
 	return new_record
@@ -489,6 +516,7 @@ def create_clock_in(
 # 3. 퇴근 데이터 업데이트 (Update)
 def update_clock_out(
 	db: Session,
+	tenant_id: int,
 	record: Attendance,
 	current_time: datetime,
 	record_status: str,
@@ -498,7 +526,7 @@ def update_clock_out(
 	note: str | None = None,
 ):
 	"""기존 레코드에 퇴근 정보를 업데이트하고 총 근무 시간을 계산합니다."""
-	location_key = resolve_work_location_token_to_key(db, location)
+	location_key = resolve_work_location_token_to_key(db, tenant_id, location)
 	record.clock_out_time = current_time
 	record.clock_out_location = location_key
 	record.clock_out_lat = lat
@@ -521,10 +549,10 @@ def update_clock_out(
 	user_id = record.user_id or ""
 	work_day = record.work_date
 	if work_day is not None:
-		_append_official_leave_time_note(db, user_id, work_day, current_time, clock_out=True)
-		refresh_attendance_daily_summary(db, user_id, work_day)
+		_append_official_leave_time_note(db, tenant_id, user_id, work_day, current_time, clock_out=True)
+		refresh_attendance_daily_summary(db, tenant_id, user_id, work_day)
 
-	_apply_user_preferred_work_location(db, user_id, location_key)
+	_apply_user_preferred_work_location(db, tenant_id, user_id, location_key)
 
 	db.commit()
 	db.refresh(record)

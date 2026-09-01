@@ -33,6 +33,7 @@ def vacation_full_todo_today():
 	db = SessionLocal()
 	try:
 		t = Todo(
+			tenant_id=1,
 			user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
 			title="pytest 종일연차",
 			start_date=datetime.combine(today, time.min),
@@ -159,6 +160,7 @@ def test_hr_clock_out_uses_open_shift_not_calendar_today(integration_employee_cl
 		db = SessionLocal()
 		try:
 			a = Attendance(
+				tenant_id=1,
 				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
 				work_date=yesterday,
 				clock_in_time=datetime.combine(yesterday, time(20, 0)),
@@ -198,6 +200,7 @@ def test_hr_clock_in_rejected_when_open_shift_exists(integration_employee_client
 		db = SessionLocal()
 		try:
 			a = Attendance(
+				tenant_id=1,
 				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
 				work_date=yesterday,
 				clock_in_time=datetime.combine(yesterday, time(9, 0)),
@@ -233,6 +236,7 @@ def test_hr_clock_out_response_includes_night_work_minutes(integration_employee_
 		db = SessionLocal()
 		try:
 			a = Attendance(
+				tenant_id=1,
 				user_id=INTEGRATION_EMPLOYEE_LOGIN_ID,
 				work_date=today,
 				clock_in_time=datetime.combine(today, time(9, 0)),

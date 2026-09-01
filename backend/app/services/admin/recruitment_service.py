@@ -4,15 +4,48 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from models import recruitment_models, auth_models
 from schemas.admin import recruitment_schemas
-from services import auth_service
 from services.admin import resume_template_service as resume_template_svc
+from services.tenant_scope import (
+	applicants_in_tenant,
+	get_user_by_login_id,
+	job_postings_in_tenant,
+	users_in_tenant,
+)
 from core.security import get_password_hash, looks_like_password_hash
 from utils.seoul_time import today_seoul
 
-# --- 1. 채용 공고 관리 ---
-def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, author_id: str):
-	tid = resume_template_svc.resolve_template_id_for_new_job(db, data.resume_template_id)
+
+def _require_job(db: Session, tenant_id: int, job_id: int):
+	job = job_postings_in_tenant(db, tenant_id).filter(recruitment_models.JobPosting.id == job_id).first()
+	if not job:
+		raise HTTPException(status_code=404, detail="공고를 찾을 수 없습니다.")
+	return job
+
+
+def _require_application(db: Session, tenant_id: int, application_id: int):
+	app = (
+		db.query(recruitment_models.Application)
+		.join(
+			recruitment_models.JobPosting,
+			recruitment_models.Application.job_id == recruitment_models.JobPosting.id,
+		)
+		.filter(
+			recruitment_models.Application.id == application_id,
+			recruitment_models.JobPosting.tenant_id == tenant_id,
+		)
+		.first()
+	)
+	if not app:
+		raise HTTPException(status_code=404, detail="지원 내역을 찾을 수 없습니다.")
+	return app
+
+
+def create_job_posting(
+	db: Session, tenant_id: int, data: recruitment_schemas.JobPostingCreate, author_id: str
+):
+	tid = resume_template_svc.resolve_template_id_for_new_job(db, tenant_id, data.resume_template_id)
 	new_job = recruitment_models.JobPosting(
+		tenant_id=tenant_id,
 		title=data.title,
 		description=data.description,
 		deadline=data.deadline,
@@ -25,68 +58,75 @@ def create_job_posting(db: Session, data: recruitment_schemas.JobPostingCreate, 
 	db.refresh(new_job)
 	return new_job
 
-def get_all_job_postings(db: Session, skip: int = 0, limit: int = 20):
-	q = db.query(recruitment_models.JobPosting).order_by(recruitment_models.JobPosting.created_at.desc())
+
+def get_all_job_postings(db: Session, tenant_id: int, skip: int = 0, limit: int = 20):
+	q = job_postings_in_tenant(db, tenant_id).order_by(recruitment_models.JobPosting.created_at.desc())
 	total = q.count()
 	items = q.offset(skip).limit(limit).all()
 	return {"items": items, "total": total}
 
-def update_job_posting(db: Session, job_id: int, data: recruitment_schemas.JobPostingUpdate):
-	job = db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.id == job_id).first()
-	if not job:
-		raise HTTPException(status_code=404, detail="공고를 찾을 수 없습니다.")
+
+def update_job_posting(
+	db: Session, tenant_id: int, job_id: int, data: recruitment_schemas.JobPostingUpdate
+):
+	job = _require_job(db, tenant_id, job_id)
 	patch = data.model_dump(exclude_unset=True)
 	if "resume_template_id" in patch:
 		if patch["resume_template_id"] is None:
 			raise HTTPException(status_code=400, detail="이력서 템플릿을 비울 수 없습니다. 템플릿을 선택해 주세요.")
-		resume_template_svc.assert_template_active_for_job(db, int(patch["resume_template_id"]))
+		resume_template_svc.assert_template_active_for_job(
+			db, tenant_id, int(patch["resume_template_id"])
+		)
 	for key, value in patch.items():
 		setattr(job, key, value)
 	db.commit()
 	db.refresh(job)
 	return job
 
-def delete_job_posting(db: Session, job_id: int):
-	job = db.query(recruitment_models.JobPosting).filter(recruitment_models.JobPosting.id == job_id).first()
-	if not job:
-		raise HTTPException(status_code=404, detail="공고를 찾을 수 없습니다.")
+
+def delete_job_posting(db: Session, tenant_id: int, job_id: int):
+	job = _require_job(db, tenant_id, job_id)
 	db.delete(job)
 	db.commit()
 	return {"message": "삭제 완료"}
 
-# --- 2. 지원자 현황 및 상태 변경 (칸반 로직) ---
-def get_applications_by_job(db: Session, job_id: int):
-	return db.query(recruitment_models.Application)\
-			 .filter(recruitment_models.Application.job_id == job_id)\
-			 .all()
 
-def update_application_status(db: Session, application_id: int, status_str: str):
-	application = db.query(recruitment_models.Application).filter(recruitment_models.Application.id == application_id).first()
-	if not application:
-		raise HTTPException(status_code=404, detail="지원 내역을 찾을 수 없습니다.")
+def get_applications_by_job(db: Session, tenant_id: int, job_id: int):
+	_require_job(db, tenant_id, job_id)
+	return (
+		db.query(recruitment_models.Application)
+		.filter(recruitment_models.Application.job_id == job_id)
+		.all()
+	)
 
+
+def update_application_status(
+	db: Session, tenant_id: int, application_id: int, status_str: str
+):
+	application = _require_application(db, tenant_id, application_id)
 	app_row: Any = application
 	app_row.status = status_str
 
-	# 🔥 최종 합격(final_passed) 시 임직원으로 자동 등록
 	if status_str == "final_passed":
 		applicant = app_row.applicant
-		# 이미 등록된 유저인지 체크
-		existing_user = db.query(auth_models.User).filter(auth_models.User.user_login_id == applicant.email_id).first()
+		existing_user = get_user_by_login_id(db, tenant_id, applicant.email_id)
 		if not existing_user:
-			# 지원자 레거시 데이터(평문 비밀번호) 대비: 직원 계정에는 항상 해시 저장
 			applicant_pw = (applicant.password or "").strip()
 			if not applicant_pw:
-				raise HTTPException(status_code=400, detail="지원자 비밀번호가 비어 있어 직원 계정을 생성할 수 없습니다.")
+				raise HTTPException(
+					status_code=400,
+					detail="지원자 비밀번호가 비어 있어 직원 계정을 생성할 수 없습니다.",
+				)
 			if not looks_like_password_hash(applicant_pw):
 				applicant_pw = get_password_hash(applicant_pw)
 			new_employee = auth_models.User(
+				tenant_id=tenant_id,
 				user_login_id=applicant.email_id,
-				user_password=applicant_pw, # 지원 시 사용한 비밀번호(해시) 계승
+				user_password=applicant_pw,
 				user_name=applicant.name,
 				user_nickname=f"{applicant.name} 사원",
 				role="user",
-				join_date=today_seoul()
+				join_date=today_seoul(),
 			)
 			db.add(new_employee)
 
@@ -95,25 +135,16 @@ def update_application_status(db: Session, application_id: int, status_str: str)
 	return app_row
 
 
-def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict:
-	"""
-	지원자(applicants) 비밀번호 저장 형태 점검.
-	- 해시로 보이지 않는 값은 레거시 평문일 가능성이 높음.
-	- 샘플에는 비밀번호 본문을 포함하지 않음.
-	"""
-	total = db.query(recruitment_models.Applicant.id).count()
+def audit_applicant_password_storage(
+	db: Session, tenant_id: int, sample_size: int = 10
+) -> dict:
+	total = applicants_in_tenant(db, tenant_id).count()
 	plaintext_like_count = 0
 	sample = []
 	need_sample = max(0, int(sample_size))
 
-	# 대용량 고려: 필요한 컬럼만 스트리밍(yield_per)으로 순회
 	q = (
-		db.query(
-			recruitment_models.Applicant.id,
-			recruitment_models.Applicant.email_id,
-			recruitment_models.Applicant.created_at,
-			recruitment_models.Applicant.password,
-		)
+		applicants_in_tenant(db, tenant_id)
 		.order_by(recruitment_models.Applicant.id.asc())
 		.yield_per(1000)
 	)
@@ -141,20 +172,16 @@ def audit_applicant_password_storage(db: Session, sample_size: int = 10) -> dict
 
 def migrate_applicant_passwords_to_hash(
 	db: Session,
+	tenant_id: int,
 	*,
 	dry_run: bool = False,
 	max_rows: int | None = None,
 	batch_size: int = 1000,
 ) -> dict:
-	"""
-	레거시 지원자 비밀번호(평문 추정)를 passlib 해시로 일괄 변환합니다.
-	- 이미 해시로 보이는 값은 건드리지 않음(재해싱 방지).
-	- 비어 있는 비밀번호는 스킵.
-	"""
 	if batch_size < 1:
 		batch_size = 1000
 
-	total = db.query(recruitment_models.Applicant.id).count()
+	total = applicants_in_tenant(db, tenant_id).count()
 	migrated = 0
 	skipped_hashed = 0
 	skipped_empty = 0
@@ -162,7 +189,7 @@ def migrate_applicant_passwords_to_hash(
 	pending_commit = 0
 
 	q = (
-		db.query(recruitment_models.Applicant)
+		applicants_in_tenant(db, tenant_id)
 		.order_by(recruitment_models.Applicant.id.asc())
 		.yield_per(batch_size)
 	)
@@ -200,14 +227,21 @@ def migrate_applicant_passwords_to_hash(
 		"dry_run": dry_run,
 	}
 
-# --- 3. 면접 평가 기록 ---
-def create_interview(db: Session, application_id: int, data: recruitment_schemas.InterviewCreate, interviewer_id: str):
+
+def create_interview(
+	db: Session,
+	tenant_id: int,
+	application_id: int,
+	data: recruitment_schemas.InterviewCreate,
+	interviewer_id: str,
+):
+	_require_application(db, tenant_id, application_id)
 	new_interview = recruitment_models.Interview(
 		application_id=application_id,
 		interviewer_id=interviewer_id,
 		interview_date=data.interview_date,
 		score=data.score,
-		feedback=data.feedback
+		feedback=data.feedback,
 	)
 	db.add(new_interview)
 	db.commit()

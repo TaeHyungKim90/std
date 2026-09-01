@@ -1,6 +1,6 @@
 import { recruitmentApi } from 'api/recruitmentApi';
-import { PATHS } from 'constants/paths';
 import { useLoading } from 'context/LoadingContext';
+import { useAppPaths } from 'context/TenantContext';
 import React, { useEffect,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
@@ -16,6 +16,7 @@ const STATUS_MAP = {
 };
 
 const MyApplicationsPage = () => {
+	const paths = useAppPaths();
 	const { showLoading, hideLoading } = useLoading();
 	const navigate = useNavigate();
 	const [applications, setApplications] = useState([]);
@@ -33,7 +34,7 @@ const MyApplicationsPage = () => {
 			}
 			if (isMounted) {
 				Notify.toastWarn("로그인이 필요한 서비스입니다.");
-				navigate(PATHS.CAREERS_LOGIN, { replace: true });
+				navigate(paths.CAREERS_LOGIN, { replace: true });
 			}
 			return false;
 		};
@@ -58,7 +59,7 @@ const MyApplicationsPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, [navigate, showLoading, hideLoading]);
+	}, [navigate, showLoading, hideLoading, paths.CAREERS_LOGIN]);
 
 	const handleCancelApplication = async (applicationId) => {
 		if (!window.confirm("정말 지원을 취소하시겠습니까?\n취소된 내역은 복구할 수 없습니다.")) return;
@@ -89,7 +90,7 @@ const MyApplicationsPage = () => {
 						<div className="my-applications__empty-icon">📝</div>
 						<h3 className="my-applications__empty-title">아직 지원한 내역이 없습니다.</h3>
 						<p className="my-applications__empty-desc">지금 바로 가치플레이의 새로운 포지션에 도전해 보세요!</p>
-						<button type="button" onClick={() => navigate(PATHS.CAREERS)} className="my-applications__cta">
+						<button type="button" onClick={() => navigate(paths.CAREERS)} className="my-applications__cta">
 							채용 공고 보러가기
 						</button>
 					</div>

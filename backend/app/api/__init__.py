@@ -6,8 +6,12 @@ from .admin import router as admin
 from .hr import router as hr
 from .public import router as public
 from .messages import router as messages
+from .platform import router as platform
+from .tenants import router as tenants
 
 api_router = APIRouter()
+api_router.include_router(tenants)
+api_router.include_router(platform)
 api_router.include_router(auth, prefix="/auth", tags=["Auth"])
 api_router.include_router(admin, prefix="/admin", tags=["Admin"])
 api_router.include_router(hr, prefix="/hr", tags=["HR"])
