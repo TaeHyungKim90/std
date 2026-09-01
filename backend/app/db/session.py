@@ -170,7 +170,6 @@ def _ensure_hr_employee_tenant_columns(default_tid: int) -> None:
 			continue
 		cols = {c["name"] for c in insp.get_columns(table)}
 		if "tenant_id" not in cols:
-			logger.info("HR %s tenant_id column add", table)
 			with engine.begin() as conn:
 				conn.execute(
 					text(f"ALTER TABLE {table} ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT {default_tid}")
