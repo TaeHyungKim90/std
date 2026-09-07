@@ -33,13 +33,24 @@ from constants.bootstrap_admin import is_bootstrap_system_admin
 from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
+from utils.user_identity import compose_birth_from_year_month_day, normalize_birth_date
+
 router = APIRouter()
 
 
 def _user_response(user: User) -> auth_schemas.UserResponse:
 	base = auth_schemas.UserResponse.model_validate(user)
-	return base.model_copy(update={"join_date_editable": not is_bootstrap_system_admin(user)})
-
+	login_id = str(user.user_login_id or "")
+	kakao_linked = bool(user.provider_kakao_id) or login_id.startswith("kakao_")
+	naver_linked = bool(user.provider_naver_id) or login_id.startswith("naver_")
+	return base.model_copy(
+		update={
+			"join_date_editable": not is_bootstrap_system_admin(user),
+			"kakao_linked": kakao_linked,
+			"naver_linked": naver_linked,
+			"birth_date": normalize_birth_date(user.birth_date) or user.birth_date,
+		}
+	)
 
 # ==========================================
 # ⚙️ 환경 설정 및 공통 변수
@@ -82,16 +93,26 @@ def generate_user_token(user, *, tenant_slug: str | None = None):
 
 
 def _normalize_social_mode(mode: str | None) -> str:
-	return "signup" if mode == "signup" else "login"
+	m = (mode or "login").strip().lower()
+	if m in ("signup", "login", "link"):
+		return m
+	return "login"
 
 
-def _create_oauth_state(mode: str | None, tenant_slug: str) -> str:
+def _create_oauth_state(
+	mode: str | None,
+	tenant_slug: str,
+	*,
+	link_user_id: int | None = None,
+) -> str:
 	payload = {
 		"nonce": str(uuid.uuid4()),
 		"mode": _normalize_social_mode(mode),
 		"tenant": tenant_slug,
 		"iat": int(time.time()),
 	}
+	if link_user_id is not None:
+		payload["link_user_id"] = int(link_user_id)
 	raw_payload = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
 	encoded_payload = base64.urlsafe_b64encode(raw_payload).decode("ascii").rstrip("=")
 	signature = hmac.new(
@@ -103,7 +124,7 @@ def _create_oauth_state(mode: str | None, tenant_slug: str) -> str:
 	return f"{encoded_payload}.{encoded_signature}"
 
 
-def _read_oauth_state(state: str) -> tuple[str, str]:
+def _read_oauth_state(state: str) -> tuple[str, str, int | None]:
 	try:
 		encoded_payload, encoded_signature = state.split(".", 1)
 		expected_signature = hmac.new(
@@ -129,7 +150,12 @@ def _read_oauth_state(state: str) -> tuple[str, str]:
 	tenant_slug = normalize_tenant_slug(payload.get("tenant"))
 	if not tenant_slug:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OAuth state에 테넌트 정보가 없습니다.")
-	return _normalize_social_mode(payload.get("mode")), tenant_slug
+	link_user_id = payload.get("link_user_id")
+	try:
+		link_user_id = int(link_user_id) if link_user_id is not None else None
+	except (TypeError, ValueError):
+		link_user_id = None
+	return _normalize_social_mode(payload.get("mode")), tenant_slug, link_user_id
 
 
 def _oauth_callback_url(tenant_slug: str, **params: str) -> str:
@@ -162,9 +188,49 @@ def _process_social_callback(
 	name: str,
 	nickname: str,
 	phone: str | None,
+	birth_date: str | None,
 	social_mode: str,
 	tenant: Tenant,
+	link_user_id: int | None = None,
 ):
+	# 내 정보에서 수동 연동(mode=link)
+	if social_mode == "link":
+		if link_user_id is None:
+			return _create_social_notice_response(
+				social_status="link_failed",
+				provider=provider,
+				tenant_slug=tenant_slug_str(tenant),
+			)
+		user = (
+			db.query(User)
+			.filter(User.id == link_user_id, User.tenant_id == tenant_pk(tenant))
+			.first()
+		)
+		if not user:
+			return _create_social_notice_response(
+				social_status="link_failed",
+				provider=provider,
+				tenant_slug=tenant_slug_str(tenant),
+			)
+		try:
+			service.link_social_provider_to_user(
+				db, user, provider=provider, provider_id=provider_id
+			)
+		except HTTPException as exc:
+			if exc.status_code == status.HTTP_409_CONFLICT:
+				return _create_social_notice_response(
+					social_status="link_conflict",
+					provider=provider,
+					tenant_slug=tenant_slug_str(tenant),
+				)
+			raise
+		return _create_social_login_response(
+			user,
+			social_status="linked",
+			provider=provider,
+			tenant_slug=tenant_slug_str(tenant),
+		)
+
 	try:
 		user, created = service.process_social_login(
 			db,
@@ -173,6 +239,7 @@ def _process_social_callback(
 			name,
 			nickname,
 			phone,
+			birth_date,
 			tenant_id=tenant_pk(tenant),
 			allow_create=social_mode == "signup",
 		)
@@ -181,7 +248,21 @@ def _process_social_callback(
 			return _create_social_notice_response(
 				social_status="not_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
 			)
+		if exc.status_code == status.HTTP_409_CONFLICT:
+			return _create_social_notice_response(
+				social_status="link_conflict", provider=provider, tenant_slug=tenant_slug_str(tenant)
+			)
+		if exc.status_code == status.HTTP_403_FORBIDDEN:
+			return _create_social_notice_response(
+				social_status="pending_approval", provider=provider, tenant_slug=tenant_slug_str(tenant)
+			)
 		raise
+
+	# 신규 소셜 가입은 승인 대기 — 쿠키 로그인 없이 안내
+	if created:
+		return _create_social_notice_response(
+			social_status="pending_approval", provider=provider, tenant_slug=tenant_slug_str(tenant)
+		)
 
 	if social_mode == "signup" and not created:
 		return _create_social_notice_response(
@@ -189,7 +270,7 @@ def _process_social_callback(
 		)
 	return _create_social_login_response(
 		user,
-		social_status="signed_up" if created else "logged_in",
+		social_status="logged_in",
 		provider=provider,
 		tenant_slug=tenant_slug_str(tenant),
 	)
@@ -294,6 +375,7 @@ async def check_auth(
 
 	join_date = None
 	resignation_date = None
+	birth_date = None
 	user_profile_image_url = None
 	avatar_zoom = 1.0
 	avatar_offset_x = 0.0
@@ -313,6 +395,7 @@ async def check_auth(
 			user_login_id = user.user_login_id
 			join_date = user.join_date
 			resignation_date = user.resignation_date
+			birth_date = normalize_birth_date(user.birth_date) or user.birth_date
 			user_profile_image_url = user.user_profile_image_url
 			avatar_zoom = float(user.avatar_zoom)
 			avatar_offset_x = float(user.avatar_offset_x)
@@ -336,6 +419,7 @@ async def check_auth(
 		"join_date": join_date,
 		"resignation_date": resignation_date,
 		"mustChangePassword": must_change_password,
+		"birth_date": birth_date,
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)
@@ -356,7 +440,7 @@ async def signup(
 ):
 	"""회원 가입"""
 	service.create_new_user(db, data, tenant_pk(tenant))
-	return {"success": True, "message": "회원가입이 완료되었습니다."}
+	return {"success": True, "message": "회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요."}
 
 
 @router.get("/me", response_model=auth_schemas.UserResponse)
@@ -455,6 +539,9 @@ def patch_my_profile(
 	if "user_phone_number" in data:
 		user.user_phone_number = data["user_phone_number"]
 
+	if "birth_date" in data:
+		user.birth_date = data["birth_date"]
+
 	avatar_zoom = data.pop("avatar_zoom", None)
 	avatar_offset_x = data.pop("avatar_offset_x", None)
 	avatar_offset_y = data.pop("avatar_offset_y", None)
@@ -550,7 +637,7 @@ async def kakao_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""카카오 인증 완료 후 돌아오는 지점"""
-	social_mode, tenant_slug = _read_oauth_state(state)
+	social_mode, tenant_slug, link_user_id = _read_oauth_state(state)
 	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
@@ -563,20 +650,27 @@ async def kakao_callback_handler(
 		user_info = user_res.json()
 
 	kakao_id = str(user_info.get("id"))
-	properties = user_info.get("properties", {})
-	kakao_account = user_info.get("kakao_account", {})
-	nickname = properties.get("nickname", "카카오유저")
+	properties = user_info.get("properties", {}) or {}
+	kakao_account = user_info.get("kakao_account", {}) or {}
+	nickname = properties.get("nickname") or kakao_account.get("name") or "카카오유저"
+	name = kakao_account.get("name") or nickname
 	phone = kakao_account.get("phone_number")
+	birth_date = compose_birth_from_year_month_day(
+		kakao_account.get("birthyear"),
+		kakao_account.get("birthday"),
+	)
 	
 	response = _process_social_callback(
 		db,
 		provider="kakao",
 		provider_id=kakao_id,
-		name=nickname,
+		name=name,
 		nickname=nickname,
 		phone=phone,
+		birth_date=birth_date,
 		social_mode=social_mode,
 		tenant=tenant,
+		link_user_id=link_user_id,
 	)
 	response.delete_cookie(key="kakao_oauth_state", path="/")
 	response.delete_cookie(key="kakao_oauth_mode", path="/")
@@ -604,7 +698,7 @@ async def naver_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""네이버 인증 완료 후 돌아오는 지점"""
-	social_mode, tenant_slug = _read_oauth_state(state)
+	social_mode, tenant_slug, link_user_id = _read_oauth_state(state)
 	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
@@ -616,11 +710,15 @@ async def naver_callback_handler(
 		user_res = await client.get("https://openapi.naver.com/v1/nid/me", headers={"Authorization": f"Bearer {access_token}"})
 		user_info = user_res.json()
 
-	naver_data = user_info.get("response", {})
+	naver_data = user_info.get("response", {}) or {}
 	naver_id = naver_data.get("id")
 	nickname = naver_data.get("nickname") or naver_data.get("name") or "네이버유저"
-	name = naver_data.get("name")
+	name = naver_data.get("name") or nickname
 	phone = naver_data.get("mobile")
+	birth_date = compose_birth_from_year_month_day(
+		naver_data.get("birthyear"),
+		naver_data.get("birthday"),
+	)
 
 	response = _process_social_callback(
 		db,
@@ -629,8 +727,10 @@ async def naver_callback_handler(
 		name=name,
 		nickname=nickname,
 		phone=phone,
+		birth_date=birth_date,
 		social_mode=social_mode,
 		tenant=tenant,
+		link_user_id=link_user_id,
 	)
 	response.delete_cookie(key="naver_oauth_state", path="/")
 	response.delete_cookie(key="naver_oauth_mode", path="/")

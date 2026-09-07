@@ -52,6 +52,24 @@ const AdminUser = () => {
 		}
 	};
 
+	const handleApproval = (userId, approval_status, label) => {
+		Notify.toastPromise(adminApi.updateUserApproval(userId, approval_status), {
+			loading: `${label} 처리 중입니다...`,
+			success: `${label} 처리되었습니다.`,
+			error: `${label} 처리에 실패했습니다.`,
+		}).then(() => {
+			loadUsers();
+		}).catch((err) => {
+			console.error(`${label} 실패`, err);
+		});
+	};
+
+	const approvalLabel = (status) => {
+		if (status === 'pending') return '승인대기';
+		if (status === 'rejected') return '거절';
+		return '승인';
+	};
+
 	// ✅ 검색 필터링 로직 (이름 또는 아이디로 검색)
 	const filteredUsers = users.filter(u => 
 		u.user_name.includes(searchTerm) || u.user_login_id.includes(searchTerm)
@@ -152,6 +170,9 @@ const AdminUser = () => {
 									<td>{u.user_phone_number || '-'}</td>
 									<td>
 										<span className={`role-badge ${u.role}`}>{u.role}</span>
+										<span className={`approval-badge approval-badge--${u.approval_status || 'approved'}`}>
+											{approvalLabel(u.approval_status || 'approved')}
+										</span>
 									</td>
 									<td>{u.created_at?.split('T')[0]}</td>
 									<td>
@@ -163,6 +184,33 @@ const AdminUser = () => {
 										<span className="admin-user__vac-total"> / {u.vacation?.total_days || 0}일</span>
 									</td>
 									<td>
+										{(u.approval_status || 'approved') === 'pending' && (
+											<button
+												type="button"
+												className="btn-edit"
+												onClick={() => handleApproval(u.id, 'approved', '승인')}
+											>
+												승인
+											</button>
+										)}
+										{(u.approval_status || 'approved') !== 'rejected' && (u.approval_status || 'approved') !== 'approved' && (
+											<button
+												type="button"
+												className="btn-delete"
+												onClick={() => handleApproval(u.id, 'rejected', '거절')}
+											>
+												거절
+											</button>
+										)}
+										{(u.approval_status || 'approved') === 'rejected' && (
+											<button
+												type="button"
+												className="btn-edit"
+												onClick={() => handleApproval(u.id, 'approved', '승인')}
+											>
+												승인
+											</button>
+										)}
 										<button className="btn-edit" onClick={() => openModal(u)}>수정</button>
 										<button className="btn-delete" onClick={() => handleDelete(u.id)}>삭제</button>
 									</td>

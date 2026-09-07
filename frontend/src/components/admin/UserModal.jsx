@@ -23,6 +23,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		user_name: '',
 		user_nickname: '',
 		user_phone_number: '',
+		birth_date: '',
 		user_profile_image_url: '',
 		department_id: '',
 		position_id: '',
@@ -74,6 +75,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				...editingUser,
 				user_password: '',
 				user_phone_number: editingUser.user_phone_number || '',
+				birth_date: toDateValue(editingUser.birth_date),
 				user_profile_image_url: editingUser.user_profile_image_url || '',
 				department_id: editingUser.department_id ?? '',
 				position_id: editingUser.position_id ?? '',
@@ -91,6 +93,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_password: '',
 				user_name: '',
 				user_nickname: '',
+				user_phone_number: '',
+				birth_date: '',
 				role: 'user', joinDate: '', resignation_date: '', department_id: '', position_id: ''
 			});
 		}
@@ -138,7 +142,8 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_password: formData.user_password,
 				user_name: formData.user_name,
 				user_nickname: formData.user_nickname || null,
-				user_phone_number: formData.user_phone_number || null,
+				user_phone_number: (formData.user_phone_number || '').replace(/\D/g, '') || null,
+				birth_date: formData.birth_date || null,
 				user_profile_image_url: nextProfileImageUrl,
 				department_id: formData.department_id === '' ? null : Number(formData.department_id),
 				position_id: formData.position_id === '' ? null : Number(formData.position_id),
@@ -240,7 +245,19 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 								type="text"
 								name="user_phone_number"
 								value={formData.user_phone_number || ''}
-								onChange={(e) => setFormData({ ...formData, user_phone_number: e.target.value })}
+								onChange={(e) => setFormData({ ...formData, user_phone_number: e.target.value.replace(/\D/g, '').slice(0, 11) })}
+								required={!editingUser}
+								placeholder="숫자만 10~11자리"
+							/>
+						</div>
+						<div className="form-group">
+							<label>생년월일</label>
+							<input
+								type="date"
+								name="birth_date"
+								value={formData.birth_date || ''}
+								onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+								required={!editingUser}
 							/>
 						</div>
 
@@ -328,6 +345,21 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 								<option value="admin">관리자</option>
 							</select>
 						</div>
+						{editingUser ? (
+							<div className="form-group">
+								<label>가입 승인</label>
+								<div className={`approval-badge approval-badge--${editingUser.approval_status || 'approved'}`}>
+									{(editingUser.approval_status || 'approved') === 'pending'
+										? '승인대기'
+										: (editingUser.approval_status || 'approved') === 'rejected'
+											? '거절'
+											: '승인'}
+								</div>
+								<div className="my-profile-hint">목록의 승인/거절 버튼으로 변경할 수 있습니다.</div>
+							</div>
+						) : (
+							<p className="my-profile-hint">관리자가 등록하는 계정은 즉시 승인됩니다.</p>
+						)}
 					</div>
 
 					<div className="modal-actions user-modal-actions">

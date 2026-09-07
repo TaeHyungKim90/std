@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 	const [resignationDate, setResignationDate] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [mustChangePassword, setMustChangePassword] = useState(false);
+	const [birthDate, setBirthDate] = useState(null);
 	const isLoggedInRef = useRef(false);
 
 	// 🌟 2. 옛날 방식 대신 새로운 리모컨 함수 가져오기!
@@ -75,6 +76,12 @@ export const AuthProvider = ({ children }) => {
 		setJoinDate(null);
 		setResignationDate(null);
 		setMustChangePassword(false);
+		setBirthDate(null);
+		try {
+			sessionStorage.removeItem('vp_birth_date_prompted');
+		} catch {
+			/* ignore */
+		}
 	}, []);
 
 	const clearMustChangePassword = useCallback(() => {
@@ -110,6 +117,7 @@ export const AuthProvider = ({ children }) => {
 			setJoinDate(res.data.join_date || null);
 			setResignationDate(res.data.resignation_date || null);
 			setMustChangePassword(Boolean(res.data.mustChangePassword));
+			setBirthDate(res.data.birth_date || null);
 			return true;
 		}
 		resetAuthState();
@@ -223,6 +231,7 @@ export const AuthProvider = ({ children }) => {
 			refreshAuth,
 			mustChangePassword,
 			clearMustChangePassword,
+			birthDate,
 		}}>
 			{children}
 		</AuthContext.Provider>

@@ -133,6 +133,10 @@ export const adminApi = {
   updateUser: (userId, payload) => 
 	client.patch(`${PATH}/users/${userId}`, payload), //
 
+  // 가입 승인/거절
+  updateUserApproval: (userId, approval_status) =>
+	client.patch(`${PATH}/users/${userId}/approval`, { approval_status }),
+
   // 사용자 삭제
   deleteUser: (userId) => 
 	client.delete(`${PATH}/users/${userId}`), //

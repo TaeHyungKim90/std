@@ -67,6 +67,8 @@ def _signup_or_exists(client: TestClient, payload: dict) -> None:
 		detail = r.text
 	if r.status_code == status.HTTP_400_BAD_REQUEST and "이미 사용" in detail:
 		return
+	if r.status_code == status.HTTP_409_CONFLICT and "이미 가입" in detail:
+		return
 	pytest.fail(f"signup failed: {r.status_code} {r.text}")
 
 
@@ -84,6 +86,20 @@ def _ensure_user_role(login_id: str, role: str) -> None:
 		db.close()
 
 
+def _ensure_user_approved(login_id: str) -> None:
+	from models.auth_models import User
+	from db.session import SessionLocal
+
+	db = SessionLocal()
+	try:
+		user = db.query(User).filter(User.user_login_id == login_id).first()
+		if user and (user.approval_status or "") != "approved":
+			user.approval_status = "approved"
+			db.commit()
+	finally:
+		db.close()
+
+
 @pytest.fixture(scope="session")
 def ensure_integration_users():
 	import main as app_main
@@ -91,13 +107,32 @@ def ensure_integration_users():
 	with TestClient(app_main.app, headers=TENANT_HEADERS) as client:
 		base = {
 			"user_password": INTEGRATION_LOGIN_PASSWORD,
-			"user_name": "통합테스트",
 			"user_nickname": "통합",
 			"joined_at": "2020-01-01",
 		}
-		_signup_or_exists(client, {**base, "user_login_id": INTEGRATION_ADMIN_LOGIN_ID})
+		_signup_or_exists(
+			client,
+			{
+				**base,
+				"user_login_id": INTEGRATION_ADMIN_LOGIN_ID,
+				"user_name": "통합관리자",
+				"user_phone_number": "01011112222",
+				"birth_date": "1988-01-01",
+			},
+		)
 		_ensure_user_role(INTEGRATION_ADMIN_LOGIN_ID, "admin")
-		_signup_or_exists(client, {**base, "user_login_id": INTEGRATION_EMPLOYEE_LOGIN_ID})
+		_ensure_user_approved(INTEGRATION_ADMIN_LOGIN_ID)
+		_signup_or_exists(
+			client,
+			{
+				**base,
+				"user_login_id": INTEGRATION_EMPLOYEE_LOGIN_ID,
+				"user_name": "통합직원",
+				"user_phone_number": "01033334444",
+				"birth_date": "1992-02-02",
+			},
+		)
+		_ensure_user_approved(INTEGRATION_EMPLOYEE_LOGIN_ID)
 	yield
 
 

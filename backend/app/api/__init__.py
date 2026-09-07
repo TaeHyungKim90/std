@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from .common import router as common
 from .auth import router as auth
+from .users import router as users
 from .admin import router as admin
 from .hr import router as hr
 from .public import router as public
@@ -13,6 +14,7 @@ api_router = APIRouter()
 api_router.include_router(tenants)
 api_router.include_router(platform)
 api_router.include_router(auth, prefix="/auth", tags=["Auth"])
+api_router.include_router(users, prefix="/users", tags=["Users"])
 api_router.include_router(admin, prefix="/admin", tags=["Admin"])
 api_router.include_router(hr, prefix="/hr", tags=["HR"])
 api_router.include_router(common, prefix="/common", tags=["Common"])

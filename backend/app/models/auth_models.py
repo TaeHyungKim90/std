@@ -40,7 +40,14 @@ class User(Base):
 	role: Mapped[str | None] = mapped_column(String(20), default="user")
 	must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
 	visible_in_user_list: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="1")
+	# pending | approved | rejected — 공개/소셜 가입은 pending, 관리자 등록·기존 계정은 approved
+	approval_status: Mapped[str] = mapped_column(
+		String(20), nullable=False, default="approved", server_default="approved"
+	)
 	user_phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+	birth_date: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD
+	provider_kakao_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+	provider_naver_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)
 	join_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 	resignation_date: Mapped[date | None] = mapped_column(Date, nullable=True)

@@ -4,7 +4,7 @@ from api.deps import tenant_id_from_user
 from db.session import get_db
 from services.auth_service import get_current_admin_for_tenant
 from services.admin import user_service
-from schemas.auth_schemas import UserResponse, UserCreate, UserUpdate
+from schemas.auth_schemas import UserResponse, UserCreate, UserUpdate, UserApprovalPatch
 
 router = APIRouter()
 
@@ -27,6 +27,19 @@ def create_user(
 	"""[관리자] 새 사용자 등록."""
 	return user_service.create_user_by_admin(
 		db, payload, tenant_id_from_user(current_admin)
+	)
+
+
+@router.patch("/{user_id}/approval", response_model=UserResponse)
+def patch_user_approval(
+	user_id: int,
+	payload: UserApprovalPatch,
+	db: Session = Depends(get_db),
+	current_admin: dict = Depends(get_current_admin_for_tenant),
+):
+	"""[관리자] 가입 승인/거절."""
+	return user_service.set_user_approval_by_admin(
+		db, user_id, payload.approval_status, tenant_id_from_user(current_admin)
 	)
 
 

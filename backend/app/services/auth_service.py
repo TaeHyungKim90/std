@@ -10,6 +10,12 @@ from models.tenant_models import Tenant
 from schemas import auth_schemas
 from core.security import verify_password, get_password_hash, decode_auth_token # 👈 분리된 보안 로직 임포트
 from core.tenant import assert_token_tenant_matches, require_tenant, require_tenant_header_or_query
+from utils.user_identity import (
+	find_user_by_identity,
+	normalize_birth_date,
+	normalize_phone_number,
+	normalize_user_name,
+)
 
 # 💡 핵심: auto_error=False로 설정하여 헤더에 토큰이 없어도 바로 터지지 않고 쿠키를 검사할 기회를 줍니다.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
@@ -92,9 +98,71 @@ async def get_current_admin_for_tenant(
 	return current_user
 
 
+def _provider_column(provider: str) -> str:
+	p = (provider or "").strip().lower()
+	if p == "kakao":
+		return "provider_kakao_id"
+	if p == "naver":
+		return "provider_naver_id"
+	raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="지원하지 않는 소셜 provider 입니다.")
+
+
+def is_provider_linked(user: User, provider: str) -> bool:
+	col = _provider_column(provider)
+	val = getattr(user, col, None)
+	if val:
+		return True
+	login_id = str(user.user_login_id or "")
+	return login_id.startswith(f"{provider}_")
+
+
+def find_user_by_provider(db: Session, *, tenant_id: int, provider: str, provider_id: str) -> User | None:
+	"""provider_*_id 컬럼 또는 레거시 user_login_id(kakao_/naver_)로 조회."""
+	pid = str(provider_id or "").strip()
+	if not pid:
+		return None
+	col = _provider_column(provider)
+	user = (
+		db.query(User)
+		.filter(User.tenant_id == tenant_id, getattr(User, col) == pid)
+		.first()
+	)
+	if user:
+		return user
+	legacy_login = f"{provider}_{pid}"
+	return (
+		db.query(User)
+		.filter(User.user_login_id == legacy_login, User.tenant_id == tenant_id)
+		.first()
+	)
+
+
+def set_provider_id(user: User, provider: str, provider_id: str) -> None:
+	setattr(user, _provider_column(provider), str(provider_id))
+
+
+def clear_provider_id(user: User, provider: str) -> None:
+	setattr(user, _provider_column(provider), None)
+
+
 # ==========================================
 # 🧑‍💻 3. 비즈니스 로직 (DB 조작 - 로그인, 가입)
 # ==========================================
+def assert_user_approved(user: User) -> None:
+	"""가입 승인 상태가 approved가 아니면 로그인 차단."""
+	status_val = (getattr(user, "approval_status", None) or "approved").strip().lower()
+	if status_val == "pending":
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="가입 승인 대기 중입니다. 관리자 승인 후 로그인해 주세요.",
+		)
+	if status_val == "rejected":
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="가입이 거절된 계정입니다.",
+		)
+
+
 def authenticate_user(db: Session, login_id: str, pw: str, tenant_id: int):
 	"""일반 로그인 유저 검증 (테넌트 스코프)"""
 	# 👈 수정된 부분: 소셜 계정은 일반 로그인 폼으로 접근 불가하도록 차단 (이중 보안)
@@ -114,6 +182,7 @@ def authenticate_user(db: Session, login_id: str, pw: str, tenant_id: int):
 			status_code=status.HTTP_401_UNAUTHORIZED, 
 			detail="아이디 또는 비밀번호가 틀립니다."
 		)
+	assert_user_approved(user)
 	return user
 
 def check_user_exists(db: Session, login_id: str, tenant_id: int):
@@ -137,15 +206,39 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: 
 			detail="공개 회원가입으로 관리자 권한을 부여할 수 없습니다.",
 		)
 
+	name = normalize_user_name(user_data.user_name)
+	birth = normalize_birth_date(user_data.birth_date)
+	phone = normalize_phone_number(user_data.user_phone_number)
+	if not name or not birth or not phone:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="이름, 생년월일, 전화번호는 필수입니다.",
+		)
+
+	existing = find_user_by_identity(
+		db,
+		tenant_id=tenant_id,
+		user_name=name,
+		birth_date=birth,
+		phone_number=phone,
+	)
+	if existing:
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT,
+			detail="이미 가입된 계정이 있습니다.",
+		)
+
 	hashed_password = get_password_hash(user_data.user_password)
 	new_user = User(
 		tenant_id=tenant_id,
 		user_login_id=user_data.user_login_id,
 		user_password=hashed_password,
-		user_name=user_data.user_name,
+		user_name=name,
 		user_nickname=user_data.user_nickname,
-		user_phone_number=user_data.user_phone_number,
+		user_phone_number=phone,
+		birth_date=birth,
 		role="user",
+		approval_status="pending",
 		join_date=user_data.joined_at,
 		resignation_date=user_data.resignation_date
 	)
@@ -172,26 +265,50 @@ def process_social_login(
 	name: str,
 	nickname: str,
 	phone: str | None = None,
+	birth_date: str | None = None,
 	*,
 	tenant_id: int,
 	allow_create: bool = True,
 ) -> tuple[User, bool]:
-	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통) — 테넌트별 계정"""
-	user_login_id = f"{provider}_{provider_id}"
-	user = (
-		db.query(User)
-		.filter(User.user_login_id == user_login_id, User.tenant_id == tenant_id)
-		.first()
-	)
-	created = False
+	"""소셜 로그인 유저 통합 관리 (카카오, 네이버 공통) — 테넌트별 계정.
 
-	clean_phone = None
-	if phone:
-		clean_phone = re.sub(r'[^\d]', '', phone)
-		# 만약 국제번호 +82 10... 형식으로 들어오면 010...으로 변환 (선택 사항)
-		if clean_phone.startswith('82'):
-			clean_phone = '0' + clean_phone[2:]
-	
+	1) provider_*_id / 레거시 login_id 로 기존 소셜 계정 조회
+	2) 없으면 (이름·생년월일·전화) 신원으로 기존 계정 조회 후 provider 연동
+	3) 그래도 없으면 allow_create 시 신규 생성
+	"""
+	provider = (provider or "").strip().lower()
+	pid = str(provider_id or "").strip()
+	if provider not in ("kakao", "naver") or not pid:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="소셜 계정 정보가 올바르지 않습니다.")
+
+	clean_phone = normalize_phone_number(phone)
+	clean_birth = normalize_birth_date(birth_date)
+	clean_name = normalize_user_name(name)
+
+	user = find_user_by_provider(db, tenant_id=tenant_id, provider=provider, provider_id=pid)
+	created = False
+	linked = False
+
+	if not user and clean_name and clean_birth and clean_phone:
+		matched = find_user_by_identity(
+			db,
+			tenant_id=tenant_id,
+			user_name=clean_name,
+			birth_date=clean_birth,
+			phone_number=clean_phone,
+		)
+		if matched:
+			# 이미 다른 소셜 ID가 같은 provider에 묶여 있으면 충돌
+			existing_pid = getattr(matched, _provider_column(provider), None)
+			if existing_pid and str(existing_pid) != pid:
+				raise HTTPException(
+					status_code=status.HTTP_409_CONFLICT,
+					detail="이미 다른 소셜 계정과 연동된 사용자입니다.",
+				)
+			user = matched
+			set_provider_id(user, provider, pid)
+			linked = True
+
 	if not user and not allow_create:
 		raise HTTPException(
 			status_code=status.HTTP_404_NOT_FOUND,
@@ -199,25 +316,92 @@ def process_social_login(
 		)
 
 	if not user:
-		# 최초 소셜 로그인 시 자동 회원가입
 		secure_random_password = secrets.token_urlsafe(32)
 		hashed_password = get_password_hash(secure_random_password)
 		user = User(
 			tenant_id=tenant_id,
-			user_login_id=user_login_id,
-			user_password=hashed_password, 
-			user_name=name,
+			user_login_id=f"{provider}_{pid}",
+			user_password=hashed_password,
+			user_name=clean_name or nickname or f"{provider}유저",
 			user_nickname=nickname,
 			user_phone_number=clean_phone,
-			role="user"
+			birth_date=clean_birth,
+			role="user",
+			approval_status="pending",
 		)
+		set_provider_id(user, provider, pid)
 		db.add(user)
 		db.commit()
 		db.refresh(user)
 		created = True
 	else:
+		changed = linked
+		# 레거시 소셜 계정에 provider 컬럼 백필
+		if not getattr(user, _provider_column(provider), None):
+			set_provider_id(user, provider, pid)
+			changed = True
 		if not user.user_phone_number and clean_phone:
 			user.user_phone_number = clean_phone
+			changed = True
+		if not user.birth_date and clean_birth:
+			user.birth_date = clean_birth
+			changed = True
+		if changed:
 			db.commit()
-		
+			db.refresh(user)
+		# 기존 계정 로그인/연동 시에도 승인 상태 검사 (신규 생성 pending은 콜백에서 처리)
+		assert_user_approved(user)
+
 	return user, created
+
+
+def link_social_provider_to_user(
+	db: Session,
+	user: User,
+	*,
+	provider: str,
+	provider_id: str,
+) -> User:
+	"""로그인 사용자에게 소셜 provider ID를 연동."""
+	provider = (provider or "").strip().lower()
+	pid = str(provider_id or "").strip()
+	if provider not in ("kakao", "naver") or not pid:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="소셜 계정 정보가 올바르지 않습니다.")
+
+	other = find_user_by_provider(db, tenant_id=user.tenant_id, provider=provider, provider_id=pid)
+	if other and other.id != user.id:
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT,
+			detail="이미 다른 계정에 연동된 소셜 계정입니다.",
+		)
+
+	set_provider_id(user, provider, pid)
+	db.commit()
+	db.refresh(user)
+	return user
+
+
+def unlink_social_provider(db: Session, user: User, *, provider: str) -> User:
+	"""소셜 연동 해제. 해당 provider로만 가입된 순수 소셜 계정은 해제 불가."""
+	provider = (provider or "").strip().lower()
+	if provider not in ("kakao", "naver"):
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="지원하지 않는 소셜 provider 입니다.")
+
+	if not is_provider_linked(user, provider):
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="연동되지 않은 소셜 계정입니다.")
+
+	login_id = str(user.user_login_id or "")
+	# 로그인 ID 자체가 해당 소셜 전용인 경우 해제하면 로그인 수단이 사라질 수 있음
+	if login_id.startswith(f"{provider}_"):
+		other_linked = is_provider_linked(user, "naver" if provider == "kakao" else "kakao")
+		# 비밀번호 로그인 불가(소셜 전용 login_id)이고 다른 소셜도 없으면 차단
+		if not other_linked:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="이 계정은 해당 소셜로만 로그인할 수 있어 연동을 해제할 수 없습니다.",
+			)
+
+	clear_provider_id(user, provider)
+	db.commit()
+	db.refresh(user)
+	return user

@@ -9,6 +9,8 @@ import * as Notify from 'utils/toastUtils';
 
 import SocialButtons from './SocialButtons';
 
+const BIRTH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 const SignupForm = () => {
 	const paths = useAppPaths();
 	const navigate = useNavigate();
@@ -20,7 +22,8 @@ const SignupForm = () => {
 		password_confirm: '',
 		user_name: '',
 		user_nickname: '',
-		user_phone_number: ''
+		user_phone_number: '',
+		birth_date: '',
 	});
 
 	const [error, setError] = useState('');
@@ -74,6 +77,16 @@ const SignupForm = () => {
 
 		if (idStatus !== 'available') return setError('아이디 중복 확인을 진행해 주세요.');
 		if (formData.user_password !== formData.password_confirm) return setError('비밀번호가 일치하지 않습니다.');
+		if (!formData.birth_date || !BIRTH_DATE_RE.test(formData.birth_date)) {
+			return setError('생년월일을 YYYY-MM-DD 형식으로 입력해 주세요.');
+		}
+		const birthMs = Date.parse(formData.birth_date);
+		if (Number.isNaN(birthMs) || birthMs > Date.now()) {
+			return setError('올바른 생년월일을 입력해 주세요.');
+		}
+		if (!formData.user_phone_number || formData.user_phone_number.length < 10) {
+			return setError('전화번호를 숫자만 10~11자리로 입력해 주세요.');
+		}
 		if (!policyAccepted) return setError('개인정보처리방침 동의 후 회원가입을 진행해 주세요.');
 
 		showLoading("회원가입 정보를 등록 중입니다... ⏳");
@@ -83,8 +96,14 @@ const SignupForm = () => {
 		};
 		Notify.toastPromise(signupTask(), {
 			loading: '회원가입 처리 중입니다...',
-			success: '회원가입이 완료되었습니다. 로그인해 주세요.',
+			success: '회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요.',
 			error: (err) => {
+				if (err?.response?.status === 409) {
+					const conflictMsg =
+						'이미 가입된 정보입니다. 소셜 로그인으로 접속하거나 기존 계정에 연동해 주세요.';
+					setError(conflictMsg);
+					return conflictMsg;
+				}
 				const errMsg =
 					formatApiDetail(err) ||
 					'회원가입 중 오류가 발생했습니다.';
@@ -94,6 +113,12 @@ const SignupForm = () => {
 		}).then(() => {
 			navigate(paths.LOGIN);
 		}).catch((err) => {
+			if (err?.response?.status === 409) {
+				Notify.toastWarn(
+					'이미 가입된 정보입니다. 소셜 로그인으로 접속하거나 기존 계정에 연동해 주세요.'
+				);
+				return;
+			}
 			Notify.toastApiFailure(err, "회원가입 실패");
 		}).finally(() => {
 			hideLoading();
@@ -158,6 +183,17 @@ const SignupForm = () => {
 
 				<input type="text" name="user_name" placeholder="이름 (실명)" value={formData.user_name} onChange={handleChange} className="login-input" required />
 				<input type="text" name="user_nickname" placeholder="닉네임" value={formData.user_nickname} onChange={handleChange} className="login-input" required />
+				<input
+					type="date"
+					name="birth_date"
+					placeholder="생년월일 (YYYY-MM-DD)"
+					value={formData.birth_date}
+					onChange={handleChange}
+					className="login-input"
+					required
+					aria-label="생년월일"
+					max={new Date().toISOString().slice(0, 10)}
+				/>
 				<input type="text" name="user_phone_number" placeholder="전화번호 (숫자만)" value={formData.user_phone_number} onChange={handleChange} maxLength="11" inputMode="numeric" className="login-input" required />
 
 				<button type="submit" className="login-button">가입하기</button>

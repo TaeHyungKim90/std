@@ -35,6 +35,13 @@ export const authApi = {
   patchMe: (payload) => client.patch(`${PATH}/me`, payload),
 
   /**
+   * 3d. 소셜 계정 연동/해제
+   * POST /api/users/me/link-social
+   */
+  linkSocial: (provider, action) =>
+	client.post('/users/me/link-social', { provider, action }),
+
+  /**
    * 4. 일반 회원가입
    * POST /api/auth/signup
    */
