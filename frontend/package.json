@@ -129,6 +129,18 @@
 		"overrides": [
 			{
 				"files": [
+					"**/tailwind.config.js",
+					"**/postcss.config.js"
+				],
+				"env": {
+					"node": true
+				},
+				"parserOptions": {
+					"sourceType": "script"
+				}
+			},
+			{
+				"files": [
 					"**/*.test.js",
 					"**/*.test.jsx"
 				],
