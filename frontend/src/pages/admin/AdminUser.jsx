@@ -6,33 +6,49 @@ import IdCopyChip from 'components/common/IdCopyChip';
 import UserAvatar from 'components/common/UserAvatar';
 import { useLoading } from 'context/LoadingContext';
 import { useEffect, useState } from 'react';
+import { formatBirthDateForExport, formatPhoneDisplay } from 'utils/contactExportFormat';
 import * as Notify from 'utils/toastUtils';
 import { formatUserDisplayName } from 'utils/userDisplayName';
 
-function escapeCsvCell(value) {
-	const s = String(value ?? '');
-	if (/[",\n\r]/.test(s)) {
-		return `"${s.replace(/"/g, '""')}"`;
-	}
-	return s;
-}
+async function downloadUsersExcel(users) {
+	const ExcelJS = (await import('exceljs')).default;
+	const workbook = new ExcelJS.Workbook();
+	workbook.creator = 'vp-hr';
+	const sheet = workbook.addWorksheet('사용자목록', {
+		views: [{ state: 'frozen', ySplit: 1 }],
+	});
 
-function downloadUsersExcelCsv(users) {
-	const header = ['이름', '생년월일', '전화번호', '주소'];
-	const rows = users.map((u) => [
-		formatUserDisplayName(u.user_name, u.user_nickname),
-		u.birth_date || '',
-		u.user_phone_number || '',
-		u.address || '',
-	]);
-	const lines = [header, ...rows].map((cols) => cols.map(escapeCsvCell).join(','));
-	const bom = '\uFEFF';
-	const blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+	sheet.columns = [
+		{ header: '이름', key: 'name', width: 18 },
+		{ header: '생년월일', key: 'birth', width: 14 },
+		{ header: '전화번호', key: 'phone', width: 16 },
+		{ header: '주소', key: 'address', width: 40 },
+	];
+
+	const headerRow = sheet.getRow(1);
+	headerRow.font = { bold: true };
+
+	users.forEach((u) => {
+		const row = sheet.addRow({
+			name: formatUserDisplayName(u.user_name, u.user_nickname),
+			birth: formatBirthDateForExport(u.birth_date),
+			phone: formatPhoneDisplay(u.user_phone_number),
+			address: u.address || '',
+		});
+		// Excel이 날짜/숫자로 해석하지 않도록 텍스트 서식
+		row.getCell('birth').numFmt = '@';
+		row.getCell('phone').numFmt = '@';
+	});
+
+	const buffer = await workbook.xlsx.writeBuffer();
+	const blob = new Blob([buffer], {
+		type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	});
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	const ymd = new Date().toISOString().slice(0, 10);
 	a.href = url;
-	a.download = `사용자목록_${ymd}.csv`;
+	a.download = `사용자목록_${ymd}.xlsx`;
 	document.body.appendChild(a);
 	a.click();
 	a.remove();
@@ -128,8 +144,11 @@ const AdminUser = () => {
 								Notify.toastWarn('다운로드할 사용자가 없습니다.');
 								return;
 							}
-							downloadUsersExcelCsv(filteredUsers);
-							Notify.toastSuccess('엑셀(CSV) 파일을 다운로드했습니다.');
+							Notify.toastPromise(downloadUsersExcel(filteredUsers), {
+								loading: '엑셀 파일을 만드는 중입니다...',
+								success: '엑셀(.xlsx) 파일을 다운로드했습니다.',
+								error: '엑셀 다운로드에 실패했습니다.',
+							});
 						}}
 					>
 						엑셀 다운로드

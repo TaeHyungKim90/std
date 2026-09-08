@@ -33,6 +33,7 @@
 		"dayjs": "1.11.23",
 		"dompurify": "3.4.13",
 		"emoji-picker-react": "4.20.2",
+		"exceljs": "4.4.0",
 		"html-react-parser": "5.2.17",
 		"lucide-react": "0.577.0",
 		"pdfjs-dist": "6.3.289",
@@ -112,7 +113,12 @@
 			],
 			"react/prop-types": "off",
 			"react/display-name": "off",
-			"no-constant-condition": ["error", { "checkLoops": false }],
+			"no-constant-condition": [
+				"error",
+				{
+					"checkLoops": false
+				}
+			],
 			"no-mixed-spaces-and-tabs": "off",
 			"react-hooks/rules-of-hooks": "error",
 			"react-hooks/exhaustive-deps": "warn"
