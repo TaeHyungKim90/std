@@ -23,6 +23,7 @@ export function pathsForTenant(tenantSlug) {
 		HOME: `${root}/`,
 		LOGIN: `${root}/login`,
 		SIGNUP: `${root}/signup`,
+		SOCIAL_SIGNUP_COMPLETE: `${root}/signup/social-complete`,
 		OAUTH_CALLBACK: `${root}/oauth/callback`,
 		MY_TODOS: `${my}/todos`,
 		MY_ATTENDANCE: `${my}/attendance`,

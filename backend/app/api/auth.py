@@ -22,7 +22,7 @@ from core.tenant import (
 	tenant_pk,
 	tenant_slug_str,
 )
-from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
+from core.security import create_access_token, create_timed_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
 from models.auth_models import User, UserAvatarSetting
@@ -33,13 +33,24 @@ from constants.bootstrap_admin import is_bootstrap_system_admin
 from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
+from utils.user_identity import compose_birth_from_year_month_day, normalize_birth_date
+
 router = APIRouter()
 
 
 def _user_response(user: User) -> auth_schemas.UserResponse:
 	base = auth_schemas.UserResponse.model_validate(user)
-	return base.model_copy(update={"join_date_editable": not is_bootstrap_system_admin(user)})
-
+	login_id = str(user.user_login_id or "")
+	kakao_linked = bool(user.provider_kakao_id) or login_id.startswith("kakao_")
+	naver_linked = bool(user.provider_naver_id) or login_id.startswith("naver_")
+	return base.model_copy(
+		update={
+			"join_date_editable": not is_bootstrap_system_admin(user),
+			"kakao_linked": kakao_linked,
+			"naver_linked": naver_linked,
+			"birth_date": normalize_birth_date(user.birth_date) or user.birth_date,
+		}
+	)
 
 # ==========================================
 # ⚙️ 환경 설정 및 공통 변수
@@ -62,6 +73,17 @@ COOKIE_OPTIONS = {
 	"secure": IS_PROD,
 	"path": "/",
 }
+
+SOCIAL_SIGNUP_COOKIE_OPTIONS = {
+	"key": "socialSignupTicket",
+	"httponly": True,
+	"max_age": 30 * 60,
+	"samesite": "lax",
+	"secure": IS_PROD,
+	"path": "/",
+}
+
+SOCIAL_SIGNUP_PURPOSE = "social_signup"
 def generate_user_token(user, *, tenant_slug: str | None = None):
 	"""공통 헬퍼: JWT 토큰 생성 (tenantId/tenantSlug 포함)"""
 	slug = tenant_slug
@@ -82,16 +104,26 @@ def generate_user_token(user, *, tenant_slug: str | None = None):
 
 
 def _normalize_social_mode(mode: str | None) -> str:
-	return "signup" if mode == "signup" else "login"
+	m = (mode or "login").strip().lower()
+	if m in ("signup", "login", "link"):
+		return m
+	return "login"
 
 
-def _create_oauth_state(mode: str | None, tenant_slug: str) -> str:
+def _create_oauth_state(
+	mode: str | None,
+	tenant_slug: str,
+	*,
+	link_user_id: int | None = None,
+) -> str:
 	payload = {
 		"nonce": str(uuid.uuid4()),
 		"mode": _normalize_social_mode(mode),
 		"tenant": tenant_slug,
 		"iat": int(time.time()),
 	}
+	if link_user_id is not None:
+		payload["link_user_id"] = int(link_user_id)
 	raw_payload = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
 	encoded_payload = base64.urlsafe_b64encode(raw_payload).decode("ascii").rstrip("=")
 	signature = hmac.new(
@@ -103,7 +135,7 @@ def _create_oauth_state(mode: str | None, tenant_slug: str) -> str:
 	return f"{encoded_payload}.{encoded_signature}"
 
 
-def _read_oauth_state(state: str) -> tuple[str, str]:
+def _read_oauth_state(state: str) -> tuple[str, str, int | None]:
 	try:
 		encoded_payload, encoded_signature = state.split(".", 1)
 		expected_signature = hmac.new(
@@ -129,7 +161,12 @@ def _read_oauth_state(state: str) -> tuple[str, str]:
 	tenant_slug = normalize_tenant_slug(payload.get("tenant"))
 	if not tenant_slug:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OAuth state에 테넌트 정보가 없습니다.")
-	return _normalize_social_mode(payload.get("mode")), tenant_slug
+	link_user_id = payload.get("link_user_id")
+	try:
+		link_user_id = int(link_user_id) if link_user_id is not None else None
+	except (TypeError, ValueError):
+		link_user_id = None
+	return _normalize_social_mode(payload.get("mode")), tenant_slug, link_user_id
 
 
 def _oauth_callback_url(tenant_slug: str, **params: str) -> str:
@@ -154,6 +191,57 @@ def _create_social_notice_response(*, social_status: str, provider: str, tenant_
 	)
 
 
+def _issue_social_signup_ticket(
+	*,
+	provider: str,
+	provider_id: str,
+	name: str,
+	nickname: str,
+	phone: str | None,
+	birth_date: str | None,
+	tenant_slug: str,
+) -> RedirectResponse:
+	ticket = create_timed_token(
+		{
+			"purpose": SOCIAL_SIGNUP_PURPOSE,
+			"provider": provider,
+			"provider_id": str(provider_id),
+			"tenant": tenant_slug,
+			"user_name": name or "",
+			"user_nickname": nickname or "",
+			"user_phone_number": phone or "",
+			"birth_date": birth_date or "",
+		},
+		minutes=30,
+	)
+	response = RedirectResponse(
+		url=_oauth_callback_url(tenant_slug, social_status="complete_required", provider=provider)
+	)
+	response.set_cookie(value=ticket, **SOCIAL_SIGNUP_COOKIE_OPTIONS)
+	return response
+
+
+def _read_social_signup_ticket(request: Request) -> dict:
+	raw = request.cookies.get(SOCIAL_SIGNUP_COOKIE_OPTIONS["key"])
+	if not raw:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션이 만료되었습니다. 다시 소셜 회원가입을 진행해 주세요.",
+		)
+	payload = decode_auth_token(raw)
+	if not payload or payload.get("purpose") != SOCIAL_SIGNUP_PURPOSE:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션이 올바르지 않습니다. 다시 소셜 회원가입을 진행해 주세요.",
+		)
+	return payload
+
+
+def _clear_social_signup_cookie(response: Response) -> None:
+	delete_options = {k: v for k, v in SOCIAL_SIGNUP_COOKIE_OPTIONS.items() if k != "max_age"}
+	response.delete_cookie(**delete_options)
+
+
 def _process_social_callback(
 	db: Session,
 	*,
@@ -162,34 +250,94 @@ def _process_social_callback(
 	name: str,
 	nickname: str,
 	phone: str | None,
+	birth_date: str | None,
 	social_mode: str,
 	tenant: Tenant,
+	link_user_id: int | None = None,
 ):
+	# 내 정보에서 수동 연동(mode=link)
+	if social_mode == "link":
+		if link_user_id is None:
+			return _create_social_notice_response(
+				social_status="link_failed",
+				provider=provider,
+				tenant_slug=tenant_slug_str(tenant),
+			)
+		user = (
+			db.query(User)
+			.filter(User.id == link_user_id, User.tenant_id == tenant_pk(tenant))
+			.first()
+		)
+		if not user:
+			return _create_social_notice_response(
+				social_status="link_failed",
+				provider=provider,
+				tenant_slug=tenant_slug_str(tenant),
+			)
+		try:
+			service.link_social_provider_to_user(
+				db, user, provider=provider, provider_id=provider_id
+			)
+		except HTTPException as exc:
+			if exc.status_code == status.HTTP_409_CONFLICT:
+				return _create_social_notice_response(
+					social_status="link_conflict",
+					provider=provider,
+					tenant_slug=tenant_slug_str(tenant),
+				)
+			raise
+		return _create_social_login_response(
+			user,
+			social_status="linked",
+			provider=provider,
+			tenant_slug=tenant_slug_str(tenant),
+		)
+
 	try:
-		user, created = service.process_social_login(
+		user, _created = service.process_social_login(
 			db,
 			provider,
 			provider_id,
 			name,
 			nickname,
 			phone,
+			birth_date,
 			tenant_id=tenant_pk(tenant),
-			allow_create=social_mode == "signup",
+			# 신규 생성은 가입 완료 폼에서만 수행
+			allow_create=False,
 		)
 	except HTTPException as exc:
-		if exc.status_code == status.HTTP_404_NOT_FOUND and social_mode == "login":
+		if exc.status_code == status.HTTP_404_NOT_FOUND:
+			if social_mode == "signup":
+				return _issue_social_signup_ticket(
+					provider=provider,
+					provider_id=provider_id,
+					name=name,
+					nickname=nickname,
+					phone=phone,
+					birth_date=birth_date,
+					tenant_slug=tenant_slug_str(tenant),
+				)
 			return _create_social_notice_response(
 				social_status="not_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
 			)
+		if exc.status_code == status.HTTP_409_CONFLICT:
+			return _create_social_notice_response(
+				social_status="link_conflict", provider=provider, tenant_slug=tenant_slug_str(tenant)
+			)
+		if exc.status_code == status.HTTP_403_FORBIDDEN:
+			return _create_social_notice_response(
+				social_status="pending_approval", provider=provider, tenant_slug=tenant_slug_str(tenant)
+			)
 		raise
 
-	if social_mode == "signup" and not created:
+	if social_mode == "signup":
 		return _create_social_notice_response(
 			social_status="already_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
 		)
 	return _create_social_login_response(
 		user,
-		social_status="signed_up" if created else "logged_in",
+		social_status="logged_in",
 		provider=provider,
 		tenant_slug=tenant_slug_str(tenant),
 	)
@@ -294,6 +442,7 @@ async def check_auth(
 
 	join_date = None
 	resignation_date = None
+	birth_date = None
 	user_profile_image_url = None
 	avatar_zoom = 1.0
 	avatar_offset_x = 0.0
@@ -313,6 +462,7 @@ async def check_auth(
 			user_login_id = user.user_login_id
 			join_date = user.join_date
 			resignation_date = user.resignation_date
+			birth_date = normalize_birth_date(user.birth_date) or user.birth_date
 			user_profile_image_url = user.user_profile_image_url
 			avatar_zoom = float(user.avatar_zoom)
 			avatar_offset_x = float(user.avatar_offset_x)
@@ -336,6 +486,7 @@ async def check_auth(
 		"join_date": join_date,
 		"resignation_date": resignation_date,
 		"mustChangePassword": must_change_password,
+		"birth_date": birth_date,
 	}
 
 @router.post("/check-id", response_model=auth_schemas.CheckIdResponse)
@@ -356,7 +507,71 @@ async def signup(
 ):
 	"""회원 가입"""
 	service.create_new_user(db, data, tenant_pk(tenant))
-	return {"success": True, "message": "회원가입이 완료되었습니다."}
+	return {"success": True, "message": "회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요."}
+
+
+@router.get("/social-signup/ticket", response_model=auth_schemas.SocialSignupTicketResponse)
+async def get_social_signup_ticket(
+	request: Request,
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""소셜 가입 완료 폼용 프리필 조회 (HttpOnly 티켓 쿠키)."""
+	payload = _read_social_signup_ticket(request)
+	ticket_tenant = normalize_tenant_slug(payload.get("tenant"))
+	if ticket_tenant != tenant_slug_str(tenant):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션의 테넌트가 일치하지 않습니다.",
+		)
+	return {
+		"provider": payload.get("provider") or "",
+		"user_name": payload.get("user_name") or None,
+		"user_nickname": payload.get("user_nickname") or None,
+		"user_phone_number": payload.get("user_phone_number") or None,
+		"birth_date": normalize_birth_date(payload.get("birth_date")) or (payload.get("birth_date") or None),
+	}
+
+
+@router.post("/social-signup/complete")
+async def complete_social_signup(
+	request: Request,
+	response: Response,
+	data: auth_schemas.SocialSignupComplete,
+	db: Session = Depends(get_db),
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""소셜 가입 완료 — 티켓의 provider로 계정 생성(pending) 또는 기존 신원 연동."""
+	payload = _read_social_signup_ticket(request)
+	ticket_tenant = normalize_tenant_slug(payload.get("tenant"))
+	if ticket_tenant != tenant_slug_str(tenant):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션의 테넌트가 일치하지 않습니다.",
+		)
+	user = service.complete_social_signup(
+		db,
+		tenant_id=tenant_pk(tenant),
+		provider=str(payload.get("provider") or ""),
+		provider_id=str(payload.get("provider_id") or ""),
+		user_name=data.user_name,
+		user_nickname=data.user_nickname,
+		phone=data.user_phone_number,
+		birth_date=data.birth_date,
+		address=data.address,
+	)
+	_clear_social_signup_cookie(response)
+	status_val = (user.approval_status or "approved").strip().lower()
+	if status_val == "pending":
+		message = "회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요."
+	elif status_val == "rejected":
+		message = "가입이 거절된 계정입니다. 관리자에게 문의해 주세요."
+	else:
+		message = "기존 계정에 소셜 연동이 완료되었습니다. 로그인해 주세요."
+	return {
+		"success": True,
+		"message": message,
+		"approval_status": status_val,
+	}
 
 
 @router.get("/me", response_model=auth_schemas.UserResponse)
@@ -455,6 +670,13 @@ def patch_my_profile(
 	if "user_phone_number" in data:
 		user.user_phone_number = data["user_phone_number"]
 
+	if "birth_date" in data:
+		user.birth_date = data["birth_date"]
+
+	if "address" in data:
+		raw = data["address"]
+		user.address = (str(raw).strip() if raw is not None else "") or None
+
 	avatar_zoom = data.pop("avatar_zoom", None)
 	avatar_offset_x = data.pop("avatar_offset_x", None)
 	avatar_offset_y = data.pop("avatar_offset_y", None)
@@ -550,7 +772,7 @@ async def kakao_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""카카오 인증 완료 후 돌아오는 지점"""
-	social_mode, tenant_slug = _read_oauth_state(state)
+	social_mode, tenant_slug, link_user_id = _read_oauth_state(state)
 	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
@@ -563,20 +785,27 @@ async def kakao_callback_handler(
 		user_info = user_res.json()
 
 	kakao_id = str(user_info.get("id"))
-	properties = user_info.get("properties", {})
-	kakao_account = user_info.get("kakao_account", {})
-	nickname = properties.get("nickname", "카카오유저")
+	properties = user_info.get("properties", {}) or {}
+	kakao_account = user_info.get("kakao_account", {}) or {}
+	nickname = properties.get("nickname") or kakao_account.get("name") or "카카오유저"
+	name = kakao_account.get("name") or nickname
 	phone = kakao_account.get("phone_number")
+	birth_date = compose_birth_from_year_month_day(
+		kakao_account.get("birthyear"),
+		kakao_account.get("birthday"),
+	)
 	
 	response = _process_social_callback(
 		db,
 		provider="kakao",
 		provider_id=kakao_id,
-		name=nickname,
+		name=name,
 		nickname=nickname,
 		phone=phone,
+		birth_date=birth_date,
 		social_mode=social_mode,
 		tenant=tenant,
+		link_user_id=link_user_id,
 	)
 	response.delete_cookie(key="kakao_oauth_state", path="/")
 	response.delete_cookie(key="kakao_oauth_mode", path="/")
@@ -604,7 +833,7 @@ async def naver_callback_handler(
 	db: Session = Depends(get_db),
 ):
 	"""네이버 인증 완료 후 돌아오는 지점"""
-	social_mode, tenant_slug = _read_oauth_state(state)
+	social_mode, tenant_slug, link_user_id = _read_oauth_state(state)
 	tenant = get_tenant_by_slug(db, tenant_slug)
 
 	async with httpx.AsyncClient() as client:
@@ -616,11 +845,21 @@ async def naver_callback_handler(
 		user_res = await client.get("https://openapi.naver.com/v1/nid/me", headers={"Authorization": f"Bearer {access_token}"})
 		user_info = user_res.json()
 
-	naver_data = user_info.get("response", {})
-	naver_id = naver_data.get("id")
+	naver_data = user_info.get("response", {}) or {}
+	naver_id_raw = naver_data.get("id")
+	if naver_id_raw is None or str(naver_id_raw).strip() == "":
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="네이버 계정 식별자를 가져오지 못했습니다.",
+		)
+	naver_id = str(naver_id_raw).strip()
 	nickname = naver_data.get("nickname") or naver_data.get("name") or "네이버유저"
-	name = naver_data.get("name")
+	name = naver_data.get("name") or nickname
 	phone = naver_data.get("mobile")
+	birth_date = compose_birth_from_year_month_day(
+		naver_data.get("birthyear"),
+		naver_data.get("birthday"),
+	)
 
 	response = _process_social_callback(
 		db,
@@ -629,8 +868,10 @@ async def naver_callback_handler(
 		name=name,
 		nickname=nickname,
 		phone=phone,
+		birth_date=birth_date,
 		social_mode=social_mode,
 		tenant=tenant,
+		link_user_id=link_user_id,
 	)
 	response.delete_cookie(key="naver_oauth_state", path="/")
 	response.delete_cookie(key="naver_oauth_mode", path="/")

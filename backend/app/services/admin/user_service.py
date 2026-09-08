@@ -241,12 +241,16 @@ def create_user_by_admin(db: Session, payload: UserCreate, tenant_id: int):
 		user_password=hashed_pw,
 		user_name=payload.user_name,
 		user_nickname=payload.user_nickname,
+		user_phone_number=payload.user_phone_number,
+		birth_date=payload.birth_date,
+		address=getattr(payload, "address", None),
 		user_profile_image_url=payload.user_profile_image_url,
 		department_id=department_id,
 		position_id=position_id,
 		salary_bank_name=payload.salary_bank_name,
 		salary_account_number=payload.salary_account_number,
 		role=payload.role,
+		approval_status="approved",
 		join_date=payload.joined_at,
 		resignation_date=payload.resignation_date
 	)
@@ -268,6 +272,31 @@ def create_user_by_admin(db: Session, payload: UserCreate, tenant_id: int):
 		db.commit()
 		db.refresh(new_user)
 	return new_user
+
+
+def set_user_approval_by_admin(db: Session, user_id: int, approval_status: str, tenant_id: int):
+	"""관리자가 가입 승인/거절 상태를 변경."""
+	user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+	status_val = (approval_status or "").strip().lower()
+	if status_val not in ("pending", "approved", "rejected"):
+		raise HTTPException(status_code=400, detail="유효하지 않은 승인 상태입니다.")
+	user.approval_status = status_val
+	db.commit()
+	updated = (
+		db.query(User)
+		.options(
+			joinedload(User.vacation),
+			joinedload(User.avatar_setting),
+			joinedload(User.department),
+			joinedload(User.position),
+		)
+		.filter(User.id == user.id)
+		.first()
+	)
+	return updated or user
+
 
 # 3. 사용자 정보 수정
 def update_user_by_admin(db: Session, user_id: int, payload: UserUpdate, tenant_id: int):

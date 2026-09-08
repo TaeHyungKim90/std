@@ -76,6 +76,25 @@ const LoginForm = () => {
 			if (res?.data?.success) {
 				// 쿠키(Set-Cookie) 반영 후 /check로 입사일 등 전역 상태 동기화
 				await checkAuth();
+				try {
+					const meRes = await authApi.getMe();
+					const role = meRes?.data?.role;
+					const birth = meRes?.data?.birth_date;
+					if (role !== 'admin' && (!birth || !String(birth).trim())) {
+						try {
+							sessionStorage.setItem('vp_birth_date_prompted', '1');
+						} catch {
+							/* ignore */
+						}
+						window.alert(
+							'생년월일이 등록되어 있지 않습니다.\n확인을 누르면 내 정보 화면으로 이동합니다. 생년월일을 입력해 주세요.'
+						);
+						navigate(paths.MY_PROFILE);
+						return;
+					}
+				} catch {
+					/* 프로필 조회 실패 시 기본 경로로 이동 */
+				}
 				navigate(paths.MY_TODOS);
 			}
 		} catch (err) {

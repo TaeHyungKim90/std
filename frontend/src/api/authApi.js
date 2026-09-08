@@ -35,11 +35,32 @@ export const authApi = {
   patchMe: (payload) => client.patch(`${PATH}/me`, payload),
 
   /**
+   * 3d. 소셜 계정 연동/해제
+   * POST /api/users/me/link-social
+   */
+  linkSocial: (provider, action) =>
+	client.post('/users/me/link-social', { provider, action }),
+
+  /**
    * 4. 일반 회원가입
    * POST /api/auth/signup
    */
   signup: (payload) => 
 	client.post(`${PATH}/signup`, payload),
+
+  /**
+   * 4b. 소셜 가입 티켓(프리필) 조회
+   * GET /api/auth/social-signup/ticket
+   */
+  getSocialSignupTicket: () =>
+	client.get(`${PATH}/social-signup/ticket`),
+
+  /**
+   * 4c. 소셜 가입 완료
+   * POST /api/auth/social-signup/complete
+   */
+  completeSocialSignup: (payload) =>
+	client.post(`${PATH}/social-signup/complete`, payload),
 
   /**
    * 5. 아이디 중복 확인

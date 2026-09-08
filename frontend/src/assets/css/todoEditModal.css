@@ -134,29 +134,21 @@
 		margin-bottom: 14px;
 	}
 
-	.todo-edit__editor-shell .sun-editor {
+	.todo-edit__editor-shell .rte-root {
 		border-color: #ddd;
 	}
 
-	.todo-edit__editor-shell .sun-editor .se-toolbar {
+	.todo-edit__editor-shell .rte-toolbar {
 		padding: 4px;
 	}
 
-	.todo-edit__editor-shell .sun-editor .se-btn-tray {
-		gap: 3px;
-	}
-
-	.todo-edit__editor-shell .sun-editor .se-btn-module {
-		margin: 0 2px 2px 0;
-	}
-
-	.todo-edit__editor-shell .sun-editor .se-btn {
+	.todo-edit__editor-shell .rte-btn {
 		width: 30px;
 		height: 30px;
 		min-width: 30px;
 	}
 
-	.todo-edit__editor-shell .sun-editor .se-wrapper {
+	.todo-edit__editor-shell .rte-content {
 		min-height: 150px;
 	}
 

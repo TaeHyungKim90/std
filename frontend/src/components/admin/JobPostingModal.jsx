@@ -1,8 +1,8 @@
 import 'assets/css/admin.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
+import RichTextEditor from 'components/common/RichTextEditor';
 import React, { useEffect, useMemo, useState } from 'react';
-import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
 
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
@@ -170,25 +170,12 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 					<div className="form-group">
 						<label>직무 설명 (JD)</label>
 						<div className="job-posting-modal__editor-offset">
-							<SunEditor
+							<RichTextEditor
 								key={editorKey}
-								setContents={formData.description}
+								content={formData.description}
 								onChange={handleEditorChange}
 								height="400px"
-								setOptions={{
-									buttonList: [
-										['undo', 'redo'],
-										['font', 'fontSize', 'formatBlock'],
-										['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
-										['fontColor', 'hiliteColor', 'textStyle'],
-										['removeFormat'],
-										'/',
-										['outdent', 'indent'],
-										['align', 'horizontalRule', 'list', 'lineHeight'],
-										['table', 'link', 'image', 'video'],
-										['fullScreen', 'showBlocks', 'codeView'],
-									],
-								}}
+								preset="full"
 							/>
 						</div>
 					</div>

@@ -180,6 +180,19 @@
 .role-badge.admin { background: #fee2e2; color: #ef4444; }
 .role-badge.user { background: rgb(var(--primary-rgb) / 0.14); color: #1a6b48; }
 
+.approval-badge {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 4px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+.approval-badge--approved { background: #e8f5e9; color: #2e7d32; }
+.approval-badge--pending { background: #fff8e1; color: #f57f17; }
+.approval-badge--rejected { background: #fce4ec; color: #c62828; }
+
 /* =========================================
    5. 공용 버튼 (관리자 뷰 안에서만 — layout.css 일정 모달·폼과 클래스명 충돌 방지)
 ========================================= */

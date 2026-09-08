@@ -4,6 +4,7 @@ import 'assets/css/my-profile-extra.css';
 import { authApi } from 'api/authApi';
 import { commonApi } from 'api/commonApi';
 import { todoService } from 'api/todoApi';
+import AddressSearchField from 'components/common/AddressSearchField';
 import AppModal from 'components/common/AppModal';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
@@ -56,9 +57,12 @@ const MyProfile = () => {
 	const [name, setName] = useState('');
 	const [nickname, setNickname] = useState('');
 	const [joinDate, setJoinDate] = useState('');
+	const [birthDate, setBirthDate] = useState('');
 	const [phone, setPhone] = useState('');
+	const [address, setAddress] = useState('');
 	const [salaryBankName, setSalaryBankName] = useState('');
 	const [salaryAccountNumber, setSalaryAccountNumber] = useState('');
+	const [socialBusy, setSocialBusy] = useState(null); // 'kakao' | 'naver' | null
 
 	const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null); // blob URL or /uploads/...
 	const [photoFile, setPhotoFile] = useState(null); // File (선택된 즉시 업로드용)
@@ -80,7 +84,9 @@ const MyProfile = () => {
 			setName(data.user_name ?? '');
 			setNickname(data.user_nickname ?? '');
 			setJoinDate(formatYmd(data.join_date) === '—' ? '' : formatYmd(data.join_date));
+			setBirthDate(formatYmd(data.birth_date) === '—' ? '' : formatYmd(data.birth_date));
 			setPhone(data.user_phone_number ?? '');
+			setAddress(data.address ?? '');
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
 			setPhotoPreviewUrl(data.user_profile_image_url ?? null);
@@ -161,20 +167,52 @@ const MyProfile = () => {
 
 	const [passwordSaving, setPasswordSaving] = useState(false);
 
+	const kakaoLinked = Boolean(profile?.kakao_linked || profile?.provider_kakao_id);
+	const naverLinked = Boolean(profile?.naver_linked || profile?.provider_naver_id);
+
+	const handleSocialLinkToggle = async (provider) => {
+		if (!profile || socialBusy) return;
+		const linked = provider === 'kakao' ? kakaoLinked : naverLinked;
+		const action = linked ? 'unlink' : 'link';
+		const label = provider === 'kakao' ? '카카오' : '네이버';
+		setSocialBusy(provider);
+		try {
+			const res = await authApi.linkSocial(provider, action);
+			if (action === 'link' && res.data?.url) {
+				window.location.href = res.data.url;
+				return;
+			}
+			Notify.toastSuccess(res.data?.message || `${label} 연동이 해제되었습니다.`);
+			await load();
+		} catch (err) {
+			Notify.toastApiFailure(err, `${label} 연동 처리에 실패했습니다.`);
+		} finally {
+			setSocialBusy(null);
+		}
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!profile || saving) return;
+
+		const nameTrim = (name || '').trim();
+		if (!nameTrim) {
+			Notify.toastWarn('이름을 입력해 주세요.');
+			return;
+		}
+		const nextBirth = birthDate || null;
+		const prevBirth = formatYmd(profile.birth_date) === '—' ? null : formatYmd(profile.birth_date);
+		if (nextBirth !== prevBirth && nextBirth && !/^\d{4}-\d{2}-\d{2}$/.test(nextBirth)) {
+			Notify.toastWarn('생년월일은 YYYY-MM-DD 형식으로 입력해 주세요.');
+			return;
+		}
+
 		setSaving(true);
 		try {
 			const payload = {};
 
 			// 이름
-			const nameTrim = (name || '').trim();
 			const prevName = (profile.user_name || '').trim();
-			if (!nameTrim) {
-				Notify.toastWarn('이름을 입력해 주세요.');
-				return;
-			}
 			if (nameTrim !== prevName) payload.user_name = nameTrim;
 
 			// 닉네임
@@ -189,10 +227,20 @@ const MyProfile = () => {
 				if (nextJoinDate !== prevJoinDate) payload.join_date = nextJoinDate;
 			}
 
+			// 생년월일
+			if (nextBirth !== prevBirth) {
+				payload.birth_date = nextBirth;
+			}
+
 			// 전화번호(숫자만)
 			const phoneDigits = (phone || '').replace(/\D/g, '');
 			const prevPhone = (profile.user_phone_number || '').replace(/\D/g, '');
 			if (phoneDigits !== prevPhone) payload.user_phone_number = phoneDigits || null;
+
+			// 주소
+			const nextAddress = (address || '').trim();
+			const prevAddress = (profile.address || '').trim();
+			if (nextAddress !== prevAddress) payload.address = nextAddress || null;
 
 			// 급여 계좌
 			const bankTrim = (salaryBankName || '').trim();
@@ -226,7 +274,9 @@ const MyProfile = () => {
 			setName(res.data.user_name ?? '');
 			setNickname(res.data.user_nickname ?? '');
 			setJoinDate(formatYmd(res.data.join_date) === '—' ? '' : formatYmd(res.data.join_date));
+			setBirthDate(formatYmd(res.data.birth_date) === '—' ? '' : formatYmd(res.data.birth_date));
 			setPhone(res.data.user_phone_number ?? '');
+			setAddress(res.data.address ?? '');
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
 			setPhotoPreviewUrl(res.data.user_profile_image_url ?? null);
@@ -491,6 +541,62 @@ const MyProfile = () => {
 										autoComplete="tel"
 									/>
 									<div className="my-profile-hint">하이픈 없이 입력해 주세요.</div>
+								</div>
+
+								<div className="my-profile-field">
+									<label htmlFor="mp-birth-date">생년월일</label>
+									<input
+										id="mp-birth-date"
+										type="date"
+										value={birthDate}
+										onChange={(e) => setBirthDate(e.target.value)}
+										max={new Date().toISOString().slice(0, 10)}
+									/>
+									<div className="my-profile-hint">소셜 계정 자동 연동에 사용됩니다.</div>
+								</div>
+
+								<div className="my-profile-field">
+									<label>주소</label>
+									<AddressSearchField
+										value={address}
+										onChange={setAddress}
+										baseInputClassName="bq-input"
+										detailInputClassName="bq-input"
+										buttonClassName="btn-edit"
+									/>
+								</div>
+							</div>
+
+							<div className="my-profile-social-link-card">
+								<h3 className="my-profile-subcard__title">소셜 계정 연동</h3>
+								<p className="my-profile-hint my-profile-social-link-card__lead">
+									같은 이름·생년월일·전화번호로 가입한 계정이 있으면 소셜 로그인 시 자동으로 연결됩니다.
+								</p>
+								<div className="my-profile-social-link-card__actions">
+									<button
+										type="button"
+										className={`my-profile-social-btn my-profile-social-btn--kakao${kakaoLinked ? ' is-linked' : ''}`}
+										disabled={Boolean(socialBusy)}
+										onClick={() => handleSocialLinkToggle('kakao')}
+									>
+										{socialBusy === 'kakao'
+											? '처리 중…'
+											: kakaoLinked
+												? '카카오 연동 해제하기'
+												: '카카오 연동하기'}
+									</button>
+									<button
+										type="button"
+										className={`my-profile-social-btn my-profile-social-btn--naver${naverLinked ? ' is-linked' : ''}`}
+										disabled={Boolean(socialBusy)}
+										onClick={() => handleSocialLinkToggle('naver')}
+									>
+										{socialBusy === 'naver'
+											? '처리 중…'
+											: naverLinked
+												? '네이버 연동 해제하기'
+												: '네이버 연동하기'}
+									</button>
 								</div>
 							</div>
 

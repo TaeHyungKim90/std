@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from core.config import settings
 
@@ -53,9 +54,17 @@ def create_access_token(data: dict) -> str:
 	to_encode.update({"exp": expire})
 	return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
+def create_timed_token(data: dict, *, minutes: int = 30) -> str:
+	"""짧은 TTL JWT (소셜 가입 티켓 등)."""
+	to_encode = data.copy()
+	expire = datetime.now(timezone.utc) + timedelta(minutes=max(1, int(minutes)))
+	to_encode.update({"exp": expire})
+	return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 def decode_auth_token(token: str) -> dict | None:
 	"""JWT 토큰 해독 (공통 헬퍼)"""
 	try:
 		return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-	except (JWTError, AttributeError):
+	except (InvalidTokenError, AttributeError):
 		return None

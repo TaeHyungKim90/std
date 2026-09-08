@@ -97,6 +97,56 @@ def _ensure_users_preferred_work_location_column() -> None:
 			conn.execute(text("ALTER TABLE users ADD COLUMN preferred_work_location VARCHAR(120)"))
 
 
+def _ensure_users_identity_social_columns() -> None:
+	"""기존 DB에 birth_date / address / provider_* / approval_status 보강 및 레거시 백필."""
+	insp = inspect(engine)
+	if not insp.has_table("users"):
+		return
+	cols = {c["name"] for c in insp.get_columns("users")}
+	alters = {
+		"birth_date": "VARCHAR(10)",
+		"address": "VARCHAR(255)",
+		"provider_kakao_id": "VARCHAR(100)",
+		"provider_naver_id": "VARCHAR(100)",
+		"approval_status": "VARCHAR(20) DEFAULT 'approved'",
+	}
+	with engine.begin() as conn:
+		for col, col_type in alters.items():
+			if col not in cols:
+				conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+		# 레거시 kakao_/naver_ login_id → provider_*_id 백필
+		conn.execute(
+			text(
+				"""
+				UPDATE users
+				SET provider_kakao_id = SUBSTR(user_login_id, 7)
+				WHERE (provider_kakao_id IS NULL OR provider_kakao_id = '')
+				  AND user_login_id LIKE 'kakao_%'
+				"""
+			)
+		)
+		conn.execute(
+			text(
+				"""
+				UPDATE users
+				SET provider_naver_id = SUBSTR(user_login_id, 7)
+				WHERE (provider_naver_id IS NULL OR provider_naver_id = '')
+				  AND user_login_id LIKE 'naver_%'
+				"""
+			)
+		)
+		# 기존 계정은 승인된 것으로 취급
+		conn.execute(
+			text(
+				"""
+				UPDATE users
+				SET approval_status = 'approved'
+				WHERE approval_status IS NULL OR TRIM(approval_status) = ''
+				"""
+			)
+		)
+
+
 def _ensure_multi_tenant_schema() -> None:
 	"""tenants 테이블 생성 및 기존 행에 tenant_id 백필."""
 	from core.config import settings as app_settings
@@ -108,9 +158,9 @@ def _ensure_multi_tenant_schema() -> None:
 	db = SessionLocal()
 	try:
 		if db.query(Tenant).count() == 0:
-			print("--- 🏢 기본 테넌트(valuesplay) 생성 — 활성, 기업명 가치플레이 ---")
 			db.add(Tenant(slug="valuesplay", name="가치플레이", is_active=True))
 			db.commit()
+			print("--- 기본 테넌트(valuesplay) 생성 — 활성, 기업명 가치플레이 ---")
 		else:
 			vp = db.query(Tenant).filter(Tenant.slug == "valuesplay").first()
 			if vp:
@@ -491,6 +541,10 @@ def init_db():
 		_ensure_users_preferred_work_location_column()
 	except Exception:
 		logger.warning("users.preferred_work_location 보강 실패(무시 가능)")
+	try:
+		_ensure_users_identity_social_columns()
+	except Exception:
+		logger.warning("users birth_date/provider_* 보강 실패(무시 가능)")
 	# 기존 SQLite DB에 신규 컬럼이 없을 경우, 런타임에서 안전하게 ALTER TABLE을 시도합니다.
 	# (운영에서는 마이그레이션(Alembic 등)을 권장합니다.)
 	try:
@@ -506,6 +560,11 @@ def init_db():
 					"salary_account_number": "TEXT",
 					"must_change_password": "INTEGER NOT NULL DEFAULT 0",
 					"visible_in_user_list": "INTEGER NOT NULL DEFAULT 1",
+					"birth_date": "VARCHAR(10)",
+					"address": "VARCHAR(255)",
+					"provider_kakao_id": "VARCHAR(100)",
+					"provider_naver_id": "VARCHAR(100)",
+					"approval_status": "VARCHAR(20) DEFAULT 'approved'",
 				}
 				for col, col_type in add_cols.items():
 					if col not in existing_cols:

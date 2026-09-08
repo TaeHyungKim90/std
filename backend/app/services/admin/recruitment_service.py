@@ -126,6 +126,7 @@ def update_application_status(
 				user_name=applicant.name,
 				user_nickname=f"{applicant.name} 사원",
 				role="user",
+				approval_status="approved",
 				join_date=today_seoul(),
 			)
 			db.add(new_employee)

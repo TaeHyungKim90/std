@@ -4,6 +4,7 @@ import { useAppPaths } from 'context/TenantContext';
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import BirthDateRequiredGate from './BirthDateRequiredGate';
 import Header from './Header';
 import MustChangePasswordGate from './MustChangePasswordGate';
 import Sidebar from './Sidebar';
@@ -16,6 +17,7 @@ const Layout = () => {
 	return (
 		<div className="bq-layout-wrapper">
 			<MustChangePasswordGate />
+			<BirthDateRequiredGate />
 			<Header />
 			<div className="bq-layout-body">
 				<Sidebar />
