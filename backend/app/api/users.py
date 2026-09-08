@@ -51,6 +51,12 @@ def link_or_unlink_social(
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
+	if (user.role or "").strip().lower() == "admin":
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="관리자 계정은 소셜 계정을 연동할 수 없습니다.",
+		)
+
 	provider = body.provider
 	action = body.action
 

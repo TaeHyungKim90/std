@@ -459,6 +459,11 @@ def link_social_provider_to_user(
 	provider_id: str,
 ) -> User:
 	"""로그인 사용자에게 소셜 provider ID를 연동."""
+	if (user.role or "").strip().lower() == "admin":
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="관리자 계정은 소셜 계정을 연동할 수 없습니다.",
+		)
 	provider = (provider or "").strip().lower()
 	pid = str(provider_id or "").strip()
 	if provider not in ("kakao", "naver") or not pid:

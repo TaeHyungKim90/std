@@ -120,6 +120,10 @@ const MyProfile = () => {
 	}, [photoPreviewUrl]);
 
 	const social = useMemo(() => isSocialLoginId(profile?.user_login_id), [profile?.user_login_id]);
+	const isAdminProfile = useMemo(
+		() => String(profile?.role || '').trim().toLowerCase() === 'admin',
+		[profile?.role],
+	);
 	const joinDateLocked = useMemo(() => isBootstrapSystemAdmin(profile), [profile]);
 
 	const vacation = profile?.vacation;
@@ -175,6 +179,10 @@ const MyProfile = () => {
 
 	const handleSocialLinkToggle = async (provider) => {
 		if (!profile || socialBusy) return;
+		if (String(profile.role || '').trim().toLowerCase() === 'admin') {
+			Notify.toastWarn('관리자 계정은 소셜 계정을 연동할 수 없습니다.');
+			return;
+		}
 		const linked = provider === 'kakao' ? kakaoLinked : naverLinked;
 		const action = linked ? 'unlink' : 'link';
 		const label = provider === 'kakao' ? '카카오' : '네이버';
@@ -584,6 +592,7 @@ const MyProfile = () => {
 								</div>
 							</div>
 
+							{!isAdminProfile ? (
 							<div className="my-profile-social-link-card">
 								<h3 className="my-profile-subcard__title">소셜 계정 연동</h3>
 								<p className="my-profile-hint my-profile-social-link-card__lead">
@@ -616,6 +625,7 @@ const MyProfile = () => {
 									</button>
 								</div>
 							</div>
+							) : null}
 
 							{/* test3.html 기준: 급여 계좌 / 비밀번호 변경 카드 */}
 							<div className="my-profile-basic-subcard-grid">

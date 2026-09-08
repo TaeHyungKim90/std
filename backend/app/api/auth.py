@@ -279,6 +279,12 @@ def _process_social_callback(
 				provider=provider,
 				tenant_slug=tenant_slug_str(tenant),
 			)
+		if (user.role or "").strip().lower() == "admin":
+			return _create_social_notice_response(
+				social_status="link_failed",
+				provider=provider,
+				tenant_slug=tenant_slug_str(tenant),
+			)
 		try:
 			service.link_social_provider_to_user(
 				db, user, provider=provider, provider_id=provider_id
