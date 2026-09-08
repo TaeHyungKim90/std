@@ -51,7 +51,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pyright==1.1.408",
-    "pytest==9.0.2",
+    "pytest==9.0.3",
 ]
 
 [tool.uv]

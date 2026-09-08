@@ -8,7 +8,7 @@ help:
 	@echo "  make lint-frontend   - eslint"
 	@echo "  make test            - backend + frontend tests"
 	@echo "  make test-backend    - pytest"
-	@echo "  make test-frontend   - react-scripts test (CI)"
+	@echo "  make test-frontend   - frontend test:ci (craco)"
 
 lint: lint-backend lint-frontend
 
