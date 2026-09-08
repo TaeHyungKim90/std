@@ -4,8 +4,8 @@ import { useAppPaths } from 'context/TenantContext';
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
-import Header from './Header';
 import BirthDateRequiredGate from './BirthDateRequiredGate';
+import Header from './Header';
 import MustChangePasswordGate from './MustChangePasswordGate';
 import Sidebar from './Sidebar';
 

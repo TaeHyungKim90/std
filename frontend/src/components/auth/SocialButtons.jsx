@@ -38,7 +38,7 @@ const SocialButtons = ({ mode = 'login' }) => {
 			<div className="social-divider">{isSignup ? '소셜 회원가입' : '소셜 로그인'}</div>
 			<p className="social-login-help">
 				{isSignup
-					? '소셜 회원가입도 관리자 승인 후 로그인할 수 있습니다. 동일 신원(이름·생년월일·전화) 계정이 있으면 연동됩니다.'
+					? '소셜 인증 후 이름·생년월일·전화·주소를 확인하고 가입을 완료합니다. 관리자 승인 후 로그인할 수 있습니다.'
 					: '승인된 소셜 계정만 로그인됩니다. 승인 대기 중이거나 미가입이면 안내됩니다.'}
 			</p>
 

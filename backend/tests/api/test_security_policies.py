@@ -363,6 +363,7 @@ def test_public_signup_rejects_admin_role():
 				"user_name": "일반가입테스트",
 				"user_phone_number": "01099998888",
 				"birth_date": "1995-05-05",
+				"address": "서울특별시 중구 세종대로 99",
 				"role": "admin",
 			},
 		)

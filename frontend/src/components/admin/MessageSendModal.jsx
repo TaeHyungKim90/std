@@ -3,10 +3,9 @@ import 'assets/css/admin.css';
 import { adminApi } from 'api/adminApi';	 // 경로 확인
 import { commonApi } from 'api/commonApi';	 // 경로 확인
 import { messageApi } from 'api/messageApi'; // 경로 확인
+import RichTextEditor from 'components/common/RichTextEditor';
 import { useLoading } from 'context/LoadingContext';
 import React, { useCallback,useEffect, useState } from 'react';
-// 🌟 SunEditor 임포트 (CSS 포함 필수)
-import SunEditor from 'suneditor-react';
 import * as Notify from 'utils/toastUtils';
 const INITIAL_FORM_DATA = {
 	title: '',
@@ -173,27 +172,16 @@ const MessageSendModal = ({ isOpen, onClose, onSuccess }) => {
 						/>
 					</div>
 
-					{/* 🌟 SunEditor 탑재 영역 */}
+					{/* TipTap 에디터 */}
 					<div className="form-group">
 						<label>상세 내용</label>
 						<div className="admin-message-send__editor-frame">
-							<SunEditor
+							<RichTextEditor
 								key={editorKey}
-								setContents={formData.content}
+								content={formData.content}
 								onChange={handleEditorChange}
-								setOptions={{
-									height: 250,
-									buttonList: [
-										['undo', 'redo'],
-										['font', 'fontSize', 'formatBlock'],
-										['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
-										['fontColor', 'hiliteColor', 'textStyle'],
-										['removeFormat'],
-										['outdent', 'indent'],
-										['align', 'horizontalRule', 'list', 'lineHeight'],
-										['table', 'link', 'image']
-									]
-								}}
+								height="250px"
+								preset="message"
 							/>
 						</div>
 					</div>

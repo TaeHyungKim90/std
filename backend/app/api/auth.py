@@ -22,7 +22,7 @@ from core.tenant import (
 	tenant_pk,
 	tenant_slug_str,
 )
-from core.security import create_access_token, decode_auth_token, get_password_hash, verify_password
+from core.security import create_access_token, create_timed_token, decode_auth_token, get_password_hash, verify_password
 from core.limiter import limiter
 from db.session import get_db
 from models.auth_models import User, UserAvatarSetting
@@ -73,6 +73,17 @@ COOKIE_OPTIONS = {
 	"secure": IS_PROD,
 	"path": "/",
 }
+
+SOCIAL_SIGNUP_COOKIE_OPTIONS = {
+	"key": "socialSignupTicket",
+	"httponly": True,
+	"max_age": 30 * 60,
+	"samesite": "lax",
+	"secure": IS_PROD,
+	"path": "/",
+}
+
+SOCIAL_SIGNUP_PURPOSE = "social_signup"
 def generate_user_token(user, *, tenant_slug: str | None = None):
 	"""공통 헬퍼: JWT 토큰 생성 (tenantId/tenantSlug 포함)"""
 	slug = tenant_slug
@@ -180,6 +191,57 @@ def _create_social_notice_response(*, social_status: str, provider: str, tenant_
 	)
 
 
+def _issue_social_signup_ticket(
+	*,
+	provider: str,
+	provider_id: str,
+	name: str,
+	nickname: str,
+	phone: str | None,
+	birth_date: str | None,
+	tenant_slug: str,
+) -> RedirectResponse:
+	ticket = create_timed_token(
+		{
+			"purpose": SOCIAL_SIGNUP_PURPOSE,
+			"provider": provider,
+			"provider_id": str(provider_id),
+			"tenant": tenant_slug,
+			"user_name": name or "",
+			"user_nickname": nickname or "",
+			"user_phone_number": phone or "",
+			"birth_date": birth_date or "",
+		},
+		minutes=30,
+	)
+	response = RedirectResponse(
+		url=_oauth_callback_url(tenant_slug, social_status="complete_required", provider=provider)
+	)
+	response.set_cookie(value=ticket, **SOCIAL_SIGNUP_COOKIE_OPTIONS)
+	return response
+
+
+def _read_social_signup_ticket(request: Request) -> dict:
+	raw = request.cookies.get(SOCIAL_SIGNUP_COOKIE_OPTIONS["key"])
+	if not raw:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션이 만료되었습니다. 다시 소셜 회원가입을 진행해 주세요.",
+		)
+	payload = decode_auth_token(raw)
+	if not payload or payload.get("purpose") != SOCIAL_SIGNUP_PURPOSE:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션이 올바르지 않습니다. 다시 소셜 회원가입을 진행해 주세요.",
+		)
+	return payload
+
+
+def _clear_social_signup_cookie(response: Response) -> None:
+	delete_options = {k: v for k, v in SOCIAL_SIGNUP_COOKIE_OPTIONS.items() if k != "max_age"}
+	response.delete_cookie(**delete_options)
+
+
 def _process_social_callback(
 	db: Session,
 	*,
@@ -232,7 +294,7 @@ def _process_social_callback(
 		)
 
 	try:
-		user, created = service.process_social_login(
+		user, _created = service.process_social_login(
 			db,
 			provider,
 			provider_id,
@@ -241,10 +303,21 @@ def _process_social_callback(
 			phone,
 			birth_date,
 			tenant_id=tenant_pk(tenant),
-			allow_create=social_mode == "signup",
+			# 신규 생성은 가입 완료 폼에서만 수행
+			allow_create=False,
 		)
 	except HTTPException as exc:
-		if exc.status_code == status.HTTP_404_NOT_FOUND and social_mode == "login":
+		if exc.status_code == status.HTTP_404_NOT_FOUND:
+			if social_mode == "signup":
+				return _issue_social_signup_ticket(
+					provider=provider,
+					provider_id=provider_id,
+					name=name,
+					nickname=nickname,
+					phone=phone,
+					birth_date=birth_date,
+					tenant_slug=tenant_slug_str(tenant),
+				)
 			return _create_social_notice_response(
 				social_status="not_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
 			)
@@ -258,13 +331,7 @@ def _process_social_callback(
 			)
 		raise
 
-	# 신규 소셜 가입은 승인 대기 — 쿠키 로그인 없이 안내
-	if created:
-		return _create_social_notice_response(
-			social_status="pending_approval", provider=provider, tenant_slug=tenant_slug_str(tenant)
-		)
-
-	if social_mode == "signup" and not created:
+	if social_mode == "signup":
 		return _create_social_notice_response(
 			social_status="already_registered", provider=provider, tenant_slug=tenant_slug_str(tenant)
 		)
@@ -443,6 +510,70 @@ async def signup(
 	return {"success": True, "message": "회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요."}
 
 
+@router.get("/social-signup/ticket", response_model=auth_schemas.SocialSignupTicketResponse)
+async def get_social_signup_ticket(
+	request: Request,
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""소셜 가입 완료 폼용 프리필 조회 (HttpOnly 티켓 쿠키)."""
+	payload = _read_social_signup_ticket(request)
+	ticket_tenant = normalize_tenant_slug(payload.get("tenant"))
+	if ticket_tenant != tenant_slug_str(tenant):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션의 테넌트가 일치하지 않습니다.",
+		)
+	return {
+		"provider": payload.get("provider") or "",
+		"user_name": payload.get("user_name") or None,
+		"user_nickname": payload.get("user_nickname") or None,
+		"user_phone_number": payload.get("user_phone_number") or None,
+		"birth_date": normalize_birth_date(payload.get("birth_date")) or (payload.get("birth_date") or None),
+	}
+
+
+@router.post("/social-signup/complete")
+async def complete_social_signup(
+	request: Request,
+	response: Response,
+	data: auth_schemas.SocialSignupComplete,
+	db: Session = Depends(get_db),
+	tenant: Tenant = Depends(require_tenant),
+):
+	"""소셜 가입 완료 — 티켓의 provider로 계정 생성(pending) 또는 기존 신원 연동."""
+	payload = _read_social_signup_ticket(request)
+	ticket_tenant = normalize_tenant_slug(payload.get("tenant"))
+	if ticket_tenant != tenant_slug_str(tenant):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="소셜 가입 세션의 테넌트가 일치하지 않습니다.",
+		)
+	user = service.complete_social_signup(
+		db,
+		tenant_id=tenant_pk(tenant),
+		provider=str(payload.get("provider") or ""),
+		provider_id=str(payload.get("provider_id") or ""),
+		user_name=data.user_name,
+		user_nickname=data.user_nickname,
+		phone=data.user_phone_number,
+		birth_date=data.birth_date,
+		address=data.address,
+	)
+	_clear_social_signup_cookie(response)
+	status_val = (user.approval_status or "approved").strip().lower()
+	if status_val == "pending":
+		message = "회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요."
+	elif status_val == "rejected":
+		message = "가입이 거절된 계정입니다. 관리자에게 문의해 주세요."
+	else:
+		message = "기존 계정에 소셜 연동이 완료되었습니다. 로그인해 주세요."
+	return {
+		"success": True,
+		"message": message,
+		"approval_status": status_val,
+	}
+
+
 @router.get("/me", response_model=auth_schemas.UserResponse)
 def get_my_profile(
 	db: Session = Depends(get_db),
@@ -541,6 +672,10 @@ def patch_my_profile(
 
 	if "birth_date" in data:
 		user.birth_date = data["birth_date"]
+
+	if "address" in data:
+		raw = data["address"]
+		user.address = (str(raw).strip() if raw is not None else "") or None
 
 	avatar_zoom = data.pop("avatar_zoom", None)
 	avatar_offset_x = data.pop("avatar_offset_x", None)
@@ -711,7 +846,13 @@ async def naver_callback_handler(
 		user_info = user_res.json()
 
 	naver_data = user_info.get("response", {}) or {}
-	naver_id = naver_data.get("id")
+	naver_id_raw = naver_data.get("id")
+	if naver_id_raw is None or str(naver_id_raw).strip() == "":
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="네이버 계정 식별자를 가져오지 못했습니다.",
+		)
+	naver_id = str(naver_id_raw).strip()
 	nickname = naver_data.get("nickname") or naver_data.get("name") or "네이버유저"
 	name = naver_data.get("name") or nickname
 	phone = naver_data.get("mobile")

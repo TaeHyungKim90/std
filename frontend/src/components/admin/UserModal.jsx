@@ -3,6 +3,7 @@ import 'assets/css/admin-user-profile-extra.css';
 
 import { adminApi } from 'api/adminApi';
 import { commonApi } from 'api/commonApi';
+import AddressSearchField from 'components/common/AddressSearchField';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
 import { Camera } from 'lucide-react';
@@ -24,6 +25,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 		user_nickname: '',
 		user_phone_number: '',
 		birth_date: '',
+		address: '',
 		user_profile_image_url: '',
 		department_id: '',
 		position_id: '',
@@ -76,6 +78,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_password: '',
 				user_phone_number: editingUser.user_phone_number || '',
 				birth_date: toDateValue(editingUser.birth_date),
+				address: editingUser.address || '',
 				user_profile_image_url: editingUser.user_profile_image_url || '',
 				department_id: editingUser.department_id ?? '',
 				position_id: editingUser.position_id ?? '',
@@ -95,6 +98,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_nickname: '',
 				user_phone_number: '',
 				birth_date: '',
+				address: '',
 				role: 'user', joinDate: '', resignation_date: '', department_id: '', position_id: ''
 			});
 		}
@@ -144,6 +148,7 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 				user_nickname: formData.user_nickname || null,
 				user_phone_number: (formData.user_phone_number || '').replace(/\D/g, '') || null,
 				birth_date: formData.birth_date || null,
+				address: (formData.address || '').trim() || null,
 				user_profile_image_url: nextProfileImageUrl,
 				department_id: formData.department_id === '' ? null : Number(formData.department_id),
 				position_id: formData.position_id === '' ? null : Number(formData.position_id),
@@ -258,6 +263,16 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 								value={formData.birth_date || ''}
 								onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
 								required={!editingUser}
+							/>
+						</div>
+						<div className="form-group">
+							<label>주소</label>
+							<AddressSearchField
+								value={formData.address || ''}
+								onChange={(full) => setFormData({ ...formData, address: full })}
+								baseInputClassName="bq-input"
+								detailInputClassName="bq-input"
+								buttonClassName="btn-edit"
 							/>
 						</div>
 

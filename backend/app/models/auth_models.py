@@ -46,6 +46,7 @@ class User(Base):
 	)
 	user_phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 	birth_date: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD
+	address: Mapped[str | None] = mapped_column(String(255), nullable=True)
 	provider_kakao_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 	provider_naver_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)

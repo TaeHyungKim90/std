@@ -63,6 +63,17 @@ def _normalize_birth_date_input(v, *, required: bool = False):
 	return normalized
 
 
+def _normalize_address_input(v, *, required: bool = False):
+	if v is None or (isinstance(v, str) and not str(v).strip()):
+		if required:
+			raise ValueError("주소를 입력해 주세요.")
+		return None
+	s = str(v).strip()
+	if len(s) > 255:
+		raise ValueError("주소는 255자 이내로 입력해 주세요.")
+	return s
+
+
 # 4. 사용자 생성 요청 (회원가입/관리자 등록)
 class UserCreate(BaseModel):
 	user_login_id: str = Field(..., description="아이디")
@@ -71,6 +82,8 @@ class UserCreate(BaseModel):
 	user_nickname: Optional[str] = None
 	user_phone_number: str = Field(..., description="휴대폰 번호")
 	birth_date: str = Field(..., description="생년월일 (YYYY-MM-DD)")
+	# 공개 가입은 서비스에서 필수 검증. 관리자 등록은 선택.
+	address: Optional[str] = Field(None, description="주소")
 	# 사용자 프로필 확장
 	user_profile_image_url: Optional[str] = None
 	department_id: Optional[int] = None
@@ -100,12 +113,18 @@ class UserCreate(BaseModel):
 	def validate_birth_date(cls, v):
 		return _normalize_birth_date_input(v, required=True)
 
+	@field_validator("address", mode="before")
+	@classmethod
+	def validate_address(cls, v):
+		return _normalize_address_input(v, required=False)
+
 # 5. 사용자 정보 업데이트 요청
 class UserUpdate(BaseModel):
 	user_name: Optional[str] = None
 	user_nickname: Optional[str] = None
 	user_phone_number: Optional[str] = None
 	birth_date: Optional[str] = Field(None, description="생년월일 (YYYY-MM-DD)")
+	address: Optional[str] = Field(None, description="주소")
 	user_profile_image_url: Optional[str] = None
 	department_id: Optional[int] = None
 	position_id: Optional[int] = None
@@ -134,6 +153,11 @@ class UserUpdate(BaseModel):
 	@classmethod
 	def validate_birth_date(cls, v):
 		return _normalize_birth_date_input(v, required=False)
+
+	@field_validator("address", mode="before")
+	@classmethod
+	def validate_address(cls, v):
+		return _normalize_address_input(v, required=False)
 
 	@field_validator("approval_status")
 	@classmethod
@@ -168,6 +192,7 @@ class MeProfilePatch(BaseModel):
 	user_nickname: Optional[str] = Field(None, max_length=50)
 	user_phone_number: Optional[str] = None
 	birth_date: Optional[str] = Field(None, description="생년월일 (YYYY-MM-DD)")
+	address: Optional[str] = Field(None, description="주소")
 	user_profile_image_url: Optional[str] = None
 	join_date: Optional[date] = None
 	department_id: Optional[int] = None
@@ -189,6 +214,55 @@ class MeProfilePatch(BaseModel):
 	@classmethod
 	def validate_birth_date(cls, v):
 		return _normalize_birth_date_input(v, required=False)
+
+	@field_validator("address", mode="before")
+	@classmethod
+	def validate_address(cls, v):
+		return _normalize_address_input(v, required=False)
+
+
+class SocialSignupComplete(BaseModel):
+	"""소셜 OAuth 이후 가입 완료 (아이디/비번은 서버 생성)."""
+
+	user_name: str = Field(..., description="실명")
+	user_nickname: Optional[str] = None
+	user_phone_number: str = Field(..., description="휴대폰 번호")
+	birth_date: str = Field(..., description="생년월일 (YYYY-MM-DD)")
+	address: str = Field(..., description="주소")
+
+	@field_validator("user_name")
+	@classmethod
+	def validate_user_name(cls, v):
+		s = str(v or "").strip()
+		if not s:
+			raise ValueError("이름을 입력해 주세요.")
+		return s
+
+	@field_validator("user_phone_number")
+	@classmethod
+	def validate_phone_number(cls, v):
+		phone = _normalize_phone_input(v)
+		if not phone:
+			raise ValueError("전화번호를 입력해 주세요.")
+		return phone
+
+	@field_validator("birth_date", mode="before")
+	@classmethod
+	def validate_birth_date(cls, v):
+		return _normalize_birth_date_input(v, required=True)
+
+	@field_validator("address", mode="before")
+	@classmethod
+	def validate_address(cls, v):
+		return _normalize_address_input(v, required=True)
+
+
+class SocialSignupTicketResponse(BaseModel):
+	provider: str
+	user_name: Optional[str] = None
+	user_nickname: Optional[str] = None
+	user_phone_number: Optional[str] = None
+	birth_date: Optional[str] = None
 
 
 class LinkSocialRequest(BaseModel):
@@ -246,6 +320,7 @@ class UserResponse(BaseModel):
 	user_nickname: Optional[str]
 	user_phone_number: Optional[str] = None
 	birth_date: Optional[str] = None
+	address: Optional[str] = None
 	provider_kakao_id: Optional[str] = None
 	provider_naver_id: Optional[str] = None
 	kakao_linked: bool = False

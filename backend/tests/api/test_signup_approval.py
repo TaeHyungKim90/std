@@ -25,6 +25,7 @@ def test_public_signup_is_pending_and_login_blocked():
 			"user_name": "승인대기유저",
 			"user_phone_number": "01077778888",
 			"birth_date": "1993-03-03",
+			"address": "서울특별시 중구 세종대로 1",
 		}
 		signup = client.post("/api/auth/signup", json=payload, headers=TENANT_HEADERS)
 		assert signup.status_code == status.HTTP_200_OK, signup.text
@@ -51,6 +52,7 @@ def test_admin_approve_then_login_ok(integration_admin_client):
 		"user_name": "승인후로그인",
 		"user_phone_number": "01066665555",
 		"birth_date": "1994-04-04",
+		"address": "서울특별시 중구 세종대로 2",
 	}
 	signup = admin.post("/api/auth/signup", json=payload, headers=TENANT_HEADERS)
 	assert signup.status_code == status.HTTP_200_OK, signup.text
@@ -84,6 +86,7 @@ def test_rejected_user_cannot_login(integration_admin_client):
 		"user_name": "거절유저",
 		"user_phone_number": "01055554444",
 		"birth_date": "1995-05-05",
+		"address": "서울특별시 중구 세종대로 3",
 	}
 	signup = admin.post("/api/auth/signup", json=payload, headers=TENANT_HEADERS)
 	assert signup.status_code == status.HTTP_200_OK, signup.text
@@ -91,6 +94,7 @@ def test_rejected_user_cannot_login(integration_admin_client):
 	db = SessionLocal()
 	try:
 		user = db.query(User).filter(User.user_login_id == payload["user_login_id"]).first()
+		assert user is not None
 		user_id = user.id
 	finally:
 		db.close()

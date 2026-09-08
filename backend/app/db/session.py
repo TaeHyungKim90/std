@@ -98,13 +98,14 @@ def _ensure_users_preferred_work_location_column() -> None:
 
 
 def _ensure_users_identity_social_columns() -> None:
-	"""기존 DB에 birth_date / provider_* / approval_status 보강 및 레거시 백필."""
+	"""기존 DB에 birth_date / address / provider_* / approval_status 보강 및 레거시 백필."""
 	insp = inspect(engine)
 	if not insp.has_table("users"):
 		return
 	cols = {c["name"] for c in insp.get_columns("users")}
 	alters = {
 		"birth_date": "VARCHAR(10)",
+		"address": "VARCHAR(255)",
 		"provider_kakao_id": "VARCHAR(100)",
 		"provider_naver_id": "VARCHAR(100)",
 		"approval_status": "VARCHAR(20) DEFAULT 'approved'",
@@ -560,6 +561,7 @@ def init_db():
 					"must_change_password": "INTEGER NOT NULL DEFAULT 0",
 					"visible_in_user_list": "INTEGER NOT NULL DEFAULT 1",
 					"birth_date": "VARCHAR(10)",
+					"address": "VARCHAR(255)",
 					"provider_kakao_id": "VARCHAR(100)",
 					"provider_naver_id": "VARCHAR(100)",
 					"approval_status": "VARCHAR(20) DEFAULT 'approved'",

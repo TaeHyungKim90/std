@@ -4,6 +4,7 @@ import 'assets/css/my-profile-extra.css';
 import { authApi } from 'api/authApi';
 import { commonApi } from 'api/commonApi';
 import { todoService } from 'api/todoApi';
+import AddressSearchField from 'components/common/AddressSearchField';
 import AppModal from 'components/common/AppModal';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
@@ -58,6 +59,7 @@ const MyProfile = () => {
 	const [joinDate, setJoinDate] = useState('');
 	const [birthDate, setBirthDate] = useState('');
 	const [phone, setPhone] = useState('');
+	const [address, setAddress] = useState('');
 	const [salaryBankName, setSalaryBankName] = useState('');
 	const [salaryAccountNumber, setSalaryAccountNumber] = useState('');
 	const [socialBusy, setSocialBusy] = useState(null); // 'kakao' | 'naver' | null
@@ -84,6 +86,7 @@ const MyProfile = () => {
 			setJoinDate(formatYmd(data.join_date) === '—' ? '' : formatYmd(data.join_date));
 			setBirthDate(formatYmd(data.birth_date) === '—' ? '' : formatYmd(data.birth_date));
 			setPhone(data.user_phone_number ?? '');
+			setAddress(data.address ?? '');
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
 			setPhotoPreviewUrl(data.user_profile_image_url ?? null);
@@ -234,6 +237,11 @@ const MyProfile = () => {
 			const prevPhone = (profile.user_phone_number || '').replace(/\D/g, '');
 			if (phoneDigits !== prevPhone) payload.user_phone_number = phoneDigits || null;
 
+			// 주소
+			const nextAddress = (address || '').trim();
+			const prevAddress = (profile.address || '').trim();
+			if (nextAddress !== prevAddress) payload.address = nextAddress || null;
+
 			// 급여 계좌
 			const bankTrim = (salaryBankName || '').trim();
 			const prevBank = (profile.salary_bank_name || '').trim();
@@ -268,6 +276,7 @@ const MyProfile = () => {
 			setJoinDate(formatYmd(res.data.join_date) === '—' ? '' : formatYmd(res.data.join_date));
 			setBirthDate(formatYmd(res.data.birth_date) === '—' ? '' : formatYmd(res.data.birth_date));
 			setPhone(res.data.user_phone_number ?? '');
+			setAddress(res.data.address ?? '');
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
 			setPhotoPreviewUrl(res.data.user_profile_image_url ?? null);
@@ -544,6 +553,17 @@ const MyProfile = () => {
 										max={new Date().toISOString().slice(0, 10)}
 									/>
 									<div className="my-profile-hint">소셜 계정 자동 연동에 사용됩니다.</div>
+								</div>
+
+								<div className="my-profile-field">
+									<label>주소</label>
+									<AddressSearchField
+										value={address}
+										onChange={setAddress}
+										baseInputClassName="bq-input"
+										detailInputClassName="bq-input"
+										buttonClassName="btn-edit"
+									/>
 								</div>
 							</div>
 

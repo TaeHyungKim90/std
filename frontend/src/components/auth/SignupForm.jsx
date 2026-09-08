@@ -1,4 +1,5 @@
 import { authApi } from 'api/authApi';
+import AddressSearchField from 'components/common/AddressSearchField';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
@@ -24,6 +25,7 @@ const SignupForm = () => {
 		user_nickname: '',
 		user_phone_number: '',
 		birth_date: '',
+		address: '',
 	});
 
 	const [error, setError] = useState('');
@@ -86,6 +88,9 @@ const SignupForm = () => {
 		}
 		if (!formData.user_phone_number || formData.user_phone_number.length < 10) {
 			return setError('전화번호를 숫자만 10~11자리로 입력해 주세요.');
+		}
+		if (!formData.address || !String(formData.address).trim()) {
+			return setError('주소를 검색해 입력해 주세요.');
 		}
 		if (!policyAccepted) return setError('개인정보처리방침 동의 후 회원가입을 진행해 주세요.');
 
@@ -195,6 +200,12 @@ const SignupForm = () => {
 					max={new Date().toISOString().slice(0, 10)}
 				/>
 				<input type="text" name="user_phone_number" placeholder="전화번호 (숫자만)" value={formData.user_phone_number} onChange={handleChange} maxLength="11" inputMode="numeric" className="login-input" required />
+
+				<AddressSearchField
+					value={formData.address}
+					onChange={(full) => setFormData((prev) => ({ ...prev, address: full }))}
+					required
+				/>
 
 				<button type="submit" className="login-button">가입하기</button>
 

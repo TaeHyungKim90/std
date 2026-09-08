@@ -83,7 +83,7 @@ describe('LoginForm', () => {
 	});
 
 	test('생년월일 미등록 시 내 정보로 이동한다', async () => {
-		authApi.getMe.mockResolvedValue({ data: { birth_date: null } });
+		authApi.getMe.mockResolvedValue({ data: { birth_date: null, role: 'user' } });
 		const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
 
 		render(<LoginForm />);
@@ -94,6 +94,21 @@ describe('LoginForm', () => {
 
 		await waitFor(() => expect(alertSpy).toHaveBeenCalled());
 		await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(PATHS.MY_PROFILE));
+		alertSpy.mockRestore();
+	});
+
+	test('관리자는 생년월일 미등록이어도 할 일로 이동한다', async () => {
+		authApi.getMe.mockResolvedValue({ data: { birth_date: null, role: 'admin' } });
+		const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+
+		render(<LoginForm />);
+
+		await userEvent.type(screen.getByPlaceholderText('아이디 (ID)'), 'admin1');
+		await userEvent.type(screen.getByPlaceholderText('비밀번호 (Password)'), 'secret12');
+		await userEvent.click(screen.getByRole('button', { name: '로그인' }));
+
+		await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(PATHS.MY_TODOS));
+		expect(alertSpy).not.toHaveBeenCalled();
 		alertSpy.mockRestore();
 	});
 });

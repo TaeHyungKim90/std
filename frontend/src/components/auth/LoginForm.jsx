@@ -78,8 +78,9 @@ const LoginForm = () => {
 				await checkAuth();
 				try {
 					const meRes = await authApi.getMe();
+					const role = meRes?.data?.role;
 					const birth = meRes?.data?.birth_date;
-					if (!birth || !String(birth).trim()) {
+					if (role !== 'admin' && (!birth || !String(birth).trim())) {
 						try {
 							sessionStorage.setItem('vp_birth_date_prompted', '1');
 						} catch {

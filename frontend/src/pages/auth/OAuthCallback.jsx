@@ -9,8 +9,9 @@ import * as Notify from 'utils/toastUtils';
 async function navigateAfterLogin(navigate, paths) {
 	try {
 		const meRes = await authApi.getMe();
+		const role = meRes?.data?.role;
 		const birth = meRes?.data?.birth_date;
-		if (!birth || !String(birth).trim()) {
+		if (role !== 'admin' && (!birth || !String(birth).trim())) {
 			try {
 				sessionStorage.setItem('vp_birth_date_prompted', '1');
 			} catch {
@@ -42,6 +43,11 @@ const OAuthCallback = () => {
 			const socialStatus = searchParams.get('social_status');
 			const provider = searchParams.get('provider') === 'naver' ? '네이버' : '카카오';
 
+			if (socialStatus === 'complete_required') {
+				Notify.toastInfo(`${provider} 인증이 완료되었습니다. 주소 등 추가 정보를 입력해 가입을 완료해 주세요.`);
+				navigate(paths.SOCIAL_SIGNUP_COMPLETE, { replace: true });
+				return;
+			}
 			if (socialStatus === 'pending_approval') {
 				Notify.toastWarn(
 					`${provider} 회원가입이 접수되었습니다. 관리자 승인 후 로그인해 주세요.`

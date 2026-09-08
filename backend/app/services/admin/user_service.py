@@ -243,6 +243,7 @@ def create_user_by_admin(db: Session, payload: UserCreate, tenant_id: int):
 		user_nickname=payload.user_nickname,
 		user_phone_number=payload.user_phone_number,
 		birth_date=payload.birth_date,
+		address=getattr(payload, "address", None),
 		user_profile_image_url=payload.user_profile_image_url,
 		department_id=department_id,
 		position_id=position_id,

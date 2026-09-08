@@ -1,7 +1,7 @@
 import DOMPurify from 'dompurify';
 
 /**
- * SunEditor 등에서 온 HTML을 표시하기 전 XSS 완화.
+ * TipTap 등에서 온 HTML을 표시하기 전 XSS 완화.
  * (관리자만 편집한다는 전제에도, 저장된 데이터 오염·실수 대비)
  */
 const DEFAULT_CONFIG = {

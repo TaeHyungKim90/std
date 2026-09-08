@@ -49,6 +49,20 @@ export const authApi = {
 	client.post(`${PATH}/signup`, payload),
 
   /**
+   * 4b. 소셜 가입 티켓(프리필) 조회
+   * GET /api/auth/social-signup/ticket
+   */
+  getSocialSignupTicket: () =>
+	client.get(`${PATH}/social-signup/ticket`),
+
+  /**
+   * 4c. 소셜 가입 완료
+   * POST /api/auth/social-signup/complete
+   */
+  completeSocialSignup: (payload) =>
+	client.post(`${PATH}/social-signup/complete`, payload),
+
+  /**
    * 5. 아이디 중복 확인
    * POST /api/auth/check-id
    */

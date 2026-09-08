@@ -118,6 +118,7 @@ def ensure_integration_users():
 				"user_name": "통합관리자",
 				"user_phone_number": "01011112222",
 				"birth_date": "1988-01-01",
+				"address": "서울특별시 테스트구 테스트로 1",
 			},
 		)
 		_ensure_user_role(INTEGRATION_ADMIN_LOGIN_ID, "admin")
@@ -130,6 +131,7 @@ def ensure_integration_users():
 				"user_name": "통합직원",
 				"user_phone_number": "01033334444",
 				"birth_date": "1992-02-02",
+				"address": "서울특별시 테스트구 테스트로 2",
 			},
 		)
 		_ensure_user_approved(INTEGRATION_EMPLOYEE_LOGIN_ID)

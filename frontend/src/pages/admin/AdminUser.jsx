@@ -7,6 +7,38 @@ import UserAvatar from 'components/common/UserAvatar';
 import { useLoading } from 'context/LoadingContext';
 import React, { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
+import { formatUserDisplayName } from 'utils/userDisplayName';
+
+function escapeCsvCell(value) {
+	const s = String(value ?? '');
+	if (/[",\n\r]/.test(s)) {
+		return `"${s.replace(/"/g, '""')}"`;
+	}
+	return s;
+}
+
+function downloadUsersExcelCsv(users) {
+	const header = ['이름', '생년월일', '전화번호', '주소'];
+	const rows = users.map((u) => [
+		formatUserDisplayName(u.user_name, u.user_nickname),
+		u.birth_date || '',
+		u.user_phone_number || '',
+		u.address || '',
+	]);
+	const lines = [header, ...rows].map((cols) => cols.map(escapeCsvCell).join(','));
+	const bom = '\uFEFF';
+	const blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	const ymd = new Date().toISOString().slice(0, 10);
+	a.href = url;
+	a.download = `사용자목록_${ymd}.csv`;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	URL.revokeObjectURL(url);
+}
+
 const AdminUser = () => {
 	const { showLoading, hideLoading } = useLoading();
 	const [users, setUsers] = useState([]);
@@ -88,6 +120,20 @@ const AdminUser = () => {
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 					/>
+					<button
+						type="button"
+						className="btn-primary btn-primary--sync-blue"
+						onClick={() => {
+							if (!filteredUsers.length) {
+								Notify.toastWarn('다운로드할 사용자가 없습니다.');
+								return;
+							}
+							downloadUsersExcelCsv(filteredUsers);
+							Notify.toastSuccess('엑셀(CSV) 파일을 다운로드했습니다.');
+						}}
+					>
+						엑셀 다운로드
+					</button>
 					<button 
 						className="btn-primary btn-primary--sync-blue" 
 						onClick={async () => {
@@ -114,17 +160,16 @@ const AdminUser = () => {
 
 			<div className="admin-table-wrapper">
 				<table className="admin-table">
-					{/* ... (thead 동일 유지) ... */}
 					<thead>
 						<tr>
 							<th>아이디</th>
 							<th>성명</th>
-							<th>닉네임</th>
+							<th>생년월일</th>
 							<th>연락처</th>
-							<th>상태/권한</th> {/* ✅ 상태 추가 */}
+							<th>상태/권한</th>
 							<th>가입일</th>
-							<th>입사/퇴사일</th> {/* ✅ 통합 */}
-							<th>잔여/총 연차</th> {/* ✅ 보기 좋게 통합 */}
+							<th>입사/퇴사일</th>
+							<th>잔여/총 연차</th>
 							<th>작업</th>
 						</tr>
 					</thead>
@@ -157,7 +202,7 @@ const AdminUser = () => {
 											/>
 											<div>
 												<div>
-													{u.user_name}
+													{formatUserDisplayName(u.user_name, u.user_nickname)}
 													{isResigned && <span className="admin-user__resigned-tag">(퇴사)</span>}
 												</div>
 												<div className="admin-user__deptpos">
@@ -166,7 +211,7 @@ const AdminUser = () => {
 											</div>
 										</div>
 									</td>
-									<td>{u.user_nickname || '-'}</td>
+									<td>{u.birth_date || '-'}</td>
 									<td>{u.user_phone_number || '-'}</td>
 									<td>
 										<span className={`role-badge ${u.role}`}>{u.role}</span>

@@ -1,9 +1,9 @@
 import 'assets/css/todoEditModal.css';
 
 import { todoService } from 'api/todoApi';
+import RichTextEditor from 'components/common/RichTextEditor';
 import { useAuth } from 'context/AuthContext';
 import React, { useActionState, useEffect, useState } from 'react';
-import SunEditor from 'suneditor-react';
 import { getEmploymentRangeError, toSeoulYmd } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
@@ -231,18 +231,12 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 					/>
 
 					<div className="todo-edit__editor-shell">
-						<SunEditor
-							setContents={description}
+						<RichTextEditor
+							key={isCompactEditor ? 'compact' : 'todo'}
+							content={description}
 							onChange={setDescription}
 							height={isCompactEditor ? '150px' : '250px'}
-							setOptions={{
-								buttonList: [
-									...(isCompactEditor ? [] : [['undo', 'redo']]),
-									...(isCompactEditor ? [] : [['font', 'fontSize', 'formatBlock']]),
-									['bold', 'underline', 'italic', 'fontColor'],
-									['list', 'link'],
-								],
-							}}
+							preset={isCompactEditor ? 'compact' : 'todo'}
 						/>
 					</div>
 

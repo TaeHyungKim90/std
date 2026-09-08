@@ -209,10 +209,16 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: 
 	name = normalize_user_name(user_data.user_name)
 	birth = normalize_birth_date(user_data.birth_date)
 	phone = normalize_phone_number(user_data.user_phone_number)
+	address = (user_data.address or "").strip() if getattr(user_data, "address", None) else ""
 	if not name or not birth or not phone:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="이름, 생년월일, 전화번호는 필수입니다.",
+		)
+	if not address:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="주소를 입력해 주세요.",
 		)
 
 	existing = find_user_by_identity(
@@ -237,6 +243,7 @@ def create_new_user(db: Session, user_data: auth_schemas.UserCreate, tenant_id: 
 		user_nickname=user_data.user_nickname,
 		user_phone_number=phone,
 		birth_date=birth,
+		address=address,
 		role="user",
 		approval_status="pending",
 		join_date=user_data.joined_at,
@@ -353,6 +360,95 @@ def process_social_login(
 		assert_user_approved(user)
 
 	return user, created
+
+
+def complete_social_signup(
+	db: Session,
+	*,
+	tenant_id: int,
+	provider: str,
+	provider_id: str,
+	user_name: str,
+	user_nickname: str | None,
+	phone: str,
+	birth_date: str,
+	address: str,
+) -> User:
+	"""소셜 OAuth 티켓 검증 후 가입 완료 — 아이디/비번 서버 생성, pending."""
+	provider = (provider or "").strip().lower()
+	pid = str(provider_id or "").strip()
+	if provider not in ("kakao", "naver") or not pid:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="소셜 계정 정보가 올바르지 않습니다.")
+
+	clean_name = normalize_user_name(user_name)
+	clean_phone = normalize_phone_number(phone)
+	clean_birth = normalize_birth_date(birth_date)
+	clean_address = (address or "").strip()
+	nick = (user_nickname or "").strip() or None
+
+	if not clean_name or not clean_phone or not clean_birth:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="이름, 생년월일, 전화번호는 필수입니다.",
+		)
+	if not clean_address:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="주소를 입력해 주세요.")
+
+	existing = find_user_by_provider(db, tenant_id=tenant_id, provider=provider, provider_id=pid)
+	if existing:
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT,
+			detail="이미 가입된 소셜 계정입니다. 로그인해 주세요.",
+		)
+
+	matched = find_user_by_identity(
+		db,
+		tenant_id=tenant_id,
+		user_name=clean_name,
+		birth_date=clean_birth,
+		phone_number=clean_phone,
+	)
+	if matched:
+		existing_pid = getattr(matched, _provider_column(provider), None)
+		if existing_pid and str(existing_pid) != pid:
+			raise HTTPException(
+				status_code=status.HTTP_409_CONFLICT,
+				detail="이미 다른 소셜 계정과 연동된 사용자입니다.",
+			)
+		# 동일 신원 기존 계정에 provider만 연동 (주소는 비어 있을 때만 채움)
+		set_provider_id(matched, provider, pid)
+		if not matched.address:
+			matched.address = clean_address
+		db.commit()
+		db.refresh(matched)
+		return matched
+
+	secure_random_password = secrets.token_urlsafe(32)
+	hashed_password = get_password_hash(secure_random_password)
+	user = User(
+		tenant_id=tenant_id,
+		user_login_id=f"{provider}_{pid}",
+		user_password=hashed_password,
+		user_name=clean_name,
+		user_nickname=nick or clean_name,
+		user_phone_number=clean_phone,
+		birth_date=clean_birth,
+		address=clean_address,
+		role="user",
+		approval_status="pending",
+	)
+	set_provider_id(user, provider, pid)
+	try:
+		db.add(user)
+		db.commit()
+		db.refresh(user)
+		return user
+	except IntegrityError:
+		db.rollback()
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="데이터베이스 오류로 가입에 실패했습니다.",
+		)
 
 
 def link_social_provider_to_user(
