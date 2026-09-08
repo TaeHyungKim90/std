@@ -6,8 +6,9 @@ import { commonApi } from 'api/commonApi';
 import AddressSearchField from 'components/common/AddressSearchField';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { Camera } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
 const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
@@ -189,9 +190,9 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 
 	return (
 		<div className="modal-overlay">
-			<div className="modal-content dynamic-enter">
-				<h3>{editingUser ? "정보 수정" : "사용자 등록"}</h3>
-				<form onSubmit={handleSave}>
+			<div className="modal-content user-modal dynamic-enter">
+				<h3 className="user-modal__title">{editingUser ? "정보 수정" : "사용자 등록"}</h3>
+				<form onSubmit={handleSave} className="user-modal__form">
 					<div className="user-modal-scroll">
 						<div className="user-modal-photo-row">
 							<button type="button" className="user-modal-photo-preview-trigger" onClick={() => setCropModalOpen(true)}>
@@ -257,12 +258,12 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 						</div>
 						<div className="form-group">
 							<label>생년월일</label>
-							<input
-								type="date"
+							<YmdDateInput
 								name="birth_date"
 								value={formData.birth_date || ''}
 								onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
 								required={!editingUser}
+								max={new Date().toISOString().slice(0, 10)}
 							/>
 						</div>
 						<div className="form-group">
@@ -270,9 +271,9 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 							<AddressSearchField
 								value={formData.address || ''}
 								onChange={(full) => setFormData({ ...formData, address: full })}
-								baseInputClassName="bq-input"
-								detailInputClassName="bq-input"
-								buttonClassName="btn-edit"
+								baseInputClassName="user-modal-input"
+								detailInputClassName="user-modal-input"
+								buttonClassName="user-modal-addr-btn"
 							/>
 						</div>
 
@@ -337,16 +338,16 @@ const UserModal = ({ isOpen, onClose, onRefresh, editingUser }) => {
 						<div className="form-row modal-form-row">
 							<div className="form-group">
 								<label>입사일</label>
-								<input
-									type="date"
+								<YmdDateInput
+									name="joinDate"
 									value={formData.joinDate || ''}
 									onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
 								/>
 							</div>
 							<div className="form-group">
 								<label>퇴사일</label>
-								<input
-									type="date"
+								<YmdDateInput
+									name="resignation_date"
 									value={formData.resignation_date || ''}
 									onChange={(e) => setFormData({ ...formData, resignation_date: e.target.value })}
 								/>

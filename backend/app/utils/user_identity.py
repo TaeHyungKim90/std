@@ -12,14 +12,19 @@ from models.auth_models import User
 
 
 def normalize_phone_number(phone: str | None) -> str | None:
-	"""하이픈·공백 등 제거 후 숫자만 남긴다. +82 국제번호는 0으로 변환."""
+	"""하이픈·공백 등 제거 후 숫자만 남긴다. +82 국제번호는 0으로 변환.
+
+	카카오 예: '+82 10-1234-5678' → '01012345678'
+	주의: 숫자만 남긴 뒤 11자리로 먼저 자르면 '82101234567'이 되어 매칭이 깨진다.
+	"""
 	if phone is None:
 		return None
 	s = str(phone).strip()
 	if not s:
 		return None
 	digits = re.sub(r"[^\d]", "", s)
-	if digits.startswith("82") and len(digits) >= 10:
+	# 82 + 국내번호(보통 10자리 → 합 12). 최소 11자 이상일 때만 국가번호로 본다.
+	if digits.startswith("82") and len(digits) >= 11:
 		digits = "0" + digits[2:]
 	return digits or None
 

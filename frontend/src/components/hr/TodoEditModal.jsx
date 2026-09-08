@@ -2,8 +2,9 @@ import 'assets/css/todoEditModal.css';
 
 import { todoService } from 'api/todoApi';
 import RichTextEditor from 'components/common/RichTextEditor';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { useAuth } from 'context/AuthContext';
-import React, { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { getEmploymentRangeError, toSeoulYmd } from 'utils/employmentDateUtils';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
@@ -156,25 +157,23 @@ const TodoEditModal = ({ isOpen, onClose, mode = 'create', selectedDate, event, 
 				<h2>{mode === 'edit' ? '📝 일정 수정' : '📅 새 일정 등록'}</h2>
 				<form action={submitAction}>
 					<div className="date-group">
-						<input
-							type="date"
+						<YmdDateInput
 							name="start_date"
 							value={startYmd}
 							onChange={handleStartYmdChange}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							required
-							className="bq-input"
+							inputClassName="bq-input"
 						/>
-						<input
-							type="date"
+						<YmdDateInput
 							name="end_date"
 							value={isHalfVacation ? startYmd : endYmd}
 							onChange={(e) => setEndYmd(e.target.value)}
 							min={hireMin || undefined}
 							max={resignMax || undefined}
 							disabled={isHalfVacation}
-							className="bq-input"
+							inputClassName="bq-input"
 							style={isHalfVacation ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
 						/>
 					</div>

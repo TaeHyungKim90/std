@@ -1,6 +1,7 @@
 import { holidayApi } from 'api/holidayApi';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback, useEffect, useMemo,useState } from 'react';
+import { useCallback, useEffect, useMemo,useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 /** 현재 연도 기준 −1 ~ +3 (총 5개 연도) */
 const getYearSelectOptions = () => {
@@ -149,7 +150,12 @@ const HolidayMgmt = () => {
 			{/* 깔끔한 신규 등록 박스 */}
 			<div className="holiday-mgmt__form-outer">
 				<div className="category-add-box category-add-box--single-line">
-					<input type="date" className="cat-input" value={newHoliday.holiday_date} onChange={e => setNewHoliday({ ...newHoliday, holiday_date: e.target.value })} aria-invalid={isDateYearMismatch} />
+					<YmdDateInput
+						inputClassName="cat-input"
+						value={newHoliday.holiday_date}
+						onChange={(e) => setNewHoliday({ ...newHoliday, holiday_date: e.target.value })}
+						aria-invalid={isDateYearMismatch}
+					/>
 					<select className="cat-input" value={newHoliday.is_official} onChange={e => setNewHoliday({ ...newHoliday, is_official: e.target.value })}>
 						<option value="true">🔴 법정 공휴일</option>
 						<option value="false">🟢 회사 휴무일</option>

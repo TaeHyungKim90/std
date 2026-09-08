@@ -1,6 +1,6 @@
 import HrLayout from 'components/hr/HrLayout';
 import { ROUTE_SEGMENTS } from 'constants/paths';
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
 const TodoListView = lazy(() => import('pages/hr/TodoList'));

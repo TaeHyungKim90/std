@@ -2,7 +2,7 @@ import 'assets/css/attendance.css';
 
 import { attendanceApi } from 'api/attendanceApi';
 import { useAuth } from 'context/AuthContext';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	resolvePreferredAgainstOptions,
 	writePreferredWorkLocation,

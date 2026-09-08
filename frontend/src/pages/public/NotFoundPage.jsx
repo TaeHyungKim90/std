@@ -2,7 +2,6 @@ import 'assets/css/notFound.css';
 
 import { DEFAULT_TENANT_SLUG, pathsForTenant } from 'constants/paths';
 import { ArrowLeft,Home } from 'lucide-react';
-import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const NotFoundPage = () => {

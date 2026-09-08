@@ -1,17 +1,14 @@
-/* eslint-disable testing-library/no-container, testing-library/no-node-access */
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { PATHS } from 'constants/paths';
-import React from 'react';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 
 import JobApplyPage from './JobApplyPage';
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 
-jest.mock('react-router-dom', () => ({
-	...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+	...(await vi.importActual('react-router-dom')),
 	useLocation: () => ({
 		state: {
 			job: { id: 42, title: '테스트 공고' },
@@ -20,35 +17,35 @@ jest.mock('react-router-dom', () => ({
 	useNavigate: () => mockNavigate,
 }));
 
-jest.mock('api/recruitmentApi', () => ({
+vi.mock('api/recruitmentApi', () => ({
 	recruitmentApi: {
-		getMyApplications: jest.fn(),
-		submitApplication: jest.fn(),
-		uploadApplyFiles: jest.fn(),
+		getMyApplications: vi.fn(),
+		submitApplication: vi.fn(),
+		uploadApplyFiles: vi.fn(),
 	},
 }));
 
-jest.mock('utils/applicantSession', () => ({
-	syncApplicantSessionFromServer: jest.fn(),
+vi.mock('utils/applicantSession', () => ({
+	syncApplicantSessionFromServer: vi.fn(),
 }));
 
-jest.mock('utils/toastUtils', () => ({
-	toastWarn: jest.fn(),
-	toastError: jest.fn(),
+vi.mock('utils/toastUtils', () => ({
+	toastWarn: vi.fn(),
+	toastError: vi.fn(),
 	toastPromise: (p) => p,
-	toastSuccess: jest.fn(),
-	toastApiFailure: jest.fn(),
-	toastLoading: jest.fn(),
-	toastInfo: jest.fn(),
+	toastSuccess: vi.fn(),
+	toastApiFailure: vi.fn(),
+	toastLoading: vi.fn(),
+	toastInfo: vi.fn(),
 }));
 
-jest.mock('utils/formatApiError', () => ({
+vi.mock('utils/formatApiError', () => ({
 	formatApiDetail: () => '',
 }));
 
 describe('JobApplyPage', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		syncApplicantSessionFromServer.mockResolvedValue({
 			isLoggedIn: true,
@@ -78,8 +75,11 @@ describe('JobApplyPage', () => {
 			type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 		});
 
-		await userEvent.upload(fileInputs[0], resumeFile);
-		await userEvent.click(screen.getByRole('button', { name: '지원서 최종 제출' }));
+		fireEvent.change(fileInputs[0], { target: { files: [resumeFile] } });
+		await waitFor(() => {
+			expect(fileInputs[0].files?.[0]?.name).toBe('resume.docx');
+		});
+		fireEvent.submit(container.querySelector('form'));
 
 		await waitFor(() => expect(recruitmentApi.uploadApplyFiles).toHaveBeenCalled());
 		await waitFor(() => expect(recruitmentApi.submitApplication).toHaveBeenCalled());

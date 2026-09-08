@@ -1,21 +1,20 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 import * as Notify from 'utils/toastUtils';
 
 import IdCopyChip from './IdCopyChip';
 
-jest.mock('utils/toastUtils', () => ({
-	toastSuccess: jest.fn(),
-	toastError: jest.fn(),
-	toastWarn: jest.fn(),
+vi.mock('utils/toastUtils', () => ({
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+	toastWarn: vi.fn(),
 }));
 
 describe('IdCopyChip', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		Object.defineProperty(navigator, 'clipboard', {
-			value: { writeText: jest.fn(() => Promise.resolve()) },
+			value: { writeText: vi.fn(() => Promise.resolve()) },
 			configurable: true,
 			writable: true,
 		});
@@ -47,7 +46,7 @@ describe('IdCopyChip', () => {
 	});
 
 	test('isolateRowClick이면 복사 버튼의 keydown이 부모로 전파되지 않는다', () => {
-		const onKeyDown = jest.fn();
+		const onKeyDown = vi.fn();
 		const longId = 'employee_login_id_very_long_value_12345';
 		render(
 			<div onKeyDown={onKeyDown}>
@@ -59,7 +58,7 @@ describe('IdCopyChip', () => {
 	});
 
 	test('isolateRowClick이 아니면 복사 버튼 keydown이 부모까지 전파된다', () => {
-		const onKeyDown = jest.fn();
+		const onKeyDown = vi.fn();
 		const longId = 'employee_login_id_very_long_value_12345';
 		render(
 			<div onKeyDown={onKeyDown}>
@@ -74,7 +73,7 @@ describe('IdCopyChip', () => {
 		const longId = 'employee_login_id_very_long_value_12345';
 		navigator.clipboard.writeText.mockRejectedValueOnce(new Error('NotAllowedError'));
 		const prevExec = document.execCommand;
-		const execCmd = jest.fn(() => true);
+		const execCmd = vi.fn(() => true);
 		document.execCommand = execCmd;
 		try {
 			render(<IdCopyChip value={longId} minAbbreviateLen={10} />);
@@ -96,7 +95,7 @@ describe('IdCopyChip', () => {
 		const longId = 'employee_login_id_very_long_value_12345';
 		navigator.clipboard.writeText.mockRejectedValueOnce(new Error('denied'));
 		const prevExec = document.execCommand;
-		document.execCommand = jest.fn(() => false);
+		document.execCommand = vi.fn(() => false);
 		try {
 			render(<IdCopyChip value={longId} minAbbreviateLen={10} />);
 			await userEvent.click(screen.getByRole('button', { name: new RegExp(`${longId} 복사`) }));

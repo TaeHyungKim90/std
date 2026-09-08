@@ -3,7 +3,7 @@ import 'assets/css/publicHeader.css';
 import { recruitmentApi } from 'api/recruitmentApi';
 import { useTenant } from 'context/TenantContext';
 import { useApplicantSession } from 'hooks/useApplicantSession';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 

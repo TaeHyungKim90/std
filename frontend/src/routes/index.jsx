@@ -5,7 +5,7 @@ import { DEFAULT_TENANT_SLUG, ROUTE_SEGMENTS, TENANT_PARAM } from 'constants/pat
 import { PLATFORM_ROOT } from 'constants/platformPaths';
 import { TenantLayout } from 'context/TenantContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import adminRoutes from './adminRoutes';

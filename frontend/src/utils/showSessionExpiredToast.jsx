@@ -1,4 +1,3 @@
-import React from 'react';
 import toast from 'react-hot-toast';
 import { navigateToLogin } from 'utils/authNavigate';
 import { beginSessionRedirect, endSessionRedirect, isSessionRedirecting } from 'utils/sessionRedirect';

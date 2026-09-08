@@ -1,7 +1,7 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';

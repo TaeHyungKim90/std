@@ -2,7 +2,8 @@ import 'assets/css/admin.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
 import RichTextEditor from 'components/common/RichTextEditor';
-import React, { useEffect, useMemo, useState } from 'react';
+import YmdDateInput from 'components/common/YmdDateInput';
+import { useEffect, useMemo, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
@@ -181,8 +182,7 @@ const JobPostingModal = ({ isOpen, onClose, onRefresh, editingJob }) => {
 					</div>
 					<div className="form-group">
 						<label>마감일</label>
-						<input
-							type="date"
+						<YmdDateInput
 							value={formData.deadline}
 							onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
 							required

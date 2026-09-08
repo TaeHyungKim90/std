@@ -1,10 +1,12 @@
 import { authApi } from 'api/authApi';
 import AddressSearchField from 'components/common/AddressSearchField';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
+import { normalizePhoneDigits } from 'utils/phoneNormalize';
 import * as Notify from 'utils/toastUtils';
 
 const BIRTH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -37,7 +39,7 @@ const SocialSignupComplete = () => {
 				setFormData({
 					user_name: data.user_name || '',
 					user_nickname: data.user_nickname || data.user_name || '',
-					user_phone_number: (data.user_phone_number || '').replace(/\D/g, '').slice(0, 11),
+					user_phone_number: normalizePhoneDigits(data.user_phone_number || ''),
 					birth_date: data.birth_date || '',
 					address: '',
 				});
@@ -60,7 +62,7 @@ const SocialSignupComplete = () => {
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		if (name === 'user_phone_number') {
-			setFormData((prev) => ({ ...prev, [name]: value.replace(/[^\d]/g, '').slice(0, 11) }));
+			setFormData((prev) => ({ ...prev, [name]: normalizePhoneDigits(value) }));
 			return;
 		}
 		setFormData((prev) => ({ ...prev, [name]: value }));
@@ -134,12 +136,11 @@ const SocialSignupComplete = () => {
 					className="login-input"
 					required
 				/>
-				<input
-					type="date"
+				<YmdDateInput
 					name="birth_date"
 					value={formData.birth_date}
 					onChange={handleChange}
-					className="login-input"
+					inputClassName="login-input"
 					required
 					aria-label="생년월일"
 					max={new Date().toISOString().slice(0, 10)}

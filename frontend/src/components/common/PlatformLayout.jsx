@@ -3,7 +3,7 @@ import 'assets/css/platform.css';
 
 import { PLATFORM_PATHS } from 'constants/platformPaths';
 import { PlatformAuthContext } from 'context/PlatformAuthContext';
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 const PlatformLayout = () => {

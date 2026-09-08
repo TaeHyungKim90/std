@@ -1,6 +1,6 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation,useNavigate } from 'react-router-dom';
 import { clearCachedApplicantUser,syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { formatApiDetail } from 'utils/formatApiError';

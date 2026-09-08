@@ -1,7 +1,6 @@
 import 'assets/css/header.css';
 
 import { useAppPaths } from 'context/TenantContext';
-import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import BirthDateRequiredGate from './BirthDateRequiredGate';

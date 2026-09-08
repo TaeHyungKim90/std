@@ -33,7 +33,11 @@ from constants.bootstrap_admin import is_bootstrap_system_admin
 from services.admin.user_service import sync_user_vacation
 from services import auth_service as service
 
-from utils.user_identity import compose_birth_from_year_month_day, normalize_birth_date
+from utils.user_identity import (
+	compose_birth_from_year_month_day,
+	normalize_birth_date,
+	normalize_phone_number,
+)
 
 router = APIRouter()
 
@@ -209,8 +213,9 @@ def _issue_social_signup_ticket(
 			"tenant": tenant_slug,
 			"user_name": name or "",
 			"user_nickname": nickname or "",
-			"user_phone_number": phone or "",
-			"birth_date": birth_date or "",
+			# 카카오 '+82 10-…' 를 티켓 단계부터 010… 으로 저장 (프론트 11자리 절단 오매칭 방지)
+			"user_phone_number": normalize_phone_number(phone) or "",
+			"birth_date": normalize_birth_date(birth_date) or (birth_date or ""),
 		},
 		minutes=30,
 	)
@@ -527,7 +532,8 @@ async def get_social_signup_ticket(
 		"provider": payload.get("provider") or "",
 		"user_name": payload.get("user_name") or None,
 		"user_nickname": payload.get("user_nickname") or None,
-		"user_phone_number": payload.get("user_phone_number") or None,
+		"user_phone_number": normalize_phone_number(payload.get("user_phone_number"))
+		or (payload.get("user_phone_number") or None),
 		"birth_date": normalize_birth_date(payload.get("birth_date")) or (payload.get("birth_date") or None),
 	}
 

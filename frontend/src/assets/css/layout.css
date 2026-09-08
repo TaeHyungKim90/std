@@ -204,13 +204,115 @@
 .bq-textarea::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 10px; }
 .bq-textarea::-webkit-scrollbar-track { background-color: transparent; }
 
+/* YmdDateInput — 텍스트 입력 + 우측 달력(네이티브 picker는 전체 너비 앵커) */
+.ymd-date-input {
+	position: relative;
+	width: 100%;
+	display: block;
+}
+
+.ymd-date-input__text {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	box-sizing: border-box;
+	padding-right: 2.6rem;
+}
+
+.ymd-date-input__text::placeholder {
+	color: #9aa09c;
+}
+
+.ymd-date-input__icon {
+	position: absolute;
+	top: 50%;
+	right: 0.7rem;
+	transform: translateY(-50%);
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #1a1a1a;
+	pointer-events: none;
+}
+
+.ymd-date-input__calendar-btn {
+	position: absolute;
+	top: 0;
+	right: 0;
+	z-index: 3;
+	width: 2.6rem;
+	height: 100%;
+	padding: 0;
+	border: none;
+	border-radius: 0 10px 10px 0;
+	background: transparent;
+	cursor: pointer;
+}
+
+.ymd-date-input__calendar-btn:disabled {
+	cursor: not-allowed;
+}
+
+.ymd-date-input__native {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 0;
+	width: 100% !important;
+	max-width: none !important;
+	min-width: 0 !important;
+	height: 100%;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	opacity: 0;
+	pointer-events: none;
+	color: transparent;
+}
+
+.ymd-date-input__native::-webkit-calendar-picker-indicator {
+	display: none;
+}
+
+/* AddressSearchField — 기본 주소 행(입력+검색) / 상세주소 */
+.address-search-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.address-search-field__row,
+.address-search-field .input-group {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	width: 100%;
+	margin: 0;
+}
+
+.address-search-field__row > input,
+.address-search-field .input-group > input {
+	flex: 1;
+	min-width: 0;
+}
+
+.address-search-field__row > button,
+.address-search-field .input-group > button {
+	flex-shrink: 0;
+}
+
 .date-group { 
 	display: flex; 
 	gap: 15px; 
 	margin-bottom: 5px; 
 }
 /* 가로 배치: .bq-input의 width:100%와 충돌하지 않도록 균등 분할 · 최소 너비 0으로 플렉스 오버플로 방지 */
-.date-group > input {
+.date-group > input,
+.date-group > .ymd-date-input {
 	flex: 1 1 0;
 	min-width: 0;
 	width: auto;
@@ -341,7 +443,8 @@
 	.modal-content h2 { font-size: 1.3rem; margin-top: 10px; }
 	.date-group { flex-direction: column; gap: 0; margin-bottom: 0; }
 	/* 세로 스택일 때 flex:1이 남아 입력칸이 세로로 과도하게 늘어나는 현상 방지 */
-	.date-group > input {
+	.date-group > input,
+	.date-group > .ymd-date-input {
 		flex: 0 0 auto;
 		width: 100%;
 		max-width: 100%;

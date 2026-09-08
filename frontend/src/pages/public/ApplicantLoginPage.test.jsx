@@ -1,44 +1,43 @@
-import { render, screen, waitFor } from '@testing-library/react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { recruitmentApi } from 'api/recruitmentApi';
-import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 
 import ApplicantLoginPage from './ApplicantLoginPage';
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 const mockReturnState = { returnUrl: '/careers/apply/42', job: { id: 42 } };
 
-jest.mock('react-router-dom', () => ({
-	...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+	...(await vi.importActual('react-router-dom')),
 	useNavigate: () => mockNavigate,
 	useLocation: () => ({ pathname: '/careers/login', state: mockReturnState }),
 }));
 
-jest.mock('api/recruitmentApi', () => ({
+vi.mock('api/recruitmentApi', () => ({
 	recruitmentApi: {
-		loginApplicant: jest.fn(),
+		loginApplicant: vi.fn(),
 	},
 }));
 
-jest.mock('utils/applicantSession', () => ({
-	syncApplicantSessionFromServer: jest.fn(),
-	clearCachedApplicantUser: jest.fn(),
+vi.mock('utils/applicantSession', () => ({
+	syncApplicantSessionFromServer: vi.fn(),
+	clearCachedApplicantUser: vi.fn(),
 }));
 
-jest.mock('utils/toastUtils', () => ({
+vi.mock('utils/toastUtils', () => ({
 	toastPromise: (p) => p,
-	toastError: jest.fn(),
+	toastError: vi.fn(),
 }));
 
-jest.mock('utils/formatApiError', () => ({
+vi.mock('utils/formatApiError', () => ({
 	formatApiDetail: () => '',
 }));
 
 describe('ApplicantLoginPage', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		recruitmentApi.loginApplicant.mockResolvedValue({ data: { name: '지원자' } });
 		syncApplicantSessionFromServer.mockResolvedValue({
 			isLoggedIn: true,

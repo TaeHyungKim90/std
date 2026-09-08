@@ -2,7 +2,6 @@ import 'assets/css/sidebar.css'; // 새로운 사이드바 CSS 연결
 
 import { adminSubMenuFor } from 'constants/menu';
 import { useAppPaths } from 'context/TenantContext';
-import React from 'react';
 import { useLocation,useNavigate } from 'react-router-dom';
 
 const Sidebar = () => {

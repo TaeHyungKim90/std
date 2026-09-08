@@ -4,7 +4,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import parse from 'html-react-parser';
-import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';

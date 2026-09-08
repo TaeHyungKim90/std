@@ -4,7 +4,8 @@ import 'assets/css/attendance.css';
 import { reportApi } from 'api/reportApi';
 import IdCopyChip from 'components/common/IdCopyChip';
 import SideDrawer from 'components/common/SideDrawer';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import YmdDateInput from 'components/common/YmdDateInput';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	addMonths,
@@ -272,10 +273,10 @@ const AdminDailyReport = () => {
 						<div className="adm-attendance__date-toolbar rep-admin-daily-top-row__date">
 							<label className="adm-attendance__date-label" htmlFor="rep-admin-daily-work-date">
 								기준일
-								<input
+								<YmdDateInput
 									id="rep-admin-daily-work-date"
-									type="date"
-									className="adm-attendance__date-input"
+									className="adm-attendance__date-field"
+									inputClassName="adm-attendance__date-input"
 									value={dailyWorkYmd}
 									disabled={pageBusy}
 									onChange={(e) => setDailyWorkYmd(e.target.value || getTodayYmd())}

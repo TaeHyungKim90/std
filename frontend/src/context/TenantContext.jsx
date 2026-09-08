@@ -2,7 +2,7 @@ import { client } from 'api/axiosInstance';
 import LoadingBar from 'components/common/LoadingBar';
 import { pathsForTenant, TENANT_PARAM } from 'constants/paths';
 import { DEFAULT_BRANDING_LOGO_SRC, resolveBrandingAssetUrl } from 'constants/tenantBranding';
-import React, { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { useEffect, useState } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 

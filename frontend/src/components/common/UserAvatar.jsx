@@ -1,6 +1,6 @@
 import 'assets/css/user-avatar.css';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getFilePreviewUrl } from 'utils/fileUtils';
 
 const getInitial = (value) => {

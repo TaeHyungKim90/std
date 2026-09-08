@@ -1,5 +1,5 @@
 import { adminApi } from 'api/adminApi';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 function currentMonthValue() {

@@ -1,7 +1,7 @@
 import { authApi } from 'api/authApi';
 import PasswordChangeModal from 'components/hr/PasswordChangeModal';
 import { useAuth } from 'context/AuthContext';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 /**

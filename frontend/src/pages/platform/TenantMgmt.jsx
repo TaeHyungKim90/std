@@ -2,7 +2,7 @@ import { platformApi } from 'api/platformApi';
 import TenantEditModal from 'components/platform/TenantEditModal';
 import { DEFAULT_TENANT_SLUG } from 'constants/paths';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const isDefaultTenant = (row) =>

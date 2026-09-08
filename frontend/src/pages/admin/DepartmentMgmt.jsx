@@ -1,6 +1,6 @@
 import { adminApi } from 'api/adminApi';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const DepartmentMgmt = () => {

@@ -1,6 +1,6 @@
 import { adminApi } from 'api/adminApi';
 import { useLoading } from 'context/LoadingContext';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
 

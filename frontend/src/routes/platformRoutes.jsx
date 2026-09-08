@@ -1,7 +1,7 @@
 import PlatformLayout from 'components/common/PlatformLayout';
 import PlatformRoute from 'components/common/PlatformRoute';
 import { PLATFORM_ROUTE_SEGMENTS } from 'constants/platformPaths';
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 
 const PlatformLogin = lazy(() => import('pages/platform/PlatformLogin'));

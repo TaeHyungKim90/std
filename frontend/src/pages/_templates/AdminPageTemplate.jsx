@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * [참조용] Admin 계열 페이지 템플릿

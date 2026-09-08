@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * 우측 슬라이드 패널 + 오버레이. `UserAttendanceDrawer`·보고서 화면 등에서 공통 사용.

@@ -5,7 +5,7 @@ import './assets/css/layout.css';
 import AuthNavigateRegistrar from 'components/common/AuthNavigateRegistrar';
 import ErrorBoundary from 'components/common/ErrorBoundary';
 import LoadingBar from 'components/common/LoadingBar';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter } from 'react-router-dom';
 

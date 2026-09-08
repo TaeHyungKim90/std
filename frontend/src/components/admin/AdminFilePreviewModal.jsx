@@ -1,6 +1,6 @@
 import 'assets/css/admin.css';
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { getFilePreviewUrl } from 'utils/fileUtils';
 
 function fileExtensionFromPath(fileUrl) {

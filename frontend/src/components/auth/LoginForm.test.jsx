@@ -1,53 +1,52 @@
-import { render, screen, waitFor } from '@testing-library/react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { authApi } from 'api/authApi';
 import { PATHS } from 'constants/paths';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
-import React from 'react';
 
 import LoginForm from './LoginForm';
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 
-jest.mock('react-router-dom', () => ({
-	...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+	...(await vi.importActual('react-router-dom')),
 	useNavigate: () => mockNavigate,
 }));
 
-jest.mock('context/AuthContext', () => ({
-	useAuth: jest.fn(),
+vi.mock('context/AuthContext', () => ({
+	useAuth: vi.fn(),
 }));
 
-jest.mock('context/LoadingContext', () => ({
-	useLoading: jest.fn(),
+vi.mock('context/LoadingContext', () => ({
+	useLoading: vi.fn(),
 }));
 
-jest.mock('api/authApi', () => ({
+vi.mock('api/authApi', () => ({
 	authApi: {
-		login: jest.fn(),
-		getMe: jest.fn(),
+		login: vi.fn(),
+		getMe: vi.fn(),
 	},
 }));
 
-jest.mock('utils/toastUtils', () => ({
+vi.mock('utils/toastUtils', () => ({
 	toastPromise: (p) => p,
-	toastApiFailure: jest.fn(),
-	toastLoading: jest.fn(() => 'loading-id'),
-	toastSuccess: jest.fn(),
-	toastError: jest.fn(),
-	toastWarn: jest.fn(),
-	toastInfo: jest.fn(),
+	toastApiFailure: vi.fn(),
+	toastLoading: vi.fn(() => 'loading-id'),
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+	toastWarn: vi.fn(),
+	toastInfo: vi.fn(),
 }));
 
-jest.mock('utils/formatApiError', () => ({
+vi.mock('utils/formatApiError', () => ({
 	formatApiDetail: () => '',
 }));
 
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', () => ({
 	__esModule: true,
 	default: {
-		dismiss: jest.fn(),
+		dismiss: vi.fn(),
 	},
 }));
 
@@ -55,16 +54,16 @@ describe('LoginForm', () => {
 	let checkAuthSpy;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
-		checkAuthSpy = jest.fn().mockResolvedValue(true);
+		vi.clearAllMocks();
+		checkAuthSpy = vi.fn().mockResolvedValue(true);
 		useAuth.mockReturnValue({
 			isLoggedIn: false,
 			loading: false,
 			checkAuth: checkAuthSpy,
 		});
 		useLoading.mockReturnValue({
-			showLoading: jest.fn(),
-			hideLoading: jest.fn(),
+			showLoading: vi.fn(),
+			hideLoading: vi.fn(),
 		});
 		authApi.login.mockResolvedValue({ data: { success: true } });
 		authApi.getMe.mockResolvedValue({ data: { birth_date: '1990-01-01' } });
@@ -84,7 +83,7 @@ describe('LoginForm', () => {
 
 	test('생년월일 미등록 시 내 정보로 이동한다', async () => {
 		authApi.getMe.mockResolvedValue({ data: { birth_date: null, role: 'user' } });
-		const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+		const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
 		render(<LoginForm />);
 
@@ -99,7 +98,7 @@ describe('LoginForm', () => {
 
 	test('관리자는 생년월일 미등록이어도 할 일로 이동한다', async () => {
 		authApi.getMe.mockResolvedValue({ data: { birth_date: null, role: 'admin' } });
-		const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+		const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
 		render(<LoginForm />);
 

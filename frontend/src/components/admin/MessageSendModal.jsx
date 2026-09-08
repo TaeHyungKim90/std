@@ -5,7 +5,7 @@ import { commonApi } from 'api/commonApi';	 // 경로 확인
 import { messageApi } from 'api/messageApi'; // 경로 확인
 import RichTextEditor from 'components/common/RichTextEditor';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback,useEffect, useState } from 'react';
+import { useCallback,useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 const INITIAL_FORM_DATA = {
 	title: '',

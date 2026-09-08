@@ -1,19 +1,14 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import React from 'react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
 
 import App from './App';
 
-jest.mock('./routes', () => {
-	const React = require('react');
-	return {
-		__esModule: true,
-		default: function StubAppRoutes() {
-			return <div data-testid="stub-routes" />;
-		},
-	};
-});
+vi.mock('./routes', () => ({
+	default: function StubAppRoutes() {
+		return <div data-testid="stub-routes" />;
+	},
+}));
 
-jest.mock('api/authApi', () => ({
+vi.mock('api/authApi', () => ({
 	authApi: {
 		checkAuth: () => Promise.resolve({ data: { isLoggedIn: false } }),
 		logout: () => Promise.resolve({ data: { success: true } }),

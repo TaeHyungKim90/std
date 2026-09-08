@@ -4,7 +4,7 @@ import { menuItemsFor } from 'constants/menu';
 import { DEFAULT_BRANDING_LOGO_SRC } from 'constants/tenantBranding';
 import { AuthContext } from 'context/AuthContext';
 import { useTenant } from 'context/TenantContext';
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link,useLocation, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 

@@ -2,7 +2,7 @@ import 'assets/css/my-profile.css';
 import 'assets/css/my-profile-extra.css';
 
 import AppModal from 'components/common/AppModal';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const PasswordChangeModal = ({

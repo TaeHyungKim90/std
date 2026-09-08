@@ -6,7 +6,7 @@ import {
 	resolveBrandingAssetUrl,
 } from 'constants/tenantBranding';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const TenantBrandingMgmt = () => {

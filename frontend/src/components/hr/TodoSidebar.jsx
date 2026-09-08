@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef } from 'react';
+import { forwardRef, useRef } from 'react';
 import { getContrastColor } from 'utils/colorUtils';
 
 const TodoSidebar = forwardRef(({ categories, openColorModal }, ref) => {

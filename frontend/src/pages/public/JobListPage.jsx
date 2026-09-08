@@ -4,7 +4,7 @@ import { DEFAULT_PUBLIC_JOBS_PAGE_SIZE } from 'constants/apiConfig';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-import React, { useCallback,useEffect, useState } from 'react';
+import { useCallback,useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 

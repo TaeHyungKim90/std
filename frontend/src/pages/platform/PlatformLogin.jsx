@@ -3,7 +3,7 @@ import 'assets/css/platform.css';
 
 import { PLATFORM_PATHS } from 'constants/platformPaths';
 import { PlatformAuthContext } from 'context/PlatformAuthContext';
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 

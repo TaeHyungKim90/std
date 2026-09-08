@@ -1,7 +1,7 @@
 import { adminApi } from 'api/adminApi';
 import { useLoading } from 'context/LoadingContext';
 import EmojiPicker from 'emoji-picker-react';
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 const CategoryMgmt = () => {
 	const [categories, setCategories] = useState([]);

@@ -3,7 +3,7 @@ import 'assets/css/avatar-image-crop-modal.css';
 import AppModal from 'components/common/AppModal';
 import UserAvatar from 'components/common/UserAvatar';
 import { Camera } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getFilePreviewUrl } from 'utils/fileUtils';
 import * as Notify from 'utils/toastUtils';
 

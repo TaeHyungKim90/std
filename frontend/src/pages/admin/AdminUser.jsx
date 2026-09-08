@@ -5,7 +5,7 @@ import UserModal from 'components/admin/UserModal';
 import IdCopyChip from 'components/common/IdCopyChip';
 import UserAvatar from 'components/common/UserAvatar';
 import { useLoading } from 'context/LoadingContext';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 import { formatUserDisplayName } from 'utils/userDisplayName';
 

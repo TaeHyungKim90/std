@@ -1,11 +1,13 @@
 import { authApi } from 'api/authApi';
 import AddressSearchField from 'components/common/AddressSearchField';
 import PrivacyPolicyConsent from 'components/common/PrivacyPolicyConsent';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useCallback,useState } from 'react';
+import { useCallback,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
+import { normalizePhoneDigits } from 'utils/phoneNormalize';
 import * as Notify from 'utils/toastUtils';
 
 import SocialButtons from './SocialButtons';
@@ -47,7 +49,7 @@ const SignupForm = () => {
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		if (name === 'user_phone_number') {
-			const onlyNums = value.replace(/[^\d]/g, '').slice(0, 11);
+			const onlyNums = normalizePhoneDigits(value);
 			setFormData(prev => ({ ...prev, [name]: onlyNums }));
 			return;
 		}
@@ -188,13 +190,12 @@ const SignupForm = () => {
 
 				<input type="text" name="user_name" placeholder="이름 (실명)" value={formData.user_name} onChange={handleChange} className="login-input" required />
 				<input type="text" name="user_nickname" placeholder="닉네임" value={formData.user_nickname} onChange={handleChange} className="login-input" required />
-				<input
-					type="date"
+				<YmdDateInput
 					name="birth_date"
 					placeholder="생년월일 (YYYY-MM-DD)"
 					value={formData.birth_date}
 					onChange={handleChange}
-					className="login-input"
+					inputClassName="login-input"
 					required
 					aria-label="생년월일"
 					max={new Date().toISOString().slice(0, 10)}

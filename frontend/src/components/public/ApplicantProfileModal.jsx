@@ -1,7 +1,7 @@
 import 'assets/css/careers.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import {
 	isApplicantSessionPayloadLoggedIn,
 	setCachedApplicantUser,

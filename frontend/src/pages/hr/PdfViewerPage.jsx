@@ -3,12 +3,12 @@ import './PdfViewerPage.css';
 import { client } from 'api/axiosInstance';
 import { Download } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
 const PDF_RENDER_SCALE_LIMIT = 2;
-const PDF_WORKER_SRC = `${process.env.PUBLIC_URL || ''}/pdf.worker.min.mjs`.replace(/\/+/g, '/');
+const PDF_WORKER_SRC = `${import.meta.env.BASE_URL || '/'}pdf.worker.min.mjs`.replace(/\/{2,}/g, '/');
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 

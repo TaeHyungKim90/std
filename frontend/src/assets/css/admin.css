@@ -99,6 +99,22 @@
 	padding: 12px 18px; border: 1px solid #ddd; border-radius: 12px; flex: 1; min-width: 150px; font-size: 14px; outline: none; transition: 0.2s;
 }
 .category-add-box > input.cat-input:focus { border-color: var(--primary); }
+.category-add-box > .ymd-date-input {
+	flex: 1;
+	min-width: 150px;
+}
+.category-add-box > .ymd-date-input .ymd-date-input__text {
+	padding: 12px 18px;
+	border: 1px solid #ddd;
+	border-radius: 12px;
+	font-size: 14px;
+	outline: none;
+	transition: 0.2s;
+	box-sizing: border-box;
+}
+.category-add-box > .ymd-date-input .ymd-date-input__text:focus {
+	border-color: var(--primary);
+}
 
 .emoji-picker-container { position: relative; display: inline-block; }
 .emoji-btn {

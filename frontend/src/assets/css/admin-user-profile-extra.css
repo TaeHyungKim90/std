@@ -16,12 +16,41 @@
 	font-size: 0.78rem;
 }
 
+/* ========== UserModal ========== */
+.modal-content.user-modal {
+	max-width: 520px;
+	padding: 28px 28px 20px;
+	display: flex;
+	flex-direction: column;
+	max-height: min(92vh, 880px);
+	overflow: hidden;
+}
+
+.user-modal__title {
+	margin: 0 0 4px;
+	font-size: 1.25rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: #1a1a1a;
+}
+
+.user-modal__form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	flex: 1;
+}
+
 .user-modal-photo-row {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
 	gap: 14px;
-	margin: 10px 0 14px;
+	margin: 8px 0 18px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	background: #f7f8f7;
+	border: 1px solid #ecefeb;
 }
 
 .user-modal-photo-upload {
@@ -32,7 +61,7 @@
 	border-radius: 10px;
 	border: 1px solid rgba(63, 175, 122, 0.35);
 	background: rgb(var(--primary-rgb) / 0.06);
-	color: var(--primary-color, #3FAF7A);
+	color: var(--primary-color, #3faf7a);
 	cursor: pointer;
 	font-weight: 700;
 	font-size: 0.9rem;
@@ -66,12 +95,83 @@
 	align-items: center;
 	justify-content: center;
 	font-size: 0.82rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .user-modal-photo-upload-text {
-	font-size: 0.82rem;
-	font-weight: 700;
-	color: var(--bq-text-dim, #8a8a8a);
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: #5c5c5c;
+}
+
+.user-modal .form-group {
+	margin-bottom: 14px;
+}
+
+.user-modal .form-group label {
+	margin-bottom: 6px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #6b6b6b;
+	letter-spacing: -0.01em;
+}
+
+.user-modal .form-group input:not(.ymd-date-input__native),
+.user-modal .form-group select,
+.user-modal .user-modal-input,
+.user-modal .ymd-date-input__text {
+	width: 100%;
+	padding: 11px 12px;
+	margin: 0;
+	border: 1px solid #e0e3e1;
+	border-radius: 10px;
+	outline: none;
+	font-size: 0.92rem;
+	color: #1a1a1a;
+	background: #fff;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+	font-family: inherit;
+}
+
+.user-modal .ymd-date-input__text {
+	padding-right: 2.6rem;
+}
+
+.user-modal .form-group input:hover,
+.user-modal .form-group select:hover,
+.user-modal .user-modal-input:hover:not(:disabled):not([readonly]),
+.user-modal .ymd-date-input__text:hover {
+	border-color: #c9d0cc;
+}
+
+.user-modal .form-group input:focus,
+.user-modal .form-group select:focus,
+.user-modal .user-modal-input:focus,
+.user-modal .ymd-date-input__text:focus {
+	border-color: var(--primary, #3faf7a);
+	box-shadow: 0 0 0 3px rgba(63, 175, 122, 0.14);
+	background: #fff;
+}
+
+.user-modal .form-group input:disabled,
+.user-modal .form-group input[readonly],
+.user-modal .user-modal-input[readonly],
+.user-modal .user-modal-input:disabled {
+	background: #f4f5f4;
+	color: #3d3d3d;
+	cursor: default;
+}
+
+.user-modal .modal-form-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin-bottom: 0;
+}
+
+.user-modal .modal-form-row .form-group {
+	min-width: 0;
 }
 
 .user-modal-salary-row {
@@ -80,14 +180,115 @@
 	gap: 12px;
 }
 
+/* 주소 검색: 입력 + 버튼 한 줄 */
+.user-modal .address-search-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.user-modal .address-search-field__row,
+.user-modal .address-search-field .input-group {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	margin: 0;
+}
+
+.user-modal .address-search-field__row .user-modal-input,
+.user-modal .address-search-field .input-group .user-modal-input {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+}
+
+.user-modal-addr-btn {
+	flex-shrink: 0;
+	align-self: stretch;
+	padding: 0 14px;
+	border-radius: 10px;
+	border: 1px solid var(--primary, #3faf7a);
+	background: #fff;
+	color: var(--primary, #3faf7a);
+	font-size: 0.82rem;
+	font-weight: 700;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.user-modal-addr-btn:hover:not(:disabled) {
+	background: var(--primary, #3faf7a);
+	color: #fff;
+}
+
+.user-modal-addr-btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
 .user-modal-scroll {
 	overflow-y: auto;
-	max-height: calc(85vh - 140px); /* 저장 버튼은 아래에 고정되도록 입력영역만 스크롤 */
-	padding-right: 6px;
+	overflow-x: hidden;
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+	padding-right: 4px;
+	margin-right: -4px;
+	scrollbar-width: thin;
+	scrollbar-color: #c5cbc7 transparent;
+}
+
+.user-modal-scroll::-webkit-scrollbar {
+	width: 6px;
+}
+
+.user-modal-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.user-modal-scroll::-webkit-scrollbar-thumb {
+	background: #c5cbc7;
+	border-radius: 999px;
+}
+
+.user-modal-scroll::-webkit-scrollbar-thumb:hover {
+	background: #aeb5b1;
 }
 
 .user-modal-actions {
-	margin-top: 18px;
-	padding-top: 0;
+	margin-top: 14px;
+	padding-top: 14px;
+	border-top: 1px solid #ecefeb;
+	flex-shrink: 0;
 }
 
+.user-modal .my-profile-hint {
+	margin: 4px 0 0;
+	font-size: 0.78rem;
+	color: #8a8a8a;
+	line-height: 1.4;
+}
+
+@media (max-width: 560px) {
+	.modal-content.user-modal {
+		max-width: 100%;
+		margin: 8px;
+		padding: 20px 16px 16px;
+	}
+
+	.user-modal .modal-form-row {
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
+
+	.user-modal .address-search-field__row,
+	.user-modal .address-search-field .input-group {
+		flex-direction: column;
+	}
+
+	.user-modal-addr-btn {
+		width: 100%;
+		padding: 11px 14px;
+	}
+}

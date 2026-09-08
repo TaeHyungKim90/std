@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * [참조용] HR(리포트) 계열 페이지 템플릿

@@ -4,7 +4,6 @@ import { adminApi } from 'api/adminApi';
 import { todoService } from 'api/todoApi';
 import { useAuth } from 'context/AuthContext';
 import parse from 'html-react-parser';
-import React from 'react';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';
 import * as Notify from 'utils/toastUtils';
 const TodoDetailModal = ({ isOpen, onClose, event, fetchTodos, onEditClick, mode = 'user', categories = [] }) => {

@@ -8,10 +8,11 @@ import AddressSearchField from 'components/common/AddressSearchField';
 import AppModal from 'components/common/AppModal';
 import AvatarImageCropModal from 'components/common/AvatarImageCropModal';
 import UserAvatar from 'components/common/UserAvatar';
+import YmdDateInput from 'components/common/YmdDateInput';
 import PasswordChangeModal from 'components/hr/PasswordChangeModal';
 import { useAuth } from 'context/AuthContext';
 import { Camera } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 function formatYmd(value) {
@@ -502,9 +503,8 @@ const MyProfile = () => {
 
 								<div className="my-profile-field">
 									<label htmlFor="mp-join-date">입사일</label>
-									<input
+									<YmdDateInput
 										id="mp-join-date"
-										type="date"
 										value={joinDate}
 										onChange={(e) => setJoinDate(e.target.value)}
 										disabled={joinDateLocked}
@@ -545,9 +545,8 @@ const MyProfile = () => {
 
 								<div className="my-profile-field">
 									<label htmlFor="mp-birth-date">생년월일</label>
-									<input
+									<YmdDateInput
 										id="mp-birth-date"
-										type="date"
 										value={birthDate}
 										onChange={(e) => setBirthDate(e.target.value)}
 										max={new Date().toISOString().slice(0, 10)}

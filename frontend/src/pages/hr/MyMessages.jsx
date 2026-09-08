@@ -4,7 +4,7 @@ import PaginationBar from 'components/common/PaginationBar';
 import { DEFAULT_PAGE_SIZE } from 'constants/apiConfig';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-import React, { useCallback,useEffect, useState } from 'react';
+import { useCallback,useEffect, useState } from 'react';
 import { formatDate } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
 const PAGE_SIZE = DEFAULT_PAGE_SIZE;

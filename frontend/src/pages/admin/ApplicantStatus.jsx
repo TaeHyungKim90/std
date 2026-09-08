@@ -2,7 +2,7 @@ import { recruitmentApi } from 'api/recruitmentApi';
 import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
 import { DEFAULT_ADMIN_MAX_PAGE_SIZE } from 'constants/apiConfig';
 import { useLoading } from 'context/LoadingContext';
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import { formatDate,formatPhoneNumber } from 'utils/commonUtils';
 import * as Notify from 'utils/toastUtils';
 const STATUS_OPTIONS = [

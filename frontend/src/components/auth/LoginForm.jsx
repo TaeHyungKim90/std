@@ -5,7 +5,7 @@ import { authApi } from 'api/authApi';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useEffect, useRef,useState } from 'react';
+import { useEffect, useRef,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatApiDetail } from 'utils/formatApiError';
 import * as Notify from 'utils/toastUtils';
@@ -98,7 +98,8 @@ const LoginForm = () => {
 				navigate(paths.MY_TODOS);
 			}
 		} catch (err) {
-			Notify.toastApiFailure(err, "로그인 실패");
+			// toastPromise error 메시지와 중복되지 않게 콘솔만 남김
+			console.error('로그인 실패:', err);
 		} finally {
 			hideLoading();
 			setIsSubmitting(false);

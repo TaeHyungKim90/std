@@ -5,7 +5,7 @@ import {
 	isSessionExpiredApiError,
 } from 'constants/authEvents';
 import { pathsForTenant } from 'constants/paths';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { broadcastLogoutSignal, subscribeLogoutFromOtherTabs } from 'utils/authLogoutBroadcast';
 import { tenantSlugFromLocation } from 'utils/fileUtils';

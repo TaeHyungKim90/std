@@ -3,7 +3,7 @@ import 'assets/css/todoTemplateModal.css';
 import { todoService } from 'api/todoApi';
 import AppModal from 'components/common/AppModal';
 import RichTextEditor from 'components/common/RichTextEditor';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const TodoTemplateModal = ({ isOpen, onClose, colorModal, setColorModal, fetchCategoriesAndConfigs }) => {

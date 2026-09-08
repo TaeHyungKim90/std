@@ -3,7 +3,7 @@ import 'assets/css/applicantListModal.css';
 import { recruitmentApi } from 'api/recruitmentApi';
 import AdminFilePreviewModal from 'components/admin/AdminFilePreviewModal';
 import { useLoading } from 'context/LoadingContext';
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const STATUS_MAP = {

@@ -2,7 +2,7 @@
 import { authApi } from 'api/authApi';
 import { useAuth } from 'context/AuthContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 

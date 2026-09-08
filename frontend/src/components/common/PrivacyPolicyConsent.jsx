@@ -1,4 +1,3 @@
-import React from 'react';
 
 const PRIVACY_POLICY_SECTIONS = [
 	{

@@ -1,4 +1,4 @@
-# Frontend (Create React App)
+# Frontend (Vite)
 
 HR·채용 **멀티테넌트 SPA**. 테넌트별 경로 `/{tenantSlug}/my/*`, `/{tenantSlug}/admin/*`, `/{tenantSlug}/careers/*`와 플랫폼 `/platform/*`를 React Router 7로 제공합니다.
 
@@ -33,12 +33,12 @@ HR·채용 **멀티테넌트 SPA**. 테넌트별 경로 `/{tenantSlug}/my/*`, `/
 
 ```bash
 npm install          # 또는 npm ci
-npm start            # prestart: PDF worker 복사 → http://localhost:3000
+npm start            # prestart: PDF worker 복사 → Vite http://localhost:3000
 npm run build        # prebuild: worker 복사 + env 검증 → build/
 npm run lint         # ESLint (max-warnings 0)
 npm run lint:fix
-npm test             # Jest (watch)
-npm run test:ci      # CI: --watchAll=false
+npm test             # Vitest (watch)
+npm run test:ci      # CI: vitest run
 ```
 
 **로컬 접속 예** (테넌트 `valuesplay`):
@@ -92,7 +92,7 @@ cd frontend
 npm run build
 ```
 
-산출물은 루트 [`deploy_frontend.bat`](../deploy_frontend.bat)가 `static/`으로 복사합니다. CRA 기본 [deployment 문서](https://create-react-app.dev/docs/deployment/)도 참고할 수 있습니다.
+산출물은 루트 [`deploy_frontend.bat`](../deploy_frontend.bat)가 `static/`으로 복사합니다.
 
 ---
 

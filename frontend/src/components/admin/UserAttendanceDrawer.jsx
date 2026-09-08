@@ -2,7 +2,7 @@ import 'assets/css/attendance.css';
 
 import { adminApi } from 'api/adminApi';
 import SideDrawer from 'components/common/SideDrawer';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	addDays,
 	addMonths,

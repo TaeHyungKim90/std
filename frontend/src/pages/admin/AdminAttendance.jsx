@@ -5,10 +5,11 @@ import { holidayApi } from 'api/holidayApi';
 import UserAttendanceDrawer from 'components/admin/UserAttendanceDrawer';
 import IdCopyChip from 'components/common/IdCopyChip';
 import PaginationBar from 'components/common/PaginationBar';
+import YmdDateInput from 'components/common/YmdDateInput';
 import { DEFAULT_ADMIN_MAX_PAGE_SIZE,DEFAULT_ADMIN_PAGE_SIZE } from 'constants/apiConfig';
 import { useLoading } from 'context/LoadingContext';
 import { usePaginationSearchParams } from 'hooks/usePaginationSearchParams';
-import React, { useCallback, useEffect, useMemo,useState } from 'react';
+import { useCallback, useEffect, useMemo,useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { formatDt, getTodayYmd, normalizeStatus, parseYmdParam } from 'utils/dateUtils';
 import * as Notify from 'utils/toastUtils';
@@ -244,11 +245,11 @@ const AdminAttendance = () => {
 				<div className="adm-attendance__date-toolbar">
 					<label className="adm-attendance__date-label">
 						날짜
-						<input
-							type="date"
+						<YmdDateInput
 							value={selectedDate}
 							onChange={(e) => handleChangeDate(e.target.value)}
-							className="adm-attendance__date-input"
+							className="adm-attendance__date-field"
+							inputClassName="adm-attendance__date-input"
 						/>
 						<button
 							type="button"

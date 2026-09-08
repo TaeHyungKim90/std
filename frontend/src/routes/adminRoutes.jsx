@@ -1,5 +1,5 @@
 import { ROUTE_SEGMENTS } from 'constants/paths';
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
 const AdminDashboard = lazy(() => import('pages/admin/AdminDashboard'));

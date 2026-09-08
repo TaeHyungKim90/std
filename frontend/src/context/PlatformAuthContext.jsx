@@ -1,6 +1,6 @@
 import { platformApi } from 'api/platformApi';
 import { PLATFORM_PATHS } from 'constants/platformPaths';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as Notify from 'utils/toastUtils';
 
 export const PlatformAuthContext = createContext(null);

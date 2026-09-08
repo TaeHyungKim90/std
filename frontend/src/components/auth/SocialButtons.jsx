@@ -1,5 +1,4 @@
 import { authApi } from 'api/authApi';
-import React from 'react';
 import * as Notify from 'utils/toastUtils';
 
 const SocialButtons = ({ mode = 'login' }) => {
@@ -45,15 +44,25 @@ const SocialButtons = ({ mode = 'login' }) => {
 			{/* 2. 동그란 버튼 그룹 */}
 			<div className="social-login-group">
 
-				{/* 카카오 동그라미 버튼 */}
-				<button className="circle-btn circle-kakao" onClick={() => handleSocialLogin('kakao')} title={`카카오 ${isSignup ? '회원가입' : '로그인'}`}>
+				{/* 카카오 동그라미 버튼 — form 안에서도 submit 되지 않도록 type="button" */}
+				<button
+					type="button"
+					className="circle-btn circle-kakao"
+					onClick={() => handleSocialLogin('kakao')}
+					title={`카카오 ${isSignup ? '회원가입' : '로그인'}`}
+				>
 					{/* 실제 카카오 아이콘 이미지가 있다면 아래 img 태그 사용, 없다면 텍스트 'K' 등 사용 */}
 					{/* <img src="/images/kakao_icon.png" alt="카카오" /> */}
 					<span className="circle-btn__letter--kakao">K</span>
 				</button>
 
 				{/* 네이버 동그라미 버튼 */}
-				<button className="circle-btn circle-naver" onClick={() => handleSocialLogin('naver')} title={`네이버 ${isSignup ? '회원가입' : '로그인'}`}>
+				<button
+					type="button"
+					className="circle-btn circle-naver"
+					onClick={() => handleSocialLogin('naver')}
+					title={`네이버 ${isSignup ? '회원가입' : '로그인'}`}
+				>
 					{/* 실제 네이버 아이콘 이미지가 있다면 아래 img 태그 사용, 없다면 텍스트 'N' 등 사용 */}
 					{/* <img src="/images/naver_icon.png" alt="네이버" /> */}
 					<span className="circle-btn__letter--naver">N</span>

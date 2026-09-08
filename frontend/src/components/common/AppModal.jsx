@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * `modal-overlay` + `modal-content` 패턴 공통화. 기존 `TodoTemplateModal` 등과 동일한 마크업 계약.

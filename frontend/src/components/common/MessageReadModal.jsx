@@ -1,7 +1,6 @@
 import 'assets/css/messageReadModal.css';
 
 import parse from 'html-react-parser';
-import React from 'react';
 import { formatDate } from 'utils/commonUtils';
 import { openAuthenticatedDownloadByFileId } from 'utils/fileUtils';
 import { sanitizeEditorHtml } from 'utils/sanitizeHtml';

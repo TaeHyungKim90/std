@@ -11,7 +11,7 @@ import TodoSidebar from 'components/hr/TodoSidebar';
 import TodoTemplateModal from 'components/hr/TodoTemplateModal';
 import { useAuth } from 'context/AuthContext';
 import { useLoading } from 'context/LoadingContext';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getContrastColor } from 'utils/colorUtils';
 import {
 	fcAllDaySpanToInclusiveYmd,

@@ -1,67 +1,66 @@
-import { render, screen, waitFor } from '@testing-library/react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { attendanceApi } from 'api/attendanceApi';
 import { holidayApi } from 'api/holidayApi';
 import { reportApi } from 'api/reportApi';
 import { useAuth } from 'context/AuthContext';
-import React from 'react';
 
 import MyReports from './MyReports';
 
-jest.mock('context/AuthContext', () => ({
-	useAuth: jest.fn(),
+vi.mock('context/AuthContext', () => ({
+	useAuth: vi.fn(),
 }));
 
-jest.mock('api/attendanceApi', () => ({
+vi.mock('api/attendanceApi', () => ({
 	attendanceApi: {
-		getAttendanceDaySessions: jest.fn(),
-		getClockContext: jest.fn(),
-		getClockContextRange: jest.fn(),
+		getAttendanceDaySessions: vi.fn(),
+		getClockContext: vi.fn(),
+		getClockContextRange: vi.fn(),
 	},
 }));
 
-jest.mock('api/holidayApi', () => ({
+vi.mock('api/holidayApi', () => ({
 	holidayApi: {
-		getHolidays: jest.fn(),
+		getHolidays: vi.fn(),
 	},
 }));
 
-jest.mock('api/reportApi', () => ({
+vi.mock('api/reportApi', () => ({
 	reportApi: {
-		getDailyRange: jest.fn(),
-		getWeekly: jest.fn(),
-		getMonthly: jest.fn(),
-		putDaily: jest.fn(),
-		putWeekly: jest.fn(),
-		putMonthly: jest.fn(),
+		getDailyRange: vi.fn(),
+		getWeekly: vi.fn(),
+		getMonthly: vi.fn(),
+		putDaily: vi.fn(),
+		putWeekly: vi.fn(),
+		putMonthly: vi.fn(),
 	},
 }));
 
-jest.mock('utils/toastUtils', () => ({
-	toastLoading: jest.fn(() => 'loading-id'),
-	toastSuccess: jest.fn(),
-	toastApiFailure: jest.fn(),
-	toastError: jest.fn(),
-	toastWarn: jest.fn(),
-	toastInfo: jest.fn(),
+vi.mock('utils/toastUtils', () => ({
+	toastLoading: vi.fn(() => 'loading-id'),
+	toastSuccess: vi.fn(),
+	toastApiFailure: vi.fn(),
+	toastError: vi.fn(),
+	toastWarn: vi.fn(),
+	toastInfo: vi.fn(),
 	toastPromise: (p) => p,
 }));
 
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', () => ({
 	__esModule: true,
 	default: {
-		dismiss: jest.fn(),
+		dismiss: vi.fn(),
 	},
 }));
 
 describe('MyReports', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		useAuth.mockReturnValue({
 			loading: false,
 			joinDate: '2000-01-01',
-			refreshAuth: jest.fn().mockResolvedValue(true),
+			refreshAuth: vi.fn().mockResolvedValue(true),
 		});
 
 		holidayApi.getHolidays.mockResolvedValue({ data: [] });

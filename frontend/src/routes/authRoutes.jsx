@@ -1,5 +1,5 @@
 import AuthLayout from 'components/auth/AuthLayout';
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
 const LoginPage = lazy(() => import('pages/auth/LoginPage'));

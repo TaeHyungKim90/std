@@ -1,7 +1,7 @@
 import { recruitmentApi } from 'api/recruitmentApi';
 import { useLoading } from 'context/LoadingContext';
 import { useAppPaths } from 'context/TenantContext';
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { syncApplicantSessionFromServer } from 'utils/applicantSession';
 import { formatDate } from 'utils/commonUtils';

@@ -1,9 +1,9 @@
-/**
- * Jest — TenantContext 목 (setupTests에서 전역 등록).
- */
-const React = require('react');
-const { pathsForTenant } = require('constants/paths');
+import { pathsForTenant } from 'constants/paths';
+import React from 'react';
 
+/**
+ * Vitest — TenantContext 목 (setupTests에서 전역 등록).
+ */
 const DEFAULT_TEST_SLUG = 'valuesplay';
 
 function buildTenantMocks(slug = DEFAULT_TEST_SLUG) {
@@ -17,7 +17,6 @@ function buildTenantMocks(slug = DEFAULT_TEST_SLUG) {
 	};
 	const Ctx = React.createContext(tenantValue);
 	return {
-		__esModule: true,
 		TenantContext: Ctx,
 		useTenant: () => tenantValue,
 		useAppPaths: () => paths,
@@ -27,4 +26,5 @@ function buildTenantMocks(slug = DEFAULT_TEST_SLUG) {
 	};
 }
 
-module.exports = buildTenantMocks();
+export default buildTenantMocks();
+export { buildTenantMocks };

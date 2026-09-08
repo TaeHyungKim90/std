@@ -1,6 +1,5 @@
 import 'assets/css/id-copy-chip.css';
 
-import React from 'react';
 import { copyTextToClipboard } from 'utils/copyToClipboard';
 import { formatIdSnippet, shouldAbbreviateId } from 'utils/formatId';
 import * as Notify from 'utils/toastUtils';

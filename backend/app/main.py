@@ -68,7 +68,7 @@ os.makedirs(TENANT_BRANDING_DIR, exist_ok=True)
 
 @app.get("/assets/icon/favicon.png")
 async def read_cra_public_favicon_png():
-	"""CRA `index.html`의 `/assets/icon/favicon.png`. Mount보다 먼저 등록(start_production·static 배포)."""
+	"""Vite `index.html`의 `/assets/icon/favicon.png`. Mount보다 먼저 등록(start_production·static 배포)."""
 	for p in (
 		os.path.join(STATIC_DIR, "assets", "icon", "favicon.png"),
 		os.path.join(STATIC_DIR, "icon", "favicon.png"),
@@ -80,10 +80,10 @@ async def read_cra_public_favicon_png():
 
 
 if os.path.exists(STATIC_DIR):
-	# CRA 프로덕션 빌드는 /static/* 경로(JS/CSS 청크)를 사용합니다.
+	# 프로덕션 빌드는 /static/* 경로(JS/CSS 청크)를 사용합니다.
 	if os.path.isdir(FRONTEND_STATIC_DIR):
 		app.mount("/static", StaticFiles(directory=FRONTEND_STATIC_DIR), name="frontend_static")
-	# CRA `public/` 산출물은 build/assets/ → 배포 시 static/assets/ (`/assets/icon/...` = static/assets/icon/...)
+	# `public/` 산출물은 build/assets/ → 배포 시 static/assets/ (`/assets/icon/...` = static/assets/icon/...)
 	cra_public_assets_dir = os.path.join(STATIC_DIR, "assets")
 	if os.path.isdir(cra_public_assets_dir):
 		app.mount("/assets", StaticFiles(directory=cra_public_assets_dir), name="assets")
@@ -125,7 +125,7 @@ async def read_robots():
 
 @app.get("/pdf.worker.min.mjs")
 async def read_pdf_worker():
-	"""PDF.js worker (CRA public/ → static/ 배포). SPA 폴백 전에 등록."""
+	"""PDF.js worker (frontend public/ → static/ 배포). SPA 폴백 전에 등록."""
 	worker_path = os.path.join(STATIC_DIR, "pdf.worker.min.mjs")
 	if os.path.isfile(worker_path):
 		return FileResponse(worker_path, media_type="application/javascript")
@@ -216,7 +216,7 @@ def run_react():
 		)
 		return
 	print(f"--- Starting React Dev Server in {frontend_dir} ---")
-	print("--- UI: http://localhost:3000 (CRA) | API: http://127.0.0.1:%s ---" % settings.APP_PORT)
+	print("--- UI: http://localhost:3000 (Vite) | API: http://127.0.0.1:%s ---" % settings.APP_PORT)
 	env = os.environ.copy()
 	env["HOST"] = "0.0.0.0"
 	# 윈도우 환경 대응
@@ -236,7 +236,7 @@ def run_react():
 	atexit.register(kill_react_server)
 
 if __name__ == "__main__":
-	# 개발 편의: .env 에 DEV_AUTO_START_REACT=true 일 때만 CRA(npm start) 자동 실행
+	# 개발 편의: .env 에 DEV_AUTO_START_REACT=true 일 때만 Vite(npm start) 자동 실행
 	if settings.DEV_AUTO_START_REACT and os.environ.get("REACT_SERVER_STARTED") != "1":
 		os.environ["REACT_SERVER_STARTED"] = "1"
 		react_thread = threading.Thread(target=run_react, daemon=True)
