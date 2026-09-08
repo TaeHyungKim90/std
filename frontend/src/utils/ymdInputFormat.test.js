@@ -1,4 +1,4 @@
-import { formatDigitsToYmd, completeYmdOrEmpty, isCompleteYmd } from './ymdInputFormat';
+import { completeYmdOrEmpty, formatDigitsToYmd, isCompleteYmd } from './ymdInputFormat';
 
 describe('ymdInputFormat', () => {
 	test('19900505 → 1990-05-05', () => {

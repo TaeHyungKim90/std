@@ -61,6 +61,7 @@ const MyProfile = () => {
 	const [birthDate, setBirthDate] = useState('');
 	const [phone, setPhone] = useState('');
 	const [address, setAddress] = useState('');
+	const [shareAddressInDirectory, setShareAddressInDirectory] = useState(true);
 	const [salaryBankName, setSalaryBankName] = useState('');
 	const [salaryAccountNumber, setSalaryAccountNumber] = useState('');
 	const [socialBusy, setSocialBusy] = useState(null); // 'kakao' | 'naver' | null
@@ -88,6 +89,7 @@ const MyProfile = () => {
 			setBirthDate(formatYmd(data.birth_date) === '—' ? '' : formatYmd(data.birth_date));
 			setPhone(data.user_phone_number ?? '');
 			setAddress(data.address ?? '');
+			setShareAddressInDirectory(Boolean(data.share_address_in_directory));
 			setSalaryBankName(data.salary_bank_name ?? '');
 			setSalaryAccountNumber(data.salary_account_number ?? '');
 			setPhotoPreviewUrl(data.user_profile_image_url ?? null);
@@ -243,6 +245,11 @@ const MyProfile = () => {
 			const prevAddress = (profile.address || '').trim();
 			if (nextAddress !== prevAddress) payload.address = nextAddress || null;
 
+			const prevShare = Boolean(profile.share_address_in_directory);
+			if (shareAddressInDirectory !== prevShare) {
+				payload.share_address_in_directory = shareAddressInDirectory;
+			}
+
 			// 급여 계좌
 			const bankTrim = (salaryBankName || '').trim();
 			const prevBank = (profile.salary_bank_name || '').trim();
@@ -278,6 +285,7 @@ const MyProfile = () => {
 			setBirthDate(formatYmd(res.data.birth_date) === '—' ? '' : formatYmd(res.data.birth_date));
 			setPhone(res.data.user_phone_number ?? '');
 			setAddress(res.data.address ?? '');
+			setShareAddressInDirectory(Boolean(res.data.share_address_in_directory));
 			setSalaryBankName(res.data.salary_bank_name ?? '');
 			setSalaryAccountNumber(res.data.salary_account_number ?? '');
 			setPhotoPreviewUrl(res.data.user_profile_image_url ?? null);
@@ -563,6 +571,16 @@ const MyProfile = () => {
 										detailInputClassName="bq-input"
 										buttonClassName="btn-edit"
 									/>
+									<label className="my-profile-share-address" htmlFor="mp-share-address">
+										<input
+											id="mp-share-address"
+											type="checkbox"
+											checked={shareAddressInDirectory}
+											onChange={(e) => setShareAddressInDirectory(e.target.checked)}
+										/>
+										<span>주소를 동료 연락처·조직도에 공개</span>
+									</label>
+									<div className="my-profile-hint">기본은 공개입니다. 체크를 해제하면 동료 연락처·조직도에서 주소가 숨겨집니다.</div>
 								</div>
 							</div>
 

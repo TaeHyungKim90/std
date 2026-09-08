@@ -5,6 +5,7 @@ export function menuItemsFor(paths) {
 		{ id: 'my-reports', label: '내 보고서', path: paths.MY_REPORTS, adminOnly: false },
 		{ id: 'commute', label: '출퇴근', path: paths.MY_ATTENDANCE, adminOnly: false },
 		{ id: 'messages', label: '내 수신함', path: paths.MY_MESSAGES, adminOnly: false },
+		{ id: 'contacts', label: '직원 연락처', path: paths.MY_CONTACTS, adminOnly: false },
 		{ id: 'my-profile', label: '내 정보', path: paths.MY_PROFILE, adminOnly: false },
 		{ id: 'admin', label: '관리모드', path: paths.ADMIN_DASHBOARD, adminOnly: true },
 	];

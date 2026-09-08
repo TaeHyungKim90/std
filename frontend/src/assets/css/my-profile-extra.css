@@ -341,6 +341,26 @@
 	min-height: 10px;
 }
 
+.my-profile-share-address {
+	display: flex !important;
+	align-items: center;
+	gap: 8px;
+	margin-top: 10px;
+	margin-bottom: 4px !important;
+	font-size: 0.88rem !important;
+	font-weight: 600 !important;
+	text-transform: none !important;
+	letter-spacing: 0 !important;
+	color: var(--bq-text, #2a2a2a) !important;
+	cursor: pointer;
+}
+
+.my-profile-share-address input {
+	width: auto !important;
+	margin: 0;
+	accent-color: var(--primary, #3faf7a);
+}
+
 .my-profile-basic-subcard-grid {
 	margin-top: 18px;
 	display: grid;

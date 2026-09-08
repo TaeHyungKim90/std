@@ -47,6 +47,10 @@ class User(Base):
 	user_phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
 	birth_date: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD
 	address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+	# 직원 연락처·조직도에 주소 공개 여부 (기본 공개)
+	share_address_in_directory: Mapped[bool] = mapped_column(
+		Boolean, nullable=False, default=True, server_default="1"
+	)
 	provider_kakao_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 	provider_naver_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 	created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_seoul_naive)

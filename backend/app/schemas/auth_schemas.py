@@ -193,6 +193,9 @@ class MeProfilePatch(BaseModel):
 	user_phone_number: Optional[str] = None
 	birth_date: Optional[str] = Field(None, description="생년월일 (YYYY-MM-DD)")
 	address: Optional[str] = Field(None, description="주소")
+	share_address_in_directory: Optional[bool] = Field(
+		None, description="직원 연락처·조직도에 주소 공개"
+	)
 	user_profile_image_url: Optional[str] = None
 	join_date: Optional[date] = None
 	department_id: Optional[int] = None
@@ -321,6 +324,7 @@ class UserResponse(BaseModel):
 	user_phone_number: Optional[str] = None
 	birth_date: Optional[str] = None
 	address: Optional[str] = None
+	share_address_in_directory: bool = True
 	provider_kakao_id: Optional[str] = None
 	provider_naver_id: Optional[str] = None
 	kakao_linked: bool = False

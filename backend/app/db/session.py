@@ -97,6 +97,19 @@ def _ensure_users_preferred_work_location_column() -> None:
 			conn.execute(text("ALTER TABLE users ADD COLUMN preferred_work_location VARCHAR(120)"))
 
 
+def _ensure_users_share_address_in_directory_column() -> None:
+	"""기존 DB에 users.share_address_in_directory 보강 (기본 공개)."""
+	insp = inspect(engine)
+	if not insp.has_table("users"):
+		return
+	cols = {c["name"] for c in insp.get_columns("users")}
+	if "share_address_in_directory" not in cols:
+		with engine.begin() as conn:
+			conn.execute(
+				text("ALTER TABLE users ADD COLUMN share_address_in_directory BOOLEAN NOT NULL DEFAULT 1")
+			)
+
+
 def _ensure_users_identity_social_columns() -> None:
 	"""기존 DB에 birth_date / address / provider_* / approval_status 보강 및 레거시 백필."""
 	insp = inspect(engine)
@@ -542,6 +555,10 @@ def init_db():
 	except Exception:
 		logger.warning("users.preferred_work_location 보강 실패(무시 가능)")
 	try:
+		_ensure_users_share_address_in_directory_column()
+	except Exception:
+		logger.warning("users.share_address_in_directory 보강 실패(무시 가능)")
+	try:
 		_ensure_users_identity_social_columns()
 	except Exception:
 		logger.warning("users birth_date/provider_* 보강 실패(무시 가능)")
@@ -565,6 +582,7 @@ def init_db():
 					"provider_kakao_id": "VARCHAR(100)",
 					"provider_naver_id": "VARCHAR(100)",
 					"approval_status": "VARCHAR(20) DEFAULT 'approved'",
+					"share_address_in_directory": "INTEGER NOT NULL DEFAULT 1",
 				}
 				for col, col_type in add_cols.items():
 					if col not in existing_cols:

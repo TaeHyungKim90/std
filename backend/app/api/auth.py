@@ -683,6 +683,9 @@ def patch_my_profile(
 		raw = data["address"]
 		user.address = (str(raw).strip() if raw is not None else "") or None
 
+	if "share_address_in_directory" in data:
+		user.share_address_in_directory = bool(data["share_address_in_directory"])
+
 	avatar_zoom = data.pop("avatar_zoom", None)
 	avatar_offset_x = data.pop("avatar_offset_x", None)
 	avatar_offset_y = data.pop("avatar_offset_y", None)

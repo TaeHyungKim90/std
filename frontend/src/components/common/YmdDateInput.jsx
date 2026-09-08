@@ -1,6 +1,5 @@
 import { Calendar } from 'lucide-react';
 import { useId, useRef } from 'react';
-
 import { completeYmdOrEmpty, formatDigitsToYmd } from 'utils/ymdInputFormat';
 
 /**

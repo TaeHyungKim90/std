@@ -9,8 +9,7 @@ export const API_ENDPOINTS = {
   ADMIN_RECRUITMENT : '/admin/recruitment',
   PUBLIC_RECRUITMENT : '/public/recruitment',
   MESSAGES : '/messages',
-  // 나중에 추가될 경로들
-  // EMPLOYEES: '/hr/employees',
+  EMPLOYEES: '/hr/directory',
 };
 
 export const VACATION_TYPE = {
