@@ -1,4 +1,3 @@
-import 'assets/css/admin.css';
 
 import { recruitmentApi } from 'api/recruitmentApi';
 import RichTextEditor from 'components/common/RichTextEditor';

@@ -1,10 +1,11 @@
-import 'assets/css/admin.css';
 import 'assets/css/platform.css';
 
 import { PLATFORM_PATHS } from 'constants/platformPaths';
 import { PlatformAuthContext } from 'context/PlatformAuthContext';
 import { useContext } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+
+import AdminStyles from './AdminStyles';
 
 const PlatformLayout = () => {
 	const { name, loginId, logout } = useContext(PlatformAuthContext);
@@ -17,6 +18,7 @@ const PlatformLayout = () => {
 
 	return (
 		<div className="bq-platform-shell">
+			<AdminStyles />
 			<header className="platform-topbar">
 				<div className="platform-topbar__brand">
 					<h1>SaaS 플랫폼 관리</h1>

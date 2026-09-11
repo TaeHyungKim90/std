@@ -582,3 +582,45 @@
 	background: #029c48;
 }
 
+.my-profile-address .address-search-field__row {
+	display: flex;
+	align-items: stretch;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.my-profile-address .address-search-field__row > input {
+	flex: 1;
+	min-width: 0;
+	width: 0;
+	margin: 0;
+}
+
+.address-search-field .my-profile-address-button {
+	flex: 0 0 auto;
+	min-height: 44px;
+	padding: 10px 16px;
+	border: 1px solid var(--primary-color);
+	border-radius: 10px;
+	background: var(--primary-color);
+	color: #fff;
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 700;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.address-search-field .my-profile-address-button:hover:not(:disabled) {
+	background: var(--primary-hover-color);
+}
+
+.address-search-field .my-profile-address-button:focus-visible {
+	outline: 3px solid rgb(var(--primary-rgb) / 0.3);
+	outline-offset: 3px;
+}
+
+.address-search-field .my-profile-address-button:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}

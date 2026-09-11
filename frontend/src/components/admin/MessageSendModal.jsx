@@ -1,4 +1,3 @@
-import 'assets/css/admin.css';
 
 import { adminApi } from 'api/adminApi';	 // 경로 확인
 import { commonApi } from 'api/commonApi';	 // 경로 확인

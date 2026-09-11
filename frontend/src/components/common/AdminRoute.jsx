@@ -1,11 +1,10 @@
-import 'assets/css/admin.css';
-
 import { AuthContext } from 'context/AuthContext';
 import { useAppPaths } from 'context/TenantContext';
 import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import * as Notify from 'utils/toastUtils';
 
+import AdminStyles from './AdminStyles';
 import LoadingBar from './LoadingBar';
 
 const AdminRoute = () => {
@@ -34,7 +33,7 @@ const AdminRoute = () => {
 	}
 
 	// 4. 관리자가 맞으면 통과!
-	return <Outlet />;
+	return <><AdminStyles /><Outlet /></>;
 };
 
 export default AdminRoute;
