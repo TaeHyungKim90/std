@@ -23,6 +23,9 @@ class MockReceiptOcrProvider:
 
 def get_provider() -> ReceiptOcrProvider:
     from core.config import settings
+    if settings.OCR_PROVIDER == "paddleocr":
+        from services.paddle_receipt_provider import PaddleReceiptProvider
+        return PaddleReceiptProvider()
     if settings.OCR_PROVIDER != "mock":
         raise ValueError("Unsupported OCR provider")
     return MockReceiptOcrProvider()

@@ -1,0 +1,31 @@
+services:
+  receipt-ocr:
+    build: ./ocr-service
+    image: std-receipt-ocr:local
+    restart: unless-stopped
+    environment:
+      OCR_SERVICE_TOKEN: ${OCR_SERVICE_TOKEN:?Set OCR_SERVICE_TOKEN in the root .env}
+    ports:
+      - "127.0.0.1:8010:8010"
+    networks:
+      - ocr-private
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 128
+    init: true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+networks:
+  ocr-private:
+    internal: true

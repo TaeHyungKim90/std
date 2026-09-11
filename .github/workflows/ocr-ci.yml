@@ -1,0 +1,65 @@
+name: Receipt OCR CI
+on:
+  pull_request:
+    branches: [master]
+    paths: ['ocr-service/**', 'compose.ocr.yaml', 'backend/app/services/*receipt*', 'backend/app/services/expense_service.py', '.github/workflows/ocr-ci.yml']
+  push:
+    branches: [master, feature/paddleocr-receipts]
+    paths: ['ocr-service/**', 'compose.ocr.yaml', 'backend/app/services/*receipt*', 'backend/app/services/expense_service.py', '.github/workflows/ocr-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: '0.11.19'
+      - run: uv sync --project ocr-service --frozen
+      - run: uv run --project ocr-service pyright --project ocr-service
+      - run: uv run python -m pytest tests -q
+        working-directory: ocr-service
+      - name: Dependency audit and SBOM (fails on any known vulnerability)
+        working-directory: ocr-service
+        run: uv run pip-audit --format cyclonedx-json --output audit-sbom.json
+      - name: Install verified Korean models and test font
+        run: |
+          uv run --project ocr-service python ocr-service/models.py
+          sudo apt-get update
+          sudo apt-get install -y fonts-nanum libgl1 libglib2.0-0 libgomp1
+      - name: Real Korean OCR smoke test
+        working-directory: ocr-service
+        run: uv run python smoke.py --font /usr/share/fonts/truetype/nanum/NanumGothic.ttf
+      - run: uv sync --project backend --frozen
+      - name: Real HR-to-OCR integration
+        working-directory: ocr-service
+        run: uv run python live_hr_smoke.py --font /usr/share/fonts/truetype/nanum/NanumGothic.ttf --backend-python ../backend/.venv/bin/python
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocr-dependencies-sbom
+          path: ocr-service/audit-sbom.json
+  container-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build -t std-receipt-ocr:ci ocr-service
+      - name: Scan final OS and runtime libraries
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: std-receipt-ocr:ci
+          format: json
+          output: ocr-container-audit.json
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocr-container-audit
+          path: ocr-container-audit.json

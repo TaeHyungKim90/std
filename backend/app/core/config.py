@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -19,7 +19,10 @@ _DEV_NAVER_REDIRECT_URI = "http://localhost:8000/api/auth/naver/callback"
 
 
 class Settings(BaseSettings):
-	OCR_PROVIDER: str = "mock"
+	OCR_PROVIDER: Literal["mock", "paddleocr"] = "paddleocr"
+	OCR_SERVICE_URL: str = ""
+	OCR_SERVICE_TOKEN: str = ""
+	OCR_TIMEOUT_SECONDS: float = 65
 	SECRET_KEY: str
 	ALGORITHM: str = "HS256"
 	#ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

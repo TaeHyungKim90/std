@@ -3,6 +3,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm.exc import StaleDataError
 
 from models.auth_models import User
@@ -144,22 +145,32 @@ async def upload_receipt(db, row, file: UploadFile, version: int):
         db.flush()
         row.receipt_file_id = attachment.id
         row.updated_at = now_seoul_naive()
-        try:
-            extracted = receipt_ocr_service.analyze(data, expected)
-            ocr_status = "SUCCEEDED"
-        except Exception:
-            # No provider payload or receipt contents in logs/errors.
-            logging.getLogger(__name__).warning("Receipt OCR failed for report %s", row.id)
-            extracted, ocr_status = {}, "FAILED"
         from core.config import settings
-        db.add(ExpenseOcrResult(tenant_id=row.tenant_id, expense_report_id=row.id,
+        ocr = ExpenseOcrResult(tenant_id=row.tenant_id, expense_report_id=row.id,
             receipt_file_id=attachment.id, ocr_provider=settings.OCR_PROVIDER,
-            status=ocr_status, data=extracted))
+            status="PENDING", data={})
+        db.add(ocr)
+        db.flush([ocr])
+        ocr_id, report_id, tenant_id = ocr.id, row.id, row.tenant_id
         commit(db)
     except Exception:
         db.rollback()
         path.unlink(missing_ok=True)
         raise
+    # Release SQLite's write lock before waiting for the isolated OCR service.
+    # After this commit the receipt is durable; do not delete it on OCR failure.
+    try:
+        extracted = await run_in_threadpool(receipt_ocr_service.analyze, data, expected)
+        ocr_status = "SUCCEEDED"
+    except Exception:
+        logging.getLogger(__name__).warning("Receipt OCR failed for report %s", report_id)
+        extracted, ocr_status = {}, "FAILED"
+    ocr = db.query(ExpenseOcrResult).filter(
+        ExpenseOcrResult.id == ocr_id, ExpenseOcrResult.tenant_id == tenant_id
+    ).one()
+    ocr.status, ocr.data = ocr_status, extracted
+    commit(db)
+    db.refresh(row)
     return detail(db, row)
 
 

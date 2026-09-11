@@ -100,7 +100,7 @@ export default function Expenses() {
             if (row.ocr?.status === 'SUCCEEDED') setForm(previous => ({ ...previous, ...Object.fromEntries(fields.filter(([key]) => row.ocr.data[key] != null).map(([key]) => [key, row.ocr.data[key]])) }));
           });
         }} /></label>}
-        {report.ocr && <p role="status">{report.ocr.status === 'FAILED' ? 'OCR 분석에 실패했습니다. 영수증은 저장되었으며 직접 입력할 수 있습니다.' : report.ocr.ocr_provider === 'mock' ? 'Mock OCR: 실제 영수증을 읽지 않은 예시 데이터입니다. 모든 값을 확인하고 수정해 주세요.' : 'OCR 결과를 확인하고 수정해 주세요.'}</p>}
+        {report.ocr && <p role="status">{report.ocr.status === 'PENDING' ? '영수증이 저장되었습니다. 분석 중에는 직접 입력할 수 있습니다. 오래 대기하면 영수증을 다시 업로드해 주세요.' : report.ocr.status === 'FAILED' ? 'OCR 분석에 실패했습니다. 영수증은 저장되었으며 직접 입력할 수 있습니다.' : report.ocr.ocr_provider === 'mock' ? 'Mock OCR: 실제 영수증을 읽지 않은 예시 데이터입니다. 모든 값을 확인하고 수정해 주세요.' : 'PaddleOCR 인식 결과입니다. 누락된 항목과 금액을 확인하고 수정해 주세요.'}</p>}
         {report.receipt_file_id && <button type="button" onClick={() => run(async () => {
           const blob = await expenseApi.download(report.receipt_file_id);
           const url = URL.createObjectURL(blob); const link = document.createElement('a');

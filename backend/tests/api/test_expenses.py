@@ -230,3 +230,21 @@ def test_upload_rollback_removes_disk_file(env, monkeypatch):
     with sessions() as db:
         assert db.query(ExpenseOcrResult).count() == 0
         assert db.get(ExpenseReport, row['id']).receipt_file_id is None
+
+
+def test_ocr_wait_does_not_hold_database_write_lock(env, monkeypatch):
+    c, _, sessions = env
+    row = draft(c)
+    def analyze(*args):
+        with sessions() as db:
+            pending = db.query(ExpenseOcrResult).one()
+            assert pending.status == 'PENDING'
+            assert db.get(ExpenseReport, row['id']).receipt_file_id == pending.receipt_file_id
+            # A second connection can write while the OCR provider is running.
+            pending.data = {'test': True}
+            db.commit()
+        return {'total_amount': '11000.00'}
+    monkeypatch.setattr(receipt_ocr_service, 'analyze', analyze)
+    response = c.post(f'/hr/expenses/{row["id"]}/receipt', data={'version': row['version']}, files={'file':('r.png',PNG,'image/png')})
+    assert response.status_code == 200
+    assert response.json()['ocr']['status'] == 'SUCCEEDED'

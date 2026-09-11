@@ -20,6 +20,7 @@ os.close(_fd)
 os.environ["DATABASE_URL"] = "sqlite:///" + Path(_TEST_DB_PATH).resolve().as_posix()
 
 _env = os.environ
+_env.setdefault("OCR_PROVIDER", "mock")
 _env.setdefault("SECRET_KEY", "pytest-secret-key-must-be-long-enough-for-jwt-hs256!")
 _env.setdefault("KAKAO_CLIENT_ID", "pytest")
 _env.setdefault("KAKAO_CLIENT_SECRET", "pytest")

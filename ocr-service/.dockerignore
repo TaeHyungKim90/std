@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!app.py
+!engine.py
+!worker.py
+!receipt_parser.py
+!models.py
