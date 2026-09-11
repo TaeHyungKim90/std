@@ -1,4 +1,4 @@
-FROM python:3.12.13-slim-bookworm AS builder
+FROM python:3.12.13-slim-trixie AS builder
 WORKDIR /app
 RUN pip install --no-cache-dir uv==0.11.19
 COPY pyproject.toml uv.lock ./
@@ -6,8 +6,8 @@ RUN uv sync --frozen --no-dev --no-editable --no-cache
 COPY models.py ./
 RUN .venv/bin/python models.py
 
-FROM python:3.12.13-slim-bookworm
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libgomp1 \
+FROM python:3.12.13-slim-trixie
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends libgl1 libglib2.0-0t64 libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --create-home ocr
 WORKDIR /app

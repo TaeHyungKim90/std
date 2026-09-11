@@ -48,6 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: docker build -t std-receipt-ocr:ci ocr-service
+      - name: Real OCR under container restrictions
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-nanum
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --cpus 2 --memory 2g --pids-limit 128 --tmpfs /tmp:rw,noexec,nosuid,size=256m -v "$PWD/ocr-service/smoke.py:/app/smoke.py:ro" -v /usr/share/fonts/truetype/nanum/NanumGothic.ttf:/fixture-font.ttf:ro std-receipt-ocr:ci python smoke.py --font /fixture-font.ttf
       - name: Scan final OS and runtime libraries
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
