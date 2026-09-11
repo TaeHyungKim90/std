@@ -19,6 +19,7 @@ _DEV_NAVER_REDIRECT_URI = "http://localhost:8000/api/auth/naver/callback"
 
 
 class Settings(BaseSettings):
+	OCR_PROVIDER: str = "mock"
 	SECRET_KEY: str
 	ALGORITHM: str = "HS256"
 	#ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

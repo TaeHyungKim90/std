@@ -9,9 +9,12 @@ const AttendanceView = lazy(() => import('pages/hr/Attendance'));
 const MyMessages = lazy(() => import('pages/hr/MyMessages'));
 const EmployeeContacts = lazy(() => import('pages/hr/EmployeeContacts'));
 const MyProfile = lazy(() => import('pages/hr/MyProfile'));
+const Expenses = lazy(() => import('pages/hr/Expenses'));
 
 const hrRoutes = (
 	<Route path="my" element={<HrLayout />}>
+		<Route path={ROUTE_SEGMENTS.MY.EXPENSES} element={<Expenses />} />
+		<Route path={`${ROUTE_SEGMENTS.MY.EXPENSES}/:expenseId`} element={<Expenses />} />
 		<Route path={ROUTE_SEGMENTS.MY.TODOS} element={<TodoListView />} />
 		<Route path={ROUTE_SEGMENTS.MY.REPORTS} element={<MyReports />} />
 		<Route path={ROUTE_SEGMENTS.MY.ATTENDANCE} element={<AttendanceView />} />

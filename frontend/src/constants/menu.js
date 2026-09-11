@@ -3,6 +3,7 @@ export function menuItemsFor(paths) {
 	return [
 		{ id: 'calendar', label: '캘린더', path: paths.MY_TODOS, adminOnly: false },
 		{ id: 'my-reports', label: '내 보고서', path: paths.MY_REPORTS, adminOnly: false },
+		{ id: 'my-expenses', label: '내 지출결의서', path: paths.MY_EXPENSES, adminOnly: false },
 		{ id: 'commute', label: '출퇴근', path: paths.MY_ATTENDANCE, adminOnly: false },
 		{ id: 'messages', label: '내 수신함', path: paths.MY_MESSAGES, adminOnly: false },
 		{ id: 'contacts', label: '직원 연락처', path: paths.MY_CONTACTS, adminOnly: false },
@@ -25,6 +26,7 @@ export function adminSubMenuFor(paths) {
 				},
 				{ id: 'admin-todos', label: '일정 로그', path: paths.ADMIN_TODOS },
 				{ id: 'admin-reports', label: '보고서 모니터링', path: paths.ADMIN_REPORTS },
+				{ id: 'admin-expenses', label: '지출결의서 관리', path: paths.ADMIN_EXPENSES },
 				{ id: 'admin-messages', label: '메시지 관리', path: paths.ADMIN_MESSAGES },
 			],
 		},

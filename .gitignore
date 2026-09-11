@@ -47,3 +47,5 @@ start_local.sh
 .tmp.driveupload/
 .tmp.drivedownload/
 .cursor/
+# Private receipt storage (served only after ACL checks)
+backend/private_receipts/

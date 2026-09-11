@@ -29,6 +29,9 @@ MSG_UPLOAD_ERROR = "File upload failed."
 def _file_response_for_row(row: UploadedFile):
 	saved_name = str(row.saved_name)
 	full_path = os.path.join(service.UPLOAD_DIR, saved_name)
+	if str(row.file_path).startswith("expense://"):
+		from services.expense_service import PRIVATE_RECEIPT_DIR
+		full_path = str(PRIVATE_RECEIPT_DIR / saved_name)
 	if not os.path.isfile(full_path):
 		raise HTTPException(
 			status_code=status.HTTP_404_NOT_FOUND,

@@ -20,3 +20,5 @@ router.include_router(reports_router, prefix="/reports", tags=["HR-Reports"])
 
 # 결과: /api/hr/directory/...
 router.include_router(directory_router, prefix="/directory", tags=["HR-Directory"])
+from .expenses import router as expenses_router
+router.include_router(expenses_router, prefix="/expenses", tags=["HR-Expenses"])

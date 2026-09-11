@@ -57,6 +57,11 @@ def assert_user_may_download_uploaded_file(db: Session, current_user: dict, uplo
 	from models.auth_models import User
 	from models.message_models import MessageAttachment, Message
 
+	if str(uploaded_row.file_path).startswith("expense://"):
+		from services.expense_service import assert_receipt_access
+		assert_receipt_access(db, current_user, uploaded_row)
+		return
+
 	if current_user.get("role") == "admin":
 		return
 

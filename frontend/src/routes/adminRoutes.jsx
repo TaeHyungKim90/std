@@ -17,9 +17,12 @@ const ResumeTemplateMgmtView = lazy(() => import('pages/admin/ResumeTemplateMgmt
 const ApplicantStatusView = lazy(() => import('pages/admin/ApplicantStatus'));
 const AdminMessage = lazy(() => import('pages/admin/AdminMessage'));
 const AdminDailyReport = lazy(() => import('pages/admin/AdminDailyReport'));
+const Expenses = lazy(() => import('pages/hr/Expenses'));
 
 const adminRoutes = (
 	<Route path="admin">
+		<Route path={ROUTE_SEGMENTS.ADMIN.EXPENSES} element={<Expenses />} />
+		<Route path={`${ROUTE_SEGMENTS.ADMIN.EXPENSES}/:expenseId`} element={<Expenses />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.DASHBOARD} element={<AdminDashboard />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.TODOS} element={<AdminTodoView />} />
 		<Route path={ROUTE_SEGMENTS.ADMIN.CATEGORIES} element={<CategoryMgmtView />} />
