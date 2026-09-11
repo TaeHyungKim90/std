@@ -75,6 +75,14 @@ Linux에서는 OpenCV/Paddle 런타임용 `libgl1`, `libglib2.0-0`, `libgomp1`�
 
 ## 검증 및 취약점 점검
 
+### 2026-09-12 검증 상태
+
+구현 커밋 `bff3169`의 [CI 결과](https://github.com/TaeHyungKim90/std/actions/runs/34627867002): OCR 테스트 16개, 타입 검사, Python 의존성 감사, 실제 한국어 OCR와 HR 업로드 통합 검증이 통과했습니다. Debian 13 기반 Docker 빌드와 외부 통신 차단·읽기 전용·CPU/메모리 제한 상태의 실제 인식도 통과했습니다. 로컬 전체 HR 테스트는 194개 통과/2개 건너뜀, 화면 테스트는 51개 통과했으며 프론트 lint/build도 통과했습니다.
+
+**운영 배포 보안 승인은 완료되지 않았습니다.** Trivy에서 시스템 패키지 HIGH/CRITICAL 66건(서로 다른 CVE 30개, CRITICAL 패키지 항목 5건)이 남아 컨테이너 검사 작업은 실패합니다. 검사 결과에는 수정 버전이 없는 것으로 표시됩니다. 주요 대상은 glib, libxml2, perl, util-linux, expat, sqlite 등입니다. Debian 12에서 13으로 올리고 배포판 업데이트까지 적용했지만 남은 항목이며, 무시 목록이나 검사 제외로 통과시키지 않았습니다. Python 패키지 감사 통과를 컨테이너 전체의 취약점 없음으로 해석하면 안 됩니다.
+
+배포 전 [컨테이너 감사 보고서](https://github.com/TaeHyungKim90/std/actions/runs/34627867002/artifacts/10275187127)를 기준으로 패치 제공 여부 및 실제 영향 범위를 확인하고, 승인된 기반 이미지로 재빌드·재검사해야 합니다. 아래 실행 방법은 개발/검증 환경 설정이며 현재 컨테이너를 운영 보안 검증 완료 상태로 간주하지 않습니다.
+
 ```shell
 uv run python -m pytest tests -q
 uv run pyright
