@@ -1,4 +1,3 @@
-import 'assets/css/admin.css';
 
 import { useMemo } from 'react';
 import { getFilePreviewUrl } from 'utils/fileUtils';

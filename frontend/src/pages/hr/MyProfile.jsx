@@ -573,11 +573,12 @@ const MyProfile = () => {
 								<div className="my-profile-field">
 									<label>주소</label>
 									<AddressSearchField
+										className="my-profile-address"
 										value={address}
 										onChange={setAddress}
 										baseInputClassName="bq-input"
 										detailInputClassName="bq-input"
-										buttonClassName="btn-edit"
+										buttonClassName="my-profile-address-button"
 									/>
 									<label className="my-profile-share-address" htmlFor="mp-share-address">
 										<input
