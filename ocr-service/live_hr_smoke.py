@@ -20,7 +20,8 @@ def main():
     parser.add_argument('--font', type=Path, required=True)
     parser.add_argument('--backend-python', type=Path, required=True)
     args = parser.parse_args()
-    backend_python = args.backend_python.resolve()
+    # Preserve the venv executable symlink on Linux; resolving it loses the venv.
+    backend_python = args.backend_python.absolute()
     root = Path(__file__).resolve().parent.parent
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
