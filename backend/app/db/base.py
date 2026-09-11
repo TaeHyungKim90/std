@@ -1,4 +1,5 @@
 from db.session import Base
+from models.expense_models import ExpenseReport, ExpenseOcrResult, ExpenseApprovalHistory
 
 from models.tenant_models import Tenant
 from models.platform_models import PlatformAdmin

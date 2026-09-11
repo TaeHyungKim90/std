@@ -30,6 +30,7 @@ export function pathsForTenant(tenantSlug) {
 		MY_MESSAGES: `${my}/messages`,
 		MY_CONTACTS: `${my}/contacts`,
 		MY_REPORTS: `${my}/reports`,
+		MY_EXPENSES: `${my}/expenses`,
 		MY_PROFILE: `${my}/profile`,
 		MY_PDF_VIEWER: `${my}/pdf-viewer`,
 		CAREERS: careers,
@@ -51,6 +52,7 @@ export function pathsForTenant(tenantSlug) {
 		ADMIN_APPLICANTS: `${admin}/applicants`,
 		ADMIN_MESSAGES: `${admin}/messages`,
 		ADMIN_REPORTS: `${admin}/reports`,
+		ADMIN_EXPENSES: `${admin}/expenses`,
 		PATH_PREFIX: {
 			MY: my,
 			ADMIN: admin,
@@ -110,6 +112,7 @@ export function routeSegmentsForTenant(tenantSlug) {
 			APPLICANTS: P.ADMIN_APPLICANTS.slice(admin.length + 1),
 			MESSAGES: P.ADMIN_MESSAGES.slice(admin.length + 1),
 			REPORTS: P.ADMIN_REPORTS.slice(admin.length + 1),
+			EXPENSES: P.ADMIN_EXPENSES.slice(admin.length + 1),
 		},
 		MY: {
 			TODOS: P.MY_TODOS.slice(my.length + 1),
@@ -117,6 +120,7 @@ export function routeSegmentsForTenant(tenantSlug) {
 			MESSAGES: P.MY_MESSAGES.slice(my.length + 1),
 			CONTACTS: P.MY_CONTACTS.slice(my.length + 1),
 			REPORTS: P.MY_REPORTS.slice(my.length + 1),
+			EXPENSES: P.MY_EXPENSES.slice(my.length + 1),
 			PROFILE: P.MY_PROFILE.slice(my.length + 1),
 			PDF_VIEWER: P.MY_PDF_VIEWER.slice(my.length + 1),
 		},

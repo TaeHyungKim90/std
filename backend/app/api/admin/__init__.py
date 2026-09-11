@@ -25,3 +25,5 @@ router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])
 router.include_router(departments_router, prefix="/departments", tags=["Admin Departments"])
 router.include_router(positions_router, prefix="/positions", tags=["Admin Positions"])
 router.include_router(work_locations_router, prefix="/work-locations", tags=["Admin Work Locations"])
+from .expenses import router as expenses_router
+router.include_router(expenses_router, prefix="/expenses", tags=["Admin Expenses"])
