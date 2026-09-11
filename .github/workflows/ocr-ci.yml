@@ -58,6 +58,12 @@ jobs:
           ignore-unfixed: false
           vuln-type: os,library
           severity: CRITICAL,HIGH
+      - name: Summarize container findings
+        if: always()
+        run: |
+          if [ -f ocr-container-audit.json ]; then
+            jq -r '.Results[]? | .Vulnerabilities[]? | [.VulnerabilityID, .PkgName, .InstalledVersion, (.FixedVersion // "unfixed"), .Severity] | @tsv' ocr-container-audit.json
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
